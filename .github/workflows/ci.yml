@@ -1,0 +1,212 @@
+name: CI
+
+# Every pull request into main is judged here, and the verdict job at the bottom
+# approves it or requests changes. See docs/PR_AUTOMATION.md.
+#
+# Job ids are the names branch protection requires: quality, conventions, hygiene.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make sure a PHP CLI is available
+        run: php --version || (sudo apt-get update && sudo apt-get install -y php-cli && php --version)
+
+      - name: PHP syntax check (php -l)
+        run: |
+          status=0
+          while IFS= read -r file; do
+            if ! output=$(php -l "$file" 2>&1); then
+              echo "::error file=$file::$output"
+              status=1
+            fi
+          done < <(git ls-files '*.php')
+          exit $status
+
+      - name: Every migration applies to a clean MySQL 8
+        run: |
+          shopt -s nullglob
+          files=(migrations/*.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No migrations to apply."
+            exit 0
+          fi
+          for file in $(printf '%s\n' "${files[@]}" | sort); do
+            echo "--- $file"
+            mysql -h 127.0.0.1 -P 3306 -uroot -proot < "$file"
+          done
+          echo "All migrations applied cleanly to an empty database." >> "$GITHUB_STEP_SUMMARY"
+
+  conventions:
+    name: conventions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make sure a PHP CLI is available
+        run: php --version || (sudo apt-get update && sudo apt-get install -y php-cli && php --version)
+
+      - name: Rules/CONVENTIONS.md check
+        env:
+          # Lets the checker prove no applied migration was edited.
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+          REPORT_FILE: conventions-report.md
+        run: php .github/scripts/conventions-check.php
+
+      - name: Keep the report for the verdict job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conventions-report
+          path: conventions-report.md
+          if-no-files-found: ignore
+
+  hygiene:
+    name: hygiene
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Branch is named actor/short-feature-name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          actors='member|moderator|sponsor|sponsor-liaison|admin|shared'
+          if ! printf '%s' "$BRANCH" | grep -Eq "^($actors)/[a-z0-9]+(-[a-z0-9]+)*\$"; then
+            echo "::error::Branch '$BRANCH' does not match actor/short-feature-name, where actor is one of $actors (Rules/CONVENTIONS.md §4)."
+            exit 1
+          fi
+          echo "Branch name OK: $BRANCH"
+
+      - name: "Commit messages follow: type: short description"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          status=0
+          while IFS= read -r subject; do
+            [ -z "$subject" ] && continue
+            if ! printf '%s' "$subject" | grep -Eq '^(feat|fix|refactor|test|docs|chore|migration): .+'; then
+              echo "::error::Commit message '$subject' is not 'type: short description' (§12)."
+              status=1
+            fi
+          done < <(git log --no-merges --format=%s "$BASE_SHA..HEAD")
+          exit $status
+
+  verdict:
+    name: Accept or request changes
+    # always(), so a failed check still gets a review explaining why.
+    if: always() && github.event_name == 'pull_request'
+    needs: [quality, conventions, hygiene]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the conventions report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: conventions-report
+
+      - name: Make sure the labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create "ci:passed" --color 0E8A16 --description "Automated checks green" --force
+          gh label create "ci:changes-requested" --color D93F0B --description "Automated checks found violations" --force
+
+      - name: Approve and queue the merge
+        if: needs.quality.result == 'success' && needs.conventions.result == 'success' && needs.hygiene.result == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTO_MERGE: ${{ vars.AUTO_MERGE }}
+        run: |
+          {
+            echo "Automated review — **passed**."
+            echo
+            echo "- \`quality\`: every PHP file parses, every migration applies to an empty MySQL 8"
+            echo "- \`conventions\`: no violation of the hard rules in Rules/CONVENTIONS.md"
+            echo "- \`hygiene\`: branch name and commit messages follow §4 and §12"
+            echo
+            if [ -f conventions-report.md ]; then
+              sed -n '/advisory note/,$p' conventions-report.md
+            fi
+            echo
+            echo "_These checks prove the branch is compatible with main, not that the feature behaves correctly — a human still reads the diff._"
+          } > review.md
+
+          gh pr review "$PR" --approve --body-file review.md
+          gh pr edit "$PR" --add-label "ci:passed" --remove-label "ci:changes-requested" || true
+
+          if [ "$AUTO_MERGE" = "true" ]; then
+            if gh pr merge "$PR" --squash --auto --delete-branch; then
+              echo "Auto-merge armed: GitHub merges this PR as soon as branch protection is satisfied." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::warning::Could not arm auto-merge. Turn on Settings -> General -> Allow auto-merge."
+            fi
+          else
+            echo "AUTO_MERGE is not set to true — merge it yourself when you are happy with the diff." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Request changes
+        if: needs.quality.result != 'success' || needs.conventions.result != 'success' || needs.hygiene.result != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "Automated review — **changes requested**."
+            echo
+            echo "| check | result |"
+            echo "| --- | --- |"
+            echo "| quality | \`${{ needs.quality.result }}\` |"
+            echo "| conventions | \`${{ needs.conventions.result }}\` |"
+            echo "| hygiene | \`${{ needs.hygiene.result }}\` |"
+            echo
+            if [ -f conventions-report.md ]; then
+              cat conventions-report.md
+            fi
+            echo
+            echo "Full log: $RUN_URL"
+            echo
+            echo "Fix it locally with \`php .github/scripts/conventions-check.php\`, push again, and this review re-runs."
+          } > review.md
+
+          gh pr review "$PR" --request-changes --body-file review.md
+          gh pr edit "$PR" --add-label "ci:changes-requested" --remove-label "ci:passed" || true
