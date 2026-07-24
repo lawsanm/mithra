@@ -4,6 +4,22 @@ When a teammate opens a PR into `main`, GitHub Actions judges it and posts the v
 as a review. Nobody has to read the diff to find out that a file is unformatted, a
 migration was edited, or a form lost its CSRF token — the bot says so within a minute.
 
+## The flow a teammate sees
+
+1. They push `member/booking-crud`. **Every push to every branch runs the checks**, so
+   they find out their code does not fit `main` before anyone else is involved.
+2. They open a pull request — as a **draft**.
+3. Green → the bot marks the PR *ready for review*, which is what requests the code
+   owner's review and puts it in the reviewer's queue. It also posts an approving review
+   and labels it `ci:passed`.
+4. Red → the bot **puts the PR back into draft**, posts a request-changes review naming
+   every violation, and labels it `ci:changes-requested`. A draft PR cannot be merged and
+   does not ask anyone for a review. They fix, push, and the verdict re-runs.
+
+GitHub cannot prevent a pull request from being *created* — nothing can. The draft state
+is the lever: an incompatible PR never reaches the reviewer's queue and never becomes
+mergeable, and it flips itself the moment the branch passes.
+
 ## What runs
 
 `.github/workflows/ci.yml` has four jobs. The first three are the required status checks.
@@ -90,4 +106,8 @@ arithmetic is right, or whether an ownership check is missing on a route it has 
 seen. Keep the merge checklist in the PR template; the reviewer still reads the diff.
 
 PRs opened from a **fork** get a read-only token, so the verdict job cannot post its
-review there. Have teammates push branches to this repository instead.
+review or manage the draft state there. Have teammates push branches to this repository
+instead — add them under Settings → Collaborators.
+
+A branch with an open PR is checked twice per push (once for the `push` event, once for
+the `pull_request` event). Harmless, and it keeps the pre-PR feedback loop.
