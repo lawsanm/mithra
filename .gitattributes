@@ -1,0 +1,7 @@
+# LF line endings everywhere (Rules/CONVENTIONS.md §5), whatever OS a member is on.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary

@@ -1,0 +1,14 @@
+# Local configuration — never committed (Rules/CONVENTIONS.md §12)
+/config/config.php
+
+# Uploaded member photos and evidence
+/storage/uploads/*
+!/storage/uploads/*/
+!/storage/uploads/**/.gitkeep
+/public/uploads/
+
+# Editor / OS noise
+/.idea/
+/.vscode/
+Thumbs.db
+Desktop.ini
