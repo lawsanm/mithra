@@ -2500,3 +2500,14 @@ textarea {
     height: 48px;
     flex-shrink: 0;
 }
+
+/* Radio-backed pill group (e.g. damage severity). */
+.pill:has(input:checked) {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.pill:has(input:focus-visible) {
+    box-shadow: var(--focus-ring);
+}
