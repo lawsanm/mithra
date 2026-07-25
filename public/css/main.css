@@ -1825,3 +1825,11 @@ textarea {
 .fact__value--lg {
     font-size: var(--text-lede);
 }
+
+/* Read-only input: warm fill, still visibly a control. */
+.input:disabled,
+.input[readonly] {
+    background-color: var(--color-warm-100);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+}
