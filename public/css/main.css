@@ -2391,3 +2391,112 @@ textarea {
 .txn-row__value--hold {
     color: var(--color-accent-text);
 }
+
+/* --------------------------------------------------------------------------
+   34. Modal — native <dialog>, scrim via ::backdrop
+   -------------------------------------------------------------------------- */
+
+.modal {
+    width: 560px;
+    max-width: calc(100% - var(--space-12));
+    padding: 26px var(--space-7);
+    border: none;
+    border-radius: var(--radius-2xl);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    box-shadow:
+        0 24px 64px -8px rgba(28, 39, 51, 0.18),
+        0 8px 24px -4px rgba(28, 39, 51, 0.1),
+        0 1px 2px 0 rgba(28, 39, 51, 0.04);
+}
+
+.modal[open] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+.modal::backdrop {
+    background-color: var(--color-scrim);
+}
+
+.modal--sm {
+    width: 520px;
+}
+
+.modal--lg {
+    width: 600px;
+}
+
+.modal__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.modal__title {
+    color: var(--color-text);
+    font-size: var(--text-section);
+    font-weight: var(--weight-bold);
+}
+
+.modal__close {
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-body);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.modal__close:hover {
+    color: var(--color-text);
+}
+
+.modal > .field,
+.modal > .field-row,
+.modal > .notice,
+.modal > .actions,
+.modal > .line-item {
+    width: 100%;
+    max-width: 100%;
+}
+
+.modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+/* Compact choice card used inside modals. */
+.choice--compact {
+    gap: 10px;
+    padding: 13px var(--space-4);
+    border-radius: var(--radius-md);
+}
+
+/* Highlighted (recommended) option turns success-green when chosen. */
+.choice--recommended:has(input:checked) {
+    border: 1.5px solid var(--color-success);
+    background-color: var(--color-success-tint);
+}
+
+.choice__aside {
+    margin-left: auto;
+}
+
+.input--half {
+    width: 240px;
+}
+
+/* 48px square thumbnail used in modal headers. */
+.thumb--modal {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}

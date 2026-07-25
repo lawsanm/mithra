@@ -134,7 +134,8 @@ include __DIR__ . '/../../partials/header.php';
             </p>
 
             <div class="actions">
-                <button class="btn btn--primary" type="submit">Request to Borrow</button>
+                <?php // Without JS this submits straight through; with it, the modal collects the details. ?>
+                <button class="btn btn--primary" type="submit" data-modal-open="request-borrow">Request to Borrow</button>
                 <a class="btn btn--ghost" href="/messages/new?member=<?= e(rawurlencode($owner['name'])) ?>">Message lender</a>
             </div>
         </form>
@@ -147,4 +148,9 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 </div>
 
-<?php include __DIR__ . '/../../partials/footer.php'; ?>
+<?php include __DIR__ . '/../../partials/modal-request-borrow.php'; ?>
+
+<?php
+$pageScripts = ['modal.js'];
+include __DIR__ . '/../../partials/footer.php';
+?>
