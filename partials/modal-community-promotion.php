@@ -24,7 +24,9 @@ $promotion = ($promotion ?? []) + [
         <h2 class="modal__title" id="community-promotion-title">
             Make <?= e($promotion['temporary_name']) ?> your home community?
         </h2>
-        <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-x"></use></svg>
+        </button>
     </div>
 
     <p class="line-item">

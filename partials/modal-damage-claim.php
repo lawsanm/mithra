@@ -35,7 +35,9 @@ $claimDraft = ($claimDraft ?? []) + [
 <dialog class="modal modal--lg" id="damage-claim" aria-labelledby="damage-claim-title">
     <div class="modal__head">
         <h2 class="modal__title" id="damage-claim-title">Raise a damage claim</h2>
-        <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-x"></use></svg>
+        </button>
     </div>
 
     <div class="media">

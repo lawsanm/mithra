@@ -32,7 +32,9 @@ $quickTags = $quickTags ?? [
 <dialog class="modal modal--sm" id="rate-review" aria-labelledby="rate-review-title">
     <div class="modal__head">
         <h2 class="modal__title" id="rate-review-title">Rate your experience</h2>
-        <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-x"></use></svg>
+        </button>
     </div>
 
     <div class="media">
