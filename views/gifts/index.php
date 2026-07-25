@@ -63,7 +63,12 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<h1 class="page-header__title">Gifts</h1>
+<header class="page-header">
+    <h1 class="page-header__title">Gifts</h1>
+    <button class="btn btn--primary page-header__action" type="button" data-modal-open="send-gift">
+        Send a gift
+    </button>
+</header>
 
 <nav class="tabs" aria-label="Gift direction">
     <?php foreach ($tabs as $tab): ?>
@@ -100,4 +105,9 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
-<?php include __DIR__ . '/../../partials/footer.php'; ?>
+<?php include __DIR__ . '/../../partials/modal-send-gift.php'; ?>
+
+<?php
+$pageScripts = ['modal.js'];
+include __DIR__ . '/../../partials/footer.php';
+?>
