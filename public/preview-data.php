@@ -19,9 +19,10 @@ require_once __DIR__ . '/../app/autoload.php';
 /**
  * Build the view data for one "feature/action" key.
  *
+ * @param  array<string, string> $params route parameters, e.g. ['id' => '3']
  * @return array<string, mixed>
  */
-function preview_data(string $view): array
+function preview_data(string $view, array $params = []): array
 {
     $pdo = Database::connection();
     $me  = (int) Config::get('demo_member_id', 4);
