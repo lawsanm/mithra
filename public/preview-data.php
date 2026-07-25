@@ -157,7 +157,9 @@ function preview_data(string $view, array $params = []): array
                     $gifts->forMember($me, $box)
                 ),
                 // Feeds the Send a gift modal that this page includes.
-                'recipients' => $users->giftableExcept($me),
+                'recipients'    => $users->giftableExcept($me),
+                'giftSentToday' => $gifts->sentToday($me),
+                'giftRemaining' => max(0, Gift::DAILY_CAP - $gifts->sentToday($me)),
             ];
         })(),
 
