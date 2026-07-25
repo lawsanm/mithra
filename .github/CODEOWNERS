@@ -1,0 +1,4 @@
+# Every pull request into main requests a review from the repo owner.
+# Add teammates here as they take ownership of modules, e.g.
+#   /app/Modules/Bookings/  @member3
+*       @lawsanm
