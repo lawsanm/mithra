@@ -275,8 +275,8 @@ textarea {
 }
 
 .nav__logo {
-    width: 21px;
-    height: 28px;
+    width: auto;
+    height: 32px;
 }
 
 .nav__wordmark {
@@ -823,4 +823,270 @@ textarea {
     border-color: var(--color-primary);
     background-color: var(--color-primary);
     color: var(--color-text-inverse);
+}
+
+/* --------------------------------------------------------------------------
+   11. Breadcrumb & dividers
+   -------------------------------------------------------------------------- */
+
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-ui-body);
+}
+
+.breadcrumb__link {
+    font-weight: var(--weight-semibold);
+}
+
+.breadcrumb__separator {
+    color: var(--color-text-disabled);
+}
+
+.breadcrumb__current {
+    color: var(--color-text-muted);
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    border: none;
+    margin: 0;
+    background-color: var(--color-border);
+}
+
+/* --------------------------------------------------------------------------
+   12. Two-column detail layout
+   -------------------------------------------------------------------------- */
+
+.detail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-12);
+}
+
+.detail__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+.detail__main {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.detail__title {
+    color: var(--color-text);
+    font-size: 30px;
+    font-weight: var(--weight-bold);
+}
+
+.detail__prose {
+    max-width: 520px;
+    color: var(--color-text);
+    font-size: var(--text-lede);
+}
+
+.detail__divider {
+    max-width: 520px;
+}
+
+/* Photo gallery */
+.gallery__main {
+    width: 640px;
+    max-width: 100%;
+    height: 420px;
+    border-radius: var(--radius-xl);
+}
+
+.gallery__thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.gallery__thumb {
+    width: 96px;
+    height: 72px;
+    border: 2px solid transparent;
+}
+
+.gallery__thumb--current {
+    border-color: var(--color-primary);
+}
+
+/* Price block */
+.price-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.price {
+    color: var(--color-primary);
+    font-size: var(--text-h2);
+    font-weight: var(--weight-semibold);
+}
+
+.price__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* Total line above the primary action */
+.total-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+    padding: var(--space-1) 0;
+}
+
+.total-row__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+.total-row__value {
+    margin-left: auto;
+    color: var(--color-text);
+    font-size: var(--text-section);
+    font-weight: var(--weight-bold);
+}
+
+/* --------------------------------------------------------------------------
+   13. Owner card, verified pill, larger avatar
+   -------------------------------------------------------------------------- */
+
+.avatar--lg {
+    width: 48px;
+    height: 48px;
+    font-size: var(--text-body);
+}
+
+.verified-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) 10px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent-tint);
+    color: var(--color-accent-text);
+    font-size: var(--text-ui-caption);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.owner-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 14px var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.owner-card__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.owner-card__name-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.owner-card__name {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.owner-card__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* --------------------------------------------------------------------------
+   14. Inline notices & action rows
+   -------------------------------------------------------------------------- */
+
+.notice {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 520px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--text-ui-body);
+}
+
+.notice--info {
+    background-color: var(--color-info-tint);
+    color: var(--color-info-text);
+}
+
+.notice--success {
+    background-color: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+.notice--warning {
+    background-color: var(--color-warning-tint);
+    color: var(--color-warning-text);
+}
+
+.notice--error {
+    background-color: var(--color-error-tint);
+    color: var(--color-error-text);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.field-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.input--date {
+    width: 254px;
+}
+
+/* --------------------------------------------------------------------------
+   15. Stack utility — vertical rhythm for groups of form controls
+   -------------------------------------------------------------------------- */
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.stack--tight {
+    gap: var(--space-3);
+}
+
+.stack--loose {
+    gap: var(--space-6);
 }
