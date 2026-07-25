@@ -1807,3 +1807,21 @@ textarea {
     height: 40px;
     font-size: var(--text-ui-label);
 }
+
+/* Compact wizard variant used for read-only workflow progress. */
+.wizard--compact .wizard__connector {
+    width: 30px;
+}
+
+.wizard__connector--done {
+    background-color: var(--color-success);
+}
+
+/* Wider gap between facts on a summary panel. */
+.facts--wide {
+    gap: 36px;
+}
+
+.fact__value--lg {
+    font-size: var(--text-lede);
+}
