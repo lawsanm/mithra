@@ -1666,3 +1666,50 @@ textarea {
     color: var(--color-text);
     font-size: var(--text-ui-body);
 }
+
+/* Wider form panel used by confirmation screens. */
+.panel--wide {
+    width: 720px;
+    max-width: 100%;
+}
+
+/* Media row: thumbnail or avatar beside a two-line label. */
+.media {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.media__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.media__title {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.media__title--sm {
+    font-size: var(--text-ui-label);
+}
+
+.media__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* Amber badge carrying an icon, e.g. the Donor award. */
+.award-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 14px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent-tint);
+    color: var(--color-accent-text);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+}
