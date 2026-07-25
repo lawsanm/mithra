@@ -76,4 +76,21 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 </form>
 
-<?php include __DIR__ . '/../../partials/footer.php'; ?>
+<section class="panel panel--wide">
+    <h2 class="panel__title">Already staying there permanently?</h2>
+    <div class="help-cta">
+        <p class="help-cta__text">
+            Once a temporary community is verified you can promote it to your home community.
+        </p>
+        <button class="btn btn--ghost" type="button" data-modal-open="community-promotion">
+            Promote to home community…
+        </button>
+    </div>
+</section>
+
+<?php include __DIR__ . '/../../partials/modal-community-promotion.php'; ?>
+
+<?php
+$pageScripts = ['modal.js'];
+include __DIR__ . '/../../partials/footer.php';
+?>
