@@ -6,9 +6,10 @@ name: CI
 # Job ids are the names branch protection requires: quality, conventions, hygiene.
 
 on:
-  pull_request:
-    branches: [main]
+  # Every push to any branch, so the author sees a failure before anyone else does.
   push:
+    branches: ['**']
+  pull_request:
     branches: [main]
 
 permissions:
@@ -75,10 +76,14 @@ jobs:
       - name: Make sure a PHP CLI is available
         run: php --version || (sudo apt-get update && sudo apt-get install -y php-cli && php --version)
 
+      - name: Work out what this branch adds to main
+        run: |
+          git fetch --no-tags --depth=0 origin main || git fetch --no-tags origin main
+          echo "BASE_REF=$(git merge-base origin/main HEAD)" >> "$GITHUB_ENV"
+
       - name: Rules/CONVENTIONS.md check
         env:
-          # Lets the checker prove no applied migration was edited.
-          BASE_REF: ${{ github.event.pull_request.base.sha }}
+          # BASE_REF lets the checker prove no applied migration was edited.
           REPORT_FILE: conventions-report.md
         run: php .github/scripts/conventions-check.php
 
@@ -92,7 +97,7 @@ jobs:
 
   hygiene:
     name: hygiene
-    if: github.event_name == 'pull_request'
+    if: github.ref_name != 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -101,7 +106,7 @@ jobs:
 
       - name: Branch is named actor/short-feature-name
         env:
-          BRANCH: ${{ github.head_ref }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           actors='member|moderator|sponsor|sponsor-liaison|admin|shared'
           if ! printf '%s' "$BRANCH" | grep -Eq "^($actors)/[a-z0-9]+(-[a-z0-9]+)*\$"; then
@@ -111,9 +116,9 @@ jobs:
           echo "Branch name OK: $BRANCH"
 
       - name: "Commit messages follow: type: short description"
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          git fetch --no-tags origin main
+          BASE_SHA=$(git merge-base origin/main HEAD)
           status=0
           while IFS= read -r subject; do
             [ -z "$subject" ] && continue
@@ -170,6 +175,9 @@ jobs:
             echo "_These checks prove the branch is compatible with main, not that the feature behaves correctly — a human still reads the diff._"
           } > review.md
 
+          # Compatible: take it out of draft, which is what requests the
+          # code owner's review and puts it in their queue.
+          gh pr ready "$PR" || true
           gh pr review "$PR" --approve --body-file review.md
           gh pr edit "$PR" --add-label "ci:passed" --remove-label "ci:changes-requested" || true
 
@@ -206,7 +214,12 @@ jobs:
             echo "Full log: $RUN_URL"
             echo
             echo "Fix it locally with \`php .github/scripts/conventions-check.php\`, push again, and this review re-runs."
+            echo
+            echo "This PR is back in **draft** until the checks pass — it does not reach the reviewer yet."
           } > review.md
 
+          # Not compatible: back to draft, so it cannot be merged and the
+          # code owner is not asked to review it.
+          gh pr ready "$PR" --undo || true
           gh pr review "$PR" --request-changes --body-file review.md
           gh pr edit "$PR" --add-label "ci:changes-requested" --remove-label "ci:passed" || true

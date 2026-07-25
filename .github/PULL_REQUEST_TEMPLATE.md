@@ -1,7 +1,10 @@
 <!--
-  CI runs php -l, the CONVENTIONS.md checker and the migrations against a clean MySQL 8,
-  then posts an approving review or requests changes. Run it yourself before pushing:
-      php .github/scripts/conventions-check.php
+  Open this as a DRAFT. CI runs php -l, the CONVENTIONS.md checker and the migrations
+  against a clean MySQL 8. Green marks the PR ready for review and requests the code
+  owner; red puts it back into draft with every violation listed.
+
+  Run the same checks before pushing:  php .github/scripts/conventions-check.php
+
   The boxes below are the part no script can judge — the reviewer ticks them.
 -->
 
