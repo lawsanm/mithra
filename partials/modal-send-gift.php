@@ -14,20 +14,19 @@ declare(strict_types=1);
  * @var array $giftErrors per-field messages from the Validator
  */
 
-$recipients = $recipients ?? ['J. Kavipriya', 'T.H.K. Madushan', 'A. Akalvily'];
+$recipients = $recipients ?? [];
 
 $giftDraft = ($giftDraft ?? []) + [
-    'recipient'    => 'J. Kavipriya',
-    'amount'       => '45',
-    'reason'       => 'Thank you for the school run help!',
-    'reason_count' => 'Max 100 characters  ·  32/100',
+    'recipient'    => '',
+    'amount'       => '',
+    'reason'       => '',
+    'reason_count' => 'Max 100 characters',
 ];
 
-// Server-side validation result. The submit button stays disabled while set.
-$giftErrors = $giftErrors ?? [
-    'amount' => 'Daily gift cap exceeded — you’ve sent 180 of 200 pts today. '
-              . 'You can send up to 20 pts more.',
-];
+// Per-field messages from the Validator. Empty on a fresh form — the Figma
+// "validation" frame is what you see when the controller passes an error here,
+// not the default state.
+$giftErrors = $giftErrors ?? [];
 
 ?>
 <dialog class="modal modal--sm" id="send-gift" aria-labelledby="send-gift-title">
@@ -44,9 +43,11 @@ $giftErrors = $giftErrors ?? [
         <div class="field">
             <label class="field__label" for="gift-recipient">Recipient</label>
             <select class="input" id="gift-recipient" name="recipient" required>
+                <option value="">Choose a member…</option>
                 <?php foreach ($recipients as $recipient): ?>
-                    <option value="<?= e($recipient) ?>"<?= $giftDraft['recipient'] === $recipient ? ' selected' : '' ?>>
-                        <?= e($recipient) ?>
+                    <option value="<?= e((string) $recipient['id']) ?>"
+                        <?= $giftDraft['recipient'] === (string) $recipient['id'] ? ' selected' : '' ?>>
+                        <?= e($recipient['full_name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>

@@ -10,52 +10,6 @@ declare(strict_types=1);
  * @var array $gifts rows: initials, name, note, amount, direction, date
  */
 
-// Sample view data — replaced by the controller once GiftController lands.
-$tabs ??= [
-    ['label' => 'Sent (4)',     'box' => 'sent', 'active' => true],
-    ['label' => 'Received (2)', 'box' => 'received'],
-];
-
-$caps ??= [
-    ['label' => 'Sent today',     'value' => '15 / 35 pts daily cap'],
-    ['label' => 'Sent this year', 'value' => '210 / 500 pts annual cap'],
-];
-
-$gifts ??= [
-    [
-        'initials'  => 'JK',
-        'name'      => 'J. Kavipriya',
-        'note'      => '“Thank you for the school run help!”',
-        'amount'    => '−15 pts',
-        'direction' => 'out',
-        'date'      => '16 Jul 2026',
-    ],
-    [
-        'initials'  => 'JK',
-        'name'      => 'J. Kavipriya',
-        'note'      => '“Great neighbour — welcome gift”',
-        'amount'    => '−10 pts',
-        'direction' => 'out',
-        'date'      => '2 Jul 2026',
-    ],
-    [
-        'initials'  => 'TM',
-        'name'      => 'T.H.K. Madushan',
-        'note'      => '“For fixing the gate hinge”',
-        'amount'    => '−20 pts',
-        'direction' => 'out',
-        'date'      => '18 Jun 2026',
-    ],
-    [
-        'initials'  => 'AA',
-        'name'      => 'A. Akalvily',
-        'note'      => '“Congrats on the new listing!”',
-        'amount'    => '−5 pts',
-        'direction' => 'out',
-        'date'      => '30 May 2026',
-    ],
-];
-
 $pageTitle = 'Gifts';
 $navActive = 'gifts';
 

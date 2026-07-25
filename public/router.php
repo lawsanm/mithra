@@ -16,6 +16,10 @@ declare(strict_types=1);
  * dispatches real routes.
  */
 
+// The real bootstrap opens the session before any output; do the same so
+// csrf_field() can mint a token without warning about sent headers.
+session_start();
+
 require_once __DIR__ . '/preview-data.php';
 
 $path   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
