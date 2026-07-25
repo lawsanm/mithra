@@ -1090,3 +1090,39 @@ textarea {
 .stack--loose {
     gap: var(--space-6);
 }
+
+/* --------------------------------------------------------------------------
+   16. Page header with a trailing action
+   -------------------------------------------------------------------------- */
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.page-header__title {
+    color: var(--color-text);
+    font-size: var(--text-h1);
+    font-weight: var(--weight-bold);
+}
+
+.page-header__action {
+    margin-left: auto;
+}
+
+/* Square row thumbnail, used where a list row has no tall photo. */
+.thumb--sm {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+}
+
+/* Vertical list of full-width rows (list rows stretch, unlike .stack). */
+.row-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+}

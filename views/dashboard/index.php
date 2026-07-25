@@ -133,7 +133,7 @@ include __DIR__ . '/../../partials/header.php';
             <a class="btn btn--primary" href="/items/browse">Browse items near you</a>
         </div>
     <?php else: ?>
-        <ul>
+        <ul class="row-list">
             <?php foreach ($activeBorrowings as $borrowing): ?>
                 <li class="list-row">
                     <span class="thumb thumb--row">Photo</span>
