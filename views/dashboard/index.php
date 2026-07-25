@@ -162,7 +162,7 @@ include __DIR__ . '/../../partials/header.php';
         <ul class="card-grid">
             <?php foreach ($listings as $listing): ?>
                 <li class="item-card">
-                    <span class="thumb thumb--card">Photo</span>
+                    <span class="thumb thumb--card thumb--card-tall">Photo</span>
                     <div class="item-card__body">
                         <a class="item-card__title" href="<?= e($listing['href']) ?>"><?= e($listing['title']) ?></a>
                         <span class="item-card__rate"><?= e($listing['rate']) ?></span>
