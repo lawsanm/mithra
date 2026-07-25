@@ -16,6 +16,10 @@ declare(strict_types=1);
  * only: it never writes, and it refuses any path outside /views.
  */
 
+// The real bootstrap starts the session before any output; do the same here so
+// csrf_field() can mint a token without warning about sent headers.
+session_start();
+
 require __DIR__ . '/../app/helpers.php';
 
 $viewRoot = realpath(__DIR__ . '/../views');

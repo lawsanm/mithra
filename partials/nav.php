@@ -35,13 +35,13 @@ $navItems = [
     </a>
 
     <ul class="nav__items">
-        <?php foreach ($navItems as $key => $item): ?>
+        <?php foreach ($navItems as $key => $navItem): ?>
             <li>
                 <a
                     class="nav__link<?= $key === $navActive ? ' nav__link--active' : '' ?>"
-                    href="<?= e($item['href']) ?>"
+                    href="<?= e($navItem['href']) ?>"
                     <?= $key === $navActive ? 'aria-current="page"' : '' ?>
-                ><?= e($item['label']) ?></a>
+                ><?= e($navItem['label']) ?></a>
             </li>
         <?php endforeach; ?>
     </ul>
