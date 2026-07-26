@@ -1383,3 +1383,220 @@ textarea {
     border-bottom-color: var(--color-primary);
     color: var(--color-primary);
 }
+
+/* --------------------------------------------------------------------------
+   22. Record detail header (title + status badge)
+   -------------------------------------------------------------------------- */
+
+.record-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.record-head__title {
+    color: var(--color-text);
+    font-size: var(--space-7);
+    font-weight: var(--weight-bold);
+}
+
+.record-meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* Summary row for a booking / request, with a trailing amount column. */
+.record-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 14px var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.record-card__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.record-card__party {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.record-card__terms {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.record-card__amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+}
+
+.record-card__amount strong {
+    color: var(--color-text);
+    font-size: 18px;
+    font-weight: var(--weight-bold);
+}
+
+.record-card__amount span {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* --------------------------------------------------------------------------
+   23. Panels, photo grids, fact lists, line items
+   -------------------------------------------------------------------------- */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 26px var(--space-7);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+}
+
+.panel--half {
+    width: 600px;
+    max-width: 100%;
+}
+
+.panel--narrow {
+    width: 520px;
+    max-width: 100%;
+}
+
+.panel__title {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.panel-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-5);
+    width: 100%;
+}
+
+.photo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.thumb--photo {
+    width: 120px;
+    height: 90px;
+    flex-shrink: 0;
+}
+
+.thumb--photo-tall {
+    width: 120px;
+    height: 129px;
+    flex-shrink: 0;
+}
+
+.upload-drop--sm {
+    height: 70px;
+}
+
+/* Label-over-value facts, laid out in a row. */
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-7);
+}
+
+.fact {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fact__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+.fact__value {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+/* Ledger-style line item: label left, amount right. */
+.line-item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    width: 100%;
+    font-size: var(--text-ui-body);
+}
+
+.line-item__label {
+    color: var(--color-text-muted);
+}
+
+.line-item__value {
+    margin-left: auto;
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+}
+
+.line-item--negative .line-item__label,
+.line-item--negative .line-item__value {
+    color: var(--color-error-text);
+}
+
+.line-item--total .line-item__label {
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+}
+
+.line-item--total .line-item__value {
+    font-size: var(--text-lede);
+    font-weight: var(--weight-bold);
+}
+
+/* Multi-line text control. */
+.textarea {
+    width: 100%;
+    min-height: 84px;
+    padding: var(--space-3) 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    resize: vertical;
+}
+
+.textarea:focus-visible {
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+}
+
+/* Forms nested in a panel stretch, so their upload targets stay full width. */
+.panel > form,
+.panel > .field,
+.panel > .photo-grid {
+    width: 100%;
+}
