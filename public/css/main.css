@@ -1713,3 +1713,97 @@ textarea {
     font-size: var(--text-ui-body);
     font-weight: var(--weight-semibold);
 }
+
+/* --------------------------------------------------------------------------
+   25. Cap meters and ledger-style transaction rows
+   -------------------------------------------------------------------------- */
+
+.cap-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+    width: 100%;
+}
+
+.cap-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: 14px var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.cap-card__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.cap-card__value {
+    color: var(--color-text);
+    font-size: var(--text-body);
+    font-weight: var(--weight-semibold);
+}
+
+.txn-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.txn-row__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.txn-row__name {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.txn-row__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.txn-row__amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    text-align: right;
+}
+
+.txn-row__value {
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.txn-row__value--out {
+    color: var(--color-error-text);
+}
+
+.txn-row__value--in {
+    color: var(--color-success-text);
+}
+
+.txn-row__date {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* Small avatar used in transaction rows. */
+.avatar--sm {
+    width: 40px;
+    height: 40px;
+    font-size: var(--text-ui-label);
+}
