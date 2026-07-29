@@ -1972,3 +1972,74 @@ textarea {
     color: var(--color-text-muted);
     font-size: var(--text-caption);
 }
+
+/* --------------------------------------------------------------------------
+   28. Notification rows
+   -------------------------------------------------------------------------- */
+
+.notification {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    color: inherit;
+}
+
+.notification:hover {
+    border-color: var(--color-primary-300);
+    text-decoration: none;
+}
+
+/* Unread rows sit on the primary tint with a matching border. */
+.notification--unread {
+    border-color: var(--color-primary-100);
+    background-color: var(--color-primary-50);
+}
+
+.notification__icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+}
+
+.notification__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.notification__title {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.notification__detail {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.notification__aside {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.notification__time {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+.notification__dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+}
