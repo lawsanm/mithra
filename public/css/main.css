@@ -1920,3 +1920,55 @@ textarea {
     border-radius: var(--radius-pill);
     background-color: var(--color-primary);
 }
+
+/* --------------------------------------------------------------------------
+   27. Review rows
+   -------------------------------------------------------------------------- */
+
+.review {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: var(--space-4) 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.review__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.review__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.review__author {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.review__stars {
+    color: var(--color-accent);
+    font-size: var(--text-ui-body);
+    letter-spacing: 1px;
+}
+
+.review__text {
+    max-width: 760px;
+    color: var(--color-text);
+    font-size: var(--text-ui-body);
+}
+
+.review__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
