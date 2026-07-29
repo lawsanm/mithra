@@ -2043,3 +2043,89 @@ textarea {
     border-radius: var(--radius-pill);
     background-color: var(--color-primary);
 }
+
+/* --------------------------------------------------------------------------
+   29. Profile header
+   -------------------------------------------------------------------------- */
+
+.profile-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+}
+
+.avatar--xl {
+    width: 72px;
+    height: 72px;
+    font-size: var(--text-h2);
+}
+
+.profile-head__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.profile-head__name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-head__name {
+    color: var(--color-text);
+    font-size: var(--text-h2);
+    font-weight: var(--weight-bold);
+}
+
+.profile-head__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* Compact amber award pill used beside a member name. */
+.award-pill--sm {
+    gap: 6px;
+    padding: 5px var(--space-3);
+    font-size: var(--text-caption);
+}
+
+/* Inline dashed upload affordance inside a field. */
+.upload-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    cursor: pointer;
+}
+
+.upload-inline:hover {
+    border-color: var(--color-primary);
+}
+
+.upload-inline__label {
+    color: var(--color-text);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+}
+
+.upload-inline__hint {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+.panel__heading {
+    color: var(--color-text);
+    font-size: var(--text-body);
+    font-weight: var(--weight-semibold);
+}
