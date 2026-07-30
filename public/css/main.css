@@ -2221,3 +2221,40 @@ textarea {
     font-size: var(--text-ui-label);
     font-weight: var(--weight-semibold);
 }
+
+/* --------------------------------------------------------------------------
+   31. Pool grid (transparency dashboard)
+   -------------------------------------------------------------------------- */
+
+.pool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 426px);
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.pool-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.pool-card__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.pool-card__value {
+    color: var(--color-primary);
+    font-size: var(--text-page-title);
+    font-weight: var(--weight-bold);
+}
+
+.pool-card__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
