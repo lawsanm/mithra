@@ -2165,3 +2165,59 @@ textarea {
     font-size: 17px;
     font-weight: var(--weight-semibold);
 }
+
+/* --------------------------------------------------------------------------
+   30. Settings rows and the danger zone
+   -------------------------------------------------------------------------- */
+
+.setting-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+}
+
+.setting-row__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.setting-row__title {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.setting-row__note {
+    max-width: 520px;
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.panel__heading--danger {
+    color: var(--color-error-text);
+}
+
+/* Destructive action: error tint, never a solid red fill. */
+.btn--danger {
+    padding: 14px 18px;
+    background-color: var(--color-error-tint);
+    color: var(--color-error-text);
+    font-size: var(--text-ui-label);
+}
+
+.btn--danger:hover {
+    background-color: var(--color-error-tint);
+    color: var(--color-error-text);
+    filter: brightness(0.97);
+}
+
+/* Standalone "go to" links stacked in a panel. */
+.panel__link {
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
