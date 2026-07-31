@@ -53,7 +53,12 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<h1 class="detail__title">Ratings</h1>
+<header class="page-header">
+    <h1 class="detail__title">Ratings</h1>
+    <button class="btn btn--primary page-header__action" type="button" data-modal-open="rate-review">
+        Rate a completed booking
+    </button>
+</header>
 
 <nav class="tabs" aria-label="Rating direction">
     <?php foreach ($tabs as $tab): ?>
@@ -84,4 +89,9 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
-<?php include __DIR__ . '/../../partials/footer.php'; ?>
+<?php include __DIR__ . '/../../partials/modal-rate-review.php'; ?>
+
+<?php
+$pageScripts = ['modal.js'];
+include __DIR__ . '/../../partials/footer.php';
+?>
