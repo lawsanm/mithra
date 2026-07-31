@@ -33,7 +33,9 @@ $giftErrors = $giftErrors ?? [
 <dialog class="modal modal--sm" id="send-gift" aria-labelledby="send-gift-title">
     <div class="modal__head">
         <h2 class="modal__title" id="send-gift-title">Send a gift</h2>
-        <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-x"></use></svg>
+        </button>
     </div>
 
     <form class="stack" method="post" action="/gifts">

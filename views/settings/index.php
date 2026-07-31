@@ -118,8 +118,13 @@ include __DIR__ . '/../../partials/header.php';
                 Ends your Mithra membership. You’ll choose what happens to your remaining points.
             </span>
         </span>
-        <a class="btn btn--danger" href="/settings/close-account">Close account…</a>
+        <a class="btn btn--danger" href="/settings/close-account" data-modal-open="close-account">Close account…</a>
     </div>
 </section>
 
-<?php include __DIR__ . '/../../partials/footer.php'; ?>
+<?php include __DIR__ . '/../../partials/modal-close-account.php'; ?>
+
+<?php
+$pageScripts = ['modal.js'];
+include __DIR__ . '/../../partials/footer.php';
+?>

@@ -47,7 +47,9 @@ $quote = ($quote ?? []) + [
 <dialog class="modal" id="request-borrow" aria-labelledby="request-borrow-title">
     <div class="modal__head">
         <h2 class="modal__title" id="request-borrow-title">Request to Borrow</h2>
-        <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
+        <button class="modal__close" type="button" data-modal-close aria-label="Close">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-x"></use></svg>
+        </button>
     </div>
 
     <div class="media">
