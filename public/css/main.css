@@ -2326,3 +2326,68 @@ textarea {
     color: var(--color-text-muted);
     font-size: var(--text-ui-label);
 }
+
+/* --------------------------------------------------------------------------
+   33. Wallet balance cards and activity icons
+   -------------------------------------------------------------------------- */
+
+.balance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+    width: 100%;
+}
+
+.balance-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--space-6) var(--space-7);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+}
+
+/* The available-balance card is the one dark surface in the member UI. */
+.balance-card--dark {
+    border-color: var(--color-primary-700);
+    background-color: var(--color-primary-700);
+}
+
+.balance-card__label,
+.balance-card__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.balance-card__value {
+    color: var(--color-text);
+    font-size: var(--text-display);
+    font-weight: var(--weight-bold);
+}
+
+.balance-card--dark .balance-card__label,
+.balance-card--dark .balance-card__note {
+    color: var(--color-primary-200);
+}
+
+.balance-card--dark .balance-card__value {
+    color: var(--color-text-inverse);
+}
+
+/* Round icon chip leading a wallet activity row. */
+.txn-row__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-warm-100);
+    color: var(--color-text-muted);
+}
+
+.txn-row__value--hold {
+    color: var(--color-accent-text);
+}
