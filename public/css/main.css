@@ -2582,3 +2582,15 @@ textarea {
     gap: var(--space-2);
     width: 100%;
 }
+
+/* Invalid control — error border, paired with a .field__error message. */
+.input--invalid,
+.input[aria-invalid="true"] {
+    border: 1.5px solid var(--color-error);
+}
+
+.input--invalid:focus-visible,
+.input[aria-invalid="true"]:focus-visible {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.4);
+}
