@@ -283,7 +283,7 @@ include __DIR__ . '/../../partials/header.php';
         <a class="btn btn--ghost" href="/bookings/1/report">Report a problem</a>
     <?php elseif ($state === 'return'): ?>
         <a class="btn btn--primary" href="/bookings/1/confirm-return">Confirm return — release escrow</a>
-        <a class="btn btn--ghost" href="/bookings/1/damage-claim">Raise damage claim</a>
+        <a class="btn btn--ghost" href="/bookings/1/damage-claim" data-modal-open="damage-claim">Raise damage claim</a>
     <?php elseif ($state === 'overdue'): ?>
         <a class="btn btn--primary" href="/bookings/1?state=return">Start return now</a>
         <a class="btn btn--ghost" href="/messages/new">Message lender</a>
@@ -295,4 +295,9 @@ include __DIR__ . '/../../partials/header.php';
     <?php endif; ?>
 </div>
 
-<?php include __DIR__ . '/../../partials/footer.php'; ?>
+<?php include __DIR__ . '/../../partials/modal-damage-claim.php'; ?>
+
+<?php
+$pageScripts = ['modal.js'];
+include __DIR__ . '/../../partials/footer.php';
+?>
