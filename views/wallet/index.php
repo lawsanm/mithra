@@ -88,7 +88,8 @@ include __DIR__ . '/../../partials/header.php';
 </div>
 
 <div class="actions">
-    <a class="btn btn--primary" href="/gifts/new">Send a gift</a>
+    <?php // Without JS this lands on Gifts, which hosts the same form. ?>
+    <a class="btn btn--primary" href="/gifts" data-modal-open="send-gift">Send a gift</a>
     <a class="btn btn--ghost" href="/aid-grants/create">Request aid grant</a>
 </div>
 
@@ -112,4 +113,9 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
-<?php include __DIR__ . '/../../partials/footer.php'; ?>
+<?php include __DIR__ . '/../../partials/modal-send-gift.php'; ?>
+
+<?php
+$pageScripts = ['modal.js'];
+include __DIR__ . '/../../partials/footer.php';
+?>

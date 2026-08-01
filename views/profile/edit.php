@@ -17,6 +17,8 @@ $member ??= [
     'verified' => true,
     'donor'    => 'Donor · 3 items given',
     'meta'     => 'Kollupitiya GN Division  ·  member since Mar 2025  ·  trust score 80 / 100',
+    // Own public profile lives on the same /members/{id} route as everyone else's.
+    'public_href' => '/members/12',
 ];
 
 $draft ??= [
@@ -55,7 +57,7 @@ include __DIR__ . '/../../partials/header.php';
             </div>
             <span class="profile-head__meta"><?= e($member['meta']) ?></span>
         </div>
-        <a class="btn btn--ghost" href="/profile/public">View public profile</a>
+        <a class="btn btn--ghost" href="<?= e($member['public_href']) ?>">View public profile</a>
     </div>
 </section>
 
