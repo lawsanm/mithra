@@ -7,88 +7,11 @@ declare(strict_types=1);
  * "Dashboard — Empty (no bookings)" state (69:23) — the empty state renders
  * when $activeBorrowings is empty.
  *
- * @var array $member            greeting, division, membership line
+ * @var array $member            greeting, membership line
  * @var array $stats             four figures for the stat row
  * @var array $activeBorrowings  rows: title, meta, status, status_label, href
  * @var array $listings          cards: title, rate, meta, href
  */
-
-// Sample view data — replaced by the controller once DashboardController lands.
-$member ??= [
-    'greeting'   => 'Good morning, Lawsan',
-    'membership' => 'Kollupitiya GN Division  ·  Verified member since 2025',
-];
-
-$stats ??= [
-    [
-        'label'   => 'Points balance',
-        'value'   => '1,250 pts',
-        'note'    => 'Earned 85 this month',
-        'primary' => true,
-    ],
-    [
-        'label' => 'Trust score',
-        'value' => '96 / 100',
-        'note'  => '23 completed transactions',
-        'href'  => '/trust',
-    ],
-    [
-        'label' => 'Active borrowings',
-        'value' => '2',
-        'note'  => '1 due back tomorrow',
-    ],
-    [
-        'label' => 'Items listed',
-        'value' => '5',
-        'note'  => '3 currently lent out',
-    ],
-];
-
-$activeBorrowings ??= [
-    [
-        'title'        => 'Bosch Cordless Drill',
-        'meta'         => 'From T.H.K. Madushan  ·  borrowed 12 Jul  ·  due 17 Jul',
-        'status'       => 'warning',
-        'status_glyph' => '!',
-        'status_label' => 'Due tomorrow',
-        'href'         => '/bookings/1',
-    ],
-    [
-        'title'        => 'Camping Tent (4-person)',
-        'meta'         => 'From J. Kavipriya  ·  borrowed 14 Jul  ·  due 21 Jul',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'On track',
-        'href'         => '/bookings/2',
-    ],
-];
-
-$listings ??= [
-    [
-        'title' => 'Rice Cooker (1.8 L)',
-        'rate'  => '5 pts / day',
-        'meta'  => 'Lent to Kavipriya  ·  due 19 Jul',
-        'href'  => '/items/1',
-    ],
-    [
-        'title' => 'Ladder (6 ft)',
-        'rate'  => '8 pts / day',
-        'meta'  => 'Available',
-        'href'  => '/items/2',
-    ],
-    [
-        'title' => 'Badminton Racket Set',
-        'rate'  => '4 pts / day',
-        'meta'  => 'Lent to Akalvily  ·  due 20 Jul',
-        'href'  => '/items/3',
-    ],
-    [
-        'title' => 'Pressure Washer',
-        'rate'  => '20 pts / day',
-        'meta'  => 'Available',
-        'href'  => '/items/4',
-    ],
-];
 
 $pageTitle = 'Dashboard';
 $navActive = 'dashboard';

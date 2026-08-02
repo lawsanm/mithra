@@ -20,7 +20,7 @@ declare(strict_types=1);
 // csrf_field() can mint a token without warning about sent headers.
 session_start();
 
-require __DIR__ . '/../app/helpers.php';
+require __DIR__ . '/preview-data.php';
 
 $viewRoot = realpath(__DIR__ . '/../views');
 
@@ -50,6 +50,9 @@ $views = preview_views($viewRoot);
 $requested = isset($_GET['page']) ? (string) $_GET['page'] : '';
 
 if ($requested !== '' && in_array($requested, $views, true)) {
+    // Stand in for the controller: fetch the row data, then render the view.
+    extract(preview_data($requested), EXTR_SKIP);
+
     require $viewRoot . '/' . $requested . '.php';
     return;
 }

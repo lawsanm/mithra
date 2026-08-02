@@ -143,30 +143,32 @@ INSERT INTO donation_requests (donation_id, requester_id, message, status, reque
 -- Bookings — 1-3 Lawsan borrowing, 4-5 Lawsan lending, 6 a closed rental
 -- ---------------------------------------------------------------------------
 
+-- Dates are relative to CURDATE() so the demo always reads as "live": booking 1
+-- is due tomorrow, 2 is on track, 3 is an open request, 6 closed last month.
 INSERT INTO bookings
   (id, item_id, borrower_id, lender_id, start_date, end_date, rate_basis, agreed_rate,
    rental_charge, late_buffer, status, requested_at, accepted_at, closed_at) VALUES
-  (1, 1, 4, 2, '2026-07-12', '2026-07-17', 'daily', 15, 75, 15, 'in_progress',
-      '2026-07-10 15:40:00', '2026-07-11 09:12:00', NULL),
-  (2, 2, 4, 3, '2026-07-14', '2026-07-21', 'daily', 18, 126, 18, 'in_progress',
-      '2026-07-12 11:02:00', '2026-07-13 07:45:00', NULL),
-  (3, 4, 4, 1, '2026-07-20', '2026-07-22', 'daily', 25, 75, 25, 'requested',
-      '2026-07-17 15:40:00', NULL, NULL),
-  (4, 9, 3, 4, '2026-07-14', '2026-07-19', 'daily', 5, 25, 5, 'in_progress',
-      '2026-07-13 10:00:00', '2026-07-13 12:00:00', NULL),
-  (5, 11, 1, 4, '2026-07-15', '2026-07-20', 'daily', 4, 20, 4, 'in_progress',
-      '2026-07-14 10:00:00', '2026-07-14 12:00:00', NULL),
-  (6, 3, 4, 1, '2026-06-15', '2026-06-20', 'daily', 12, 60, 12, 'completed',
-      '2026-06-14 10:00:00', '2026-06-14 12:00:00', '2026-06-22 16:00:00');
+  (1, 1, 4, 2, CURDATE() - INTERVAL 4 DAY,  CURDATE() + INTERVAL 1 DAY,  'daily', 15, 75, 15, 'in_progress',
+      NOW() - INTERVAL 6 DAY, NOW() - INTERVAL 5 DAY, NULL),
+  (2, 2, 4, 3, CURDATE() - INTERVAL 2 DAY,  CURDATE() + INTERVAL 5 DAY,  'daily', 18, 126, 18, 'in_progress',
+      NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 3 DAY, NULL),
+  (3, 4, 4, 1, CURDATE() + INTERVAL 3 DAY,  CURDATE() + INTERVAL 5 DAY,  'daily', 25, 75, 25, 'requested',
+      NOW() - INTERVAL 8 HOUR, NULL, NULL),
+  (4, 9, 3, 4, CURDATE() - INTERVAL 3 DAY,  CURDATE() + INTERVAL 2 DAY,  'daily',  5, 25,  5, 'in_progress',
+      NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 4 DAY, NULL),
+  (5, 11, 1, 4, CURDATE() - INTERVAL 2 DAY, CURDATE() + INTERVAL 3 DAY,  'daily',  4, 20,  4, 'in_progress',
+      NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 3 DAY, NULL),
+  (6, 3, 4, 1, CURDATE() - INTERVAL 40 DAY, CURDATE() - INTERVAL 35 DAY, 'daily', 12, 60, 12, 'completed',
+      NOW() - INTERVAL 41 DAY, NOW() - INTERVAL 41 DAY, NOW() - INTERVAL 33 DAY);
 
 INSERT INTO handover_records
   (booking_id, handover_at, lender_photos, borrower_photos, lender_notes,
    lender_accepted_at, borrower_accepted_at) VALUES
-  (1, '2026-07-12 08:30:00',
+  (1, CURDATE() - INTERVAL 4 DAY + INTERVAL 8 HOUR,
       JSON_ARRAY('handover/1-l1.jpg','handover/1-l2.jpg','handover/1-l3.jpg','handover/1-l4.jpg'),
       JSON_ARRAY('handover/1-b1.jpg','handover/1-b2.jpg','handover/1-b3.jpg'),
       'Small scratch on the battery cover, noted by both parties.',
-      '2026-07-12 08:35:00', '2026-07-12 08:40:00');
+      NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 4 DAY);
 
 -- ---------------------------------------------------------------------------
 -- Points: pools, wallets, gifts, an aid grant and an illustrative ledger
@@ -207,63 +209,63 @@ INSERT INTO aid_grants
       '2026-07-12 14:00:00', 'vouched', '2026-07-10 09:15:00');
 
 INSERT INTO gifts (id, sender_id, recipient_id, amount, reason, sent_at) VALUES
-  (1, 4, 3, 15, 'Thank you for the school run help!', '2026-07-16 17:30:00'),
-  (2, 4, 3, 10, 'Great neighbour — welcome gift',     '2026-07-02 12:10:00'),
-  (3, 4, 2, 20, 'For fixing the gate hinge',          '2026-06-18 09:45:00'),
-  (4, 4, 1,  5, 'Congrats on the new listing!',       '2026-05-30 16:20:00'),
-  (5, 3, 4, 10, 'Great neighbour — welcome gift',     '2026-07-02 13:00:00'),
-  (6, 2, 4, 12, 'Thanks for the jumper cables',       '2026-06-24 10:00:00');
+  (1, 4, 3, 15, 'Thank you for the school run help!', NOW() - INTERVAL 1 DAY),
+  (2, 4, 3, 10, 'Great neighbour — welcome gift',     NOW() - INTERVAL 15 DAY),
+  (3, 4, 2, 20, 'For fixing the gate hinge',          NOW() - INTERVAL 37 DAY),
+  (4, 4, 1,  5, 'Congrats on the new listing!',       NOW() - INTERVAL 56 DAY),
+  (5, 3, 4, 10, 'Great neighbour — welcome gift',     NOW() - INTERVAL 15 DAY),
+  (6, 2, 4, 12, 'Thanks for the jumper cables',       NOW() - INTERVAL 31 DAY);
 
 INSERT INTO gift_usage_counters (user_id, day, day_total, year, year_total) VALUES
-  (4, '2026-07-16', 15, 2026, 210);
+  (4, CURDATE() - INTERVAL 1 DAY, 15, YEAR(CURDATE()), 210);
 
 INSERT INTO point_ledger
   (from_pool_code, from_user_id, to_pool_code, to_user_id, amount, reason, booking_id, gift_id, created_at) VALUES
-  ('in_flight', NULL, NULL, 4,  25, 'rental_payout',  4,    NULL, '2026-07-16 18:00:00'),
-  (NULL, 4, 'in_flight', NULL,  75, 'rental_charge',  1,    NULL, '2026-07-12 08:00:00'),
-  (NULL, 4, NULL, 3,             15, 'gift',          NULL, 1,    '2026-07-16 17:30:00'),
-  (NULL, 3, NULL, 4,             10, 'gift',          NULL, 5,    '2026-07-02 13:00:00'),
-  (NULL, 4, 'in_flight', NULL,  10, 'late_fee',       6,    NULL, '2026-06-22 16:00:00');
+  ('in_flight', NULL, NULL, 4,  25, 'rental_payout',  4,    NULL, NOW() - INTERVAL 1 DAY),
+  (NULL, 4, 'in_flight', NULL,  75, 'rental_charge',  1,    NULL, NOW() - INTERVAL 4 DAY),
+  (NULL, 4, NULL, 3,             15, 'gift',          NULL, 1,    NOW() - INTERVAL 1 DAY),
+  (NULL, 3, NULL, 4,             10, 'gift',          NULL, 5,    NOW() - INTERVAL 15 DAY),
+  (NULL, 4, 'in_flight', NULL,  10, 'late_fee',       6,    NULL, NOW() - INTERVAL 33 DAY);
 
 -- ---------------------------------------------------------------------------
 -- Ratings and notifications
 -- ---------------------------------------------------------------------------
 
 INSERT INTO ratings (booking_id, rater_id, ratee_id, context, stars, comment, created_at) VALUES
-  (1, 2, 4, 'rental', 5, 'Returned the drill spotless and on time. Would lend again without hesitation.', '2026-07-17 18:00:00'),
-  (2, 3, 4, 'rental', 5, 'Careful with the tent, great communication about pickup.',                      '2026-07-02 18:00:00'),
-  (6, 1, 4, 'rental', 4, 'All good — slightly late confirming the return window.',                        '2026-06-18 18:00:00'),
-  (4, 1, 4, 'rental', 5, 'Textbook borrower. On time, item as handed over.',                              '2026-05-30 18:00:00'),
-  (1, 4, 2, 'rental', 5, 'Drill was in great shape, batteries fully charged. Smooth handover.',           '2026-07-17 19:00:00'),
-  (6, 1, 2, 'rental', 5, 'Lovely to deal with — flexible on pickup time.',                                '2026-06-28 19:00:00');
+  (1, 2, 4, 'rental', 5, 'Returned the drill spotless and on time. Would lend again without hesitation.', NOW() - INTERVAL 1 DAY),
+  (2, 3, 4, 'rental', 5, 'Careful with the tent, great communication about pickup.',                      NOW() - INTERVAL 15 DAY),
+  (6, 1, 4, 'rental', 4, 'All good — slightly late confirming the return window.',                        NOW() - INTERVAL 37 DAY),
+  (4, 1, 4, 'rental', 5, 'Textbook borrower. On time, item as handed over.',                              NOW() - INTERVAL 56 DAY),
+  (1, 4, 2, 'rental', 5, 'Drill was in great shape, batteries fully charged. Smooth handover.',           NOW() - INTERVAL 1 DAY),
+  (6, 1, 2, 'rental', 5, 'Lovely to deal with — flexible on pickup time.',                                NOW() - INTERVAL 27 DAY);
 
 INSERT INTO notifications (user_id, type, payload, created_at, read_at) VALUES
   (4, 'booking_accepted',
       JSON_OBJECT('title','Madushan accepted your request for Bosch Cordless Drill',
                   'detail','Handover step is now open — upload your photos.',
                   'icon','handshake','href','/bookings/1?state=handover'),
-      '2026-07-17 15:30:00', NULL),
+      NOW() - INTERVAL 10 MINUTE, NULL),
   (4, 'return_due',
       JSON_OBJECT('title','Return due tomorrow: Bosch Cordless Drill',
                   'detail','Return by 17 Jul to keep your on-time streak.',
                   'icon','alert-triangle','href','/bookings/1'),
-      '2026-07-17 13:40:00', NULL),
+      NOW() - INTERVAL 2 HOUR, NULL),
   (4, 'gift_received',
       JSON_OBJECT('title','Kavipriya sent you a gift of 10 pts',
                   'detail','“Thanks for the jumper cables last week!”',
                   'icon','gift','href','/gifts?box=received'),
-      '2026-07-16 10:00:00', '2026-07-16 11:00:00'),
+      NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY),
   (4, 'aid_grant_vouched',
       JSON_OBJECT('title','Your aid grant moved to liaison approval',
                   'detail','Moderator A. Akalvily vouched for request #A-1042.',
                   'icon','heart','href','/aid-grants/1042'),
-      '2026-07-12 14:05:00', '2026-07-12 15:00:00'),
+      NOW() - INTERVAL 13 DAY, NOW() - INTERVAL 13 DAY),
   (4, 'listing_approved',
       JSON_OBJECT('title','Listing approved: Pressure Washer',
                   'detail','Your listing is now visible to Kollupitiya members.',
                   'icon','check-circle','href','/items/12/edit'),
-      '2026-07-10 09:00:00', '2026-07-10 10:00:00');
+      NOW() - INTERVAL 15 DAY, NOW() - INTERVAL 15 DAY);
 
 INSERT INTO cron_runs (job_name, started_at, finished_at, status, notes) VALUES
-  ('check_invariant', '2026-07-17 02:00:00', '2026-07-17 02:00:14', 'success',
+  ('check_invariant', CURDATE() + INTERVAL 2 HOUR, CURDATE() + INTERVAL 2 HOUR + INTERVAL 14 SECOND, 'success',
    'total points in = total points out across all pools');
