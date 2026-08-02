@@ -119,6 +119,48 @@ function preview_data(string $view, array $params = []): array
             ),
         ],
 
+        'gifts/index' => (static function () use ($gifts, $users, $me): array {
+            $box = ($_GET['box'] ?? 'sent') === 'received' ? 'received' : 'sent';
+
+            return [
+                'tabs' => [
+                    [
+                        'label'  => 'Sent (' . $gifts->countForMember($me, 'sent') . ')',
+                        'box'    => 'sent',
+                        'active' => $box === 'sent',
+                    ],
+                    [
+                        'label'  => 'Received (' . $gifts->countForMember($me, 'received') . ')',
+                        'box'    => 'received',
+                        'active' => $box === 'received',
+                    ],
+                ],
+                'caps' => [
+                    [
+                        'label' => 'Sent today',
+                        'value' => $gifts->sentToday($me) . ' / ' . Gift::DAILY_CAP . ' pts daily cap',
+                    ],
+                    [
+                        'label' => 'Sent this year',
+                        'value' => $gifts->sentThisYear($me) . ' / ' . Gift::ANNUAL_CAP . ' pts annual cap',
+                    ],
+                ],
+                'gifts' => array_map(
+                    static fn (array $g): array => [
+                        'initials'  => User::initials((string) $g['counterparty']),
+                        'name'      => (string) $g['counterparty'],
+                        'note'      => '“' . $g['reason'] . '”',
+                        'amount'    => ($box === 'sent' ? '−' : '+') . $g['amount'] . ' pts',
+                        'direction' => $box === 'sent' ? 'out' : 'in',
+                        'date'      => date('j M Y', strtotime((string) $g['sent_at'])),
+                    ],
+                    $gifts->forMember($me, $box)
+                ),
+                // Feeds the Send a gift modal that this page includes.
+                'recipients' => $users->giftableExcept($me),
+            ];
+        })(),
+
         default => [],
     };
 
