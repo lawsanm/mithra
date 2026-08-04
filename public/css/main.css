@@ -2606,3 +2606,16 @@ legend {
     border-color: var(--color-error);
     box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.4);
 }
+
+/* Form groups inside a stack span its width; only buttons hug their label. */
+.stack > .field,
+.stack > .field-row,
+.stack > .notice,
+.stack > .tag-list,
+.stack > fieldset,
+.stack > .line-item,
+.stack > .modal__footer,
+.stack > .upload-drop,
+.stack > .choice {
+    width: 100%;
+}

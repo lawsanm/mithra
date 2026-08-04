@@ -17,16 +17,36 @@ declare(strict_types=1);
 $recipients = $recipients ?? [];
 
 $giftDraft = ($giftDraft ?? []) + [
-    'recipient'    => '',
-    'amount'       => '',
-    'reason'       => '',
-    'reason_count' => 'Max 100 characters',
+    'recipient' => (string) ($recipients[0]['id'] ?? ''),
+    'amount'    => '45',
+    'reason'    => 'Thank you for the school run help!',
 ];
 
-// Per-field messages from the Validator. Empty on a fresh form — the Figma
-// "validation" frame is what you see when the controller passes an error here,
-// not the default state.
+// Remaining daily allowance, so the cap line and any error reflect real usage
+// rather than being written into the template.
+$giftRemaining = $giftRemaining ?? Gift::DAILY_CAP;
+$giftSentToday = $giftSentToday ?? 0;
+
+/**
+ * Per-field messages from the Validator. The Figma "validation" frame is this
+ * modal with an amount over the cap — it renders when the amount really is
+ * over, not as the default state.
+ */
 $giftErrors = $giftErrors ?? [];
+
+if ($giftErrors === [] && (int) $giftDraft['amount'] > $giftRemaining) {
+    $giftErrors['amount'] = sprintf(
+        'Daily gift cap exceeded — you’ve sent %d of %d pts today. You can send up to %d pts more.',
+        $giftSentToday,
+        Gift::DAILY_CAP,
+        $giftRemaining
+    );
+}
+
+$giftReasonCount = sprintf(
+    'Max 100 characters  ·  %d/100',
+    mb_strlen((string) $giftDraft['reason'])
+);
 
 ?>
 <dialog class="modal modal--sm" id="send-gift" aria-labelledby="send-gift-title">
@@ -43,7 +63,9 @@ $giftErrors = $giftErrors ?? [];
         <div class="field">
             <label class="field__label" for="gift-recipient">Recipient</label>
             <select class="input" id="gift-recipient" name="recipient" required>
-                <option value="">Choose a member…</option>
+                <?php if ($giftDraft['recipient'] === ''): ?>
+                    <option value="">Choose a member…</option>
+                <?php endif; ?>
                 <?php foreach ($recipients as $recipient): ?>
                     <option value="<?= e((string) $recipient['id']) ?>"
                         <?= $giftDraft['recipient'] === (string) $recipient['id'] ? ' selected' : '' ?>>
@@ -84,7 +106,7 @@ $giftErrors = $giftErrors ?? [];
                 maxlength="100"
                 required
             >
-            <span class="field__hint"><?= e($giftDraft['reason_count']) ?></span>
+            <span class="field__hint"><?= e($giftReasonCount) ?></span>
         </div>
 
         <p class="notice notice--info">
