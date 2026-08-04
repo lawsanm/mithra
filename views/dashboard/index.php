@@ -28,11 +28,11 @@ include __DIR__ . '/../../partials/header.php';
 <div class="stat-grid">
     <?php foreach ($stats as $stat): ?>
         <?php $tag = isset($stat['href']) ? 'a' : 'div'; ?>
-        <<?= $tag ?> class="stat-card"<?= isset($stat['href']) ? ' href="' . e($stat['href']) . '"' : '' ?>>
+        <<?= e($tag) ?> class="stat-card"<?= isset($stat['href']) ? ' href="' . e($stat['href']) . '"' : '' ?>>
             <span class="stat-card__label"><?= e($stat['label']) ?></span>
             <strong class="stat-card__value<?= !empty($stat['primary']) ? ' stat-card__value--primary' : '' ?>"><?= e($stat['value']) ?></strong>
             <span class="stat-card__note"><?= e($stat['note']) ?></span>
-        </<?= $tag ?>>
+        </<?= e($tag) ?>>
     <?php endforeach; ?>
 </div>
 
