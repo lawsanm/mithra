@@ -66,14 +66,22 @@ final class User extends BaseModel
     /**
      * Members this person may send a gift to.
      *
+     * Only the member role is giftable — moderators, the sponsor liaison and
+     * admins hold staff accounts and are never gift recipients.
+     *
      * @return list<array<string, mixed>>
      */
     public function giftableExcept(int $id): array
     {
         return $this->select(
-            'SELECT id, full_name FROM users
-              WHERE id <> :id AND status = \'active\' AND gift_receive_enabled = 1
-              ORDER BY full_name',
+            "SELECT u.id, u.full_name
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE u.id <> :id
+                AND r.code = 'member'
+                AND u.status = 'active'
+                AND u.gift_receive_enabled = 1
+              ORDER BY u.full_name",
             ['id' => $id]
         );
     }
