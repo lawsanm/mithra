@@ -72,7 +72,7 @@ directly for scheduled work.
 | CSS classes | kebab-case, component-prefixed | `.listing-card`, `.listing-card__title` |
 | View files | `feature/action.php` | `views/bookings/create.php` |
 | Migrations | `NNN_verb_noun.sql` | `014_create_point_ledger.sql` |
-| Git branches | `memberN/short-feature-name` | `member3/booking-crud` |
+| Git branches | `actor/short-feature-name` | `member/booking-crud` |
 
 Standard column set for every table: `id` (BIGINT UNSIGNED AUTO_INCREMENT PK),
 `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP, and `updated_at` where rows are mutable.
@@ -208,7 +208,10 @@ report and viva).
 ## 12. Git workflow
 
 - `main` is protected: PRs only, 1 approving review + green CI required.
-- Branch per task: `memberN/short-feature-name`. Small PRs — one module or sub-feature.
+- Branch per task: `actor/short-feature-name`, where actor is the one whose screens the
+  work belongs to — `member`, `moderator`, `sponsor`, `sponsor-liaison`, `admin` — plus
+  `shared` for cross-cutting work that is nobody's feature (tooling, CI, the stylesheet).
+  Enforced by the `hygiene` job. Small PRs — one module or sub-feature.
 - Commit messages: `type: short description` where type ∈
   `feat | fix | refactor | test | docs | chore | migration`.
   Example: `feat: booking creation with conflict check`.
