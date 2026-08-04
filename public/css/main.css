@@ -1,0 +1,2621 @@
+/* ==========================================================================
+   Mithra — the stylesheet.
+
+   This is the ONLY CSS file in the project (Rules/CONVENTIONS.md §3). Every
+   colour, spacing step, radius and font size below is a custom property, and
+   page markup must use them rather than hard-coded values (§11).
+
+   Values map 1:1 to the Figma "Design System" canvas.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design tokens
+   -------------------------------------------------------------------------- */
+
+:root {
+    /* Primary — Soft Denim Blue. Trust carrier: buttons, links, active nav. */
+    --color-primary-50:  #ECF2F8;   /* hover rows, info tint */
+    --color-primary-100: #D2E1EF;   /* light fills, chips */
+    --color-primary-200: #AFC9E1;   /* disabled button bg */
+    --color-primary-300: #82A9CF;   /* borders on tints */
+    --color-primary-400: #5388BD;   /* secondary emphasis */
+    --color-primary-500: #2D6CA3;   /* base */
+    --color-primary-600: #28608F;   /* button hover */
+    --color-primary-700: #274B6D;   /* pressed / secondary */
+    --color-primary-800: #1F3A55;   /* dark section bg */
+    --color-primary-900: #16293C;   /* deep contrast text */
+
+    --color-primary:          var(--color-primary-500);
+    --color-primary-hover:    var(--color-primary-600);
+    --color-primary-active:   var(--color-primary-700);
+    --color-primary-disabled: var(--color-primary-200);
+
+    /* Accent — Honey Amber. The warmth carrier. Dark text only, never white. */
+    --color-accent-tint:  #FCF1DC;  /* featured / badge bg */
+    --color-accent-light: #F8E1B6;  /* soft fills, bands */
+    --color-accent:       #E9A23B;  /* icons, tags */
+    --color-accent-dark:  #D08C28;  /* accent hover */
+    --color-accent-deep:  #A66E1C;  /* strong accent on light */
+    --color-accent-text:  #7A4D06;  /* text on amber tint */
+
+    /* Warm neutrals. The background must stay warm — never a cool gray. */
+    --color-surface:       #FFFFFF; /* cards, panels, modals */
+    --color-bg:            #F7F5F1; /* page background */
+    --color-warm-100:      #EFEDE7; /* alt sections, photo placeholders */
+    --color-border:        #E5E3DD; /* borders, dividers, input outlines */
+    --color-border-strong: #D2D0C9;
+
+    /* Text */
+    --color-text:          #1C2733; /* body and headings */
+    --color-text-heading:  #34404B; /* secondary headings (h3) */
+    --color-text-muted:    #5E6A74; /* metadata, captions */
+    --color-text-disabled: #A6ABB0;
+    --color-text-inverse:  #FFFFFF;
+
+    /* Semantic / status. Small elements only — pills, badges, icons, alerts. */
+    --color-success:      #2F9E44;
+    --color-success-tint: #E4F3EA;
+    --color-success-text: #1E6B3E;
+    --color-warning:      #DD8A14;
+    --color-warning-tint: #FBEED4;
+    --color-warning-text: #7A4D06;
+    --color-error:        #D64545;
+    --color-error-tint:   #FBEAEA;
+    --color-error-text:   #9A2A2A;
+    --color-info:         #2D6CA3;
+    --color-info-tint:    #EAF1F8;
+    --color-info-text:    #1B4D7A;
+
+    /* Avatars */
+    --color-avatar-bg:   #D2E1EF;
+    --color-avatar-text: #274B6D;
+
+    /* Modal scrim — charcoal at 50% */
+    --color-scrim: rgba(28, 39, 51, 0.5);
+
+    /* Focus ring — primary at 40%, 3px, on every focusable element */
+    --focus-ring: 0 0 0 3px rgba(45, 108, 163, 0.4);
+
+    /* Spacing — 4px base step */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-7:  28px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+
+    /* Radii */
+    --radius-sm:   8px;   /* photos, placeholders */
+    --radius-md:   10px;  /* buttons, inputs */
+    --radius-lg:   12px;  /* list rows, stat cards */
+    --radius-xl:   14px;  /* cards */
+    --radius-2xl:  16px;  /* modals */
+    --radius-pill: 999px;
+
+    /* Type. Inter throughout, with a system fallback — no webfont CDN. */
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+
+    /* Marketing ramp */
+    --text-display: 40px;
+    --text-h1:      32px;
+    --text-h2:      24px;
+    --text-h3:      19px;
+    --text-body:    16px;
+    --text-small:   14px;
+    --text-caption: 12px;
+
+    /* Compact app ramp — used by every screen behind the login */
+    --text-page-title:   22px;
+    --text-ui-label:     14px;
+    --text-ui-body:      13px;
+    --text-ui-caption:   11px;
+    --text-section:      20px;  /* in-page section headings */
+    --text-lede:         15px;  /* page sub-title, row titles, buttons */
+    --text-stat:         28px;  /* stat card figures */
+
+    --weight-regular:  400;
+    --weight-medium:   500;
+    --weight-semibold: 600;
+    --weight-bold:     700;
+
+    /* Layout */
+    --layout-width:      1440px;  /* the coded layout width */
+    --layout-pad-x:      48px;
+    --layout-pad-top:    40px;
+    --layout-pad-bottom: 64px;
+    --layout-section-gap: 24px;
+    --nav-height:  68px;
+    --size-avatar: 36px;
+    --size-icon:   20px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset & base
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-ui-body);
+    line-height: 1.45;
+}
+
+h1, h2, h3, h4, p, figure, ul, ol, dl, dd {
+    margin: 0;
+}
+
+ul, ol {
+    padding: 0;
+    list-style: none;
+}
+
+img, svg {
+    display: block;
+    max-width: 100%;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+
+/* Fieldsets group radios/checkboxes for assistive tech only — no visible box. */
+fieldset {
+    padding: 0;
+    border: none;
+    margin: 0;
+}
+
+legend {
+    padding: 0;
+}
+
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.skip-link {
+    position: absolute;
+    left: var(--space-4);
+    top: calc(var(--space-4) * -6);
+    z-index: 10;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+    transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+    top: var(--space-4);
+    color: var(--color-text-inverse);
+    text-decoration: none;
+}
+
+/* The sprite itself never renders; only its <symbol>s are referenced. */
+.icon-sprite {
+    display: none;
+}
+
+.icon {
+    width: var(--size-icon);
+    height: var(--size-icon);
+    flex-shrink: 0;
+}
+
+.icon--sm {
+    width: 16px;
+    height: 16px;
+}
+
+.icon--lg {
+    width: 29px;
+    height: 29px;
+}
+
+/* Visually hidden but available to screen readers. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3. Navigation
+   -------------------------------------------------------------------------- */
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    height: var(--nav-height);
+    padding: var(--space-4) var(--layout-pad-x);
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.nav__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.nav__brand:hover {
+    text-decoration: none;
+}
+
+.nav__logo {
+    width: auto;
+    height: 32px;
+}
+
+.nav__wordmark {
+    color: var(--color-primary);
+    font-size: var(--text-page-title);
+    font-weight: var(--weight-bold);
+}
+
+.nav__tagline {
+    color: var(--color-accent-deep);
+    font-size: var(--text-ui-caption);
+    font-weight: var(--weight-medium);
+    white-space: nowrap;
+}
+
+.nav__items {
+    display: flex;
+    align-items: center;
+    gap: var(--space-7);
+}
+
+.nav__link {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.nav__link:hover {
+    color: var(--color-primary-hover);
+}
+
+.nav__link--active {
+    color: var(--color-primary);
+}
+
+.nav__spacer {
+    flex: 1 0 0;
+    min-width: 0;
+}
+
+.nav__bell {
+    display: flex;
+    align-items: center;
+    color: var(--color-text-muted);
+}
+
+.nav__bell:hover {
+    color: var(--color-primary);
+}
+
+.nav__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+/* --------------------------------------------------------------------------
+   4. Page shell
+   -------------------------------------------------------------------------- */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--layout-pad-top) var(--layout-pad-x) var(--layout-pad-bottom);
+}
+
+.page-intro__title {
+    color: var(--color-text);
+    font-size: var(--text-h1);
+    font-weight: var(--weight-bold);
+}
+
+.page-intro__meta {
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--text-lede);
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.section__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.section__title {
+    color: var(--color-text);
+    font-size: var(--text-section);
+    font-weight: var(--weight-semibold);
+}
+
+.section__action {
+    margin-left: auto;
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+/* --------------------------------------------------------------------------
+   5. Buttons & links
+   -------------------------------------------------------------------------- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) 22px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.btn:hover {
+    text-decoration: none;
+}
+
+.btn--primary {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.btn--primary:hover {
+    background-color: var(--color-primary-hover);
+    color: var(--color-text-inverse);
+}
+
+.btn--primary:active {
+    background-color: var(--color-primary-active);
+}
+
+.btn--primary:disabled,
+.btn--primary[aria-disabled="true"] {
+    background-color: var(--color-primary-disabled);
+    cursor: not-allowed;
+}
+
+.btn--ghost {
+    border: 1.5px solid var(--color-primary);
+    background-color: transparent;
+    color: var(--color-primary);
+}
+
+.btn--ghost:hover {
+    background-color: var(--color-primary-50);
+    color: var(--color-primary);
+}
+
+.btn--ghost:active {
+    border-color: var(--color-primary-active);
+    color: var(--color-primary-active);
+}
+
+.btn--ghost:disabled,
+.btn--ghost[aria-disabled="true"] {
+    border-color: var(--color-primary-disabled);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+}
+
+.link {
+    color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+}
+
+.link:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   6. Pills, badges, avatars
+   -------------------------------------------------------------------------- */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 7px var(--space-4);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.badge--success {
+    background-color: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+.badge--warning {
+    background-color: var(--color-warning-tint);
+    color: var(--color-warning-text);
+}
+
+.badge--error {
+    background-color: var(--color-error-tint);
+    color: var(--color-error-text);
+}
+
+.badge--info {
+    background-color: var(--color-info-tint);
+    color: var(--color-info-text);
+}
+
+.badge--neutral {
+    background-color: var(--color-warm-100);
+    color: var(--color-text-muted);
+}
+
+.meta-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px var(--space-4);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent-tint);
+    color: var(--color-accent-text);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.meta-pill:hover {
+    color: var(--color-accent-text);
+    text-decoration: none;
+}
+
+.role-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px var(--space-3);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-info-tint);
+    color: var(--color-info-text);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-semibold);
+}
+
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--size-avatar);
+    height: var(--size-avatar);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-avatar-bg);
+    color: var(--color-avatar-text);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-semibold);
+}
+
+.avatar:hover {
+    color: var(--color-avatar-text);
+    text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. Cards, rows, placeholders
+   -------------------------------------------------------------------------- */
+
+.card {
+    padding: var(--space-7);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+}
+
+/* Photo / image placeholder — warm fill, radius 8. */
+.thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-warm-100);
+    color: var(--color-text-disabled);
+    font-size: var(--text-caption);
+}
+
+.thumb--row {
+    width: 56px;
+    height: 80px;
+    flex-shrink: 0;
+}
+
+.thumb--card {
+    width: 100%;
+    height: 169px;
+    border-radius: 0;
+}
+
+.thumb--card-tall {
+    height: 240px;
+}
+
+/* Stat card — 18px/20px padding, radius 12. */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 18px var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.stat-card:hover {
+    text-decoration: none;
+}
+
+.stat-card__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.stat-card__value {
+    color: var(--color-text);
+    font-size: var(--text-stat);
+    font-weight: var(--weight-bold);
+}
+
+.stat-card__value--primary {
+    color: var(--color-primary);
+}
+
+.stat-card__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* List row — 14px/18px padding, radius 12. */
+.list-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: 14px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.list-row__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.list-row__title {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.list-row__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* Item card — fixed 288px column, matching the Figma grid. */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 288px);
+    gap: var(--space-5);
+}
+
+.item-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.item-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--space-4);
+}
+
+.item-card__title {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.item-card__rate {
+    color: var(--color-primary);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.item-card__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* A status badge in a card body hugs its label rather than stretching. */
+.item-card__body > .badge {
+    align-self: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   8. Empty state
+   -------------------------------------------------------------------------- */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-16) var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+    text-align: center;
+}
+
+.empty-state__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary-50);
+    color: var(--color-primary);
+}
+
+.empty-state__title {
+    color: var(--color-text);
+    font-size: 18px;
+    font-weight: var(--weight-semibold);
+}
+
+.empty-state__body {
+    max-width: 440px;
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* --------------------------------------------------------------------------
+   9. Forms
+   -------------------------------------------------------------------------- */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field__label {
+    color: var(--color-text);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+}
+
+.field__hint {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+.input {
+    width: 100%;
+    padding: var(--space-3) 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+}
+
+.input::placeholder {
+    color: var(--color-text-disabled);
+}
+
+.input:focus-visible {
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+}
+
+.input--search {
+    width: 520px;
+    max-width: 100%;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   10. Filter pills
+   -------------------------------------------------------------------------- */
+
+.filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.pill:hover {
+    border-color: var(--color-primary-300);
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.pill--active,
+.pill--active:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+/* --------------------------------------------------------------------------
+   11. Breadcrumb & dividers
+   -------------------------------------------------------------------------- */
+
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-ui-body);
+}
+
+.breadcrumb__link {
+    font-weight: var(--weight-semibold);
+}
+
+.breadcrumb__separator {
+    color: var(--color-text-disabled);
+}
+
+.breadcrumb__current {
+    color: var(--color-text-muted);
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    border: none;
+    margin: 0;
+    background-color: var(--color-border);
+}
+
+/* --------------------------------------------------------------------------
+   12. Two-column detail layout
+   -------------------------------------------------------------------------- */
+
+.detail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-12);
+}
+
+.detail__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+.detail__main {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.detail__title {
+    color: var(--color-text);
+    font-size: 30px;
+    font-weight: var(--weight-bold);
+}
+
+.detail__prose {
+    max-width: 520px;
+    color: var(--color-text);
+    font-size: var(--text-lede);
+}
+
+.detail__divider {
+    max-width: 520px;
+}
+
+/* Photo gallery */
+.gallery__main {
+    width: 640px;
+    max-width: 100%;
+    height: 420px;
+    border-radius: var(--radius-xl);
+}
+
+.gallery__thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.gallery__thumb {
+    width: 96px;
+    height: 72px;
+    border: 2px solid transparent;
+}
+
+.gallery__thumb--current {
+    border-color: var(--color-primary);
+}
+
+/* Price block */
+.price-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.price {
+    color: var(--color-primary);
+    font-size: var(--text-h2);
+    font-weight: var(--weight-semibold);
+}
+
+.price__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* Total line above the primary action */
+.total-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+    padding: var(--space-1) 0;
+}
+
+.total-row__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+.total-row__value {
+    margin-left: auto;
+    color: var(--color-text);
+    font-size: var(--text-section);
+    font-weight: var(--weight-bold);
+}
+
+/* --------------------------------------------------------------------------
+   13. Owner card, verified pill, larger avatar
+   -------------------------------------------------------------------------- */
+
+.avatar--lg {
+    width: 48px;
+    height: 48px;
+    font-size: var(--text-body);
+}
+
+.verified-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) 10px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent-tint);
+    color: var(--color-accent-text);
+    font-size: var(--text-ui-caption);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.owner-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 14px var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.owner-card__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.owner-card__name-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.owner-card__name {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.owner-card__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* --------------------------------------------------------------------------
+   14. Inline notices & action rows
+   -------------------------------------------------------------------------- */
+
+.notice {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 520px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--text-ui-body);
+}
+
+.notice--info {
+    background-color: var(--color-info-tint);
+    color: var(--color-info-text);
+}
+
+.notice--success {
+    background-color: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+.notice--warning {
+    background-color: var(--color-warning-tint);
+    color: var(--color-warning-text);
+}
+
+.notice--error {
+    background-color: var(--color-error-tint);
+    color: var(--color-error-text);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.field-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.input--date {
+    width: 254px;
+}
+
+/* --------------------------------------------------------------------------
+   15. Stack utility — vertical rhythm for groups of form controls
+   -------------------------------------------------------------------------- */
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.stack--tight {
+    gap: var(--space-3);
+}
+
+.stack--loose {
+    gap: var(--space-6);
+}
+
+/* --------------------------------------------------------------------------
+   16. Page header with a trailing action
+   -------------------------------------------------------------------------- */
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.page-header__title {
+    color: var(--color-text);
+    font-size: var(--text-h1);
+    font-weight: var(--weight-bold);
+}
+
+.page-header__action {
+    margin-left: auto;
+}
+
+/* Square row thumbnail, used where a list row has no tall photo. */
+.thumb--sm {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+}
+
+/* Vertical list of full-width rows (list rows stretch, unlike .stack). */
+.row-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   17. Multi-step wizard
+   -------------------------------------------------------------------------- */
+
+.wizard {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.wizard__step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.wizard__marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-semibold);
+}
+
+.wizard__marker--current {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.wizard__marker--done {
+    background-color: var(--color-success);
+    color: var(--color-text-inverse);
+}
+
+.wizard__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+    white-space: nowrap;
+}
+
+.wizard__label--current {
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+}
+
+.wizard__connector {
+    width: 36px;
+    height: 2px;
+    margin: 0 10px;
+    border: none;
+    background-color: var(--color-border);
+}
+
+/* --------------------------------------------------------------------------
+   18. Form card
+   -------------------------------------------------------------------------- */
+
+.form-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    width: 760px;
+    max-width: 100%;
+    padding: 26px var(--space-7);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+}
+
+.form-card__legend {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.form-card > .field,
+.form-card > .notice,
+.form-card > .actions {
+    width: 100%;
+    max-width: 100%;
+}
+
+.input--narrow {
+    width: 330px;
+}
+
+/* Upload targets */
+.upload-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 90px;
+    border: 1.5px dashed var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    color: var(--color-text-muted);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.upload-tile:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.thumb--upload {
+    width: 120px;
+    height: 90px;
+    flex-shrink: 0;
+}
+
+.upload-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 110px;
+    border: 1.5px dashed var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+    cursor: pointer;
+}
+
+.upload-drop:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.upload-drop__glyph {
+    font-size: var(--text-section);
+}
+
+/* --------------------------------------------------------------------------
+   19. Choice cards (radio-backed)
+   -------------------------------------------------------------------------- */
+
+.choice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-4) 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    cursor: pointer;
+}
+
+.choice:has(input:checked) {
+    border: 1.5px solid var(--color-primary);
+    background-color: var(--color-primary-50);
+}
+
+.choice:has(input:focus-visible) {
+    box-shadow: var(--focus-ring);
+}
+
+.choice__input {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin: 0;
+    accent-color: var(--color-primary);
+}
+
+.choice__body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.choice__title {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.choice__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* --------------------------------------------------------------------------
+   20. Summary block
+   -------------------------------------------------------------------------- */
+
+.summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--text-ui-body);
+}
+
+.summary__label {
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+}
+
+.summary__value {
+    color: var(--color-text-muted);
+}
+
+/* Amber pricing/tip callout — accent tint, never a status colour. */
+.notice--amber {
+    background-color: var(--color-accent-tint);
+    color: var(--color-accent-text);
+}
+
+/* Per-field validation message, rendered next to the control it belongs to. */
+.field__error {
+    color: var(--color-error-text);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-semibold);
+}
+
+/* --------------------------------------------------------------------------
+   21. Underline tabs
+   -------------------------------------------------------------------------- */
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-7);
+}
+
+.tabs__link {
+    display: inline-block;
+    padding-bottom: var(--space-2);
+    border-bottom: 2.5px solid transparent;
+    color: var(--color-text-muted);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+.tabs__link:hover {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.tabs__link--active {
+    border-bottom-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   22. Record detail header (title + status badge)
+   -------------------------------------------------------------------------- */
+
+.record-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.record-head__title {
+    color: var(--color-text);
+    font-size: var(--space-7);
+    font-weight: var(--weight-bold);
+}
+
+.record-meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* Summary row for a booking / request, with a trailing amount column. */
+.record-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 14px var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.record-card__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.record-card__party {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.record-card__terms {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.record-card__amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+}
+
+.record-card__amount strong {
+    color: var(--color-text);
+    font-size: 18px;
+    font-weight: var(--weight-bold);
+}
+
+.record-card__amount span {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* --------------------------------------------------------------------------
+   23. Panels, photo grids, fact lists, line items
+   -------------------------------------------------------------------------- */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 26px var(--space-7);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+}
+
+.panel--half {
+    width: 600px;
+    max-width: 100%;
+}
+
+.panel--narrow {
+    width: 520px;
+    max-width: 100%;
+}
+
+.panel__title {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.panel-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-5);
+    width: 100%;
+}
+
+.photo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.thumb--photo {
+    width: 120px;
+    height: 90px;
+    flex-shrink: 0;
+}
+
+.thumb--photo-tall {
+    width: 120px;
+    height: 129px;
+    flex-shrink: 0;
+}
+
+.upload-drop--sm {
+    height: 70px;
+}
+
+/* Label-over-value facts, laid out in a row. */
+.facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-7);
+}
+
+.fact {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fact__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+.fact__value {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+/* Ledger-style line item: label left, amount right. */
+.line-item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    width: 100%;
+    font-size: var(--text-ui-body);
+}
+
+.line-item__label {
+    color: var(--color-text-muted);
+}
+
+.line-item__value {
+    margin-left: auto;
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+}
+
+.line-item--negative .line-item__label,
+.line-item--negative .line-item__value {
+    color: var(--color-error-text);
+}
+
+.line-item--total .line-item__label {
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+}
+
+.line-item--total .line-item__value {
+    font-size: var(--text-lede);
+    font-weight: var(--weight-bold);
+}
+
+/* Multi-line text control. */
+.textarea {
+    width: 100%;
+    min-height: 84px;
+    padding: var(--space-3) 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    resize: vertical;
+}
+
+.textarea:focus-visible {
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+}
+
+/* Forms nested in a panel stretch, so their upload targets stay full width. */
+.panel > form,
+.panel > .field,
+.panel > .photo-grid {
+    width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   24. Toggle switch (checkbox-backed)
+   -------------------------------------------------------------------------- */
+
+.toggle-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toggle {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex-shrink: 0;
+    margin: 0;
+    appearance: none;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-border-strong);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.toggle::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+    transition: transform 0.15s ease;
+}
+
+.toggle:checked {
+    background-color: var(--color-primary);
+}
+
+.toggle:checked::after {
+    transform: translateX(18px);
+}
+
+.toggle-field__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* Medium avatar, used in request and recipient rows. */
+.avatar--md {
+    width: 44px;
+    height: 44px;
+    font-size: var(--text-lede);
+}
+
+/* Roomier record card, and a member's message inside one. */
+.record-card--roomy {
+    padding: var(--space-4) 18px;
+}
+
+.record-card__quote {
+    max-width: 640px;
+    color: var(--color-text);
+    font-size: var(--text-ui-body);
+}
+
+/* Wider form panel used by confirmation screens. */
+.panel--wide {
+    width: 720px;
+    max-width: 100%;
+}
+
+/* Media row: thumbnail or avatar beside a two-line label. */
+.media {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.media__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.media__title {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.media__title--sm {
+    font-size: var(--text-ui-label);
+}
+
+.media__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* Amber badge carrying an icon, e.g. the Donor award. */
+.award-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) 14px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-accent-tint);
+    color: var(--color-accent-text);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+}
+
+/* --------------------------------------------------------------------------
+   25. Cap meters and ledger-style transaction rows
+   -------------------------------------------------------------------------- */
+
+.cap-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+    width: 100%;
+}
+
+.cap-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: 14px var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.cap-card__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.cap-card__value {
+    color: var(--color-text);
+    font-size: var(--text-body);
+    font-weight: var(--weight-semibold);
+}
+
+.txn-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.txn-row__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.txn-row__name {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.txn-row__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.txn-row__amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    text-align: right;
+}
+
+.txn-row__value {
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.txn-row__value--out {
+    color: var(--color-error-text);
+}
+
+.txn-row__value--in {
+    color: var(--color-success-text);
+}
+
+.txn-row__date {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* Small avatar used in transaction rows. */
+.avatar--sm {
+    width: 40px;
+    height: 40px;
+    font-size: var(--text-ui-label);
+}
+
+/* Compact wizard variant used for read-only workflow progress. */
+.wizard--compact .wizard__connector {
+    width: 30px;
+}
+
+.wizard__connector--done {
+    background-color: var(--color-success);
+}
+
+/* Wider gap between facts on a summary panel. */
+.facts--wide {
+    gap: 36px;
+}
+
+.fact__value--lg {
+    font-size: var(--text-lede);
+}
+
+/* Read-only input: warm fill, still visibly a control. */
+.input:disabled,
+.input[readonly] {
+    background-color: var(--color-warm-100);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   26. Score hero and weighted factor meters
+   -------------------------------------------------------------------------- */
+
+.score-hero {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.score-hero__value {
+    color: var(--color-text);
+    font-size: var(--text-display);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+}
+
+.score-hero__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+
+.score-hero__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.factor-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+}
+
+.factor-row__name {
+    width: 160px;
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.factor-row__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.weight-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary-50);
+    color: var(--color-info-text);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-semibold);
+}
+
+/* Progress meter — a real <progress>, restyled in both engines. */
+.meter {
+    width: 440px;
+    max-width: 100%;
+    height: 8px;
+    appearance: none;
+    border: none;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-border);
+    overflow: hidden;
+}
+
+.meter::-webkit-progress-bar {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-border);
+}
+
+.meter::-webkit-progress-value {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+}
+
+.meter::-moz-progress-bar {
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   27. Review rows
+   -------------------------------------------------------------------------- */
+
+.review {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: var(--space-4) 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.review__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.review__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.review__author {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.review__stars {
+    color: var(--color-accent);
+    font-size: var(--text-ui-body);
+    letter-spacing: 1px;
+}
+
+.review__text {
+    max-width: 760px;
+    color: var(--color-text);
+    font-size: var(--text-ui-body);
+}
+
+.review__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* --------------------------------------------------------------------------
+   28. Notification rows
+   -------------------------------------------------------------------------- */
+
+.notification {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    color: inherit;
+}
+
+.notification:hover {
+    border-color: var(--color-primary-300);
+    text-decoration: none;
+}
+
+/* Unread rows sit on the primary tint with a matching border. */
+.notification--unread {
+    border-color: var(--color-primary-100);
+    background-color: var(--color-primary-50);
+}
+
+.notification__icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+}
+
+.notification__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.notification__title {
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+}
+
+.notification__detail {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.notification__aside {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.notification__time {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+.notification__dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   29. Profile header
+   -------------------------------------------------------------------------- */
+
+.profile-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+}
+
+.avatar--xl {
+    width: 72px;
+    height: 72px;
+    font-size: var(--text-h2);
+}
+
+.profile-head__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.profile-head__name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-head__name {
+    color: var(--color-text);
+    font-size: var(--text-h2);
+    font-weight: var(--weight-bold);
+}
+
+.profile-head__meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* Compact amber award pill used beside a member name. */
+.award-pill--sm {
+    gap: 6px;
+    padding: 5px var(--space-3);
+    font-size: var(--text-caption);
+}
+
+/* Inline dashed upload affordance inside a field. */
+.upload-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    cursor: pointer;
+}
+
+.upload-inline:hover {
+    border-color: var(--color-primary);
+}
+
+.upload-inline__label {
+    color: var(--color-text);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+}
+
+.upload-inline__hint {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+.panel__heading {
+    color: var(--color-text);
+    font-size: var(--text-body);
+    font-weight: var(--weight-semibold);
+}
+
+/* Trailing score column on a public profile header. */
+.profile-head__score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+}
+
+.profile-head__score strong {
+    color: var(--color-text);
+    font-size: 30px;
+    font-weight: var(--weight-bold);
+}
+
+.profile-head__score span {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* Compact stat card variant used on public profiles. */
+.stat-card--compact {
+    gap: var(--space-1);
+    padding: 14px var(--space-5);
+}
+
+.stat-card--compact .stat-card__value {
+    font-size: var(--text-section);
+}
+
+.section-heading {
+    color: var(--color-text);
+    font-size: 17px;
+    font-weight: var(--weight-semibold);
+}
+
+/* --------------------------------------------------------------------------
+   30. Settings rows and the danger zone
+   -------------------------------------------------------------------------- */
+
+.setting-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+}
+
+.setting-row__body {
+    display: flex;
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.setting-row__title {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+.setting-row__note {
+    max-width: 520px;
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.panel__heading--danger {
+    color: var(--color-error-text);
+}
+
+/* Destructive action: error tint, never a solid red fill. */
+.btn--danger {
+    padding: 14px 18px;
+    background-color: var(--color-error-tint);
+    color: var(--color-error-text);
+    font-size: var(--text-ui-label);
+}
+
+.btn--danger:hover {
+    background-color: var(--color-error-tint);
+    color: var(--color-error-text);
+    filter: brightness(0.97);
+}
+
+/* Standalone "go to" links stacked in a panel. */
+.panel__link {
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+}
+
+/* --------------------------------------------------------------------------
+   31. Pool grid (transparency dashboard)
+   -------------------------------------------------------------------------- */
+
+.pool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 426px);
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.pool-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.pool-card__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.pool-card__value {
+    color: var(--color-primary);
+    font-size: var(--text-page-title);
+    font-weight: var(--weight-bold);
+}
+
+.pool-card__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* --------------------------------------------------------------------------
+   32. FAQ accordion — native <details>, no JavaScript needed
+   -------------------------------------------------------------------------- */
+
+.faq {
+    width: 100%;
+    padding: 18px 22px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+}
+
+.faq[open] {
+    border-color: var(--color-primary-100);
+}
+
+.faq__question {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--color-text);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    list-style: none;
+}
+
+.faq__question::-webkit-details-marker {
+    display: none;
+}
+
+.faq[open] .faq__question {
+    color: var(--color-primary);
+}
+
+/* Chevron rendered from the marker column, rotated when open. */
+.faq__question::after {
+    content: "⌄";
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-regular);
+}
+
+.faq[open] .faq__question::after {
+    content: "⌃";
+}
+
+.faq__answer {
+    max-width: 1080px;
+    margin-top: 10px;
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* Help footer: prose beside a trailing action. */
+.help-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.help-cta__text {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-label);
+}
+
+/* --------------------------------------------------------------------------
+   33. Wallet balance cards and activity icons
+   -------------------------------------------------------------------------- */
+
+.balance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+    width: 100%;
+}
+
+.balance-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--space-6) var(--space-7);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+}
+
+/* The available-balance card is the one dark surface in the member UI. */
+.balance-card--dark {
+    border-color: var(--color-primary-700);
+    background-color: var(--color-primary-700);
+}
+
+.balance-card__label,
+.balance-card__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+.balance-card__value {
+    color: var(--color-text);
+    font-size: var(--text-display);
+    font-weight: var(--weight-bold);
+}
+
+.balance-card--dark .balance-card__label,
+.balance-card--dark .balance-card__note {
+    color: var(--color-primary-200);
+}
+
+.balance-card--dark .balance-card__value {
+    color: var(--color-text-inverse);
+}
+
+/* Round icon chip leading a wallet activity row. */
+.txn-row__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-warm-100);
+    color: var(--color-text-muted);
+}
+
+.txn-row__value--hold {
+    color: var(--color-accent-text);
+}
+
+/* --------------------------------------------------------------------------
+   34. Modal — native <dialog>, scrim via ::backdrop
+   -------------------------------------------------------------------------- */
+
+.modal {
+    width: 560px;
+    max-width: calc(100% - var(--space-12));
+    padding: 26px var(--space-7);
+    border: none;
+    border-radius: var(--radius-2xl);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    box-shadow:
+        0 24px 64px -8px rgba(28, 39, 51, 0.18),
+        0 8px 24px -4px rgba(28, 39, 51, 0.1),
+        0 1px 2px 0 rgba(28, 39, 51, 0.04);
+}
+
+.modal[open] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+.modal::backdrop {
+    background-color: var(--color-scrim);
+}
+
+.modal--sm {
+    width: 520px;
+}
+
+.modal--lg {
+    width: 600px;
+}
+
+.modal__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.modal__title {
+    color: var(--color-text);
+    font-size: var(--text-section);
+    font-weight: var(--weight-bold);
+}
+
+.modal__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.modal__close:hover {
+    color: var(--color-text);
+}
+
+.modal > .field,
+.modal > .field-row,
+.modal > .notice,
+.modal > .actions,
+.modal > .line-item {
+    width: 100%;
+    max-width: 100%;
+}
+
+.modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+/* Compact choice card used inside modals. */
+.choice--compact {
+    gap: 10px;
+    padding: 13px var(--space-4);
+    border-radius: var(--radius-md);
+}
+
+/* Highlighted (recommended) option turns success-green when chosen. */
+.choice--recommended:has(input:checked) {
+    border: 1.5px solid var(--color-success);
+    background-color: var(--color-success-tint);
+}
+
+.choice__aside {
+    margin-left: auto;
+}
+
+.input--half {
+    width: 240px;
+}
+
+/* 48px square thumbnail used in modal headers. */
+.thumb--modal {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}
+
+/* Radio-backed pill group (e.g. damage severity). */
+.pill:has(input:checked) {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.pill:has(input:focus-visible) {
+    box-shadow: var(--focus-ring);
+}
+
+/* --------------------------------------------------------------------------
+   35. Star rating (radio-backed, CSS-only)
+   -------------------------------------------------------------------------- */
+
+.rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: 0;
+    border: none;
+    margin: 0;
+}
+
+.rating input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.rating label {
+    color: var(--color-border-strong);
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* Row-reverse means "~ label" targets the stars to the left of the checked one. */
+.rating input:checked ~ label,
+.rating label:hover,
+.rating label:hover ~ label {
+    color: var(--color-accent);
+}
+
+.rating input:focus-visible + label {
+    border-radius: var(--radius-sm);
+    box-shadow: var(--focus-ring);
+}
+
+/* Multi-select tag chips — tinted when chosen, unlike the solid .pill. */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+}
+
+.tag:has(input:checked) {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-50);
+    color: var(--color-primary);
+}
+
+.tag:has(input:focus-visible) {
+    box-shadow: var(--focus-ring);
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+/* Invalid control — error border, paired with a .field__error message. */
+.input--invalid,
+.input[aria-invalid="true"] {
+    border: 1.5px solid var(--color-error);
+}
+
+.input--invalid:focus-visible,
+.input[aria-invalid="true"]:focus-visible {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.4);
+}
+
+/* Form groups inside a stack span its width; only buttons hug their label. */
+.stack > .field,
+.stack > .field-row,
+.stack > .notice,
+.stack > .tag-list,
+.stack > fieldset,
+.stack > .line-item,
+.stack > .modal__footer,
+.stack > .upload-drop,
+.stack > .choice {
+    width: 100%;
+}
