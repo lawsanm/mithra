@@ -179,9 +179,16 @@ include __DIR__ . '/../../../partials/header-admin.php';
         </form>
     </div>
 
-    <button class="btn btn--ghost" type="button" id="toggle-removal" onclick="
-        var section = document.getElementById('removal-section');
-        var btn = document.getElementById('toggle-removal');
+    <button class="btn btn--ghost" type="button" id="toggle-removal">Remove moderator…</button>
+</div>
+
+<script>
+(function () {
+    var btn = document.getElementById('toggle-removal');
+    var section = document.getElementById('removal-section');
+    if (!btn || !section) return;
+
+    btn.addEventListener('click', function () {
         if (section.style.display === 'none') {
             section.style.display = 'block';
             btn.textContent = 'Cancel';
@@ -189,7 +196,8 @@ include __DIR__ . '/../../../partials/header-admin.php';
             section.style.display = 'none';
             btn.textContent = 'Remove moderator…';
         }
-    ">Remove moderator…</button>
-</div>
+    });
+})();
+</script>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

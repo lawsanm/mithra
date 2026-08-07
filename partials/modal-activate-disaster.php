@@ -57,7 +57,7 @@ $divisions ??= [];
         </div>
 
         <div class="modal__footer">
-            <button class="btn btn--ghost" type="button" onclick="this.closest('dialog').close()">Cancel</button>
+            <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
             <button class="btn btn--primary" type="submit">Activate</button>
         </div>
     </form>

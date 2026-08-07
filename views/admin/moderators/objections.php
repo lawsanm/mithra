@@ -115,8 +115,8 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <td>
                             <?php if ($obj['status'] === 'warning'): ?>
                                 <div style="display: flex; gap: var(--space-2);">
-                                    <button class="btn btn--ghost" type="button" onclick="document.getElementById('dismiss-modal').showModal(); document.getElementById('dismiss-member-name').textContent = '<?= e($obj['member']) ?>';">Dismiss</button>
-                                    <button class="btn btn--danger" type="button" onclick="document.getElementById('uphold-modal').showModal(); document.getElementById('uphold-appointee-name').textContent = '<?= e($obj['against']) ?>';">Uphold</button>
+                                    <button class="btn btn--ghost js-dismiss-objection" type="button" data-member="<?= e($obj['member']) ?>">Dismiss</button>
+                                    <button class="btn btn--danger js-uphold-objection" type="button" data-appointee="<?= e($obj['against']) ?>">Uphold</button>
                                 </div>
                             <?php else: ?>
                                 <span class="badge badge--neutral">—</span>
@@ -142,6 +142,24 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <?php include __DIR__ . '/../../../partials/modal-dismiss-objection.php'; ?>
 <?php include __DIR__ . '/../../../partials/modal-uphold-objection.php'; ?>
+
+<script>
+(function () {
+    document.querySelectorAll('.js-dismiss-objection').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('dismiss-member-name').textContent = this.dataset.member;
+            document.getElementById('dismiss-modal').showModal();
+        });
+    });
+
+    document.querySelectorAll('.js-uphold-objection').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('uphold-appointee-name').textContent = this.dataset.appointee;
+            document.getElementById('uphold-modal').showModal();
+        });
+    });
+})();
+</script>
 
 <?php $pageScripts = []; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>
