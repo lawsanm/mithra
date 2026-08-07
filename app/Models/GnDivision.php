@@ -103,6 +103,43 @@ final class GnDivision extends BaseModel
         return (int) $this->selectValue('SELECT COUNT(*) FROM gn_divisions');
     }
 
+    /**
+     * Most recent pending member approvals across every division, for the
+     * admin notification feed.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentPendingApprovals(int $limit = 5): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT ud.created_at, u.full_name, d.name AS division_name
+               FROM user_divisions ud
+               JOIN users u ON u.id = ud.user_id
+               JOIN gn_divisions d ON d.id = ud.gn_division_id
+              WHERE ud.status = 'pending'
+              ORDER BY ud.created_at DESC
+              LIMIT :limit"
+        );
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    /**
+     * Divisions with nobody currently appointed as moderator.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function vacant(): array
+    {
+        return $this->select(
+            'SELECT d.name, d.created_at FROM gn_divisions d
+              WHERE d.moderator_id IS NULL
+              ORDER BY d.name'
+        );
+    }
+
     /** @return list<array<string, mixed>> */
     public function pendingApprovals(int $divisionId): array
     {

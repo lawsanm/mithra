@@ -46,6 +46,30 @@ final class Dispute extends BaseModel
         );
     }
 
+    /**
+     * Most recently opened disputes, for the admin notification feed.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentOpen(int $limit = 10): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT dp.id, dp.reason, dp.status, dp.created_at,
+                    borrower.full_name AS borrower_name, lender.full_name AS lender_name
+               FROM disputes dp
+               LEFT JOIN bookings b ON b.id = dp.booking_id
+               LEFT JOIN users borrower ON borrower.id = b.borrower_id
+               LEFT JOIN users lender ON lender.id = b.lender_id
+              WHERE dp.status = 'open'
+              ORDER BY dp.created_at DESC
+              LIMIT :limit"
+        );
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
     /** @return array<string, mixed>|null */
     public function findWithHistory(int $id): ?array
     {

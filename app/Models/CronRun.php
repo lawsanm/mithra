@@ -30,6 +30,25 @@ final class CronRun extends BaseModel
         );
     }
 
+    /**
+     * Most recently failed jobs, for the admin notification feed.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentFailed(int $limit = 5): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT job_name, started_at, notes FROM cron_runs
+              WHERE status = 'failed'
+              ORDER BY started_at DESC
+              LIMIT :limit"
+        );
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
     /** @return list<array<string, mixed>> */
     public function allJobs(): array
     {
