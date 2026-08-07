@@ -74,7 +74,7 @@ INSERT INTO users
   (5, 3, 'S. Perera',       '198812345675', '+94 77 111 1005', 'liaison@example.lk',
       'Mithra Office, Colombo 02',    '$2y$10$JvMwBR8k2hpL6ZAV3XXtSe0zqu87RVh0YmNh/tFAKgiJ.fTX9QL2a',
       70, 0, 'active', '2024-09-01 09:00:00'),
-  (6, 4, 'Platform Admin',  '198512345676', '+94 77 111 1006', 'admin@example.lk',
+  (6, 4, 'Hasith Kaveesha', '198512345676', '+94 77 111 1006', 'admin@example.lk',
       'Mithra Office, Colombo 02',    '$2y$10$JvMwBR8k2hpL6ZAV3XXtSe0zqu87RVh0YmNh/tFAKgiJ.fTX9QL2a',
       70, 0, 'active', '2024-09-01 09:00:00');
 
