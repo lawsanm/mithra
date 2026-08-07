@@ -75,6 +75,23 @@ final class Booking extends BaseModel
         );
     }
 
+    /** Bookings currently live anywhere in the platform (admin dashboard stat). */
+    public function countActive(): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings WHERE status IN ('in_progress', 'awaiting_return', 'awaiting_handover')"
+        );
+    }
+
+    /** Rental charge held in escrow across all currently active bookings. */
+    public function activeEscrowPoints(): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COALESCE(SUM(rental_charge), 0) FROM bookings
+              WHERE status IN ('in_progress', 'awaiting_return', 'awaiting_handover')"
+        );
+    }
+
     public function countDueTomorrow(int $memberId): int
     {
         return (int) $this->selectValue(

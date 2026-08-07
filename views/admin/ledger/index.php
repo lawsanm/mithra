@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 /**
  * Global ledger — admin append-only transaction log with filters.
+ *
+ * @var array  $filters   label, slug, active(bool)
+ * @var array  $entries   ref, date, title, meta, amount, amount_class
+ * @var string $search
+ * @var string $dateRange
+ * @var string $division
+ */
 
 $filters ??= [
     ['label' => 'All types',  'slug' => '',          'active' => true],

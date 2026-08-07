@@ -242,7 +242,7 @@ function preview_admin_dispatch(string $view, array $params): array
     ];
 
     $data = match ($view) {
-        'admin/dashboard/index'        => preview_admin_dashboard($pdo, $shared, $users, $disputes, $pools, $bookings, $cronRuns),
+        'admin/dashboard/index'        => preview_admin_dashboard($shared, $users, $disputes, $pools, $bookings, $cronRuns, $divisions),
         'admin/divisions/index'        => preview_admin_divisions_index($shared, $divisions),
         'admin/divisions/show'         => preview_admin_divisions_show($shared, $divisions, $params),
         'admin/divisions/approvals'    => preview_admin_divisions_approvals($shared, $divisions, $params),
@@ -250,20 +250,20 @@ function preview_admin_dispatch(string $view, array $params): array
         'admin/moderators/performance' => preview_admin_moderators_performance($shared, $moderators),
         'admin/moderators/appoint'     => preview_admin_moderators_appoint($shared, $divisions, $moderators, $params),
         'admin/moderators/objections'  => $shared,
-        'admin/moderators/show'        => preview_admin_moderators_show($shared, $pdo, $params),
+        'admin/moderators/show'        => preview_admin_moderators_show($shared, $moderators, $params),
         'admin/disputes/index'         => preview_admin_disputes_index($shared, $disputes),
         'admin/disputes/show'          => preview_admin_disputes_show($shared, $disputes, $params),
         'admin/disaster/index'         => preview_admin_disaster_index($shared, $divisions),
-        'admin/categories/index'       => preview_admin_categories_index($shared, $pdo),
+        'admin/categories/index'       => preview_admin_categories_index($shared, $cats),
         'admin/pools/index'            => preview_admin_pools_index($shared, $pools, $cronRuns),
         'admin/pools/writeoffs'        => preview_admin_writeoffs_index($shared, $writeoffs, $pools),
-        'admin/pools/sponsor-ledger'   => preview_admin_sponsor_ledger($shared, $pdo),
+        'admin/pools/sponsor-ledger'   => preview_admin_sponsor_ledger($shared, $sponsors, $pools),
         'admin/pools/policies'         => preview_admin_policies($shared),
         'admin/ledger/index'           => preview_admin_ledger_index($shared, $ledger),
-        'admin/users/index'            => preview_admin_users_index($shared, $pdo, $divisions),
-        'admin/users/show'             => preview_admin_users_show($shared, $pdo, $params),
+        'admin/users/index'            => preview_admin_users_index($shared, $users, $divisions),
+        'admin/users/show'             => preview_admin_users_show($shared, $pdo, $users, $params),
         'admin/cron/index'             => preview_admin_cron_index($shared, $cronRuns),
-        'admin/notifications/index'    => preview_admin_notifications_index($shared, $pdo),
+        'admin/notifications/index'    => preview_admin_notifications_index($shared, $disputes, $cronRuns, $sponsors, $users, $divisions, $moderators),
         'admin/settings/profile'       => preview_admin_settings($shared, $adminUser, 'profile'),
         'admin/settings/security'      => preview_admin_settings($shared, $adminUser, 'security'),
         'admin/settings/notifications' => preview_admin_settings($shared, $adminUser, 'notifications'),
@@ -275,15 +275,15 @@ function preview_admin_dispatch(string $view, array $params): array
 
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
-function preview_admin_dashboard(PDO $pdo, array $shared, User $users, Dispute $disputes, PointPool $pools, Booking $bookings, CronRun $cronRuns): array
+function preview_admin_dashboard(array $shared, User $users, Dispute $disputes, PointPool $pools, Booking $bookings, CronRun $cronRuns, GnDivision $divisions): array
 {
-    $totalMembers = (int) $pdo->query('SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.code = \'member\'')->fetchColumn();
-    $newThisMonth = (int) $pdo->query('SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.code = \'member\' AND u.joined_at >= DATE_FORMAT(CURDATE(), \'%Y-%m-01\')')->fetchColumn();
-    $activeBookings = (int) $pdo->query('SELECT COUNT(*) FROM bookings WHERE status IN (\'in_progress\', \'awaiting_return\', \'awaiting_handover\')')->fetchColumn();
-    $escrowPts = (int) $pdo->query('SELECT COALESCE(SUM(rental_charge), 0) FROM bookings WHERE status IN (\'in_progress\', \'awaiting_return\', \'awaiting_handover\')')->fetchColumn();
+    $totalMembers = $users->countByRole('member');
+    $newThisMonth = $users->countNewMembersThisMonth();
+    $activeBookings = $bookings->countActive();
+    $escrowPts = $bookings->activeEscrowPoints();
     $openDisputes = $disputes->countOpen();
     $pastTimer = $disputes->countPastTimer();
-    $totalPts = (int) $pdo->query('SELECT COALESCE(SUM(balance), 0) FROM point_pools')->fetchColumn();
+    $totalPts = $pools->totalBalance();
 
     $invariantRun = $cronRuns->lastInvariantResult();
     $invariantPassed = $invariantRun !== null && $invariantRun['status'] === 'success';
@@ -298,7 +298,7 @@ function preview_admin_dashboard(PDO $pdo, array $shared, User $users, Dispute $
         ];
     }, $cronRuns->recentJobs(5));
 
-    $divisionCount = (int) $pdo->query('SELECT COUNT(*) FROM gn_divisions')->fetchColumn();
+    $divisionCount = $divisions->countAll();
 
     return $shared + [
         'admin' => ['name' => trim((string) strrchr($shared['currentAdmin']['full_name'], ' ')) ?: $shared['currentAdmin']['full_name']],
@@ -467,21 +467,10 @@ function preview_admin_moderators_appoint(array $shared, GnDivision $divisions, 
     ];
 }
 
-function preview_admin_moderators_show(array $shared, PDO $pdo, array $params): array
+function preview_admin_moderators_show(array $shared, Moderator $moderators, array $params): array
 {
     $id = (int) ($params['id'] ?? 1);
-    $stmt = $pdo->prepare(
-        'SELECT ma.id, ma.appointed_at, ma.bond_points, ma.bond_status, ma.status,
-                u.id AS user_id, u.full_name, u.trust_score, u.phone, u.email, u.address,
-                d.id AS division_id, d.name AS division_name
-           FROM moderator_assignments ma
-           JOIN users u ON u.id = ma.user_id
-           JOIN gn_divisions d ON d.id = ma.gn_division_id
-          WHERE ma.user_id = :id AND ma.status IN (\'active\', \'trial\')
-          LIMIT 1'
-    );
-    $stmt->execute(['id' => $id]);
-    $mod = $stmt->fetch();
+    $mod = $moderators->findByUserId($id);
 
     if (!$mod) {
         return $shared;
@@ -584,16 +573,9 @@ function preview_admin_disaster_index(array $shared, GnDivision $divisions): arr
 
 // ── Categories ──────────────────────────────────────────────────────────────
 
-function preview_admin_categories_index(array $shared, PDO $pdo): array
+function preview_admin_categories_index(array $shared, ItemCategory $cats): array
 {
-    $rows = $pdo->query(
-        'SELECT c.id, c.name, c.active, c.display_order,
-                COUNT(i.id) AS listing_count
-           FROM item_categories c
-           LEFT JOIN items i ON i.category_id = c.id AND i.status NOT IN (\'archived\', \'rejected\')
-          GROUP BY c.id
-          ORDER BY c.display_order'
-    )->fetchAll();
+    $rows = $cats->allWithListingCount();
 
     return $shared + [
         'categories' => array_map(static fn(array $c): array => [
@@ -676,19 +658,13 @@ function preview_admin_writeoffs_index(array $shared, WriteOff $writeoffs, Point
     ];
 }
 
-function preview_admin_sponsor_ledger(array $shared, PDO $pdo): array
+function preview_admin_sponsor_ledger(array $shared, Sponsor $sponsors, PointPool $pools): array
 {
-    $inflows = $pdo->query(
-        'SELECT sp.recorded_at, s.company_name, sp.receipt_number, sp.cash_amount,
-                sp.points_credited, sp.sponsor_pool_pct, sp.aid_pool_pct
-           FROM sponsor_purchases sp
-           JOIN sponsors s ON s.id = sp.sponsor_id
-          ORDER BY sp.recorded_at DESC'
-    )->fetchAll();
+    $inflows = $sponsors->allInflows();
 
     $totalReceived = array_sum(array_column($inflows, 'points_credited'));
 
-    $sponsorPool = $pdo->query('SELECT balance FROM point_pools WHERE pool_code = \'sponsor\'')->fetchColumn();
+    $sponsorPool = $pools->balance('sponsor');
 
     return $shared + [
         'summary' => [
@@ -770,44 +746,17 @@ function preview_admin_ledger_index(array $shared, PointLedger $ledger): array
 
 // ── Users ───────────────────────────────────────────────────────────────────
 
-function preview_admin_users_index(array $shared, PDO $pdo, GnDivision $divisions): array
+function preview_admin_users_index(array $shared, User $users, GnDivision $divisions): array
 {
     $statusFilter = $_GET['status'] ?? '';
     $search = $_GET['q'] ?? '';
 
-    $where = '1=1';
-    $params = [];
-    if ($statusFilter !== '' && $statusFilter !== 'all') {
-        $where .= ' AND u.status = :status';
-        $params['status'] = $statusFilter;
-    }
-    if ($search !== '') {
-        $where .= ' AND (u.full_name LIKE :q OR d.name LIKE :q2)';
-        $params['q'] = "%{$search}%";
-        $params['q2'] = "%{$search}%";
-    }
+    $rows = $users->adminList($statusFilter, $search);
 
-    $stmt = $pdo->prepare(
-        "SELECT u.id, u.full_name, u.status, u.trust_score,
-                r.name AS role_name,
-                d.name AS division_name,
-                COALESCE(mw.balance, 0) AS balance
-           FROM users u
-           JOIN roles r ON r.id = u.role_id
-           LEFT JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = 'home'
-           LEFT JOIN gn_divisions d ON d.id = ud.gn_division_id
-           LEFT JOIN member_wallets mw ON mw.user_id = u.id
-          WHERE {$where}
-          ORDER BY u.id
-          LIMIT 50"
-    );
-    $stmt->execute($params);
-    $rows = $stmt->fetchAll();
-
-    $totalUsers = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
-    $activeUsers = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE status = \'active\'')->fetchColumn();
-    $frozenUsers = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE status = \'suspended\'')->fetchColumn();
-    $newMonth = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE joined_at >= DATE_FORMAT(CURDATE(), \'%Y-%m-01\')')->fetchColumn();
+    $totalUsers = $users->countAll();
+    $activeUsers = $users->countByStatus('active');
+    $frozenUsers = $users->countByStatus('suspended');
+    $newMonth = $users->countJoinedThisMonth();
 
     $statusMap = ['active' => 'success', 'suspended' => 'error', 'pending' => 'warning', 'closed_standard' => 'neutral', 'closed_donation' => 'neutral'];
 
@@ -833,10 +782,9 @@ function preview_admin_users_index(array $shared, PDO $pdo, GnDivision $division
     ];
 }
 
-function preview_admin_users_show(array $shared, PDO $pdo, array $params): array
+function preview_admin_users_show(array $shared, PDO $pdo, User $users, array $params): array
 {
     $id = (int) ($params['id'] ?? 1);
-    $users = new User($pdo);
     $user = $users->findWithDivision($id);
     if ($user === null) {
         return $shared;
@@ -846,9 +794,7 @@ function preview_admin_users_show(array $shared, PDO $pdo, array $params): array
     $balance = $wallets->balance($id);
     $pStats = $users->profileStats($id);
 
-    $roleStmt = $pdo->prepare('SELECT r.name FROM roles r JOIN users u ON u.role_id = r.id WHERE u.id = :id');
-    $roleStmt->execute(['id' => $id]);
-    $roleName = $roleStmt->fetchColumn() ?: 'Member';
+    $roleName = $users->roleName($id);
 
     $statusMap = ['active' => 'success', 'suspended' => 'error', 'pending' => 'warning'];
 
@@ -905,24 +851,14 @@ function preview_admin_cron_index(array $shared, CronRun $cronRuns): array
  * pool health, account actions, staffing), not personal messages. This
  * synthesizes that feed from the tables that actually drive each event.
  */
-function preview_admin_notifications_index(array $shared, PDO $pdo): array
+function preview_admin_notifications_index(array $shared, Dispute $disputes, CronRun $cronRuns, Sponsor $sponsors, User $users, GnDivision $divisions, Moderator $moderators): array
 {
     $typeFilter = $_GET['type'] ?? '';
 
     $notices = [];
 
     // Disputes — new/open cases needing moderator or admin attention.
-    $disputeRows = $pdo->query(
-        'SELECT dp.id, dp.reason, dp.status, dp.created_at,
-                borrower.full_name AS borrower_name, lender.full_name AS lender_name
-           FROM disputes dp
-           LEFT JOIN bookings b ON b.id = dp.booking_id
-           LEFT JOIN users borrower ON borrower.id = b.borrower_id
-           LEFT JOIN users lender ON lender.id = b.lender_id
-          WHERE dp.status = \'open\'
-          ORDER BY dp.created_at DESC
-          LIMIT 10'
-    )->fetchAll();
+    $disputeRows = $disputes->recentOpen(10);
     foreach ($disputeRows as $d) {
         $daysOpen = (int) floor((time() - strtotime($d['created_at'])) / 86400);
         $notices[] = [
@@ -936,10 +872,7 @@ function preview_admin_notifications_index(array $shared, PDO $pdo): array
     }
 
     // Pools — nightly invariant check outcome.
-    $invariant = $pdo->query(
-        'SELECT status, finished_at, notes FROM cron_runs
-          WHERE job_name = \'check_invariant\' ORDER BY started_at DESC LIMIT 1'
-    )->fetch();
+    $invariant = $cronRuns->lastInvariantResult();
     if ($invariant) {
         $passed = $invariant['status'] === 'success';
         $notices[] = [
@@ -953,13 +886,7 @@ function preview_admin_notifications_index(array $shared, PDO $pdo): array
     }
 
     // Pools — recent sponsor injections.
-    $sponsorRows = $pdo->query(
-        'SELECT sp.receipt_number, sp.points_credited, sp.recorded_at, s.company_name
-           FROM sponsor_purchases sp
-           JOIN sponsors s ON s.id = sp.sponsor_id
-          ORDER BY sp.recorded_at DESC
-          LIMIT 5'
-    )->fetchAll();
+    $sponsorRows = $sponsors->recentInjections(5);
     foreach ($sponsorRows as $s) {
         $notices[] = [
             'icon'     => '⚡',
@@ -972,12 +899,7 @@ function preview_admin_notifications_index(array $shared, PDO $pdo): array
     }
 
     // Users — frozen / suspended accounts.
-    $frozenRows = $pdo->query(
-        'SELECT id, full_name, updated_at FROM users
-          WHERE status = \'suspended\'
-          ORDER BY updated_at DESC
-          LIMIT 5'
-    )->fetchAll();
+    $frozenRows = $users->recentlySuspended(5);
     foreach ($frozenRows as $u) {
         $notices[] = [
             'icon'     => '🔒',
@@ -990,15 +912,7 @@ function preview_admin_notifications_index(array $shared, PDO $pdo): array
     }
 
     // Users — pending division approvals (new residents awaiting verification).
-    $pendingRows = $pdo->query(
-        'SELECT ud.created_at, u.full_name, d.name AS division_name
-           FROM user_divisions ud
-           JOIN users u ON u.id = ud.user_id
-           JOIN gn_divisions d ON d.id = ud.gn_division_id
-          WHERE ud.status = \'pending\'
-          ORDER BY ud.created_at DESC
-          LIMIT 5'
-    )->fetchAll();
+    $pendingRows = $divisions->recentPendingApprovals(5);
     foreach ($pendingRows as $p) {
         $notices[] = [
             'icon'     => '📋',
@@ -1011,15 +925,7 @@ function preview_admin_notifications_index(array $shared, PDO $pdo): array
     }
 
     // System — moderator appointments.
-    $modRows = $pdo->query(
-        'SELECT ma.appointed_at, u.full_name, d.name AS division_name
-           FROM moderator_assignments ma
-           JOIN users u ON u.id = ma.user_id
-           JOIN gn_divisions d ON d.id = ma.gn_division_id
-          WHERE ma.status IN (\'active\', \'trial\')
-          ORDER BY ma.appointed_at DESC
-          LIMIT 5'
-    )->fetchAll();
+    $modRows = $moderators->recentAppointments(5);
     foreach ($modRows as $m) {
         $notices[] = [
             'icon'     => '👤',
@@ -1032,12 +938,7 @@ function preview_admin_notifications_index(array $shared, PDO $pdo): array
     }
 
     // System — divisions with no moderator (vacant staffing gap).
-    $vacantRows = $pdo->query(
-        'SELECT d.name, d.created_at
-           FROM gn_divisions d
-          WHERE d.moderator_id IS NULL
-          ORDER BY d.name'
-    )->fetchAll();
+    $vacantRows = $divisions->vacant();
     foreach ($vacantRows as $v) {
         $notices[] = [
             'icon'     => '⚠',
@@ -1050,12 +951,7 @@ function preview_admin_notifications_index(array $shared, PDO $pdo): array
     }
 
     // System — failed cron jobs.
-    $failedJobs = $pdo->query(
-        'SELECT job_name, started_at, notes FROM cron_runs
-          WHERE status = \'failed\'
-          ORDER BY started_at DESC
-          LIMIT 5'
-    )->fetchAll();
+    $failedJobs = $cronRuns->recentFailed(5);
     foreach ($failedJobs as $j) {
         $notices[] = [
             'icon'     => '✕',
