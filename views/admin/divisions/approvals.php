@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Member approvals for a division (bootstrap phase).
+ * Member approvals for a division (initial setup phase).
  *
  * @var array  $division       name
  * @var array  $approvalStats  label, value
@@ -58,7 +58,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 <header class="page-header">
     <div>
         <h1 class="page-header__title">Member Approvals</h1>
-        <p class="page-intro__meta"><?= e($division['name']) ?> GN Division · Bootstrap phase</p>
+        <p class="page-intro__meta"><?= e($division['name']) ?> GN Division · Initial setup phase</p>
     </div>
     <span class="badge badge--info page-header__action">i Admin is verifying — no moderator appointed yet</span>
 </header>

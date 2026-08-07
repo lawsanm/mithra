@@ -54,10 +54,10 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <span class="text-muted"><?= e($pref['description']) ?></span>
                     </td>
                     <td style="text-align: center">
-                        <input type="checkbox" name="prefs[<?= $i ?>][email]" value="1"<?= $pref['email'] ? ' checked' : '' ?>>
+                        <input type="checkbox" name="prefs[<?= e((string) $i) ?>][email]" value="1"<?= $pref['email'] ? ' checked' : '' ?>>
                     </td>
                     <td style="text-align: center">
-                        <input type="checkbox" name="prefs[<?= $i ?>][push]" value="1"<?= $pref['push'] ? ' checked' : '' ?>>
+                        <input type="checkbox" name="prefs[<?= e((string) $i) ?>][push]" value="1"<?= $pref['push'] ? ' checked' : '' ?>>
                     </td>
                 </tr>
             <?php endforeach; ?>
