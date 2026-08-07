@@ -12,7 +12,7 @@ declare(strict_types=1);
         <?= csrf_field() ?>
         <div class="modal__head">
             <h2 class="modal__title">Uphold objection — cancel appointment</h2>
-            <button class="modal__close" type="button" aria-label="Close" onclick="this.closest('dialog').close();">✕</button>
+            <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
         </div>
 
         <p style="font-size: var(--text-ui-label); margin-bottom: var(--space-4);">
@@ -24,7 +24,7 @@ declare(strict_types=1);
         </div>
 
         <div class="modal__footer">
-            <button class="btn btn--ghost" type="button" onclick="this.closest('dialog').close();">Cancel</button>
+            <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
             <button class="btn btn--danger" type="submit">Uphold and cancel appointment</button>
         </div>
     </form>

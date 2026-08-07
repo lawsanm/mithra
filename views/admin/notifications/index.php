@@ -56,7 +56,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 <ul class="row-list">
     <?php foreach ($notices as $notice): ?>
         <li class="list-row<?= !$notice['read'] ? ' list-row--unread' : '' ?>">
-            <span class="list-row__icon" aria-hidden="true"><?= $notice['icon'] ?></span>
+            <span class="list-row__icon" aria-hidden="true"><?= e($notice['icon']) ?></span>
             <div class="list-row__body">
                 <span class="list-row__title"><?= e($notice['title']) ?></span>
                 <span class="list-row__meta"><?= e($notice['meta']) ?></span>

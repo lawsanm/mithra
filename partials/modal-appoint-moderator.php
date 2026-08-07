@@ -35,7 +35,7 @@ declare(strict_types=1);
         </div>
 
         <div class="modal__footer">
-            <button class="btn btn--ghost" type="button" onclick="this.closest('dialog').close()">Cancel</button>
+            <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
             <button class="btn btn--primary" type="submit">Confirm appointment</button>
         </div>
     </form>
