@@ -86,6 +86,109 @@ final class User extends BaseModel
         );
     }
 
+    public function countByRole(string $roleCode): int
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.code = :code',
+            ['code' => $roleCode]
+        );
+    }
+
+    public function countNewMembersThisMonth(): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE r.code = 'member' AND u.joined_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+        );
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->selectValue('SELECT COUNT(*) FROM users');
+    }
+
+    public function countByStatus(string $status): int
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM users WHERE status = :status',
+            ['status' => $status]
+        );
+    }
+
+    public function countJoinedThisMonth(): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM users WHERE joined_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+        );
+    }
+
+    /**
+     * Most recently suspended accounts, for the admin notification feed.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentlySuspended(int $limit = 5): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id, full_name, updated_at FROM users
+              WHERE status = 'suspended'
+              ORDER BY updated_at DESC
+              LIMIT :limit"
+        );
+        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    public function roleName(int $id): string
+    {
+        return (string) ($this->selectValue(
+            'SELECT r.name FROM roles r JOIN users u ON u.role_id = r.id WHERE u.id = :id',
+            ['id' => $id]
+        ) ?: 'Member');
+    }
+
+    /**
+     * Admin member directory, filtered by status and free-text search on name
+     * or home division.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function adminList(string $status, string $search): array
+    {
+        $where = '1=1';
+        $params = [];
+
+        if ($status !== '' && $status !== 'all') {
+            $where .= ' AND u.status = :status';
+            $params['status'] = $status;
+        }
+
+        if ($search !== '') {
+            $where .= ' AND (u.full_name LIKE :q OR d.name LIKE :q2)';
+            $params['q'] = "%{$search}%";
+            $params['q2'] = "%{$search}%";
+        }
+
+        return $this->select(
+            "SELECT u.id, u.full_name, u.status, u.trust_score,
+                    r.name AS role_name,
+                    d.name AS division_name,
+                    COALESCE(mw.balance, 0) AS balance
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+               LEFT JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = 'home'
+               LEFT JOIN gn_divisions d ON d.id = ud.gn_division_id
+               LEFT JOIN member_wallets mw ON mw.user_id = u.id
+              WHERE {$where}
+              ORDER BY u.id
+              LIMIT 50",
+            $params
+        );
+    }
+
     /**
      * Initials for the avatar, e.g. "T.H.K. Madushan" -> "TM".
      */

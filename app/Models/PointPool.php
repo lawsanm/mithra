@@ -21,6 +21,19 @@ final class PointPool extends BaseModel
         );
     }
 
+    public function balance(string $poolCode): int
+    {
+        return (int) $this->selectValue(
+            'SELECT balance FROM point_pools WHERE pool_code = :code',
+            ['code' => $poolCode]
+        );
+    }
+
+    public function totalBalance(): int
+    {
+        return (int) $this->selectValue('SELECT COALESCE(SUM(balance), 0) FROM point_pools');
+    }
+
     /**
      * @return array<string, mixed>|null
      */
