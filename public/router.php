@@ -92,6 +92,18 @@ $routes = [
     '/admin/settings/profile'         => 'admin/settings/profile',
     '/admin/settings/security'        => 'admin/settings/security',
     '/admin/settings/notifications'   => 'admin/settings/notifications',
+
+    // ── Moderator ──
+    '/moderator'                         => 'moderator/dashboard/index',
+    '/moderator/dashboard'               => 'moderator/dashboard/index',
+    '/moderator/verifications'           => 'moderator/verifications/index',
+    '/moderator/verifications/{id}'      => 'moderator/verifications/show',
+    '/moderator/listing-approvals'       => 'moderator/listing-approvals/index',
+    '/moderator/listing-approvals/{id}'  => 'moderator/listing-approvals/show',
+    '/moderator/cases'                   => 'moderator/cases/index',
+    '/moderator/cases/{id}'              => 'moderator/cases/show',
+    '/moderator/disasters'               => 'moderator/disasters/index',
+    '/moderator/aid-vouching'            => 'moderator/aid-vouching/index',
 ];
 
 /**
