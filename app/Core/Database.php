@@ -42,6 +42,30 @@ final class Database
     }
 
     /**
+     * A separate handle with no database selected, for setup tooling that
+     * creates the schema itself (scripts/migrate.php). Emulated prepares stay
+     * on because multi-statement .sql files need the emulated driver path;
+     * the app never uses this connection.
+     */
+    public static function serverConnection(): PDO
+    {
+        return new PDO(
+            sprintf(
+                'mysql:host=%s;port=%d;charset=%s',
+                (string) Config::get('db.host', '127.0.0.1'),
+                (int) Config::get('db.port', 3306),
+                (string) Config::get('db.charset', 'utf8mb4')
+            ),
+            (string) Config::get('db.username', 'root'),
+            (string) Config::get('db.password', ''),
+            [
+                PDO::ATTR_ERRMODE          => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_EMULATE_PREPARES => true,
+            ]
+        );
+    }
+
+    /**
      * Replace the handle — used by tests to point at a throwaway database.
      */
     public static function swap(?PDO $connection): void

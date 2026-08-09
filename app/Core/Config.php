@@ -37,7 +37,15 @@ final class Config
     public static function all(): array
     {
         if (self::$values === null) {
-            $file = dirname(__DIR__, 2) . '/config/config.php';
+            $dir  = dirname(__DIR__, 2) . '/config';
+            $file = $dir . '/config.php';
+
+            // A fresh clone has no config.php (git-ignored, §12). The example
+            // file carries only stock XAMPP defaults — no secrets — so fall
+            // back to it rather than fail before any local setup.
+            if (!is_file($file)) {
+                $file = $dir . '/config.example.php';
+            }
 
             if (!is_file($file)) {
                 throw new RuntimeException(
