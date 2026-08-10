@@ -3202,3 +3202,114 @@ legend {
     font-size: var(--text-ui-label);
     color: var(--color-accent-text);
 }
+
+/* ==========================================================================
+   Moderator-specific components
+   ========================================================================== */
+
+/* Review layout: evidence on the left, the moderator's decision on the right. */
+.two-col--wide-main {
+    grid-template-columns: 2fr 1fr;
+}
+
+.stack > .two-col {
+    width: 100%;
+}
+
+/* Queue filter bar — status pills with the outstanding count trailing right. */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+.filter-bar__count {
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+}
+
+/* Two-figure stat row (disaster mode). */
+.stat-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Panel heading with its actions trailing right, and its supporting copy. */
+.panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.panel__actions {
+    margin-left: auto;
+}
+
+.panel__prose {
+    max-width: 640px;
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+}
+
+.panel__note {
+    color: var(--color-text-muted);
+    font-size: var(--text-caption);
+}
+
+/* Review checklist — native checkboxes, tinted by accent-color like .choice. */
+.checklist {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.checklist__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: pointer;
+}
+
+.checklist__input {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    margin: 0;
+    accent-color: var(--color-primary);
+}
+
+.checklist__input:focus-visible {
+    box-shadow: var(--focus-ring);
+}
+
+.checklist__label {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+}
+
+/* A labelled set of evidence photos, e.g. "Handover baseline · 8 Jul". */
+.photo-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.photo-group__label {
+    color: var(--color-text-muted);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+}
+
+@media (max-width: 900px) {
+    .two-col--wide-main {
+        grid-template-columns: 1fr;
+    }
+}
