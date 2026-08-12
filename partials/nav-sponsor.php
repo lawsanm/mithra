@@ -53,6 +53,6 @@ $navItems = [
 
     <div class="nav__actions">
         <span class="avatar"><?= e($currentSponsor['initials']) ?></span>
-        <span class="meta-pill"><?= e($currentSponsor['company_name']) ?></span>
+        <span class="nav__company"><?= e($currentSponsor['company_name']) ?></span>
     </div>
 </nav>

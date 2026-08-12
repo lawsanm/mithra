@@ -3,13 +3,10 @@
 declare(strict_types=1);
 
 /**
- * Disaster Mode activated — auto-opened once for a sponsor whose division has
- * a new active disaster. Figma: "Disaster Alert — Modal" (387:189).
+ * Disaster Mode activated — opened by clicking the "Moderator on the ground"
+ * box on the disaster connect screen. Figma: "Disaster Alert — Modal" (387:189).
  *
- * The page underneath already carries the same information in its
- * notifications row, so a no-JS visitor loses nothing but the pop-up.
- *
- * @var array $activeAlert id, division, reason, affected, liaison
+ * @var array $activeAlert event_name, division, affected
  */
 
 $activeAlert ??= [];
@@ -21,10 +18,7 @@ $activeAlert ??= [];
         <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>
     </div>
 
-    <span class="badge badge--error">
-        <span aria-hidden="true">!</span>
-        <?= e($activeAlert['reason'] ?? 'Disaster Mode active') ?>
-    </span>
+    <span class="badge badge--error"><?= e($activeAlert['event_name'] ?? 'Disaster Mode active') ?></span>
 
     <p class="field__hint">
         A regional flood event has been declared in <?= e($activeAlert['division'] ?? 'your division') ?>.
@@ -38,7 +32,7 @@ $activeAlert ??= [];
     </p>
 
     <div class="modal__footer">
-        <button class="btn btn--ghost" type="button" data-modal-close>Not now</button>
-        <a class="btn btn--primary" href="/sponsor/disasters/<?= e((string) ($activeAlert['id'] ?? '')) ?>">Connect with moderator</a>
+        <button class="btn btn--ghost" type="button" data-modal-close>Dismiss</button>
+        <a class="btn btn--primary" href="#offer_amount" data-modal-close>Connect with moderator</a>
     </div>
 </dialog>
