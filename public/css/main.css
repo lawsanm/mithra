@@ -629,6 +629,10 @@ legend {
     color: var(--color-primary);
 }
 
+.stat-card__value--accent {
+    color: var(--color-accent-text);
+}
+
 .stat-card__note {
     color: var(--color-text-muted);
     font-size: var(--text-caption);
@@ -3201,6 +3205,69 @@ legend {
 .countdown-card__label {
     font-size: var(--text-ui-label);
     color: var(--color-accent-text);
+}
+
+/* Sponsor nav — company name beside the avatar, no pill background */
+.nav__company {
+    color: var(--color-text);
+    font-size: var(--text-ui-label);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+}
+
+/* Sponsor/Aid pool allocation bar (Purchase Points) */
+.split-bar {
+    display: flex;
+    width: 100%;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.split-bar__fill--sponsor {
+    background-color: var(--color-primary);
+}
+
+.split-bar__fill--aid {
+    background-color: var(--color-accent);
+}
+
+.split-legend {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.split-legend__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-ui-body);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text);
+}
+
+.split-legend__dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+
+.split-legend__dot--sponsor {
+    background-color: var(--color-primary);
+}
+
+.split-legend__dot--aid {
+    background-color: var(--color-accent);
+}
+
+/* Trailing bold amount on an otherwise plain list-row (CSR quarterly breakdown) */
+.list-row__amount {
+    color: var(--color-primary);
+    font-size: var(--text-lede);
+    font-weight: var(--weight-bold);
+    white-space: nowrap;
 }
 
 /* ==========================================================================

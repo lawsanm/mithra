@@ -62,20 +62,23 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
             <input class="input" type="text" id="tagline" name="tagline" value="<?= e($draft['tagline']) ?>">
         </div>
 
-        <div class="toggle-field">
+        <div class="setting-row">
+            <span class="setting-row__body">
+                <label class="setting-row__title" for="tag_bonuses">Tag funded bonuses &amp; aid grants</label>
+                <span class="setting-row__note">
+                    Show "Supported by <?= e($draft['display_name']) ?>" on welcome bonuses and aid grants
+                    your contribution funded.
+                </span>
+            </span>
             <input class="toggle" type="checkbox" id="tag_bonuses" name="tag_bonuses" value="1" <?= !empty($draft['tag_bonuses']) ? 'checked' : '' ?>>
-            <label class="toggle-field__label" for="tag_bonuses">
-                Tag funded bonuses &amp; aid grants — show "Supported by <?= e($draft['display_name']) ?>" on
-                welcome bonuses and aid grants your contribution funded.
-            </label>
         </div>
 
-        <button class="btn btn--primary" type="submit">Save changes</button>
+        <button class="btn btn--primary" type="submit">Save branding</button>
     </form>
 
     <section class="panel panel--half">
         <h2 class="panel__title">Sponsor wall preview</h2>
-        <div class="media">
+        <div class="media list-row">
             <span class="avatar avatar--md"><?= e($wall['initials']) ?></span>
             <span class="media__body">
                 <span class="media__title"><?= e($wall['name']) ?></span>

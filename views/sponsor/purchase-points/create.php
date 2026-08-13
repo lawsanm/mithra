@@ -8,24 +8,32 @@ declare(strict_types=1);
  * No in-app payment — submitting sends a request to the Sponsor Liaison, who
  * records the cash-to-points conversion offline with a receipt number.
  *
- * @var array $packages    radio options: value, title, note, selected
- * @var array $allocations radio options: value, title, note, selected
+ * @var array $packages    radio options: value, label, price, note, selected
+ * @var array $split       sponsor_pct, aid_pct, sponsor_pts, aid_pts — the selected allocation
+ * @var array $allocations radio options: value, label, selected
  * @var string $liaisonNote
  */
 
 // Sample view data — replaced by the controller once SponsorController lands.
 $packages ??= [
-    ['value' => 'starter',   'title' => 'Starter — LKR 25,000',    'note' => '= 25,000 points'],
-    ['value' => 'community', 'title' => 'Community — LKR 50,000',  'note' => '= 50,000 points', 'selected' => true],
-    ['value' => 'impact',    'title' => 'Impact — LKR 100,000',    'note' => '= 100,000 points'],
-    ['value' => 'custom',    'title' => 'Custom amount',           'note' => '1 : 1, your choice'],
+    ['value' => 'starter',   'label' => 'Starter',   'price' => 'LKR 25,000',  'note' => '= 25,000 points'],
+    ['value' => 'community', 'label' => 'Community', 'price' => 'LKR 50,000',  'note' => '= 50,000 points', 'selected' => true],
+    ['value' => 'impact',    'label' => 'Impact',    'price' => 'LKR 100,000', 'note' => '= 100,000 points'],
+    ['value' => 'custom',    'label' => 'Custom',    'price' => 'Any amount',  'note' => '1 : 1, your choice'],
+];
+
+$split ??= [
+    'sponsor_pct' => 70,
+    'aid_pct'     => 30,
+    'sponsor_pts' => '35,000 pts',
+    'aid_pts'     => '15,000 pts',
 ];
 
 $allocations ??= [
-    ['value' => '100-0', 'title' => '100% Sponsor / 0% Aid', 'note' => 'All funds go to welcome bonuses, stipends and community rewards'],
-    ['value' => '70-30', 'title' => '70% Sponsor / 30% Aid', 'note' => 'Mostly sponsor-directed rewards, 30% reserved for aid grants', 'selected' => true],
-    ['value' => '50-50', 'title' => '50% Sponsor / 50% Aid', 'note' => 'An even split between rewards and aid'],
-    ['value' => '0-100', 'title' => '0% Sponsor / 100% Aid', 'note' => 'Entirely reserved for approved aid grants'],
+    ['value' => '100-0', 'label' => '100 / 0'],
+    ['value' => '70-30', 'label' => '70 / 30', 'selected' => true],
+    ['value' => '50-50', 'label' => '50 / 50'],
+    ['value' => '0-100', 'label' => '0 / 100'],
 ];
 
 $liaisonNote ??= 'No in-app payment. Submitting sends a purchase request to your Sponsor Liaison '
@@ -50,53 +58,61 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 <form class="stack" method="post" action="/sponsor/purchase-points">
     <?= csrf_field() ?>
 
-    <fieldset class="stack">
-        <legend class="field__label">Package</legend>
-        <div class="panel-row">
-            <?php foreach ($packages as $package): ?>
-                <label class="choice">
-                    <input
-                        class="choice__input"
-                        type="radio"
-                        name="package"
-                        value="<?= e($package['value']) ?>"
-                        <?= !empty($package['selected']) ? 'checked' : '' ?>
-                    >
-                    <span class="choice__body">
-                        <span class="choice__title"><?= e($package['title']) ?></span>
-                        <span class="choice__note"><?= e($package['note']) ?></span>
-                    </span>
-                </label>
-            <?php endforeach; ?>
+    <div class="stat-grid">
+        <?php foreach ($packages as $package): ?>
+            <label class="choice">
+                <input
+                    class="visually-hidden"
+                    type="radio"
+                    name="package"
+                    value="<?= e($package['value']) ?>"
+                    <?= !empty($package['selected']) ? 'checked' : '' ?>
+                >
+                <span class="choice__body">
+                    <span class="stat-card__label"><?= e($package['label']) ?></span>
+                    <strong class="stat-card__value"><?= e($package['price']) ?></strong>
+                    <span class="stat-card__note"><?= e($package['note']) ?></span>
+                </span>
+            </label>
+        <?php endforeach; ?>
+    </div>
+
+    <section class="panel">
+        <h2 class="panel__title">Allocation — entirely your choice</h2>
+
+        <div class="split-bar">
+            <span class="split-bar__fill--sponsor" style="flex-grow: <?= (int) $split['sponsor_pct'] ?>"></span>
+            <span class="split-bar__fill--aid" style="flex-grow: <?= (int) $split['aid_pct'] ?>"></span>
         </div>
 
-        <div class="field">
-            <label class="field__label" for="custom_amount">Custom amount (LKR)</label>
-            <input class="input input--narrow" type="number" id="custom_amount" name="custom_amount" min="1" step="1">
-            <span class="field__hint">Only used if you select Custom above.</span>
+        <div class="split-legend">
+            <span class="split-legend__row">
+                <span class="split-legend__dot split-legend__dot--sponsor"></span>
+                Sponsor Pool · <?= (int) $split['sponsor_pct'] ?>% = <?= e($split['sponsor_pts']) ?> —
+                welcome bonuses, stipends, community rewards
+            </span>
+            <span class="split-legend__row">
+                <span class="split-legend__dot split-legend__dot--aid"></span>
+                Aid Pool · <?= (int) $split['aid_pct'] ?>% = <?= e($split['aid_pts']) ?> —
+                reserved exclusively for approved aid grants
+            </span>
         </div>
-    </fieldset>
 
-    <fieldset class="stack">
-        <legend class="field__label">Allocation — entirely your choice</legend>
-        <div class="panel-row">
+        <div class="filter-pills">
             <?php foreach ($allocations as $allocation): ?>
-                <label class="choice">
+                <label class="pill">
                     <input
-                        class="choice__input"
+                        class="visually-hidden"
                         type="radio"
                         name="allocation"
                         value="<?= e($allocation['value']) ?>"
                         <?= !empty($allocation['selected']) ? 'checked' : '' ?>
                     >
-                    <span class="choice__body">
-                        <span class="choice__title"><?= e($allocation['title']) ?></span>
-                        <span class="choice__note"><?= e($allocation['note']) ?></span>
-                    </span>
+                    <?= e($allocation['label']) ?>
                 </label>
             <?php endforeach; ?>
         </div>
-    </fieldset>
+    </section>
 
     <div class="notice notice--info notice--full"><?= e($liaisonNote) ?></div>
 

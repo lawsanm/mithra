@@ -9,7 +9,6 @@ declare(strict_types=1);
  * @var array $stats         four figures for the stat row
  * @var array $callouts      rows: icon, title, meta, status, status_label, action_label, action_href
  * @var array $impact        CSR impact panel note
- * @var array $activeAlert   the disaster this sponsor is being connected to, or null
  */
 
 // Sample view data — replaced by the controller once SponsorController lands.
@@ -19,10 +18,10 @@ $sponsor ??= [
 ];
 
 $stats ??= [
-    ['label' => 'Total contributed', 'value' => 'LKR 16,000', 'note' => '2 purchases this year', 'primary' => true],
-    ['label' => 'Points generated',  'value' => '16,000',     'note' => '1 rupee = 1 point, no deductions'],
-    ['label' => 'Aid grants funded', 'value' => '9',          'note' => 'From your Aid Pool share', 'href' => '/sponsor/csr-reports'],
-    ['label' => 'Unread alerts',     'value' => '1',          'note' => 'Disaster Mode active', 'href' => '/sponsor/notifications'],
+    ['label' => 'Total contributed', 'value' => 'LKR 16,000', 'note' => '2 purchases this year', 'tone' => 'primary'],
+    ['label' => 'Points generated',  'value' => '16,000',     'note' => '1 rupee = 1 point, no deductions', 'tone' => 'primary'],
+    ['label' => 'Aid grants funded', 'value' => '9',          'note' => 'From your Aid Pool share', 'tone' => 'primary', 'href' => '/sponsor/csr-reports'],
+    ['label' => 'Unread alerts',     'value' => '1',          'note' => 'Disaster Mode active', 'tone' => 'accent', 'href' => '/sponsor/notifications'],
 ];
 
 $callouts ??= [
@@ -31,8 +30,8 @@ $callouts ??= [
         'title'         => 'Disaster Mode active — Wellawatte flooding',
         'meta'          => 'Regional flood event declared. Moderators are coordinating relief on the ground.  ·  2 hrs ago',
         'status'        => 'error',
-        'status_label'  => 'Disaster Mode',
-        'action_label'  => 'Connect',
+        'status_label'  => 'Urgent',
+        'action_label'  => 'View',
         'action_href'   => '/sponsor/disasters/1',
     ],
     [
@@ -40,8 +39,8 @@ $callouts ??= [
         'title'         => 'Aid request pending your response',
         'meta'          => 'Your liaison shared a relief request matching your CSR focus.  ·  1 day ago',
         'status'        => 'warning',
-        'status_label'  => 'Awaiting response',
-        'action_label'  => 'Review',
+        'status_label'  => 'Action needed',
+        'action_label'  => 'View',
         'action_href'   => '/sponsor/disasters/1',
     ],
 ];
@@ -50,14 +49,6 @@ $impact ??= [
     'title' => 'Your CSR impact',
     'note'  => 'LKR 16,000 contributed  ·  funded 14 welcome bonuses and 9 aid grants  ·  '
              . 'featured on the sponsor wall & monthly newsletter',
-];
-
-$activeAlert ??= [
-    'id'       => '1',
-    'division' => 'Wellawatte GN Division',
-    'reason'   => 'Regional flood event',
-    'affected' => '60 households affected',
-    'liaison'  => 'A. Akalvily',
 ];
 
 $pageTitle = 'Sponsor dashboard';
@@ -74,16 +65,17 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
 <div class="stat-grid">
     <?php foreach ($stats as $stat): ?>
+        <?php $valueClass = 'stat-card__value' . (isset($stat['tone']) ? ' stat-card__value--' . $stat['tone'] : ''); ?>
         <?php if (isset($stat['href'])): ?>
             <a class="stat-card" href="<?= e($stat['href']) ?>">
                 <span class="stat-card__label"><?= e($stat['label']) ?></span>
-                <strong class="stat-card__value<?= !empty($stat['primary']) ? ' stat-card__value--primary' : '' ?>"><?= e($stat['value']) ?></strong>
+                <strong class="<?= e($valueClass) ?>"><?= e($stat['value']) ?></strong>
                 <span class="stat-card__note"><?= e($stat['note']) ?></span>
             </a>
         <?php else: ?>
             <div class="stat-card">
                 <span class="stat-card__label"><?= e($stat['label']) ?></span>
-                <strong class="stat-card__value"><?= e($stat['value']) ?></strong>
+                <strong class="<?= e($valueClass) ?>"><?= e($stat['value']) ?></strong>
                 <span class="stat-card__note"><?= e($stat['note']) ?></span>
             </div>
         <?php endif; ?>
@@ -115,10 +107,5 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
     <h2 class="panel__title"><?= e($impact['title']) ?></h2>
     <p class="panel__note"><?= e($impact['note']) ?></p>
 </section>
-
-<?php if ($activeAlert !== null): ?>
-    <?php include __DIR__ . '/../../../partials/modal-sponsor-disaster-alert.php'; ?>
-    <?php $pageScripts = ['modal.js', 'sponsor-disaster-alert.js']; ?>
-<?php endif; ?>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>
