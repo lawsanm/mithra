@@ -104,6 +104,21 @@ $routes = [
     '/moderator/cases/{id}'              => 'moderator/cases/show',
     '/moderator/disasters'               => 'moderator/disasters/index',
     '/moderator/aid-vouching'            => 'moderator/aid-vouching/index',
+
+    // ── Sponsor Liaison ──
+    '/sponsor-liaison'                          => 'sponsor-liaison/dashboard/index',
+    '/sponsor-liaison/dashboard'                => 'sponsor-liaison/dashboard/index',
+    '/sponsor-liaison/sponsors'                 => 'sponsor-liaison/sponsors/index',
+    '/sponsor-liaison/sponsors/onboarding'      => 'sponsor-liaison/sponsors/onboarding',
+    '/sponsor-liaison/purchases'                => 'sponsor-liaison/purchases/index',
+    '/sponsor-liaison/purchases/create'         => 'sponsor-liaison/purchases/create',
+    '/sponsor-liaison/points-pool'              => 'sponsor-liaison/points-pool/index',
+    '/sponsor-liaison/disasters'                => 'sponsor-liaison/disasters/index',
+    '/sponsor-liaison/disasters/connection'     => 'sponsor-liaison/disasters/connection',
+    '/sponsor-liaison/aid-grants'                => 'sponsor-liaison/aid-grants/index',
+    '/sponsor-liaison/aid-grants/{id}'          => 'sponsor-liaison/aid-grants/show',
+    '/sponsor-liaison/csr-reports'              => 'sponsor-liaison/csr-reports/index',
+    '/sponsor-liaison/csr-reports/quarterly'    => 'sponsor-liaison/csr-reports/quarterly',
 ];
 
 /**
