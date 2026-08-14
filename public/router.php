@@ -119,6 +119,14 @@ $routes = [
     '/sponsor-liaison/aid-grants/{id}'          => 'sponsor-liaison/aid-grants/show',
     '/sponsor-liaison/csr-reports'              => 'sponsor-liaison/csr-reports/index',
     '/sponsor-liaison/csr-reports/quarterly'    => 'sponsor-liaison/csr-reports/quarterly',
+    // ── Sponsor ──
+    '/sponsor'                 => 'sponsor/dashboard/index',
+    '/sponsor/dashboard'       => 'sponsor/dashboard/index',
+    '/sponsor/purchase-points' => 'sponsor/purchase-points/create',
+    '/sponsor/csr-reports'     => 'sponsor/csr-reports/index',
+    '/sponsor/branding'        => 'sponsor/branding/edit',
+    '/sponsor/notifications'   => 'sponsor/notifications/index',
+    '/sponsor/disasters/{id}'  => 'sponsor/disasters/show',
 ];
 
 /**
