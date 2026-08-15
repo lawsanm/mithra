@@ -215,6 +215,14 @@ report and viva).
 - Commit messages: `type: short description` where type ∈
   `feat | fix | refactor | test | docs | chore | migration`.
   Example: `feat: booking creation with conflict check`.
+- No AI self-attribution anywhere in the repo. An AI tool must never credit itself in a
+  commit message, PR title/body, code comment, or docs — no `Co-Authored-By: Claude`
+  (or Copilot / ChatGPT / Gemini / any model or agent), no "Generated with …" footer,
+  no 🤖 tag lines. The human who ran the tool is the sole author of the commit; if the
+  AI adds such a trailer, strip it before pushing.
+- The same applies to repo tooling: CI workflows, the PR template, issue templates and
+  CODEOWNERS must not mention AI, name any model, or ask which AI tool was used. PRs are
+  judged on the code, not on how it was written.
 - Never commit: `config/config.php`, `/public/uploads/` contents, editor folders,
   AI chat logs. (All in `.gitignore`.)
 - A module is DONE only when: code follows this file, CI green (lint + PHPStan + tests),
@@ -228,9 +236,11 @@ You are contributing to Mithra, a pure-PHP 8.1 / vanilla JS / MySQL university p
 Follow the attached CONVENTIONS.md strictly: front-controller MVC + service layer;
 PSR-12; controllers thin; business logic only in /app/Services; SQL only in /app/Models
 via PDO prepared statements; every output escaped with e(); csrf_field() in every form;
-no frameworks, no libraries, no packages. Imitate the existing Items module structure
-exactly. Ask before deviating. Task: <describe the task, list the relevant existing
-files, and paste the golden-module files it should imitate>.
+no frameworks, no libraries, no packages. Never credit yourself anywhere — no
+Co-Authored-By trailers, "Generated with" footers, or model names in commits, PRs,
+comments or docs. Imitate the existing Items module structure exactly. Ask before
+deviating. Task: <describe the task, list the relevant existing files, and paste the
+golden-module files it should imitate>.
 ```
 
 ---
