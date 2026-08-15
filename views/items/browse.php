@@ -35,7 +35,7 @@ $results ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Available',
-        'href'         => '/items/1',
+        'href'         => base_url() . '/items/1',
     ],
     [
         'title'        => 'Camping Tent (4-person)',
@@ -44,7 +44,7 @@ $results ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Available',
-        'href'         => '/items/2',
+        'href'         => base_url() . '/items/2',
     ],
     [
         'title'        => 'Stand Mixer',
@@ -53,7 +53,7 @@ $results ??= [
         'status'       => 'warning',
         'status_glyph' => '!',
         'status_label' => 'Back on 19 Jul',
-        'href'         => '/items/3',
+        'href'         => base_url() . '/items/3',
     ],
     [
         'title'        => 'Projector (Full HD)',
@@ -62,7 +62,7 @@ $results ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Available',
-        'href'         => '/items/4',
+        'href'         => base_url() . '/items/4',
     ],
     [
         'title'        => 'Extension Ladder',
@@ -71,7 +71,7 @@ $results ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Available',
-        'href'         => '/items/5',
+        'href'         => base_url() . '/items/5',
     ],
     [
         'title'        => 'Baby Stroller',
@@ -80,7 +80,7 @@ $results ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Available',
-        'href'         => '/items/6',
+        'href'         => base_url() . '/items/6',
     ],
     [
         'title'        => 'Sewing Machine',
@@ -89,7 +89,7 @@ $results ??= [
         'status'       => 'warning',
         'status_glyph' => '!',
         'status_label' => 'Back on 21 Jul',
-        'href'         => '/items/7',
+        'href'         => base_url() . '/items/7',
     ],
     [
         'title'        => 'Folding Tables ×2',
@@ -98,7 +98,7 @@ $results ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Available',
-        'href'         => '/items/8',
+        'href'         => base_url() . '/items/8',
     ],
 ];
 
@@ -119,7 +119,7 @@ include __DIR__ . '/../../partials/header.php';
 </header>
 
 <?php // Search is a read-only GET: no CSRF token, so it never lands in the URL. ?>
-<form class="search-bar" method="get" action="/items/browse" role="search">
+<form class="search-bar" method="get" action="<?= base_url() ?>/items/browse" role="search">
     <label class="visually-hidden" for="item-search">Search items</label>
     <input
         class="input input--search"
@@ -137,7 +137,7 @@ include __DIR__ . '/../../partials/header.php';
         <li>
             <a
                 class="pill<?= !empty($category['active']) ? ' pill--active' : '' ?>"
-                href="/items/browse?category=<?= e(rawurlencode($category['slug'])) ?>"
+                href="<?= base_url() ?>/items/browse?category=<?= e(rawurlencode($category['slug'])) ?>"
                 <?= !empty($category['active']) ? 'aria-current="true"' : '' ?>
             ><?= e($category['label']) ?></a>
         </li>
@@ -154,7 +154,7 @@ include __DIR__ . '/../../partials/header.php';
             Try a broader keyword, another category, or widen your search to nearby GN
             divisions. You can also ask the community to list one.
         </p>
-        <a class="btn btn--primary" href="/items/browse">Clear filters</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/items/browse">Clear filters</a>
     </div>
 <?php else: ?>
     <ul class="card-grid">

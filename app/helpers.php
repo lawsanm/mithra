@@ -18,6 +18,21 @@ if (!function_exists('e')) {
     }
 }
 
+if (!function_exists('base_url')) {
+    /**
+     * The URL prefix the app is served under: '' when it owns the domain root
+     * (the dev server on :8123), '/mithra' when Apache serves it from a
+     * sub-directory. Links in views are written as
+     * href="<?= base_url() ?>/items" so the same markup works in both.
+     *
+     * The entry point sets APP_BASE before any view renders.
+     */
+    function base_url(): string
+    {
+        return defined('APP_BASE') ? APP_BASE : '';
+    }
+}
+
 if (!function_exists('csrf_token')) {
     /**
      * The current session's CSRF token, generated on first use.

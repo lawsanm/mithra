@@ -90,7 +90,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/admin/moderators">Moderators</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/admin/moderators">Moderators</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current">Appoint moderator</span>
 </nav>
@@ -228,7 +228,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
     <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
         <button class="btn btn--ghost" type="button" id="btn-back-1">Back to selection</button>
-        <form method="post" action="/admin/moderators/appoint" style="display:inline;">
+        <form method="post" action="<?= base_url() ?>/admin/moderators/appoint" style="display:inline;">
             <?= csrf_field() ?>
             <input type="hidden" name="division_id" value="<?= e((string) $division['id']) ?>">
             <input type="hidden" name="member_initials" id="appoint-member-id" value="">
@@ -278,11 +278,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
                             <span class="list-row__meta"><?= e($obj['reason']) ?></span>
                             <span class="list-row__meta"><?= e($obj['date']) ?></span>
                         </div>
-                        <form method="post" action="/admin/moderators/objections/dismiss" style="display:inline;">
+                        <form method="post" action="<?= base_url() ?>/admin/moderators/objections/dismiss" style="display:inline;">
                             <?= csrf_field() ?>
                             <button class="btn btn--ghost" type="submit">Dismiss</button>
                         </form>
-                        <form method="post" action="/admin/moderators/objections/uphold" style="display:inline;">
+                        <form method="post" action="<?= base_url() ?>/admin/moderators/objections/uphold" style="display:inline;">
                             <?= csrf_field() ?>
                             <button class="btn btn--danger" type="submit">Uphold</button>
                         </form>
@@ -293,7 +293,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </section>
 
     <div style="margin-top: var(--space-6);">
-        <a class="btn btn--ghost" href="/admin/moderators/objections/<?= e((string) $division['id']) ?>">View objection details</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/objections/<?= e((string) $division['id']) ?>">View objection details</a>
     </div>
 </div>
 

@@ -17,20 +17,20 @@ $currentAdmin = $currentAdmin ?? [
 ];
 
 $navItems = [
-    'dashboard'  => ['label' => 'Dashboard',   'href' => '/admin/dashboard'],
-    'divisions'  => ['label' => 'Divisions',    'href' => '/admin/divisions'],
-    'moderators' => ['label' => 'Moderators',   'href' => '/admin/moderators'],
-    'disputes'   => ['label' => 'Disputes',     'href' => '/admin/disputes'],
-    'categories' => ['label' => 'Categories',   'href' => '/admin/categories'],
-    'pools'      => ['label' => 'Pools',        'href' => '/admin/pools'],
-    'ledger'     => ['label' => 'Ledger',       'href' => '/admin/ledger'],
-    'users'      => ['label' => 'Users',        'href' => '/admin/users'],
+    'dashboard'  => ['label' => 'Dashboard',   'href' => base_url() . '/admin/dashboard'],
+    'divisions'  => ['label' => 'Divisions',    'href' => base_url() . '/admin/divisions'],
+    'moderators' => ['label' => 'Moderators',   'href' => base_url() . '/admin/moderators'],
+    'disputes'   => ['label' => 'Disputes',     'href' => base_url() . '/admin/disputes'],
+    'categories' => ['label' => 'Categories',   'href' => base_url() . '/admin/categories'],
+    'pools'      => ['label' => 'Pools',        'href' => base_url() . '/admin/pools'],
+    'ledger'     => ['label' => 'Ledger',       'href' => base_url() . '/admin/ledger'],
+    'users'      => ['label' => 'Users',        'href' => base_url() . '/admin/users'],
 ];
 
 ?>
 <nav class="nav" aria-label="Admin">
-    <a class="nav__brand" href="/admin/dashboard">
-        <img class="nav__logo" src="/img/logo-deep-slate.svg" alt="">
+    <a class="nav__brand" href="<?= base_url() ?>/admin/dashboard">
+        <img class="nav__logo" src="<?= base_url() ?>/img/logo-deep-slate.svg" alt="">
         <span class="nav__wordmark">Mithra</span>
         <span class="nav__tagline">Lend · Share · Care</span>
     </a>
@@ -52,9 +52,9 @@ $navItems = [
     <div class="nav__spacer"></div>
 
     <div class="nav__actions">
-        <a class="nav__bell" href="/admin/notifications" aria-label="Notifications">
+        <a class="nav__bell" href="<?= base_url() ?>/admin/notifications" aria-label="Notifications">
             <svg class="icon" aria-hidden="true"><use href="#icon-bell"></use></svg>
         </a>
-        <a class="avatar" href="/admin/settings"><?= e($currentAdmin['initials']) ?></a>
+        <a class="avatar" href="<?= base_url() ?>/admin/settings"><?= e($currentAdmin['initials']) ?></a>
     </div>
 </nav>

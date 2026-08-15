@@ -40,7 +40,7 @@ include __DIR__ . '/../../partials/header.php';
     <div class="section__head">
         <h2 class="section__title">Your active borrowings</h2>
         <?php if ($activeBorrowings !== []): ?>
-            <a class="link section__action" href="/bookings">View all</a>
+            <a class="link section__action" href="<?= base_url() ?>/bookings">View all</a>
         <?php endif; ?>
     </div>
 
@@ -53,7 +53,7 @@ include __DIR__ . '/../../partials/header.php';
             <p class="empty-state__body">
                 When you borrow an item, it appears here with its due date, status and return steps.
             </p>
-            <a class="btn btn--primary" href="/items/browse">Browse items near you</a>
+            <a class="btn btn--primary" href="<?= base_url() ?>/items/browse">Browse items near you</a>
         </div>
     <?php else: ?>
         <ul class="row-list">
@@ -79,7 +79,7 @@ include __DIR__ . '/../../partials/header.php';
     <section class="section">
         <div class="section__head">
             <h2 class="section__title">Your listings</h2>
-            <a class="link section__action" href="/items">Manage items</a>
+            <a class="link section__action" href="<?= base_url() ?>/items">Manage items</a>
         </div>
 
         <ul class="card-grid">

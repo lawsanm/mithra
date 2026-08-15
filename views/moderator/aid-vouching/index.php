@@ -80,7 +80,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link link" href="/moderator/disasters">Disasters</a>
+    <a class="breadcrumb__link link" href="<?= base_url() ?>/moderator/disasters">Disasters</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page">Aid vouching</span>
 </nav>
@@ -94,7 +94,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <?php foreach ($filters as $filter): ?>
             <li>
                 <a class="pill<?= $filter['active'] ? ' pill--active' : '' ?>"
-                   href="/moderator/aid-vouching<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
+                   href="<?= base_url() ?>/moderator/aid-vouching<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
                    <?= $filter['active'] ? 'aria-current="true"' : '' ?>
                 ><?= e($filter['label']) ?></a>
             </li>
@@ -112,7 +112,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <p class="empty-state__body">
             No aid request matches this filter. Try “All” to see every request in your division.
         </p>
-        <a class="btn btn--primary" href="/moderator/aid-vouching">Show all requests</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/moderator/aid-vouching">Show all requests</a>
     </div>
 <?php else: ?>
     <ul class="row-list">
@@ -123,9 +123,9 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                     <span class="list-row__meta"><?= e($request['meta']) ?></span>
                 </div>
                 <span class="badge badge--<?= e($request['status']) ?>"><?= e($request['status_label']) ?></span>
-                <a class="btn btn--ghost" href="/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
                 <?php if ($request['vouchable']): ?>
-                    <form method="post" action="/moderator/aid-vouching/<?= rawurlencode($request['id']) ?>/vouch">
+                    <form method="post" action="<?= base_url() ?>/moderator/aid-vouching/<?= rawurlencode($request['id']) ?>/vouch">
                         <?= csrf_field() ?>
                         <button class="btn btn--primary" type="submit">Vouch</button>
                     </form>

@@ -45,7 +45,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/admin/users">Users</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/admin/users">Users</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current"><?= e($user['name']) ?></span>
 </nav>
@@ -127,7 +127,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
         </div>
 
         <div style="display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4);">
-            <a class="btn btn--ghost" href="/admin/users" style="width:100%; text-align:center;">Back to users</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/admin/users" style="width:100%; text-align:center;">Back to users</a>
         </div>
     </div>
 </div>

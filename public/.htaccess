@@ -1,0 +1,23 @@
+# Apache rules for /public — the only directory the web server exposes.
+# Serves real files as they are and sends every other request to index.php,
+# whether the app sits at a domain root or under htdocs/mithra.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Existing files and directories (CSS, JS, images) are served untouched.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Everything else → the front controller.
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# No directory listings.
+Options -Indexes
+
+# Dotfiles are never served.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

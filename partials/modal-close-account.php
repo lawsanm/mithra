@@ -44,7 +44,7 @@ $closureOptions = $closureOptions ?? [
         You have <?= e($remainingPoints) ?> remaining. Choose what happens to them:
     </p>
 
-    <form class="stack" method="post" action="/settings/close-account">
+    <form class="stack" method="post" action="<?= base_url() ?>/settings/close-account">
         <?= csrf_field() ?>
 
         <?php foreach ($closureOptions as $option): ?>

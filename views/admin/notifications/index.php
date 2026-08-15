@@ -35,7 +35,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
-    <form method="post" action="/admin/notifications/mark-all-read" class="page-header__action">
+    <form method="post" action="<?= base_url() ?>/admin/notifications/mark-all-read" class="page-header__action">
         <?= csrf_field() ?>
         <button class="btn btn--ghost" type="submit">Mark all read</button>
     </form>
@@ -46,7 +46,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <li>
             <a
                 class="pill<?= !empty($filter['active']) ? ' pill--active' : '' ?>"
-                href="/admin/notifications?type=<?= e(rawurlencode($filter['slug'])) ?>"
+                href="<?= base_url() ?>/admin/notifications?type=<?= e(rawurlencode($filter['slug'])) ?>"
                 <?= !empty($filter['active']) ? 'aria-current="true"' : '' ?>
             ><?= e($filter['label']) ?></a>
         </li>
