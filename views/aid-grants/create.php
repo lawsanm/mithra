@@ -41,7 +41,7 @@ include __DIR__ . '/../../partials/header.php';
     first, then a sponsor liaison approves.
 </p>
 
-<form class="panel panel--wide" method="post" action="/aid-grants" enctype="multipart/form-data">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/aid-grants" enctype="multipart/form-data">
     <?= csrf_field() ?>
 
     <div class="field">
@@ -109,7 +109,7 @@ include __DIR__ . '/../../partials/header.php';
     </p>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="/dashboard">Cancel</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/dashboard">Cancel</a>
         <button class="btn btn--primary" type="submit">Submit request</button>
     </div>
 </form>

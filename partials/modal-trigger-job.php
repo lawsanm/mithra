@@ -12,7 +12,7 @@ $triggerJob ??= ['name' => '', 'description' => '', 'last_run' => ''];
 
 ?>
 <dialog class="modal modal--sm" id="modal-trigger-job">
-    <form method="post" action="/admin/cron/trigger">
+    <form method="post" action="<?= base_url() ?>/admin/cron/trigger">
         <?= csrf_field() ?>
         <div class="modal__head">
             <h2 class="modal__title">Trigger job manually</h2>

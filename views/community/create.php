@@ -34,7 +34,7 @@ include __DIR__ . '/../../partials/header.php';
     and borrow locally.
 </p>
 
-<form class="panel panel--wide" method="post" action="/community/temporary" enctype="multipart/form-data">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/community/temporary" enctype="multipart/form-data">
     <?= csrf_field() ?>
 
     <div class="field">
@@ -71,7 +71,7 @@ include __DIR__ . '/../../partials/header.php';
     </p>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="/settings">Cancel</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/settings">Cancel</a>
         <button class="btn btn--primary" type="submit">Submit for verification</button>
     </div>
 </form>

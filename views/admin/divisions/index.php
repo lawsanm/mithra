@@ -9,10 +9,10 @@ declare(strict_types=1);
  */
 
 $divisions ??= [
-    ['name' => 'Kollupitiya',    'member_count' => 412, 'moderator_name' => 'A. Akalvily', 'liaison_name' => 'A. Akalvily', 'status' => 'success', 'status_label' => 'Healthy',       'href' => '/admin/divisions/1'],
-    ['name' => 'Wellawatte',     'member_count' => 386, 'moderator_name' => 'J. Kavipriya', 'liaison_name' => 'A. Akalvily', 'status' => 'error',   'status_label' => 'Disaster Mode', 'href' => '/admin/divisions/2'],
-    ['name' => 'Dehiwala',       'member_count' => 298, 'moderator_name' => 'T.H.K. Madushan', 'liaison_name' => 'A. Akalvily', 'status' => 'success', 'status_label' => 'Healthy',   'href' => '/admin/divisions/3'],
-    ['name' => 'Bambalapitiya',  'member_count' => 241, 'moderator_name' => null,           'liaison_name' => 'A. Akalvily', 'status' => 'warning', 'status_label' => 'No moderator',  'href' => '/admin/divisions/4', 'vacant_days' => 12],
+    ['name' => 'Kollupitiya',    'member_count' => 412, 'moderator_name' => 'A. Akalvily', 'liaison_name' => 'A. Akalvily', 'status' => 'success', 'status_label' => 'Healthy',       'href' => base_url() . '/admin/divisions/1'],
+    ['name' => 'Wellawatte',     'member_count' => 386, 'moderator_name' => 'J. Kavipriya', 'liaison_name' => 'A. Akalvily', 'status' => 'error',   'status_label' => 'Disaster Mode', 'href' => base_url() . '/admin/divisions/2'],
+    ['name' => 'Dehiwala',       'member_count' => 298, 'moderator_name' => 'T.H.K. Madushan', 'liaison_name' => 'A. Akalvily', 'status' => 'success', 'status_label' => 'Healthy',   'href' => base_url() . '/admin/divisions/3'],
+    ['name' => 'Bambalapitiya',  'member_count' => 241, 'moderator_name' => null,           'liaison_name' => 'A. Akalvily', 'status' => 'warning', 'status_label' => 'No moderator',  'href' => base_url() . '/admin/divisions/4', 'vacant_days' => 12],
 ];
 
 $pageTitle = 'Division management';

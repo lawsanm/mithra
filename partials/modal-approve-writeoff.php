@@ -12,7 +12,7 @@ $writeoff ??= ['id' => '', 'user_name' => '', 'amount' => 0, 'reason' => '', 're
 
 ?>
 <dialog class="modal modal--sm" id="modal-approve-writeoff">
-    <form method="post" action="/admin/pools/writeoffs/approve">
+    <form method="post" action="<?= base_url() ?>/admin/pools/writeoffs/approve">
         <?= csrf_field() ?>
         <div class="modal__head">
             <h2 class="modal__title">Approve write-off</h2>

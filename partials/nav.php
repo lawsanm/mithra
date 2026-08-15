@@ -18,18 +18,18 @@ $currentMember = $currentMember ?? [
 ];
 
 $navItems = [
-    'dashboard' => ['label' => 'Dashboard',    'href' => '/dashboard'],
-    'browse'    => ['label' => 'Browse Items', 'href' => '/items/browse'],
-    'items'     => ['label' => 'My Items',     'href' => '/items'],
-    'bookings'  => ['label' => 'My Bookings',  'href' => '/bookings'],
-    'wallet'    => ['label' => 'Wallet',       'href' => '/wallet'],
-    'gifts'     => ['label' => 'Gifts',        'href' => '/gifts'],
+    'dashboard' => ['label' => 'Dashboard',    'href' => base_url() . '/dashboard'],
+    'browse'    => ['label' => 'Browse Items', 'href' => base_url() . '/items/browse'],
+    'items'     => ['label' => 'My Items',     'href' => base_url() . '/items'],
+    'bookings'  => ['label' => 'My Bookings',  'href' => base_url() . '/bookings'],
+    'wallet'    => ['label' => 'Wallet',       'href' => base_url() . '/wallet'],
+    'gifts'     => ['label' => 'Gifts',        'href' => base_url() . '/gifts'],
 ];
 
 ?>
 <nav class="nav" aria-label="Main">
-    <a class="nav__brand" href="/dashboard">
-        <img class="nav__logo" src="/img/logo-deep-slate.svg" alt="">
+    <a class="nav__brand" href="<?= base_url() ?>/dashboard">
+        <img class="nav__logo" src="<?= base_url() ?>/img/logo-deep-slate.svg" alt="">
         <span class="nav__wordmark">Mithra</span>
         <span class="nav__tagline">Lend · Share · Care</span>
     </a>
@@ -49,10 +49,10 @@ $navItems = [
     <div class="nav__spacer"></div>
 
     <div class="nav__actions">
-        <a class="nav__bell" href="/notifications" aria-label="Notifications">
+        <a class="nav__bell" href="<?= base_url() ?>/notifications" aria-label="Notifications">
             <svg class="icon" aria-hidden="true"><use href="#icon-bell"></use></svg>
         </a>
-        <a class="meta-pill" href="/wallet"><?= e($currentMember['points_balance']) ?></a>
-        <a class="avatar" href="/profile"><?= e($currentMember['initials']) ?></a>
+        <a class="meta-pill" href="<?= base_url() ?>/wallet"><?= e($currentMember['points_balance']) ?></a>
+        <a class="avatar" href="<?= base_url() ?>/profile"><?= e($currentMember['initials']) ?></a>
     </div>
 </nav>

@@ -30,12 +30,12 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </header>
 
 <ul class="filter-pills">
-    <li><a class="pill" href="/admin/settings/profile">Profile</a></li>
-    <li><a class="pill" href="/admin/settings/security">Security</a></li>
-    <li><a class="pill pill--active" href="/admin/settings/notifications" aria-current="true">Notifications</a></li>
+    <li><a class="pill" href="<?= base_url() ?>/admin/settings/profile">Profile</a></li>
+    <li><a class="pill" href="<?= base_url() ?>/admin/settings/security">Security</a></li>
+    <li><a class="pill pill--active" href="<?= base_url() ?>/admin/settings/notifications" aria-current="true">Notifications</a></li>
 </ul>
 
-<form class="form-card" method="post" action="/admin/settings/notifications">
+<form class="form-card" method="post" action="<?= base_url() ?>/admin/settings/notifications">
     <?= csrf_field() ?>
 
     <table class="data-table">

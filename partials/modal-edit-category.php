@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 ?>
 <dialog class="modal modal--sm" id="modal-edit-category">
-    <form method="post" action="/admin/categories" id="form-edit-category">
+    <form method="post" action="<?= base_url() ?>/admin/categories" id="form-edit-category">
         <?= csrf_field() ?>
         <input type="hidden" name="id" id="category-id">
 

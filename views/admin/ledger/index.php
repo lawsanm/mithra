@@ -52,7 +52,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <li>
             <a
                 class="pill<?= !empty($filter['active']) ? ' pill--active' : '' ?>"
-                href="/admin/ledger?type=<?= e(rawurlencode($filter['slug'])) ?>"
+                href="<?= base_url() ?>/admin/ledger?type=<?= e(rawurlencode($filter['slug'])) ?>"
                 <?= !empty($filter['active']) ? 'aria-current="true"' : '' ?>
             ><?= e($filter['label']) ?></a>
         </li>

@@ -48,7 +48,7 @@ $claimDraft = ($claimDraft ?? []) + [
         </span>
     </div>
 
-    <form class="stack" method="post" action="/bookings/1/damage-claim" enctype="multipart/form-data">
+    <form class="stack" method="post" action="<?= base_url() ?>/bookings/1/damage-claim" enctype="multipart/form-data">
         <?= csrf_field() ?>
 
         <fieldset>

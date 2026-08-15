@@ -60,7 +60,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/admin/moderators">Moderators</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/admin/moderators">Moderators</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current"><?= e($moderator['name']) ?></span>
 </nav>
@@ -157,7 +157,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 
     <div id="removal-section" style="display: none;">
-        <form method="post" action="/admin/moderators/<?= e(rawurlencode($moderator['name'])) ?>/remove">
+        <form method="post" action="<?= base_url() ?>/admin/moderators/<?= e(rawurlencode($moderator['name'])) ?>/remove">
             <?= csrf_field() ?>
 
             <div class="field" style="margin-bottom: var(--space-4);">

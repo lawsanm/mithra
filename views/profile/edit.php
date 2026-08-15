@@ -18,7 +18,7 @@ $member ??= [
     'donor'    => 'Donor · 3 items given',
     'meta'     => 'Kollupitiya GN Division  ·  member since Mar 2025  ·  trust score 80 / 100',
     // Own public profile lives on the same /members/{id} route as everyone else's.
-    'public_href' => '/members/12',
+    'public_href' => base_url() . '/members/12',
 ];
 
 $draft ??= [
@@ -61,7 +61,7 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 </section>
 
-<form class="panel panel--wide" method="post" action="/profile" enctype="multipart/form-data">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile" enctype="multipart/form-data">
     <?= csrf_field() ?>
 
     <h2 class="panel__heading">Edit details</h2>
@@ -107,7 +107,7 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="/dashboard">Cancel</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/dashboard">Cancel</a>
         <button class="btn btn--primary" type="submit">Save changes</button>
     </div>
 </form>

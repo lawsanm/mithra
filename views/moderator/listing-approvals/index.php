@@ -31,7 +31,7 @@ $sampleRows = [
         'meta'         => 'R. Fernando  ·  declared 12,000 LKR  ·  proof: receipt  ·  1 day ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => '/moderator/listing-approvals/cordless-drill',
+        'href'         => base_url() . '/moderator/listing-approvals/cordless-drill',
     ],
     [
         'state'        => 'pending',
@@ -39,7 +39,7 @@ $sampleRows = [
         'meta'         => 'N. Silva  ·  declared 8,500 LKR  ·  proof: photo  ·  2 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => '/moderator/listing-approvals/folding-table',
+        'href'         => base_url() . '/moderator/listing-approvals/folding-table',
     ],
     [
         'state'        => 'pending',
@@ -47,7 +47,7 @@ $sampleRows = [
         'meta'         => 'K. Bandara  ·  declared 22,000 LKR  ·  inspection requested  ·  2 days ago',
         'status'       => 'info',
         'status_label' => 'Inspection requested',
-        'href'         => '/moderator/listing-approvals/pressure-washer-kb',
+        'href'         => base_url() . '/moderator/listing-approvals/pressure-washer-kb',
     ],
     [
         'state'        => 'pending',
@@ -55,7 +55,7 @@ $sampleRows = [
         'meta'         => 'P. Mendis  ·  declared 15,000 LKR  ·  proof: receipt  ·  3 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => '/moderator/listing-approvals/sewing-machine',
+        'href'         => base_url() . '/moderator/listing-approvals/sewing-machine',
     ],
     [
         'state'        => 'approved',
@@ -63,7 +63,7 @@ $sampleRows = [
         'meta'         => 'T.H.K. Madushan  ·  declared 32,000 LKR  ·  approved 15 Jul',
         'status'       => 'success',
         'status_label' => 'Approved',
-        'href'         => '/moderator/listing-approvals/pressure-washer',
+        'href'         => base_url() . '/moderator/listing-approvals/pressure-washer',
     ],
     [
         'state'        => 'rejected',
@@ -71,7 +71,7 @@ $sampleRows = [
         'meta'         => 'S. Perera  ·  fuel-powered items are not lendable  ·  rejected 12 Jul',
         'status'       => 'error',
         'status_label' => 'Rejected',
-        'href'         => '/moderator/listing-approvals/petrol-generator',
+        'href'         => base_url() . '/moderator/listing-approvals/petrol-generator',
     ],
 ];
 
@@ -99,7 +99,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <?php foreach ($filters as $filter): ?>
             <li>
                 <a class="pill<?= $filter['active'] ? ' pill--active' : '' ?>"
-                   href="/moderator/listing-approvals<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
+                   href="<?= base_url() ?>/moderator/listing-approvals<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
                    <?= $filter['active'] ? 'aria-current="true"' : '' ?>
                 ><?= e($filter['label']) ?></a>
             </li>
@@ -117,7 +117,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <p class="empty-state__body">
             No listing matches this filter. Try “All” to see every listing awaiting approval in your division.
         </p>
-        <a class="btn btn--primary" href="/moderator/listing-approvals">Show all listings</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/moderator/listing-approvals">Show all listings</a>
     </div>
 <?php else: ?>
     <ul class="row-list">

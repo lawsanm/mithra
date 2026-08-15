@@ -60,7 +60,7 @@ $quote = ($quote ?? []) + [
         </span>
     </div>
 
-    <form class="stack" method="post" action="/bookings">
+    <form class="stack" method="post" action="<?= base_url() ?>/bookings">
         <?= csrf_field() ?>
 
         <div class="field-row">

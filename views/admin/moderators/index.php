@@ -76,7 +76,7 @@ $activeMods ??= [
         'objection_label' => 'Confirmed',
         'trust_score'     => 92,
         'bond'            => '500 pts',
-        'href'            => '/admin/moderators/1',
+        'href'            => base_url() . '/admin/moderators/1',
     ],
     [
         'initials'        => 'SK',
@@ -87,7 +87,7 @@ $activeMods ??= [
         'objection_label' => '5 days left',
         'trust_score'     => null,
         'bond'            => '—',
-        'href'            => '/admin/moderators/objections/2',
+        'href'            => base_url() . '/admin/moderators/objections/2',
     ],
 ];
 
@@ -106,7 +106,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <?php foreach ($divisions as $div): ?>
         <li>
             <a class="pill<?= !empty($div['active']) ? ' pill--active' : '' ?>"
-               href="/admin/moderators<?= $div['id'] > 0 ? '?division=' . e((string) $div['id']) : '' ?>"
+               href="<?= base_url() ?>/admin/moderators<?= $div['id'] > 0 ? '?division=' . e((string) $div['id']) : '' ?>"
                <?= !empty($div['active']) ? 'aria-current="true"' : '' ?>
             ><?= e($div['name']) ?></a>
         </li>
@@ -152,11 +152,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <span class="list-row__title"><?= e($member['name']) ?></span>
                         <span class="list-row__meta">NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?></span>
                     </div>
-                    <form method="post" action="/admin/moderators/registrations/reject" style="display:inline;">
+                    <form method="post" action="<?= base_url() ?>/admin/moderators/registrations/reject" style="display:inline;">
                         <?= csrf_field() ?>
                         <button class="btn btn--ghost" type="submit">Reject</button>
                     </form>
-                    <form method="post" action="/admin/moderators/registrations/approve" style="display:inline;">
+                    <form method="post" action="<?= base_url() ?>/admin/moderators/registrations/approve" style="display:inline;">
                         <?= csrf_field() ?>
                         <button class="btn btn--primary" type="submit">Approve</button>
                     </form>
@@ -221,7 +221,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         </td>
                         <td>
                             <?php if ($member['conflict'] === null): ?>
-                                <a class="btn btn--ghost" href="/admin/moderators/appoint?division=2&member=<?= e($member['initials']) ?>">Select</a>
+                                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint?division=2&member=<?= e($member['initials']) ?>">Select</a>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -281,7 +281,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <a class="btn btn--<?= $member['recommended'] ? 'primary' : 'ghost' ?>" href="/admin/moderators/appoint?division=1&member=<?= e($member['initials']) ?>">Select</a>
+                            <a class="btn btn--<?= $member['recommended'] ? 'primary' : 'ghost' ?>" href="<?= base_url() ?>/admin/moderators/appoint?division=1&member=<?= e($member['initials']) ?>">Select</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

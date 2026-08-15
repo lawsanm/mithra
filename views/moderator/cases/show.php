@@ -211,7 +211,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link link" href="/moderator/cases">Damage cases</a>
+    <a class="breadcrumb__link link" href="<?= base_url() ?>/moderator/cases">Damage cases</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($case['title']) ?></span>
 </nav>
@@ -230,7 +230,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
     </p>
 <?php endif; ?>
 
-<form class="stack stack--loose" method="post" action="/moderator/cases/<?= rawurlencode($caseId) ?>/resolution">
+<form class="stack stack--loose" method="post" action="<?= base_url() ?>/moderator/cases/<?= rawurlencode($caseId) ?>/resolution">
     <?= csrf_field() ?>
 
     <div class="two-col two-col--wide-main">

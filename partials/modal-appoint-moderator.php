@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 ?>
 <dialog class="modal modal--sm" id="modal-appoint-moderator">
-    <form method="post" action="/admin/moderators/appoint">
+    <form method="post" action="<?= base_url() ?>/admin/moderators/appoint">
         <?= csrf_field() ?>
         <input type="hidden" name="user_id" id="appoint-user-id">
         <input type="hidden" name="division_id" id="appoint-division-id">

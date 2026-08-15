@@ -29,12 +29,12 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </header>
 
 <ul class="filter-pills">
-    <li><a class="pill" href="/admin/settings/profile">Profile</a></li>
-    <li><a class="pill pill--active" href="/admin/settings/security" aria-current="true">Security</a></li>
-    <li><a class="pill" href="/admin/settings/notifications">Notifications</a></li>
+    <li><a class="pill" href="<?= base_url() ?>/admin/settings/profile">Profile</a></li>
+    <li><a class="pill pill--active" href="<?= base_url() ?>/admin/settings/security" aria-current="true">Security</a></li>
+    <li><a class="pill" href="<?= base_url() ?>/admin/settings/notifications">Notifications</a></li>
 </ul>
 
-<form class="form-card" method="post" action="/admin/settings/security/password">
+<form class="form-card" method="post" action="<?= base_url() ?>/admin/settings/security/password">
     <?= csrf_field() ?>
     <h2 class="form-card__title">Change password</h2>
 
@@ -66,7 +66,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
             <strong>2FA is <?= $twoFactorEnabled ? 'enabled' : 'disabled' ?></strong>
             <p class="text-muted">Adds an extra layer of security to your account</p>
         </div>
-        <form method="post" action="/admin/settings/security/2fa">
+        <form method="post" action="<?= base_url() ?>/admin/settings/security/2fa">
             <?= csrf_field() ?>
             <input type="hidden" name="enabled" value="<?= $twoFactorEnabled ? '0' : '1' ?>">
             <button class="btn btn--ghost" type="submit"><?= $twoFactorEnabled ? 'Disable' : 'Enable' ?></button>
@@ -84,7 +84,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                     <span class="list-row__meta"><?= e($session['ip']) ?> · <?= e($session['last_active']) ?></span>
                 </div>
                 <?php if (!$session['current']): ?>
-                    <form method="post" action="/admin/settings/security/revoke-session">
+                    <form method="post" action="<?= base_url() ?>/admin/settings/security/revoke-session">
                         <?= csrf_field() ?>
                         <input type="hidden" name="ip" value="<?= e($session['ip']) ?>">
                         <button class="btn btn--danger" type="submit">Revoke</button>

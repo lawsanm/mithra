@@ -12,7 +12,7 @@ $verifiedMembers ??= [];
 
 ?>
 <dialog class="modal modal--sm" id="modal-create-division">
-    <form method="post" action="/admin/divisions">
+    <form method="post" action="<?= base_url() ?>/admin/divisions">
         <?= csrf_field() ?>
         <div class="modal__head">
             <h2 class="modal__title">Create new division</h2>

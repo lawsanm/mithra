@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 ?>
 <dialog class="modal" id="dismiss-modal">
-    <form method="post" action="/admin/moderators/objections/dismiss" class="modal__content">
+    <form method="post" action="<?= base_url() ?>/admin/moderators/objections/dismiss" class="modal__content">
         <?= csrf_field() ?>
         <div class="modal__head">
             <h2 class="modal__title">Dismiss objection</h2>

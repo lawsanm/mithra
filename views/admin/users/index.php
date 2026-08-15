@@ -26,11 +26,11 @@ $filters ??= [
 ];
 
 $users ??= [
-    ['initials' => 'ML', 'name' => 'M. Lawsan',           'division' => 'Kollupitiya', 'role' => 'Member',    'balance' => '120 pts',  'status' => 'success', 'status_label' => 'Active',  'href' => '/admin/users/1'],
-    ['initials' => 'AA', 'name' => 'A. Akalvily',         'division' => 'Dehiwala',    'role' => 'Member',    'balance' => '−45 pts',  'status' => 'error',   'status_label' => 'Frozen',  'href' => '/admin/users/2'],
-    ['initials' => 'JK', 'name' => 'J. Kavipriya',        'division' => 'Wellawatte',  'role' => 'Moderator', 'balance' => '340 pts',  'status' => 'success', 'status_label' => 'Active',  'href' => '/admin/users/3'],
-    ['initials' => 'TM', 'name' => 'T.H.K. Madushan',     'division' => 'Bambalapitiya','role' => 'Member',   'balance' => '85 pts',   'status' => 'success', 'status_label' => 'Active',  'href' => '/admin/users/4'],
-    ['initials' => 'NK', 'name' => 'N. Kumari',           'division' => 'Kollupitiya', 'role' => 'Member',    'balance' => '−20 pts',  'status' => 'warning', 'status_label' => 'Negative', 'href' => '/admin/users/5'],
+    ['initials' => 'ML', 'name' => 'M. Lawsan',           'division' => 'Kollupitiya', 'role' => 'Member',    'balance' => '120 pts',  'status' => 'success', 'status_label' => 'Active',  'href' => base_url() . '/admin/users/1'],
+    ['initials' => 'AA', 'name' => 'A. Akalvily',         'division' => 'Dehiwala',    'role' => 'Member',    'balance' => '−45 pts',  'status' => 'error',   'status_label' => 'Frozen',  'href' => base_url() . '/admin/users/2'],
+    ['initials' => 'JK', 'name' => 'J. Kavipriya',        'division' => 'Wellawatte',  'role' => 'Moderator', 'balance' => '340 pts',  'status' => 'success', 'status_label' => 'Active',  'href' => base_url() . '/admin/users/3'],
+    ['initials' => 'TM', 'name' => 'T.H.K. Madushan',     'division' => 'Bambalapitiya','role' => 'Member',   'balance' => '85 pts',   'status' => 'success', 'status_label' => 'Active',  'href' => base_url() . '/admin/users/4'],
+    ['initials' => 'NK', 'name' => 'N. Kumari',           'division' => 'Kollupitiya', 'role' => 'Member',    'balance' => '−20 pts',  'status' => 'warning', 'status_label' => 'Negative', 'href' => base_url() . '/admin/users/5'],
 ];
 
 $search ??= '';
@@ -67,7 +67,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <li>
             <a
                 class="pill<?= !empty($filter['active']) ? ' pill--active' : '' ?>"
-                href="/admin/users?status=<?= e(rawurlencode($filter['slug'])) ?>"
+                href="<?= base_url() ?>/admin/users?status=<?= e(rawurlencode($filter['slug'])) ?>"
                 <?= !empty($filter['active']) ? 'aria-current="true"' : '' ?>
             ><?= e($filter['label']) ?></a>
         </li>

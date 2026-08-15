@@ -45,7 +45,7 @@ $quickTags = $quickTags ?? [
         </span>
     </div>
 
-    <form class="stack" method="post" action="/ratings">
+    <form class="stack" method="post" action="<?= base_url() ?>/ratings">
         <?= csrf_field() ?>
 
         <fieldset class="rating">

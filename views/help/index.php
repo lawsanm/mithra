@@ -65,7 +65,7 @@ include __DIR__ . '/../../partials/header.php';
 <h1 class="page-header__title">Help &amp; FAQ</h1>
 
 <?php // Read-only GET search: no CSRF token, so it never lands in the URL. ?>
-<form method="get" action="/help" role="search">
+<form method="get" action="<?= base_url() ?>/help" role="search">
     <label class="visually-hidden" for="help-search">Search help articles</label>
     <input
         class="input input--search"
@@ -90,7 +90,7 @@ include __DIR__ . '/../../partials/header.php';
     <h2 class="panel__title">Still stuck?</h2>
     <div class="help-cta">
         <p class="help-cta__text"><?= e($moderator['line']) ?></p>
-        <a class="btn btn--ghost" href="/messages/new?to=moderator">Contact moderator</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/messages/new?to=moderator">Contact moderator</a>
     </div>
 </section>
 

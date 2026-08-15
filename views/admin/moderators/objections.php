@@ -53,7 +53,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/admin/moderators">Moderators</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/admin/moderators">Moderators</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current">Objections — <?= e($appointment['name']) ?></span>
 </nav>
@@ -130,7 +130,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </section>
 
 <?php if ($windowExpired && $allDismissed): ?>
-    <form method="post" action="/admin/moderators/<?= e(rawurlencode($appointment['name'])) ?>/finalise" style="margin-top: var(--space-6);">
+    <form method="post" action="<?= base_url() ?>/admin/moderators/<?= e(rawurlencode($appointment['name'])) ?>/finalise" style="margin-top: var(--space-6);">
         <?= csrf_field() ?>
         <button class="btn btn--primary" type="submit">Finalise appointment</button>
     </form>

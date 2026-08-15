@@ -63,7 +63,7 @@ if ($requested !== '' && in_array($requested, $views, true)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>View preview · Mithra</title>
-    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="<?= base_url() ?>/css/main.css">
 </head>
 <body>
 <main class="page">

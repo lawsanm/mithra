@@ -17,7 +17,7 @@ $pageScripts = $pageScripts ?? [];
 ?>
 </main>
 <?php foreach ($pageScripts as $script): ?>
-<script src="/js/<?= e($script) ?>"></script>
+<script src="<?= base_url() ?>/js/<?= e($script) ?>"></script>
 <?php endforeach; ?>
 </body>
 </html>

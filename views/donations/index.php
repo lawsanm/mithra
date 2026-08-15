@@ -23,21 +23,21 @@ $requests ??= [
         'name'         => 'J. Kavipriya',
         'meta'         => 'Trust 98  ·  8 transactions  ·  Kollupitiya',
         'message'      => '“Expecting our second in August — this would help so much. Can collect any evening.”',
-        'profile_href' => '/members/2',
+        'profile_href' => base_url() . '/members/2',
     ],
     [
         'initials'     => 'TM',
         'name'         => 'T.H.K. Madushan',
         'meta'         => 'Trust 88  ·  12 transactions  ·  Bambalapitiya',
         'message'      => '“My sister just moved back with her baby. Happy to come to you this weekend.”',
-        'profile_href' => '/members/1',
+        'profile_href' => base_url() . '/members/1',
     ],
     [
         'initials'     => 'AA',
         'name'         => 'A. Akalvily',
         'meta'         => 'Trust 96  ·  31 transactions  ·  Kollupitiya',
         'message'      => '“For my niece — we’re setting up on a tight budget. Thank you for donating!”',
-        'profile_href' => '/members/3',
+        'profile_href' => base_url() . '/members/3',
     ],
 ];
 
@@ -49,7 +49,7 @@ include __DIR__ . '/../../partials/header.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/items">My Items</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/items">My Items</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($donation['item']) ?></span>
 </nav>
@@ -62,7 +62,7 @@ include __DIR__ . '/../../partials/header.php';
     </span>
 </header>
 
-<form class="toggle-field" method="post" action="/donations/1/first-come">
+<form class="toggle-field" method="post" action="<?= base_url() ?>/donations/1/first-come">
     <?= csrf_field() ?>
     <input
         class="toggle"
@@ -87,7 +87,7 @@ include __DIR__ . '/../../partials/header.php';
                 <p class="record-card__quote"><?= e($request['message']) ?></p>
             </div>
             <a class="btn btn--ghost" href="<?= e($request['profile_href']) ?>">View profile</a>
-            <form method="post" action="/donations/1/recipient">
+            <form method="post" action="<?= base_url() ?>/donations/1/recipient">
                 <?= csrf_field() ?>
                 <input type="hidden" name="member" value="<?= e($request['name']) ?>">
                 <button class="btn btn--primary" type="submit">Choose recipient</button>

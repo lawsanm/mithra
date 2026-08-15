@@ -33,7 +33,7 @@ include __DIR__ . '/../../partials/header.php';
 
 <h1 class="detail__title">Confirm donation handover</h1>
 
-<form class="panel panel--wide" method="post" action="/donations/1/handover">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/donations/1/handover">
     <?= csrf_field() ?>
 
     <div class="media">
@@ -66,7 +66,7 @@ include __DIR__ . '/../../partials/header.php';
     </p>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="/donations/1">Back</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/donations/1">Back</a>
         <button class="btn btn--primary" type="submit">Confirm handover</button>
     </div>
 </form>

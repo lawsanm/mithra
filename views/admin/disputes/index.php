@@ -18,7 +18,7 @@ $disputes ??= [
         'reason'       => 'borrower refused sign-off',
         'status'       => 'warning',
         'status_label' => 'Timer expired',
-        'href'         => '/admin/disputes/142',
+        'href'         => base_url() . '/admin/disputes/142',
     ],
     [
         'title'        => 'Stand Mixer',
@@ -29,7 +29,7 @@ $disputes ??= [
         'reason'       => 'day 5 of 7',
         'status'       => 'info',
         'status_label' => 'In window',
-        'href'         => '/admin/disputes/138',
+        'href'         => base_url() . '/admin/disputes/138',
     ],
 ];
 

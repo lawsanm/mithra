@@ -57,7 +57,7 @@ $giftReasonCount = sprintf(
         </button>
     </div>
 
-    <form class="stack" method="post" action="/gifts">
+    <form class="stack" method="post" action="<?= base_url() ?>/gifts">
         <?= csrf_field() ?>
 
         <div class="field">

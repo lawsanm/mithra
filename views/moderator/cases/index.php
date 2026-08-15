@@ -31,7 +31,7 @@ $sampleRows = [
         'meta'         => 'R. Fernando ↔ S. Perera  ·  moderate damage  ·  meet by 28 Jul',
         'status'       => 'warning',
         'status_label' => 'Awaiting meeting',
-        'href'         => '/moderator/cases/cordless-drill-case',
+        'href'         => base_url() . '/moderator/cases/cordless-drill-case',
     ],
     [
         'state'        => 'open',
@@ -39,7 +39,7 @@ $sampleRows = [
         'meta'         => 'A. Nizam ↔ M. Gunawardena  ·  minor damage  ·  2 of 3 signed off',
         'status'       => 'info',
         'status_label' => 'Awaiting sign-off',
-        'href'         => '/moderator/cases/camping-tent-case',
+        'href'         => base_url() . '/moderator/cases/camping-tent-case',
     ],
     [
         'state'        => 'open',
@@ -47,7 +47,7 @@ $sampleRows = [
         'meta'         => 'T.H.K. Madushan ↔ J. Kavipriya  ·  you are a party to this case',
         'status'       => 'warning',
         'status_label' => 'Mediating',
-        'href'         => '/moderator/cases/grinding-drill',
+        'href'         => base_url() . '/moderator/cases/grinding-drill',
     ],
     [
         'state'        => 'resolved',
@@ -55,7 +55,7 @@ $sampleRows = [
         'meta'         => 'M. Lawsan ↔ J. Kavipriya  ·  repair confirmed  ·  closed 12 Jul',
         'status'       => 'success',
         'status_label' => 'Resolved',
-        'href'         => '/moderator/cases/camping-tent-4p',
+        'href'         => base_url() . '/moderator/cases/camping-tent-4p',
     ],
     [
         'state'        => 'escalated',
@@ -63,7 +63,7 @@ $sampleRows = [
         'meta'         => 'K. Bandara ↔ T. Wickrama  ·  party refused to sign off',
         'status'       => 'error',
         'status_label' => 'Escalated to Admin',
-        'href'         => '/moderator/cases/pressure-washer-case',
+        'href'         => base_url() . '/moderator/cases/pressure-washer-case',
     ],
 ];
 
@@ -91,7 +91,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <?php foreach ($filters as $filter): ?>
             <li>
                 <a class="pill<?= $filter['active'] ? ' pill--active' : '' ?>"
-                   href="/moderator/cases<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
+                   href="<?= base_url() ?>/moderator/cases<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
                    <?= $filter['active'] ? 'aria-current="true"' : '' ?>
                 ><?= e($filter['label']) ?></a>
             </li>
@@ -109,7 +109,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <p class="empty-state__body">
             No case matches this filter. Try “All” to see every damage case in your division.
         </p>
-        <a class="btn btn--primary" href="/moderator/cases">Show all cases</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/moderator/cases">Show all cases</a>
     </div>
 <?php else: ?>
     <ul class="row-list">
