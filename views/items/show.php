@@ -32,7 +32,7 @@ $owner ??= [
     'name'     => 'T.H.K. Madushan',
     'verified' => true,
     'meta'     => 'Trust score 96 / 100  ·  23 successful lends  ·  Member since 2024  ·  0.4 km away',
-    'href'     => '/members/1',
+    'href'     => base_url() . '/members/1',
 ];
 
 $quote ??= [
@@ -50,9 +50,9 @@ include __DIR__ . '/../../partials/header.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/items/browse">Browse Items</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/items/browse">Browse Items</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
-    <a class="breadcrumb__link" href="/items/browse?category=<?= e(rawurlencode($item['category_slug'])) ?>"><?= e($item['category']) ?></a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/items/browse?category=<?= e(rawurlencode($item['category_slug'])) ?>"><?= e($item['category']) ?></a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($item['title']) ?></span>
 </nav>
@@ -98,7 +98,7 @@ include __DIR__ . '/../../partials/header.php';
             <a class="btn btn--ghost" href="<?= e($owner['href']) ?>">View profile</a>
         </div>
 
-        <form class="stack" method="post" action="/bookings">
+        <form class="stack" method="post" action="<?= base_url() ?>/bookings">
             <?= csrf_field() ?>
 
             <div class="field-row">
@@ -136,7 +136,7 @@ include __DIR__ . '/../../partials/header.php';
             <div class="actions">
                 <?php // Without JS this submits straight through; with it, the modal collects the details. ?>
                 <button class="btn btn--primary" type="submit" data-modal-open="request-borrow">Request to Borrow</button>
-                <a class="btn btn--ghost" href="/messages/new?member=<?= e(rawurlencode($owner['name'])) ?>">Message lender</a>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/messages/new?member=<?= e(rawurlencode($owner['name'])) ?>">Message lender</a>
             </div>
         </form>
 

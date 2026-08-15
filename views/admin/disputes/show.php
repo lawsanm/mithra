@@ -38,7 +38,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/admin/disputes">Disputes</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/admin/disputes">Disputes</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current"><?= e($dispute['title']) ?> · <?= e($dispute['case_number']) ?></span>
 </nav>
@@ -73,7 +73,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 
     <div>
-        <form class="form-card" style="width:100%;" method="post" action="/admin/disputes/<?= e(ltrim($dispute['case_number'], '#CD-')) ?>/ruling">
+        <form class="form-card" style="width:100%;" method="post" action="<?= base_url() ?>/admin/disputes/<?= e(ltrim($dispute['case_number'], '#CD-')) ?>/ruling">
             <?= csrf_field() ?>
             <h2 class="form-card__legend" style="font-size:var(--text-lede);">Final decision</h2>
 
@@ -91,7 +91,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                 <button class="btn btn--primary" type="submit">Record final ruling</button>
             </div>
             <div class="actions">
-                <a class="btn btn--ghost" href="/admin/disputes">Return to disputes</a>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/disputes">Return to disputes</a>
             </div>
         </form>
     </div>

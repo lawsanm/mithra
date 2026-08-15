@@ -19,17 +19,17 @@ $currentModerator = $currentModerator ?? [
 ];
 
 $navItems = [
-    'dashboard'         => ['label' => 'Dashboard',     'href' => '/moderator/dashboard'],
-    'verifications'     => ['label' => 'Verifications', 'href' => '/moderator/verifications'],
-    'listing-approvals' => ['label' => 'Approvals',     'href' => '/moderator/listing-approvals'],
-    'cases'             => ['label' => 'Cases',         'href' => '/moderator/cases'],
-    'disasters'         => ['label' => 'Disasters',     'href' => '/moderator/disasters'],
+    'dashboard'         => ['label' => 'Dashboard',     'href' => base_url() . '/moderator/dashboard'],
+    'verifications'     => ['label' => 'Verifications', 'href' => base_url() . '/moderator/verifications'],
+    'listing-approvals' => ['label' => 'Approvals',     'href' => base_url() . '/moderator/listing-approvals'],
+    'cases'             => ['label' => 'Cases',         'href' => base_url() . '/moderator/cases'],
+    'disasters'         => ['label' => 'Disasters',     'href' => base_url() . '/moderator/disasters'],
 ];
 
 ?>
 <nav class="nav" aria-label="Moderator">
-    <a class="nav__brand" href="/moderator/dashboard">
-        <img class="nav__logo" src="/img/logo-deep-slate.svg" alt="">
+    <a class="nav__brand" href="<?= base_url() ?>/moderator/dashboard">
+        <img class="nav__logo" src="<?= base_url() ?>/img/logo-deep-slate.svg" alt="">
         <span class="nav__wordmark">Mithra</span>
         <span class="nav__tagline">Lend · Share · Care</span>
     </a>
@@ -51,10 +51,10 @@ $navItems = [
     <div class="nav__spacer"></div>
 
     <div class="nav__actions">
-        <a class="nav__bell" href="/notifications" aria-label="Notifications">
+        <a class="nav__bell" href="<?= base_url() ?>/notifications" aria-label="Notifications">
             <svg class="icon" aria-hidden="true"><use href="#icon-bell"></use></svg>
         </a>
         <span class="meta-pill"><?= e($currentModerator['bond']) ?></span>
-        <a class="avatar" href="/profile"><?= e($currentModerator['initials']) ?></a>
+        <a class="avatar" href="<?= base_url() ?>/profile"><?= e($currentModerator['initials']) ?></a>
     </div>
 </nav>

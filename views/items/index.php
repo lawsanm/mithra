@@ -24,7 +24,7 @@ $items ??= [
         'status'       => 'info',
         'status_glyph' => 'i',
         'status_label' => 'Lent out — due 19 Jul',
-        'href'         => '/items/1/edit',
+        'href'         => base_url() . '/items/1/edit',
     ],
     [
         'title'        => 'Ladder (6 ft)',
@@ -32,7 +32,7 @@ $items ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Approved — available',
-        'href'         => '/items/2/edit',
+        'href'         => base_url() . '/items/2/edit',
     ],
     [
         'title'        => 'Pressure Washer',
@@ -40,7 +40,7 @@ $items ??= [
         'status'       => 'warning',
         'status_glyph' => '!',
         'status_label' => 'Pending moderator approval',
-        'href'         => '/items/3/edit',
+        'href'         => base_url() . '/items/3/edit',
     ],
     [
         'title'        => 'Baby Clothes Bundle',
@@ -48,7 +48,7 @@ $items ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'Approved — available',
-        'href'         => '/items/4/edit',
+        'href'         => base_url() . '/items/4/edit',
     ],
     [
         'title'        => 'Badminton Racket Set',
@@ -56,7 +56,7 @@ $items ??= [
         'status'       => 'info',
         'status_glyph' => 'i',
         'status_label' => 'Lent out — due 20 Jul',
-        'href'         => '/items/5/edit',
+        'href'         => base_url() . '/items/5/edit',
     ],
 ];
 
@@ -70,7 +70,7 @@ include __DIR__ . '/../../partials/header.php';
 <header class="page-header">
     <h1 class="page-header__title">My Items</h1>
     <?php if ($items !== []): ?>
-        <a class="btn btn--primary page-header__action" href="/items/create">
+        <a class="btn btn--primary page-header__action" href="<?= base_url() ?>/items/create">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
             List an item
         </a>
@@ -88,7 +88,7 @@ include __DIR__ . '/../../partials/header.php';
             whenever a neighbour borrows it. Every listing is reviewed by your GN division
             moderator first.
         </p>
-        <a class="btn btn--primary" href="/items/create">List your first item</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/items/create">List your first item</a>
     </div>
 <?php else: ?>
     <ul class="filter-pills">
@@ -96,7 +96,7 @@ include __DIR__ . '/../../partials/header.php';
             <li>
                 <a
                     class="pill<?= !empty($filter['active']) ? ' pill--active' : '' ?>"
-                    href="/items?type=<?= e(rawurlencode($filter['slug'])) ?>"
+                    href="<?= base_url() ?>/items?type=<?= e(rawurlencode($filter['slug'])) ?>"
                     <?= !empty($filter['active']) ? 'aria-current="true"' : '' ?>
                 ><?= e($filter['label']) ?></a>
             </li>

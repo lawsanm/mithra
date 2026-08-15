@@ -84,8 +84,8 @@ include __DIR__ . '/../../../partials/header-admin.php';
         </div>
 
         <div class="actions">
-            <a class="btn btn--ghost" href="/admin/ledger/diff-report">Download diff report</a>
-            <a class="btn btn--primary" href="/admin/ledger">Open ledger at <?= e($invariant['diff'][count($invariant['diff']) - 1]['label'] ?? '') ?></a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/admin/ledger/diff-report">Download diff report</a>
+            <a class="btn btn--primary" href="<?= base_url() ?>/admin/ledger">Open ledger at <?= e($invariant['diff'][count($invariant['diff']) - 1]['label'] ?? '') ?></a>
         </div>
     <?php endif; ?>
 <?php endif; ?>
@@ -93,7 +93,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Cron job health</h2>
-        <a class="link section__action" href="/admin/cron">View all jobs</a>
+        <a class="link section__action" href="<?= base_url() ?>/admin/cron">View all jobs</a>
     </div>
 
     <ul class="row-list">
@@ -110,9 +110,9 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </section>
 
 <div class="actions">
-    <a class="btn btn--ghost" href="/admin/disaster">Disaster Mode</a>
-    <a class="btn btn--ghost" href="/admin/pools/writeoffs">Review write-offs</a>
-    <a class="btn btn--primary" href="/admin/disputes">Open escalated disputes</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/disaster">Disaster Mode</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/writeoffs">Review write-offs</a>
+    <a class="btn btn--primary" href="<?= base_url() ?>/admin/disputes">Open escalated disputes</a>
 </div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

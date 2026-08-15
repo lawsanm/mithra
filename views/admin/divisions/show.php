@@ -42,7 +42,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/admin/divisions">Divisions</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/admin/divisions">Divisions</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current"><?= e($division['name']) ?></span>
 </nav>
@@ -76,14 +76,14 @@ include __DIR__ . '/../../../partials/header-admin.php';
                 <span class="list-row__title" style="color: var(--color-error)">Moderator - vacant since <?= e($staff['moderator_vacant_since']) ?></span>
                 <span class="list-row__meta"><?= e($staff['moderator_fallback']) ?></span>
             </div>
-            <a class="btn btn--primary" href="/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Appoint moderator</a>
+            <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Appoint moderator</a>
         <?php else: ?>
             <span class="avatar"><?= e($staff['moderator']['initials']) ?></span>
             <div class="list-row__body">
                 <span class="list-row__title">Moderator - <?= e($staff['moderator']['name']) ?></span>
                 <span class="list-row__meta"><?= e($staff['moderator']['meta']) ?></span>
             </div>
-            <a class="btn btn--ghost" href="/admin/moderators">View</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators">View</a>
         <?php endif; ?>
     </div>
 

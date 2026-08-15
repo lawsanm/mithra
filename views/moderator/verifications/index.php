@@ -32,7 +32,7 @@ $sampleRows = [
         'meta'         => 'NIC + proof of address  ·  Kollupitiya  ·  submitted 2 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => '/moderator/verifications/perera-s',
+        'href'         => base_url() . '/moderator/verifications/perera-s',
     ],
     [
         'state'        => 'pending',
@@ -40,7 +40,7 @@ $sampleRows = [
         'meta'         => 'NIC + utility bill  ·  Kollupitiya  ·  submitted 3 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => '/moderator/verifications/gunawardena-m',
+        'href'         => base_url() . '/moderator/verifications/gunawardena-m',
     ],
     [
         'state'        => 'pending',
@@ -48,7 +48,7 @@ $sampleRows = [
         'meta'         => 'NIC + GN letter  ·  Kollupitiya  ·  submitted 4 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => '/moderator/verifications/nizam-a',
+        'href'         => base_url() . '/moderator/verifications/nizam-a',
     ],
     [
         'state'        => 'pending',
@@ -56,7 +56,7 @@ $sampleRows = [
         'meta'         => 'NIC only — address proof missing  ·  submitted 5 days ago',
         'status'       => 'info',
         'status_label' => 'Needs more info',
-        'href'         => '/moderator/verifications/wickrama-t',
+        'href'         => base_url() . '/moderator/verifications/wickrama-t',
     ],
     [
         'state'        => 'approved',
@@ -64,7 +64,7 @@ $sampleRows = [
         'meta'         => 'NIC + proof of address  ·  Wellawatte  ·  approved 14 Jul',
         'status'       => 'success',
         'status_label' => 'Approved',
-        'href'         => '/moderator/verifications/akalvily-a',
+        'href'         => base_url() . '/moderator/verifications/akalvily-a',
     ],
     [
         'state'        => 'rejected',
@@ -72,7 +72,7 @@ $sampleRows = [
         'meta'         => 'Address outside this GN division  ·  rejected 11 Jul',
         'status'       => 'error',
         'status_label' => 'Rejected',
-        'href'         => '/moderator/verifications/rajapaksa-d',
+        'href'         => base_url() . '/moderator/verifications/rajapaksa-d',
     ],
 ];
 
@@ -100,7 +100,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <?php foreach ($filters as $filter): ?>
             <li>
                 <a class="pill<?= $filter['active'] ? ' pill--active' : '' ?>"
-                   href="/moderator/verifications<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
+                   href="<?= base_url() ?>/moderator/verifications<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
                    <?= $filter['active'] ? 'aria-current="true"' : '' ?>
                 ><?= e($filter['label']) ?></a>
             </li>
@@ -118,7 +118,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <p class="empty-state__body">
             No verification matches this filter. Try “All” to see every application in your division.
         </p>
-        <a class="btn btn--primary" href="/moderator/verifications">Show all verifications</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/moderator/verifications">Show all verifications</a>
     </div>
 <?php else: ?>
     <ul class="row-list">
