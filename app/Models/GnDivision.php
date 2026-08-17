@@ -152,4 +152,70 @@ final class GnDivision extends BaseModel
             ['div' => $divisionId]
         );
     }
+
+    /**
+     * Create a new division. Throws InvalidArgumentException if name or
+     * district is blank, or if that name+district pair already exists.
+     */
+    public function create(string $name, string $district): int
+    {
+        $name = trim($name);
+        $district = trim($district);
+
+        if ($name === '' || $district === '') {
+            throw new InvalidArgumentException('Name and district are required.');
+        }
+
+        $exists = $this->selectValue(
+            'SELECT COUNT(*) FROM gn_divisions WHERE name = :name AND district = :district',
+            ['name' => $name, 'district' => $district]
+        );
+
+        if ((int) $exists > 0) {
+            throw new InvalidArgumentException('A division with this name already exists in that district.');
+        }
+
+        return $this->insert([
+            'name' => $name,
+            'district' => $district,
+            'status' => 'active',
+        ]);
+    }
+
+    /**
+     * Update a division's name and district. Throws InvalidArgumentException
+     * on blank input or a name+district clash with another division.
+     */
+    public function updateDetails(int $id, string $name, string $district): void
+    {
+        $name = trim($name);
+        $district = trim($district);
+
+        if ($name === '' || $district === '') {
+            throw new InvalidArgumentException('Name and district are required.');
+        }
+
+        $exists = $this->selectValue(
+            'SELECT COUNT(*) FROM gn_divisions WHERE name = :name AND district = :district AND id != :id',
+            ['name' => $name, 'district' => $district, 'id' => $id]
+        );
+
+        if ((int) $exists > 0) {
+            throw new InvalidArgumentException('A division with this name already exists in that district.');
+        }
+
+        $this->update($id, [
+            'name' => $name,
+            'district' => $district,
+        ]);
+    }
+
+    /**
+     * Soft-delete: mark the division archived rather than removing the row,
+     * since bookings/items/memberships reference it by foreign key.
+     */
+    public function archive(int $id): void
+    {
+        $this->update($id, ['status' => 'archived']);
+    }
 }

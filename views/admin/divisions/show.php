@@ -13,6 +13,7 @@ declare(strict_types=1);
 $division ??= [
     'id'           => 4,
     'name'         => 'Bambalapitiya',
+    'district'     => 'Colombo',
     'status'       => 'warning',
     'status_label' => 'No moderator — 12 days',
 ];
@@ -52,6 +53,16 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <?= e($division['name']) ?>
         <span class="badge badge--<?= e($division['status']) ?>"><?= e($division['status_label']) ?></span>
     </h1>
+    <div class="actions">
+        <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-division"
+            data-division-id="<?= e((string) $division['id']) ?>"
+            data-division-name="<?= e($division['name']) ?>"
+            data-division-district="<?= e($division['district'] ?? '') ?>">Edit division</button>
+        <form method="post" action="/admin/divisions/<?= e((string) $division['id']) ?>/archive" data-confirm="Archive this division? It will no longer accept new members.">
+            <?= csrf_field() ?>
+            <button class="btn btn--ghost" type="submit" style="color: var(--color-error)">Archive division</button>
+        </form>
+    </div>
 </header>
 
 <div class="stat-grid stat-grid--3">
@@ -103,4 +114,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
     Appointing a moderator uses the eligible candidate pool and the appointment flow - including the 7-day community objection window for launch-phase nominations.
 </div>
 
+<?php include __DIR__ . '/../../../partials/modal-edit-division.php'; ?>
+
+<?php $pageScripts = ['modal.js', 'edit-division.js', 'confirm-submit.js']; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

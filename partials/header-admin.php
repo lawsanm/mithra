@@ -26,3 +26,12 @@ $navActive = $navActive ?? '';
 <?php include __DIR__ . '/icon-sprite.php'; ?>
 <?php include __DIR__ . '/nav-admin.php'; ?>
 <main class="page" id="main">
+
+<?php if (!empty($_SESSION['flash_success'])): ?>
+    <div class="notice notice--success notice--full"><?= e($_SESSION['flash_success']) ?></div>
+    <?php unset($_SESSION['flash_success']); ?>
+<?php endif; ?>
+<?php if (!empty($_SESSION['flash_error'])): ?>
+    <div class="notice notice--error notice--full"><?= e($_SESSION['flash_error']) ?></div>
+    <?php unset($_SESSION['flash_error']); ?>
+<?php endif; ?>

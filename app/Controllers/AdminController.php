@@ -51,6 +51,42 @@ final class AdminController
         include __DIR__ . '/../../views/admin/divisions/show.php';
     }
 
+    public function createDivision(): void
+    {
+        $divisionModel = new GnDivision($this->pdo);
+
+        try {
+            $divisionModel->create((string) ($_POST['name'] ?? ''), (string) ($_POST['district'] ?? ''));
+            $_SESSION['flash_success'] = 'Division created.';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
+        }
+
+        header('Location: /admin/divisions');
+    }
+
+    public function updateDivision(int $id): void
+    {
+        $divisionModel = new GnDivision($this->pdo);
+
+        try {
+            $divisionModel->updateDetails($id, (string) ($_POST['name'] ?? ''), (string) ($_POST['district'] ?? ''));
+            $_SESSION['flash_success'] = 'Division updated.';
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
+        }
+
+        header('Location: /admin/divisions/' . $id);
+    }
+
+    public function archiveDivision(int $id): void
+    {
+        (new GnDivision($this->pdo))->archive($id);
+        $_SESSION['flash_success'] = 'Division archived.';
+
+        header('Location: /admin/divisions');
+    }
+
     public function divisionApprovals(int $id): void
     {
         $divisionModel = new GnDivision($this->pdo);

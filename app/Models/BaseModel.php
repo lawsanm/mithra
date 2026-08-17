@@ -71,4 +71,50 @@ abstract class BaseModel
 
         return $statement->fetchColumn();
     }
+
+    /**
+     * Insert a row into this model's table and return its new id.
+     *
+     * @param  array<string, mixed> $data
+     */
+    protected function insert(array $data): int
+    {
+        $columns = array_keys($data);
+        $placeholders = array_map(static fn (string $column): string => ":{$column}", $columns);
+
+        $sql = "INSERT INTO {$this->table} (" . implode(', ', $columns) . ')
+                VALUES (' . implode(', ', $placeholders) . ')';
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute($data);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Update a row in this model's table by id.
+     *
+     * @param  array<string, mixed> $data
+     */
+    protected function update(int $id, array $data): void
+    {
+        $assignments = array_map(
+            static fn (string $column): string => "{$column} = :{$column}",
+            array_keys($data)
+        );
+
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $assignments) . ' WHERE id = :id';
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([...$data, 'id' => $id]);
+    }
+
+    /**
+     * Delete a row from this model's table by id.
+     */
+    protected function delete(int $id): void
+    {
+        $statement = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        $statement->execute(['id' => $id]);
+    }
 }
