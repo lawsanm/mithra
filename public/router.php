@@ -160,6 +160,31 @@ function router_match(string $path, array $routes): ?array
     return null;
 }
 
+// Division CRUD (interim requirement) — real writes, ahead of the front
+// controller. Delete this block along with the rest of this file once
+// public/index.php dispatches real routes.
+if ($method === 'POST') {
+    $admin = new AdminController(Database::connection());
+
+    if ($path === '/admin/divisions') {
+        $admin->createDivision();
+
+        return true;
+    }
+
+    if (preg_match('#^/admin/divisions/(\d+)/archive$#', $path, $m) === 1) {
+        $admin->archiveDivision((int) $m[1]);
+
+        return true;
+    }
+
+    if (preg_match('#^/admin/divisions/(\d+)$#', $path, $m) === 1) {
+        $admin->updateDivision((int) $m[1]);
+
+        return true;
+    }
+}
+
 $matched = router_match($path, $routes);
 
 // POSTs have no service layer behind them yet — say so plainly rather than 404.
