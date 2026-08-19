@@ -104,6 +104,18 @@ final class Booking extends BaseModel
     }
 
     /**
+     * Bookings still running against one item. A listing with any of these
+     * cannot be archived — the rental history has to stay reachable.
+     */
+    public function countOpenForItem(int $itemId): int
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM bookings WHERE item_id = :item AND status IN ' . self::OPEN_STATES,
+            ['item' => $itemId]
+        );
+    }
+
+    /**
      * Booking Detail, with the counterparty and the handover baseline.
      *
      * @return array<string, mixed>|null
