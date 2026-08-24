@@ -577,6 +577,12 @@ legend {
     font-size: var(--text-caption);
 }
 
+/* A real photo standing in for the placeholder — same box, cropped to fill. */
+.thumb__img {
+    display: block;
+    object-fit: cover;
+}
+
 .thumb--row {
     width: 56px;
     height: 80px;
