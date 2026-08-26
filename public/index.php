@@ -29,6 +29,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+require_once __DIR__ . '/../app/autoload.php';
 require_once __DIR__ . '/preview-data.php';
 
 $path   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -40,6 +41,32 @@ if (APP_BASE !== '' && str_starts_with($path, APP_BASE)) {
 }
 
 $path = '/' . ltrim($path, '/');
+
+/**
+ * Routes a real controller answers, by method. Everything else still falls
+ * through to the view table below.
+ *
+ * Exact patterns win over {id} patterns (router_match checks them first), so
+ * /items/create is never read as an item id.
+ *
+ * @var array<string, array<string, array{0:string, 1:string}>> $controllerRoutes
+ */
+$controllerRoutes = [
+    'GET' => [
+        '/items'           => ['ItemController', 'index'],
+        '/items/browse'    => ['ItemController', 'browse'],
+        '/items/create'    => ['ItemController', 'createForm'],
+        '/items/{id}'      => ['ItemController', 'show'],
+        '/items/{id}/edit' => ['ItemController', 'editForm'],
+    ],
+    'POST' => [
+        '/items'              => ['ItemController', 'store'],
+        '/items/{id}'         => ['ItemController', 'update'],
+        '/items/{id}/archive' => ['ItemController', 'archive'],
+        '/items/{id}/pause'   => ['ItemController', 'pause'],
+        '/items/{id}/resume'  => ['ItemController', 'resume'],
+    ],
+];
 
 /**
  * Route table: pattern => view. {id} matches one path segment.
@@ -170,6 +197,49 @@ function router_match(string $path, array $routes): ?array
     }
 
     return null;
+}
+
+$lookupMethod = $method === 'HEAD' ? 'GET' : $method;
+
+$controllerMatch = router_match($path, $controllerRoutes[$lookupMethod] ?? []);
+
+if ($controllerMatch !== null) {
+    [[$controllerClass, $action], $params] = $controllerMatch;
+
+    // Stands in for CsrfMiddleware: every state-changing request carries the
+    // session's token (§7.3). Fails closed — no token, no action.
+    if ($lookupMethod !== 'GET' && !hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
+        http_response_code(419);
+        router_notice(
+            'That form has expired',
+            'Your session token did not match, so nothing was changed.',
+            'Go back, reload the page and try again.'
+        );
+
+        return true;
+    }
+
+    try {
+        $controller = new $controllerClass(Database::connection());
+
+        if (isset($params['id'])) {
+            $controller->{$action}((int) $params['id']);
+        } else {
+            $controller->{$action}();
+        }
+    } catch (Throwable $exception) {
+        // The real error goes to the log, never to the member (§8).
+        error_log(sprintf('%s: %s in %s:%d', get_class($exception), $exception->getMessage(), $exception->getFile(), $exception->getLine()));
+
+        http_response_code(500);
+        router_notice(
+            'Something went wrong',
+            'The page could not be built. The error has been logged.',
+            ''
+        );
+    }
+
+    return true;
 }
 
 $matched = router_match($path, $routes);
