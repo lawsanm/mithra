@@ -64,7 +64,7 @@ include __DIR__ . '/../../partials/header.php';
     <?php foreach ($tabs as $tab): ?>
         <a
             class="tabs__link<?= !empty($tab['active']) ? ' tabs__link--active' : '' ?>"
-            href="/ratings?box=<?= e(rawurlencode($tab['box'])) ?>"
+            href="<?= base_url() ?>/ratings?box=<?= e(rawurlencode($tab['box'])) ?>"
             <?= !empty($tab['active']) ? 'aria-current="page"' : '' ?>
         ><?= e($tab['label']) ?></a>
     <?php endforeach; ?>

@@ -26,19 +26,19 @@ $stats ??= [
         'value'   => '7',
         'note'    => '2 temporary membership',
         'primary' => true,
-        'href'    => '/verifications',
+        'href'    => base_url() . '/moderator/verifications',
     ],
     [
         'label' => 'Listings to approve',
         'value' => '4',
         'note'  => '1 with value proof',
-        'href'  => '/listing-approvals',
+        'href'  => base_url() . '/moderator/listing-approvals',
     ],
     [
         'label' => 'Active damage cases',
         'value' => '2',
         'note'  => '1 awaiting sign-off',
-        'href'  => '/damage-cases',
+        'href'  => base_url() . '/moderator/cases',
     ],
     [
         'label' => 'Resolved this month',
@@ -54,7 +54,7 @@ $verifications ??= [
         'meta'         => 'A. Akalvily  ·  applied 15 Jul  ·  Wellawatte',
         'status'       => 'info',
         'status_label' => 'New member',
-        'href'         => '/moderator/verifications/akalvily-a',
+        'href'         => base_url() . '/moderator/verifications/akalvily-a',
     ],
     [
         'initials'     => 'ML',
@@ -62,7 +62,7 @@ $verifications ??= [
         'meta'         => 'M. Lawsan  ·  submitted 16 Jul  ·  from Kollupitiya',
         'status'       => 'warning',
         'status_label' => 'Proof to review',
-        'href'         => '/moderator/verifications/lawsan-m',
+        'href'         => base_url() . '/moderator/verifications/lawsan-m',
     ],
 ];
 
@@ -72,7 +72,7 @@ $approvals ??= [
         'meta'         => 'Listed by T.H.K. Madushan  ·  value proof attached  ·  submitted 15 Jul',
         'status'       => 'warning',
         'status_label' => 'Pending approval',
-        'href'         => '/moderator/listing-approvals/pressure-washer',
+        'href'         => base_url() . '/moderator/listing-approvals/pressure-washer',
     ],
 ];
 
@@ -82,14 +82,14 @@ $cases ??= [
         'meta'         => 'Reported by T.H.K. Madushan  ·  14 Jul  ·  Case #CD-0142',
         'status'       => 'warning',
         'status_label' => 'Mediating',
-        'href'         => '/moderator/cases/grinding-drill',
+        'href'         => base_url() . '/moderator/cases/grinding-drill',
     ],
     [
         'title'        => 'Camping Tent (4-person)',
         'meta'         => 'M. Lawsan & J. Kavipriya  ·  repair confirmed',
         'status'       => 'info',
         'status_label' => 'Awaiting sign-off',
-        'href'         => '/moderator/cases/camping-tent-4p',
+        'href'         => base_url() . '/moderator/cases/camping-tent-4p',
     ],
 ];
 
@@ -128,7 +128,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Pending verifications</h2>
-        <a class="link section__action" href="/moderator/verifications">View all</a>
+        <a class="link section__action" href="<?= base_url() ?>/moderator/verifications">View all</a>
     </div>
 
     <?php if ($verifications === []): ?>
@@ -161,7 +161,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Listing &amp; value-proof approvals</h2>
-        <a class="link section__action" href="/moderator/listing-approvals">View all</a>
+        <a class="link section__action" href="<?= base_url() ?>/moderator/listing-approvals">View all</a>
     </div>
 
     <ul class="row-list">
@@ -182,7 +182,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Active damage cases</h2>
-        <a class="link section__action" href="/moderator/cases">View all</a>
+        <a class="link section__action" href="<?= base_url() ?>/moderator/cases">View all</a>
     </div>
 
     <ul class="row-list">
@@ -204,9 +204,9 @@ include __DIR__ . '/../../../partials/header-moderator.php';
     <div class="panel__head">
         <h2 class="panel__title">Disaster relief &amp; aid</h2>
         <div class="actions panel__actions">
-            <a class="btn btn--ghost" href="/moderator/disasters/report">Report disaster</a>
-            <a class="btn btn--ghost" href="/moderator/disasters/relief">Record relief given</a>
-            <a class="btn btn--primary" href="/moderator/aid-vouching">Vouch aid requests</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters/report">Report disaster</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters/relief">Record relief given</a>
+            <a class="btn btn--primary" href="<?= base_url() ?>/moderator/aid-vouching">Vouch aid requests</a>
         </div>
     </div>
     <p class="panel__note"><?= e($relief) ?></p>

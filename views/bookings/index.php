@@ -22,7 +22,7 @@ $bookings ??= [
         'status'       => 'warning',
         'status_glyph' => '!',
         'status_label' => 'Return due tomorrow',
-        'href'         => '/bookings/1',
+        'href'         => base_url() . '/bookings/1',
     ],
     [
         'title'        => 'Camping Tent (4-person)',
@@ -30,7 +30,7 @@ $bookings ??= [
         'status'       => 'success',
         'status_glyph' => '✓',
         'status_label' => 'In progress',
-        'href'         => '/bookings/2',
+        'href'         => base_url() . '/bookings/2',
     ],
     [
         'title'        => 'Projector (Full HD)',
@@ -38,7 +38,7 @@ $bookings ??= [
         'status'       => 'info',
         'status_glyph' => 'i',
         'status_label' => 'Awaiting lender response',
-        'href'         => '/bookings/3',
+        'href'         => base_url() . '/bookings/3',
     ],
 ];
 
@@ -55,7 +55,7 @@ include __DIR__ . '/../../partials/header.php';
     <?php foreach ($tabs as $tab): ?>
         <a
             class="tabs__link<?= !empty($tab['active']) ? ' tabs__link--active' : '' ?>"
-            href="/bookings?role=<?= e(rawurlencode($tab['role'])) ?>"
+            href="<?= base_url() ?>/bookings?role=<?= e(rawurlencode($tab['role'])) ?>"
             <?= !empty($tab['active']) ? 'aria-current="page"' : '' ?>
         ><?= e($tab['label']) ?></a>
     <?php endforeach; ?>

@@ -21,7 +21,7 @@ $moderators ??= [
         'status'           => 'success',
         'status_label'     => 'Active',
         'action_label'     => 'View',
-        'action_href'      => '/admin/moderators/1',
+        'action_href'      => base_url() . '/admin/moderators/1',
         'action_style'     => 'ghost',
     ],
     [
@@ -32,7 +32,7 @@ $moderators ??= [
         'status'           => 'success',
         'status_label'     => 'Active',
         'action_label'     => 'View',
-        'action_href'      => '/admin/moderators/2',
+        'action_href'      => base_url() . '/admin/moderators/2',
         'action_style'     => 'ghost',
     ],
     [
@@ -43,7 +43,7 @@ $moderators ??= [
         'status'           => 'warning',
         'status_label'     => 'Inactive - 60 days',
         'action_label'     => 'Replace',
-        'action_href'      => '/admin/moderators/appoint/3',
+        'action_href'      => base_url() . '/admin/moderators/appoint/3',
         'action_style'     => 'ghost',
     ],
 ];
@@ -105,7 +105,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                     <span class="list-row__title"><?= e($candidate['name']) ?></span>
                     <span class="list-row__meta"><?= e($candidate['meta']) ?></span>
                 </div>
-                <form method="post" action="/admin/moderators/appoint">
+                <form method="post" action="<?= base_url() ?>/admin/moderators/appoint">
                     <?= csrf_field() ?>
                     <input type="hidden" name="candidate" value="<?= e($candidate['initials']) ?>">
                     <button class="btn btn--primary" type="submit">Appoint</button>

@@ -68,7 +68,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Aid requests awaiting your vouch</h2>
-        <a class="link section__action" href="/moderator/aid-vouching">View all</a>
+        <a class="link section__action" href="<?= base_url() ?>/moderator/aid-vouching">View all</a>
     </div>
 
     <ul class="row-list">
@@ -79,8 +79,8 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                     <span class="list-row__title"><?= e($request['name']) ?></span>
                     <span class="list-row__meta"><?= e($request['meta']) ?></span>
                 </div>
-                <a class="btn btn--ghost" href="/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
-                <form method="post" action="/moderator/aid-vouching/<?= rawurlencode($request['id']) ?>/vouch">
+                <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
+                <form method="post" action="<?= base_url() ?>/moderator/aid-vouching/<?= rawurlencode($request['id']) ?>/vouch">
                     <?= csrf_field() ?>
                     <button class="btn btn--primary" type="submit">Vouch</button>
                 </form>
@@ -98,8 +98,8 @@ include __DIR__ . '/../../../partials/header-moderator.php';
             </p>
         </div>
         <div class="actions panel__actions">
-            <a class="btn btn--ghost" href="/moderator/disasters/report">Report disaster</a>
-            <a class="btn btn--primary" href="/moderator/disasters/relief">Record relief given</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters/report">Report disaster</a>
+            <a class="btn btn--primary" href="<?= base_url() ?>/moderator/disasters/relief">Record relief given</a>
         </div>
     </div>
 </section>

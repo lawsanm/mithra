@@ -97,12 +97,12 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <?php endif; ?>
                     </div>
                 </div>
-                <form method="post" action="/admin/divisions/<?= e((string) $division['id']) ?>/approvals/reject" style="display:inline;">
+                <form method="post" action="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>/approvals/reject" style="display:inline;">
                     <?= csrf_field() ?>
                     <input type="hidden" name="member_id" value="<?= e($member['initials']) ?>">
                     <button class="btn btn--ghost" type="submit">Reject</button>
                 </form>
-                <form method="post" action="/admin/divisions/<?= e((string) $division['id']) ?>/approvals/approve" style="display:inline;">
+                <form method="post" action="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>/approvals/approve" style="display:inline;">
                     <?= csrf_field() ?>
                     <input type="hidden" name="member_id" value="<?= e($member['initials']) ?>">
                     <button class="btn btn--primary" type="submit">Approve</button>

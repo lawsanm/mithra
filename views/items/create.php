@@ -47,7 +47,7 @@ include __DIR__ . '/../../partials/header.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/items">My Items</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/items">My Items</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page">New listing</span>
 </nav>
@@ -73,7 +73,7 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </ol>
 
-<form class="form-card" method="post" action="/items" enctype="multipart/form-data">
+<form class="form-card" method="post" action="<?= base_url() ?>/items" enctype="multipart/form-data">
     <?= csrf_field() ?>
     <input type="hidden" name="step" value="<?= e((string) $step) ?>">
 
@@ -126,7 +126,7 @@ include __DIR__ . '/../../partials/header.php';
         <p class="field__hint">Add up to 5 photos. Clear, well-lit photos build borrower trust.</p>
 
         <div class="actions">
-            <a class="btn btn--ghost" href="/items">Cancel</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/items">Cancel</a>
             <button class="btn btn--primary" type="submit">Continue</button>
         </div>
 
@@ -165,7 +165,7 @@ include __DIR__ . '/../../partials/header.php';
         </p>
 
         <div class="actions">
-            <a class="btn btn--ghost" href="/items/create?step=1">Back</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/items/create?step=1">Back</a>
             <button class="btn btn--primary" type="submit">Continue</button>
         </div>
 
@@ -206,7 +206,7 @@ include __DIR__ . '/../../partials/header.php';
         </label>
 
         <div class="actions">
-            <a class="btn btn--ghost" href="/items/create?step=2">Back</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/items/create?step=2">Back</a>
             <button class="btn btn--primary" type="submit">Continue</button>
         </div>
 
@@ -252,7 +252,7 @@ include __DIR__ . '/../../partials/header.php';
         </p>
 
         <div class="actions">
-            <a class="btn btn--ghost" href="/items/create?step=3">Back</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/items/create?step=3">Back</a>
             <button class="btn btn--primary" type="submit">Submit for approval</button>
         </div>
 

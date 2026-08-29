@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 ?>
 <dialog class="modal" id="uphold-modal">
-    <form method="post" action="/admin/moderators/objections/uphold" class="modal__content">
+    <form method="post" action="<?= base_url() ?>/admin/moderators/objections/uphold" class="modal__content">
         <?= csrf_field() ?>
         <div class="modal__head">
             <h2 class="modal__title">Uphold objection — cancel appointment</h2>

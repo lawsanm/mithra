@@ -45,7 +45,7 @@ include __DIR__ . '/../../partials/header.php';
 
 <h1 class="page-header__title">Settings</h1>
 
-<form class="panel panel--wide" method="post" action="/settings/account">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/settings/account">
     <?= csrf_field() ?>
 
     <h2 class="panel__heading">Account details</h2>
@@ -78,7 +78,7 @@ include __DIR__ . '/../../partials/header.php';
     <button class="btn btn--primary" type="submit">Save changes</button>
 </form>
 
-<form class="panel panel--wide" method="post" action="/settings/preferences">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/settings/preferences">
     <?= csrf_field() ?>
 
     <h2 class="panel__heading">Preferences</h2>
@@ -105,8 +105,8 @@ include __DIR__ . '/../../partials/header.php';
 
 <section class="panel panel--wide">
     <h2 class="panel__heading">About Mithra</h2>
-    <a class="link panel__link" href="/help">Help &amp; FAQ  →</a>
-    <a class="link panel__link" href="/transparency">Transparency dashboard  →</a>
+    <a class="link panel__link" href="<?= base_url() ?>/help">Help &amp; FAQ  →</a>
+    <a class="link panel__link" href="<?= base_url() ?>/transparency">Transparency dashboard  →</a>
 </section>
 
 <section class="panel panel--wide">
@@ -118,7 +118,7 @@ include __DIR__ . '/../../partials/header.php';
                 Ends your Mithra membership. You’ll choose what happens to your remaining points.
             </span>
         </span>
-        <a class="btn btn--danger" href="/settings/close-account" data-modal-open="close-account">Close account…</a>
+        <a class="btn btn--danger" href="<?= base_url() ?>/settings/close-account" data-modal-open="close-account">Close account…</a>
     </div>
 </section>
 

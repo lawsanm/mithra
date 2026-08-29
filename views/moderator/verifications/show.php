@@ -206,7 +206,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link link" href="/moderator/verifications">Verifications</a>
+    <a class="breadcrumb__link link" href="<?= base_url() ?>/moderator/verifications">Verifications</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($applicant['name']) ?></span>
 </nav>
@@ -219,7 +219,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 
 <p class="record-meta"><?= e($applicant['submitted']) ?></p>
 
-<form class="stack stack--loose" method="post" action="/moderator/verifications/<?= rawurlencode($verificationId) ?>/decision">
+<form class="stack stack--loose" method="post" action="<?= base_url() ?>/moderator/verifications/<?= rawurlencode($verificationId) ?>/decision">
     <?= csrf_field() ?>
 
     <div class="two-col two-col--wide-main">

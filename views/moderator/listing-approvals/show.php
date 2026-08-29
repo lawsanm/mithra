@@ -147,7 +147,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link link" href="/moderator/listing-approvals">Listing approvals</a>
+    <a class="breadcrumb__link link" href="<?= base_url() ?>/moderator/listing-approvals">Listing approvals</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($listing['title']) ?></span>
 </nav>
@@ -160,7 +160,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 
 <p class="record-meta"><?= e($listing['meta']) ?></p>
 
-<form class="stack stack--loose" method="post" action="/moderator/listing-approvals/<?= rawurlencode($listingId) ?>/decision">
+<form class="stack stack--loose" method="post" action="<?= base_url() ?>/moderator/listing-approvals/<?= rawurlencode($listingId) ?>/decision">
     <?= csrf_field() ?>
 
     <div class="two-col two-col--wide-main">

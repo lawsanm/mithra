@@ -24,7 +24,7 @@ $notifications ??= [
         'detail' => 'Handover step is now open — upload your photos.',
         'time'   => '10 min ago',
         'unread' => true,
-        'href'   => '/bookings/1?state=handover',
+        'href'   => base_url() . '/bookings/1?state=handover',
     ],
     [
         'icon'   => 'alert-triangle',
@@ -32,7 +32,7 @@ $notifications ??= [
         'detail' => 'Return by 17 Jul to keep your on-time streak.',
         'time'   => '2 h ago',
         'unread' => true,
-        'href'   => '/bookings/1',
+        'href'   => base_url() . '/bookings/1',
     ],
     [
         'icon'   => 'gift',
@@ -40,7 +40,7 @@ $notifications ??= [
         'detail' => '“Thanks for the jumper cables last week!”',
         'time'   => 'Yesterday',
         'unread' => false,
-        'href'   => '/gifts?box=received',
+        'href'   => base_url() . '/gifts?box=received',
     ],
     [
         'icon'   => 'heart',
@@ -48,7 +48,7 @@ $notifications ??= [
         'detail' => 'Moderator A. Akalvily vouched for request #A-1042.',
         'time'   => '12 Jul',
         'unread' => false,
-        'href'   => '/aid-grants/1042',
+        'href'   => base_url() . '/aid-grants/1042',
     ],
     [
         'icon'   => 'check-circle',
@@ -56,7 +56,7 @@ $notifications ??= [
         'detail' => 'Your listing is now visible to Kollupitiya members.',
         'time'   => '10 Jul',
         'unread' => false,
-        'href'   => '/items/3/edit',
+        'href'   => base_url() . '/items/3/edit',
     ],
 ];
 
@@ -69,7 +69,7 @@ include __DIR__ . '/../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
-    <form class="page-header__action" method="post" action="/notifications/read-all">
+    <form class="page-header__action" method="post" action="<?= base_url() ?>/notifications/read-all">
         <?= csrf_field() ?>
         <button class="btn btn--ghost" type="submit">Mark all as read</button>
     </form>
@@ -80,7 +80,7 @@ include __DIR__ . '/../../partials/header.php';
         <li>
             <a
                 class="pill<?= !empty($filter['active']) ? ' pill--active' : '' ?>"
-                href="/notifications?type=<?= e(rawurlencode($filter['slug'])) ?>"
+                href="<?= base_url() ?>/notifications?type=<?= e(rawurlencode($filter['slug'])) ?>"
                 <?= !empty($filter['active']) ? 'aria-current="true"' : '' ?>
             ><?= e($filter['label']) ?></a>
         </li>

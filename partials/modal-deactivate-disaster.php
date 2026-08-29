@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 ?>
 <dialog class="modal modal--sm" id="modal-deactivate-disaster">
-    <form method="post" action="/admin/disaster/deactivate">
+    <form method="post" action="<?= base_url() ?>/admin/disaster/deactivate">
         <?= csrf_field() ?>
         <input type="hidden" name="division_id" id="deactivate-division-id">
 

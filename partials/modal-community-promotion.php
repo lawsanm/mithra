@@ -46,7 +46,7 @@ $promotion = ($promotion ?? []) + [
         and active bookings must complete first. This can’t be undone from this screen.
     </p>
 
-    <form class="modal__footer" method="post" action="/community/promote">
+    <form class="modal__footer" method="post" action="<?= base_url() ?>/community/promote">
         <?= csrf_field() ?>
         <button class="btn btn--ghost" type="button" data-modal-close>Keep as temporary</button>
         <button class="btn btn--primary" type="submit">Confirm promotion</button>
