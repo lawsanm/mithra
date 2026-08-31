@@ -10,11 +10,11 @@ migration was edited, or a form lost its CSRF token — the bot says so within a
    they find out their code does not fit `main` before anyone else is involved.
 2. They open a pull request — as a **draft**.
 3. Green → the bot marks the PR *ready for review*, which is what requests the code
-   owner's review and puts it in the reviewer's queue. It also posts an approving review
-   and labels it `ci:passed`.
-4. Red → the bot **puts the PR back into draft**, posts a request-changes review naming
-   every violation, and labels it `ci:changes-requested`. A draft PR cannot be merged and
-   does not ask anyone for a review. They fix, push, and the verdict re-runs.
+   owner's review and puts it in the reviewer's queue. It also comments the verdict
+   and labels it `ci:passed`. The approving review stays a human's job (§12).
+4. Red → the bot **puts the PR back into draft**, comments naming every violation, and
+   labels it `ci:changes-requested`. A draft PR cannot be merged and does not ask anyone
+   for a review. They fix, push, and the verdict re-runs.
 
 GitHub cannot prevent a pull request from being *created* — nothing can. The draft state
 is the lever: an incompatible PR never reaches the reviewer's queue and never becomes
@@ -29,17 +29,19 @@ mergeable, and it flips itself the moment the branch passes.
 | **`quality`** | Every `.php` file parses (`php -l`), and every file in `/migrations/` runs top-to-bottom on an empty MySQL 8 — so a new migration cannot contradict the existing schema. |
 | **`conventions`** | `.github/scripts/conventions-check.php` finds no violation of the hard rules in `Rules/CONVENTIONS.md`. |
 | **`hygiene`** | The branch is named `actor/short-feature-name` (§4) and every commit message is `type: short description` with type ∈ `feat\|fix\|refactor\|test\|docs\|chore\|migration` (§12). |
-| **Accept or request changes** | Reads the three results and reviews the PR. |
+| **Accept or request changes** | Reads the three results, comments the verdict, and sets the PR's draft state. |
 
 The verdict job:
 
-- **all green** → posts an **approving review**, adds the `ci:passed` label, and (if enabled)
-  arms auto-merge;
-- **anything red** → posts a **request-changes review** listing every violation with
+- **all green** → marks the PR ready for review, comments the verdict, adds the
+  `ci:passed` label, and (if enabled) arms auto-merge;
+- **anything red** → returns the PR to draft, comments listing every violation with
   `file:line`, and adds the `ci:changes-requested` label.
 
-Pushing a fix re-runs everything and replaces the verdict. GitHub blocks merging while a
-request-changes review is outstanding, which is the "reject" half of the automation.
+The verdict is a **comment**, not a review: `GITHUB_TOKEN` is not permitted to approve
+pull requests, and §12 wants the approval to come from a human who read the diff. Draft
+state is what actually holds an incompatible PR back — a draft cannot be merged and does
+not reach the reviewer's queue. Pushing a fix re-runs everything and posts a new verdict.
 
 ## What the checker enforces
 
@@ -78,7 +80,7 @@ An intentional exception to the escaping rule is marked on the line itself:
 php .github/scripts/conventions-check.php
 ```
 
-Same script, same output as CI. Exit code 0 means the bot will approve.
+Same script, same output as CI. Exit code 0 means the bot will pass the branch.
 
 ## Repository setup (one-off, done in GitHub Settings)
 
@@ -87,16 +89,17 @@ Same script, same output as CI. Exit code 0 means the bot will approve.
    - Require status checks to pass, with branches up to date: `quality`, `conventions`, `hygiene`
    - Block force pushes. Leave admin bypass allowed.
 2. **Settings → Actions → General → Workflow permissions**: *Read and write permissions*
-   and *Allow GitHub Actions to create and approve pull requests* — without this the bot
-   cannot post its review.
+   — without this the bot cannot comment, label, or change draft state. The separate
+   *Allow GitHub Actions to create and approve pull requests* toggle is **not** needed:
+   the bot comments rather than approving.
 3. **Settings → General → Pull Requests**: tick *Allow auto-merge* if you want step 4.
 4. **Settings → Secrets and variables → Actions → Variables**: add `AUTO_MERGE` = `true`
    to let a green PR merge itself. Leave it unset (or `false`) to keep the final click.
 
-With `AUTO_MERGE` unset you get: bot approves → you glance at the diff → you press merge.
-With `AUTO_MERGE=true` and a branch ruleset requiring a human approval, the PR merges the
-moment you approve it. With `AUTO_MERGE=true` and no human approval required, green PRs
-merge themselves.
+With `AUTO_MERGE` unset you get: bot comments green → a teammate reviews and approves →
+you press merge. With `AUTO_MERGE=true` and a branch ruleset requiring a human approval,
+the PR merges the moment someone approves it. With `AUTO_MERGE=true` and no human
+approval required, green PRs merge themselves.
 
 ## Limits — read this before trusting it
 
