@@ -17,8 +17,9 @@ $member ??= [
     'verified' => true,
     'donor'    => 'Donor · 3 items given',
     'meta'     => 'Kollupitiya GN Division  ·  member since Mar 2025  ·  trust score 80 / 100',
-    // Own public profile lives on the same /members/{id} route as everyone else's.
-    'public_href' => base_url() . '/members/12',
+    // Own public profile lives on the same /members/{id} route as everyone
+    // else's, so this carries the member's own id — the controller supplies it.
+    'public_href' => base_url() . '/members/4',
 ];
 
 $draft ??= [

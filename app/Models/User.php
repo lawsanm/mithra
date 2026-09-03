@@ -17,7 +17,8 @@ final class User extends BaseModel
     {
         return $this->selectOne(
             'SELECT u.id, u.full_name, u.email, u.phone, u.address, u.trust_score,
-                    u.gift_receive_enabled, u.joined_at, d.id AS division_id, d.name AS division_name
+                    u.gift_receive_enabled, u.status, u.joined_at,
+                    d.id AS division_id, d.name AS division_name
                FROM users u
                JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = \'home\'
                JOIN gn_divisions  d  ON d.id = ud.gn_division_id
