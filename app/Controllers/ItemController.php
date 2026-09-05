@@ -10,8 +10,8 @@ declare(strict_types=1);
  * arithmetic (Rules/CONVENTIONS.md §6).
  *
  * Until Identity ships a login the acting member comes from the session, with
- * config's demo_member_id as the fallback — the same stand-in preview-data.php
- * uses. Swapping that for the real session is a one-line change.
+ * config's demo_member_id as the fallback. Authentication and role enforcement
+ * still need to be implemented before this becomes a deployed application.
  */
 final class ItemController
 {

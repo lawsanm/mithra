@@ -34,30 +34,31 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <li><a class="pill" href="<?= base_url() ?>/admin/settings/notifications">Notifications</a></li>
 </ul>
 
-<form class="form-card" method="post" action="<?= base_url() ?>/admin/settings/security/password">
-    <?= csrf_field() ?>
+<div class="form-card" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
     <h2 class="form-card__title">Change password</h2>
 
     <div class="field">
         <label class="label" for="current_password">Current password</label>
-        <input class="input" type="password" id="current_password" name="current_password" required>
+        <input class="input" type="password" id="current_password" name="current_password" required disabled>
     </div>
 
     <div class="field-row">
         <div class="field">
             <label class="label" for="new_password">New password</label>
-            <input class="input" type="password" id="new_password" name="new_password" required>
+            <input class="input" type="password" id="new_password" name="new_password" required disabled>
         </div>
         <div class="field">
             <label class="label" for="confirm_password">Confirm new password</label>
-            <input class="input" type="password" id="confirm_password" name="confirm_password" required>
+            <input class="input" type="password" id="confirm_password" name="confirm_password" required disabled>
         </div>
     </div>
 
     <div class="form-card__actions">
-        <button class="btn btn--primary" type="submit">Update password</button>
+        <button class="btn btn--primary" type="submit" disabled>Update password</button>
     </div>
-</form>
+</div>
 
 <div class="form-card">
     <h2 class="form-card__title">Two-factor authentication</h2>
@@ -66,11 +67,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
             <strong>2FA is <?= $twoFactorEnabled ? 'enabled' : 'disabled' ?></strong>
             <p class="text-muted">Adds an extra layer of security to your account</p>
         </div>
-        <form method="post" action="<?= base_url() ?>/admin/settings/security/2fa">
-            <?= csrf_field() ?>
-            <input type="hidden" name="enabled" value="<?= $twoFactorEnabled ? '0' : '1' ?>">
-            <button class="btn btn--ghost" type="submit"><?= $twoFactorEnabled ? 'Disable' : 'Enable' ?></button>
-        </form>
+        <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+
+            <button class="btn btn--ghost" type="submit" disabled><?= $twoFactorEnabled ? 'Disable' : 'Enable' ?></button>
+        </div>
     </div>
 </div>
 
@@ -84,11 +85,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
                     <span class="list-row__meta"><?= e($session['ip']) ?> · <?= e($session['last_active']) ?></span>
                 </div>
                 <?php if (!$session['current']): ?>
-                    <form method="post" action="<?= base_url() ?>/admin/settings/security/revoke-session">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="ip" value="<?= e($session['ip']) ?>">
-                        <button class="btn btn--danger" type="submit">Revoke</button>
-                    </form>
+                    <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+
+                        <button class="btn btn--danger" type="submit" disabled>Revoke</button>
+                    </div>
                 <?php endif; ?>
             </li>
         <?php endforeach; ?>

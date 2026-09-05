@@ -44,7 +44,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 ?>
 
-<header class="page-intro">
+<header class="page-intro page-intro--dashboard">
     <h1 class="page-intro__title">Good morning, <?= e($admin['name']) ?></h1>
     <p class="page-intro__meta">System Administrator · <?= e((string) $globalMeta['division_count']) ?> GN divisions · <?= e((string) $globalMeta['member_count']) ?> members</p>
 </header>
@@ -53,18 +53,16 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <?php foreach ($stats as $stat): ?>
         <div class="stat-card">
             <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value<?= !empty($stat['error']) ? '' : (!empty($stat['primary']) ? ' stat-card__value--primary' : '') ?>"
-                <?php if (!empty($stat['error'])): ?> style="color: var(--color-error)"<?php endif; ?>
-            ><?= e($stat['value']) ?></strong>
+            <strong class="stat-card__value <?= !empty($stat['error']) ? 'stat-card__value--warning' : 'stat-card__value--primary' ?>"><?= e($stat['value']) ?></strong>
             <span class="stat-card__note"><?= e($stat['note']) ?></span>
         </div>
     <?php endforeach; ?>
 </div>
 
 <?php if ($invariant['passed']): ?>
-    <div class="notice notice--success notice--full">
-        <strong>Nightly invariant check passed</strong>
-        <span>Last run <?= e($invariant['last_run']) ?> · <?= e($invariant['summary']) ?></span>
+    <div class="panel invariant-panel">
+        <strong class="badge badge--success">Nightly invariant check passed</strong>
+        <span class="invariant-panel__meta">Last run <?= e($invariant['last_run']) ?> · <?= e($invariant['summary']) ?></span>
     </div>
 <?php else: ?>
     <div class="notice notice--error notice--full">
@@ -84,15 +82,15 @@ include __DIR__ . '/../../../partials/header-admin.php';
         </div>
 
         <div class="actions">
-            <a class="btn btn--ghost" href="<?= base_url() ?>/admin/ledger/diff-report">Download diff report</a>
+            <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Download diff report</button><span class="demo-note">Not available in this demo</span></span>
             <a class="btn btn--primary" href="<?= base_url() ?>/admin/ledger">Open ledger at <?= e($invariant['diff'][count($invariant['diff']) - 1]['label'] ?? '') ?></a>
         </div>
     <?php endif; ?>
 <?php endif; ?>
 
-<section class="section">
+<section class="panel section cron-panel">
     <div class="section__head">
-        <h2 class="section__title">Cron job health</h2>
+        <h2 class="panel__title">Cron job health</h2>
         <a class="link section__action" href="<?= base_url() ?>/admin/cron">View all jobs</a>
     </div>
 

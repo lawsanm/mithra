@@ -33,8 +33,9 @@ include __DIR__ . '/../../partials/header.php';
 
 <h1 class="detail__title">Confirm donation handover</h1>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/donations/1/handover">
-    <?= csrf_field() ?>
+<div class="panel panel--wide" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="media">
         <span class="thumb thumb--sm"></span>
@@ -67,8 +68,8 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/donations/1">Back</a>
-        <button class="btn btn--primary" type="submit">Confirm handover</button>
+        <button class="btn btn--primary" type="submit" disabled>Confirm handover</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

@@ -10,40 +10,6 @@ declare(strict_types=1);
  * @var array $reviews recent ratings received
  */
 
-// Sample view data — replaced by the controller once ProfileController lands.
-$member ??= [
-    'initials'   => 'TM',
-    'name'       => 'T.H.K. Madushan',
-    'verified'   => true,
-    'meta'       => 'Kollupitiya GN Division — same community as you  ·  member since Jan 2025',
-    'score'      => '96',
-    'score_note' => 'out of 100  ·  41 transactions',
-];
-
-$stats ??= [
-    ['label' => 'On-time returns', 'value' => '98%'],
-    ['label' => 'Items listed',    'value' => '7'],
-    ['label' => 'Times lent',      'value' => '29'],
-    ['label' => 'Disputes',        'value' => '0'],
-];
-
-$reviews ??= [
-    [
-        'initials' => 'ML',
-        'author'   => 'M. Lawsan',
-        'rating'   => 5,
-        'text'     => '“Drill was in great shape, batteries fully charged. Smooth handover.”',
-        'meta'     => '17 Jul 2026',
-    ],
-    [
-        'initials' => 'AA',
-        'author'   => 'A. Akalvily',
-        'rating'   => 5,
-        'text'     => '“Lovely to deal with — flexible on pickup time.”',
-        'meta'     => '28 Jun 2026',
-    ],
-];
-
 $pageTitle = $member['name'];
 $navActive = '';
 
@@ -84,6 +50,10 @@ include __DIR__ . '/../../partials/header.php';
 </div>
 
 <h2 class="section-heading">Recent ratings</h2>
+
+<?php if ($reviews === []): ?>
+    <p class="empty-state__body">No ratings yet.</p>
+<?php endif; ?>
 
 <ul class="row-list">
     <?php foreach ($reviews as $review): ?>

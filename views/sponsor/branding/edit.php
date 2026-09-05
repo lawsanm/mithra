@@ -38,20 +38,21 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 </header>
 
 <div class="panel-row">
-    <form class="panel panel--half" method="post" action="/sponsor/branding" enctype="multipart/form-data">
-        <?= csrf_field() ?>
+    <div class="panel panel--half" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
 
         <h2 class="panel__title">Company logo</h2>
 
         <label class="upload-drop">
             <span class="upload-drop__glyph" aria-hidden="true">＋</span>
             <span>Upload logo — PNG or SVG, min 400×400, transparent background preferred</span>
-            <input class="visually-hidden" type="file" name="logo" accept="image/png,image/svg+xml">
+            <input class="visually-hidden" type="file" name="logo" accept="image/png,image/svg+xml" disabled>
         </label>
 
         <div class="field">
             <label class="field__label" for="display_name">Display name</label>
-            <input class="input" type="text" id="display_name" name="display_name" value="<?= e($draft['display_name']) ?>" required>
+            <input class="input" type="text" id="display_name" name="display_name" value="<?= e($draft['display_name']) ?>" required disabled>
             <?php if (isset($errors['display_name'])): ?>
                 <span class="field__error"><?= e($errors['display_name']) ?></span>
             <?php endif; ?>
@@ -59,7 +60,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
         <div class="field">
             <label class="field__label" for="tagline">Tagline (optional)</label>
-            <input class="input" type="text" id="tagline" name="tagline" value="<?= e($draft['tagline']) ?>">
+            <input class="input" type="text" id="tagline" name="tagline" value="<?= e($draft['tagline']) ?>" disabled>
         </div>
 
         <div class="setting-row">
@@ -70,11 +71,11 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
                     your contribution funded.
                 </span>
             </span>
-            <input class="toggle" type="checkbox" id="tag_bonuses" name="tag_bonuses" value="1" <?= !empty($draft['tag_bonuses']) ? 'checked' : '' ?>>
+            <input class="toggle" type="checkbox" id="tag_bonuses" name="tag_bonuses" value="1" <?= !empty($draft['tag_bonuses']) ? 'checked' : '' ?> disabled>
         </div>
 
-        <button class="btn btn--primary" type="submit">Save branding</button>
-    </form>
+        <button class="btn btn--primary" type="submit" disabled>Save branding</button>
+    </div>
 
     <section class="panel panel--half">
         <h2 class="panel__title">Sponsor wall preview</h2>

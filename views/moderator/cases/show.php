@@ -25,7 +25,7 @@ $severityLegend = 'Severity reference:  Minor = cosmetic  ·  Moderate = works, 
                 . 'Major = unusable, repairable  ·  Total loss = beyond repair';
 
 $sampleCases = [
-    'grinding-drill' => [
+    '1' => [
         'case' => [
             'title'              => 'Grinding Drill',
             'status_label'       => 'Mediating',
@@ -54,7 +54,7 @@ $sampleCases = [
             ['name' => 'Borrower — J. Kavipriya',  'status' => 'warning', 'status_label' => 'Pending'],
         ],
     ],
-    'camping-tent-4p' => [
+    '2' => [
         'case' => [
             'title'              => 'Camping Tent (4-person)',
             'status_label'       => 'Awaiting sign-off',
@@ -84,7 +84,7 @@ $sampleCases = [
             ['name' => 'Borrower — J. Kavipriya',  'status' => 'warning', 'status_label' => 'Pending'],
         ],
     ],
-    'cordless-drill-case' => [
+    '3' => [
         'case' => [
             'title'              => 'Case #1042 — Cordless Drill',
             'status_label'       => 'Awaiting meeting',
@@ -113,7 +113,7 @@ $sampleCases = [
             ['name' => 'Borrower — S. Perera',     'status' => 'warning', 'status_label' => 'Pending'],
         ],
     ],
-    'camping-tent-case' => [
+    '4' => [
         'case' => [
             'title'              => 'Case #1039 — Camping Tent',
             'status_label'       => 'Awaiting sign-off',
@@ -142,7 +142,7 @@ $sampleCases = [
             ['name' => 'Borrower — M. Gunawardena', 'status' => 'warning', 'status_label' => 'Pending'],
         ],
     ],
-    'pressure-washer-case' => [
+    '5' => [
         'case' => [
             'title'              => 'Case #1035 — Pressure Washer',
             'status_label'       => 'Escalated to Admin',
@@ -175,7 +175,14 @@ $sampleCases = [
 ];
 
 $caseId = (string) ($_GET['id'] ?? '');
-$sample = $sampleCases[$caseId] ?? reset($sampleCases);
+$sample = $sampleCases[$caseId] ?? null;
+if ($sample === null) {
+    http_response_code(404);
+    $noticeTitle = 'Record not found';
+    $noticeBody = 'This review is no longer available. Return to the queue to choose a record.';
+    include __DIR__ . '/../../errors/notice.php';
+    return;
+}
 
 $case     ??= $sample['case'];
 $parties  ??= $sample['parties'];
@@ -230,8 +237,9 @@ include __DIR__ . '/../../../partials/header-moderator.php';
     </p>
 <?php endif; ?>
 
-<form class="stack stack--loose" method="post" action="<?= base_url() ?>/moderator/cases/<?= rawurlencode($caseId) ?>/resolution">
-    <?= csrf_field() ?>
+<div class="stack stack--loose" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="two-col two-col--wide-main">
         <div class="stack">
@@ -305,17 +313,17 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                     name="decision_notes"
                     placeholder="Record the agreed resolution and any points awarded…"
                     required
-                ></textarea>
+                 disabled></textarea>
             </div>
 
         </div>
     </div>
 
     <div class="actions">
-        <button class="btn btn--ghost" type="submit" name="action" value="escalate" formnovalidate <?= $canEscalate ? '' : 'disabled' ?>><?= e($escalateLabel) ?></button>
-        <button class="btn btn--ghost" type="submit" name="action" value="request-info" formnovalidate>Request more info</button>
-        <button class="btn btn--primary" type="submit" name="action" value="resolve">Record resolution</button>
+        <button class="btn btn--ghost" type="submit" name="action" value="escalate" formnovalidate disabled><?= e($escalateLabel) ?></button>
+        <button class="btn btn--ghost" type="submit" name="action" value="request-info" formnovalidate disabled>Request more info</button>
+        <button class="btn btn--primary" type="submit" name="action" value="resolve" disabled>Record resolution</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

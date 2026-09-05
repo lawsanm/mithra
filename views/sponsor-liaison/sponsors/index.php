@@ -45,30 +45,31 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Sponsors</h1>
-    <a class="btn btn--primary page-header__action" href="/sponsor-liaison/sponsors/onboarding">
+    <a class="btn btn--primary page-header__action" href="<?= base_url() ?>/sponsor-liaison/sponsors/onboarding">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
         Add sponsor
     </a>
 </header>
 
-<form class="field-row" method="get" action="/sponsor-liaison/sponsors">
+<form class="field-row" method="get" action="<?= base_url() ?>/sponsor-liaison/sponsors">
     <div class="field">
-        <input class="input input--search" type="search" name="q" placeholder="Search sponsors" value="<?= e($search) ?>">
+        <input class="input input--search" aria-label="Search sponsors" type="search" name="q" placeholder="Search sponsors" value="<?= e($search) ?>">
     </div>
     <div class="field">
-        <select class="input" name="sort" data-auto-submit>
+        <select class="input" aria-label="Sort sponsors" name="sort" data-auto-submit>
             <?php foreach ($sortOptions as $value => $label): ?>
                 <option value="<?= e($value) ?>"<?= $sort === $value ? ' selected' : '' ?>><?= e($label) ?></option>
             <?php endforeach; ?>
         </select>
     </div>
     <div class="field">
-        <select class="input" name="status" data-auto-submit>
+        <select class="input" aria-label="Agreement status" name="status" data-auto-submit>
             <?php foreach ($statusOptions as $value => $label): ?>
                 <option value="<?= e($value) ?>"<?= $status === $value ? ' selected' : '' ?>><?= e($label) ?></option>
             <?php endforeach; ?>
         </select>
     </div>
+    <button class="btn btn--ghost" type="submit">Apply filters</button>
 </form>
 
 <?php if ($sponsors === []): ?>
@@ -88,7 +89,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
                     <span class="list-row__title"><?= e($sponsor['points']) ?></span>
                     <span class="stat-card__note">injected</span>
                 </div>
-                <a class="btn btn--ghost" href="/sponsor-liaison/sponsors/<?= e((string) $sponsor['id']) ?>">View</a>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/sponsors/<?= e((string) $sponsor['id']) ?>">View</a>
             </li>
         <?php endforeach; ?>
     </ul>

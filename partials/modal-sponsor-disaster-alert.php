@@ -12,9 +12,9 @@ declare(strict_types=1);
 $activeAlert ??= [];
 
 ?>
-<dialog class="modal modal--sm" id="modal-sponsor-disaster-alert">
+<dialog aria-labelledby="modal-sponsor-disaster-alert-title" class="modal modal--sm" id="modal-sponsor-disaster-alert">
     <div class="modal__head">
-        <h2 class="modal__title">Disaster Mode activated</h2>
+        <h2 class="modal__title" id="modal-sponsor-disaster-alert-title">Disaster Mode activated</h2>
         <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>
     </div>
 

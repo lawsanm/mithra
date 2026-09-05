@@ -105,11 +105,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
                     <span class="list-row__title"><?= e($candidate['name']) ?></span>
                     <span class="list-row__meta"><?= e($candidate['meta']) ?></span>
                 </div>
-                <form method="post" action="<?= base_url() ?>/admin/moderators/appoint">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="candidate" value="<?= e($candidate['initials']) ?>">
-                    <button class="btn btn--primary" type="submit">Appoint</button>
-                </form>
+                <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+
+                    <button class="btn btn--primary" type="submit" disabled>Appoint</button>
+                </div>
             </li>
         <?php endforeach; ?>
     </ul>
