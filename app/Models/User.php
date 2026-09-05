@@ -28,6 +28,52 @@ final class User extends BaseModel
     }
 
     /**
+     * The account a login attempt may match, found by email address.
+     *
+     * Reads only what authentication needs — the hash is never fetched by the
+     * profile queries above (§9: name the columns).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForLoginByEmail(string $email): ?array
+    {
+        return $this->selectOne(
+            'SELECT u.id, u.full_name, u.password_hash, u.status, r.code AS role_code
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE u.email = :email
+              ORDER BY u.id
+              LIMIT 1',
+            ['email' => $email]
+        );
+    }
+
+    /**
+     * The same row found by mobile number, compared on the last nine digits.
+     *
+     * Numbers are stored as people write them ("+94 77 123 4567"), so the
+     * column is stripped of spaces, dashes and the plus before the comparison
+     * and the caller passes digits only. That costs a scan of `users`, which is
+     * acceptable here: it runs once per login attempt, never on a page render.
+     *
+     * @param string $digits the last nine digits of the typed number
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForLoginByPhone(string $digits): ?array
+    {
+        return $this->selectOne(
+            "SELECT u.id, u.full_name, u.password_hash, u.status, r.code AS role_code
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE RIGHT(REPLACE(REPLACE(REPLACE(u.phone, ' ', ''), '-', ''), '+', ''), 9) = :digits
+              ORDER BY u.id
+              LIMIT 1",
+            ['digits' => $digits]
+        );
+    }
+
+    /**
      * Headline figures for a public profile.
      *
      * @return array<string, mixed>
