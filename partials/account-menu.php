@@ -48,8 +48,15 @@ $accountLinks = match ($accountRole) {
             <?php endforeach; ?>
         </ul>
         <div class="account-menu__footer">
-            <button class="account-menu__link account-menu__logout" type="button" disabled>Log out</button>
-            <p class="account-menu__note">Demo session — sign-in is not enabled.</p>
+            <?php if (isset($_SESSION['user_id'])): ?>
+                <form method="post" action="<?= base_url() ?>/logout">
+                    <?= csrf_field() ?>
+                    <button class="account-menu__link account-menu__logout" type="submit">Log out</button>
+                </form>
+            <?php else: ?>
+                <a class="account-menu__link" href="<?= base_url() ?>/login">Log in</a>
+                <p class="account-menu__note">Demo session — these screens show the configured demo member.</p>
+            <?php endif; ?>
         </div>
     </div>
 </details>
