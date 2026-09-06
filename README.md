@@ -35,7 +35,7 @@ Browser URL
   -> View + partials       display the HTML page
 ```
 
-Items supports database-backed listing, browsing, creation, editing, pausing, resuming and archiving. The member dashboard, gifts list, booking lists/details and many admin screens read database data. Other screens still use sample data. Actions without a backend are visibly disabled or marked as previews. Login and role enforcement are not implemented; the member identity comes from `demo_member_id` in the local config. This is an interim demonstration, not a finished deployment.
+Items supports database-backed listing, browsing, creation, editing, pausing, resuming and archiving. The member dashboard, gifts list, booking lists/details and many admin screens read database data. Other screens still use sample data. Actions without a backend are visibly disabled or marked as previews. `/login` authenticates a seeded account by email or mobile number and stores the member id and role in the session; registration, password reset and role enforcement are not implemented. Without a session the screens still render as `demo_member_id` from the local config, so signing in is not yet an access control. This is an interim demonstration, not a finished deployment.
 
 See [the UI fix report](docs/UI_FIXES.md) for the changes across all five roles, verification results and remaining visual checks.
 
@@ -44,6 +44,7 @@ See [the UI fix report](docs/UI_FIXES.md) for the changes across all five roles,
 | File or folder | Purpose |
 | --- | --- |
 | `app/routes.php` | All GET/POST route registrations |
+| `app/Controllers/AuthController.php` | Sign-in and sign-out |
 | `app/Controllers/ItemController.php` | Working Items requests |
 | `app/Controllers/BookingController.php` | Read-only member bookings and record-specific details |
 | `app/Controllers/SponsorLiaisonController.php` | Filtering and navigation for liaison sample records |
