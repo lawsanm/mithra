@@ -80,11 +80,10 @@ include __DIR__ . '/../../partials/header-public.php';
     <div class="auth-links">
         <span class="preview-action">
             <button class="link" type="button" disabled>Forgot password?</button>
-            <span class="demo-note">Not available in this demo</span>
+            <span class="demo-note">Not available yet</span>
         </span>
         <span class="preview-action preview-action--end">
-            <button class="link" type="button" disabled>New here? Register</button>
-            <span class="demo-note">Not available in this demo</span>
+            <a class="link" href="<?= base_url() ?>/register">New here? Register</a>
         </span>
     </div>
 </form>

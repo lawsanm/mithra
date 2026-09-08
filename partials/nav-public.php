@@ -10,6 +10,11 @@ declare(strict_types=1);
  * screen (92:178). That screen is not routed yet, so the link is left out
  * rather than pointed somewhere else — add it here when About ships.
  *
+ * Transparency and Help sat here too. Both render a member's chrome and need a
+ * session, and AuthMiddleware now sends a signed-out visitor to /login, so
+ * listing them here would be a link that goes somewhere else. They are in the
+ * signed-in navigation; put them back when a signed-out version of each exists.
+ *
  * @var string $navActive route key of the current page
  */
 
@@ -23,15 +28,10 @@ $navActive = $navActive ?? '';
         <span class="nav__tagline">Lend · Share · Care</span>
     </a>
 
-    <ul class="nav__items">
-        <li><a class="nav__link" href="<?= base_url() ?>/transparency">Transparency</a></li>
-        <li><a class="nav__link" href="<?= base_url() ?>/help">Help</a></li>
-    </ul>
-
     <span class="nav__spacer"></span>
 
     <div class="nav__actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/login"<?= $navActive === 'login' ? ' aria-current="page"' : '' ?>>Log in</a>
-        <button class="btn btn--primary" type="button" disabled>Register</button>
+        <a class="btn btn--primary" href="<?= base_url() ?>/register"<?= $navActive === 'register' ? ' aria-current="page"' : '' ?>>Register</a>
     </div>
 </nav>
