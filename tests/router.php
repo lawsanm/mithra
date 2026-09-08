@@ -52,4 +52,32 @@ foreach ([['POST', '/wallet', 405], ['GET', '/items/42/archive', 405], ['GET', '
     check(http_response_code() === $status, 'Wrong status: ' . $method . ' ' . $path);
 }
 
-echo 'Passed: ' . $checks . " registered routes, URL matching, method handling and CSRF rejection.\n";
+// A signed-out request is turned away before the router reaches a controller,
+// so no page is rendered and no database connection is opened.
+unset($_SESSION['user_id']);
+foreach (['/', '/dashboard', '/items', '/admin', '/moderator/verifications'] as $path) {
+    ob_start();
+    $router->dispatch('GET', $path);
+    $body = (string) ob_get_clean();
+    check($body === '', 'Signed-out request rendered a page: ' . $path);
+    $checks++;
+}
+
+// The sign-in screens are the exception, and every other path is not.
+$gate = new AuthMiddleware();
+foreach (['/login', '/register', '/logout', '/login/', '/register/'] as $path) {
+    check($gate->handle($path, null) === null, 'Signed-out visitor must reach ' . $path);
+    $checks++;
+}
+foreach (['/', '/dashboard', '/items/42', '/admin', '/wallet', '/loginx', '/register/step-2'] as $path) {
+    check($gate->handle($path, null) === '/login', 'Path must require a session: ' . $path);
+    $checks++;
+}
+foreach ([null, 0, -1] as $absent) {
+    check($gate->handle('/dashboard', $absent) === '/login', 'A missing member id is not a session.');
+    $checks++;
+}
+check($gate->handle('/dashboard', 4) === null, 'A signed-in member must pass.');
+$checks++;
+
+echo 'Passed: ' . $checks . " registered routes, URL matching, method handling, CSRF and sign-in rejection.\n";

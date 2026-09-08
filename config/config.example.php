@@ -18,7 +18,4 @@ return [
         'password' => '',
         'charset'  => 'utf8mb4',
     ],
-
-    // Until Identity ships a login, the app renders as this member.
-    'demo_member_id' => 4,
 ];

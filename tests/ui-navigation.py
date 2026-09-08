@@ -1,6 +1,7 @@
 """Read-only HTTP regression checks. Start Mithra locally before running."""
 from pathlib import Path
 from html.parser import HTMLParser
+import http.cookiejar
 import re
 import urllib.error
 import urllib.parse
@@ -33,10 +34,46 @@ class Page(HTMLParser):
     def tagged(self, name):
         return [attrs for tag, attrs in self.tags if tag == name]
 
+def sign_in(email, password):
+    """Every screen needs a session (AuthMiddleware), so hold one for the whole run.
+
+    The account is both a moderator and a member of its division, so one
+    session reaches the member screens and the verification queue alike.
+    """
+    urllib.request.install_opener(urllib.request.build_opener(
+        urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())))
+    with urllib.request.urlopen(BASE + '/login', timeout=15) as response:
+        token = re.search(r'name="csrf_token" value="([a-f0-9]+)"',
+                          response.read().decode('utf-8', errors='replace'))
+    if token is None:
+        raise SystemExit('No sign-in form at ' + BASE + '/login. Is the app running?')
+    form = urllib.parse.urlencode(
+        {'csrf_token': token.group(1), 'identifier': email, 'password': password}).encode()
+    with urllib.request.urlopen(BASE + '/login', form, timeout=15) as response:
+        if response.geturl().endswith('/login'):
+            raise SystemExit('Could not sign in as ' + email + '. Is the demo data loaded?')
+
+# Two accounts, because the screens belong to two actors: the demo member every
+# sample record was built around, and the moderator who owns the verification
+# queue. Whoever is signed in is swapped as the audit moves between them.
+MEMBER = ('lawsan@email.com', 'password')
+MODERATOR = ('akalvily@example.lk', 'password')
+signed_in_as = None
+
+def use(account):
+    global signed_in_as
+    if account != signed_in_as:
+        sign_in(*account)
+        signed_in_as = account
+
+def account_for(path):
+    return MODERATOR if path.startswith('/moderator') else MEMBER
+
 route_text = (ROOT / 'app/routes.php').read_text(encoding='utf-8').split("'POST' =>", 1)[0]
 paths = [p.replace('{id}', '1') for p in re.findall(r"^\s*'(/[^']*)'\s*=>", route_text, re.M)]
 pages = {}
 for path in paths:
+    use(account_for(path))
     status, body = fetch(path)
     if path == '/items/1/edit' and status == 403:
         continue  # The seeded item is owned by another member.
@@ -62,6 +99,7 @@ for path in paths:
         if tag == 'a' and attrs.get('href', '').startswith('#'):
             check(attrs['href'][1:] in ids, f'{path}: missing local fragment {attrs["href"]}')
 
+use(MEMBER)
 for role in ['borrower', 'lender']:
     status, body = fetch('/bookings?role=' + role)
     check(status == 200, 'Booking role page failed')
@@ -74,12 +112,14 @@ for role in ['borrower', 'lender']:
         check('As ' + role.capitalize() in detail, 'Wrong booking party role')
 check(fetch('/bookings/999999')[0] == 404, 'Unknown booking must not display a sample record')
 
+use(MODERATOR)
 for group in ['verifications', 'listing-approvals', 'cases']:
     code1, one = fetch('/moderator/' + group + '/1')
     code2, two = fetch('/moderator/' + group + '/2')
     check(code1 == code2 == 200 and one != two, 'Moderator detail must change with the selected ID')
     check(fetch('/moderator/' + group + '/999999')[0] == 404, 'Unknown moderator record must not fall back')
 
+use(MEMBER)
 _, first = fetch('/sponsor-liaison/sponsors/1')
 _, second = fetch('/sponsor-liaison/sponsors/2')
 check('Northwind Co' in first and 'ACM Corp' in second and first != second, 'Sponsor record selection failed')

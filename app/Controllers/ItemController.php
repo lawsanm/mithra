@@ -9,9 +9,9 @@ declare(strict_types=1);
  * read), then renders a view or redirects. No SQL, no business rules, no point
  * arithmetic (Rules/CONVENTIONS.md §6).
  *
- * Until Identity ships a login the acting member comes from the session, with
- * config's demo_member_id as the fallback. Authentication and role enforcement
- * still need to be implemented before this becomes a deployed application.
+ * The acting member is whoever is signed in; AuthMiddleware guarantees there is
+ * one. Role enforcement is still missing — a member and an admin reach these
+ * actions alike — so this is not yet a deployed application.
  */
 final class ItemController
 {
@@ -823,9 +823,10 @@ final class ItemController
         return trim((string) preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($name)), '-');
     }
 
+    /** The signed-in member. AuthMiddleware guarantees there is one (§7.4). */
     private function memberId(): int
     {
-        return (int) ($_SESSION['user_id'] ?? Config::get('demo_member_id', 4));
+        return (int) ($_SESSION['user_id'] ?? 0);
     }
 
     private function divisionId(): int

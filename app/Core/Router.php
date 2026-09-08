@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-/** Matches a URL, checks submitted forms, then calls the controller. */
+/**
+ * Matches a URL, checks the submitted form's token and the visitor's session,
+ * then calls the controller.
+ */
 final class Router
 {
     public function __construct(private array $routes)
@@ -46,6 +49,15 @@ final class Router
                 $this->notice(403, 'That form has expired', 'Reload the page and try again. Nothing was changed.');
                 return;
             }
+        }
+
+        // Token first, session second: a forged POST is refused outright rather
+        // than bounced to a sign-in page that would accept it afterwards.
+        $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+        $signIn = (new AuthMiddleware())->handle($path, $userId);
+        if ($signIn !== null) {
+            header('Location: ' . base_url() . $signIn, true, 303);
+            return;
         }
 
         $pdo = Database::connection();

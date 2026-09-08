@@ -81,9 +81,10 @@ final class ProfileController
         ];
     }
 
+    /** The signed-in member. AuthMiddleware guarantees there is one (§7.4). */
     private function memberId(): int
     {
-        return (int) ($_SESSION['user_id'] ?? Config::get('demo_member_id', 4));
+        return (int) ($_SESSION['user_id'] ?? 0);
     }
 
     private function render(string $view, array $data): void
