@@ -60,17 +60,18 @@ $quote = ($quote ?? []) + [
         </span>
     </div>
 
-    <form class="stack" method="post" action="<?= base_url() ?>/bookings">
-        <?= csrf_field() ?>
+    <div class="stack" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
 
         <div class="field-row">
             <div class="field">
                 <label class="visually-hidden" for="modal-from">From date</label>
-                <input class="input input--half" type="date" id="modal-from" name="from_date" value="<?= e($quote['from']) ?>" required>
+                <input class="input input--half" type="date" id="modal-from" name="from_date" value="<?= e($quote['from']) ?>" required disabled>
             </div>
             <div class="field">
                 <label class="visually-hidden" for="modal-to">To date</label>
-                <input class="input input--half" type="date" id="modal-to" name="to_date" value="<?= e($quote['to']) ?>" required>
+                <input class="input input--half" type="date" id="modal-to" name="to_date" value="<?= e($quote['to']) ?>" required disabled>
             </div>
         </div>
 
@@ -84,7 +85,7 @@ $quote = ($quote ?? []) + [
                     name="pricing"
                     value="<?= e($option['value']) ?>"
                     <?= $option['selected'] ? 'checked' : '' ?>
-                >
+                 disabled>
                 <span class="choice__body">
                     <span class="choice__title"><?= e($option['title']) ?></span>
                     <span class="choice__note"><?= e($option['total']) ?></span>
@@ -108,7 +109,7 @@ $quote = ($quote ?? []) + [
                 id="modal-message"
                 name="message"
                 placeholder="Hi! I’d like to borrow this for a shelving project…"
-            >
+             disabled>
         </div>
 
         <p class="line-item">
@@ -118,7 +119,7 @@ $quote = ($quote ?? []) + [
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--primary" type="submit">Send request</button>
+            <button class="btn btn--primary" type="submit" disabled>Send request</button>
         </div>
-    </form>
+    </div>
 </dialog>

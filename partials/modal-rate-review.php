@@ -45,8 +45,9 @@ $quickTags = $quickTags ?? [
         </span>
     </div>
 
-    <form class="stack" method="post" action="<?= base_url() ?>/ratings">
-        <?= csrf_field() ?>
+    <div class="stack" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
 
         <fieldset class="rating">
             <legend class="visually-hidden">Rating out of 5</legend>
@@ -58,7 +59,7 @@ $quickTags = $quickTags ?? [
                     value="<?= e((string) $star) ?>"
                     <?= $star === $rating ? 'checked' : '' ?>
                     required
-                >
+                 disabled>
                 <label for="star-<?= e((string) $star) ?>">
                     <span aria-hidden="true">★</span>
                     <span class="visually-hidden"><?= e((string) $star) ?> stars</span>
@@ -77,7 +78,7 @@ $quickTags = $quickTags ?? [
                             name="tags[]"
                             value="<?= e($tag['value']) ?>"
                             <?= $tag['selected'] ? 'checked' : '' ?>
-                        >
+                         disabled>
                         <?= e($tag['label']) ?>
                     </label>
                 <?php endforeach; ?>
@@ -92,7 +93,7 @@ $quickTags = $quickTags ?? [
                 id="review-text"
                 name="review"
                 placeholder="Drill was in great shape, batteries fully charged…"
-            >
+             disabled>
         </div>
 
         <p class="field__hint">
@@ -101,7 +102,7 @@ $quickTags = $quickTags ?? [
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Skip</button>
-            <button class="btn btn--primary" type="submit">Submit review</button>
+            <button class="btn btn--primary" type="submit" disabled>Submit review</button>
         </div>
-    </form>
+    </div>
 </dialog>

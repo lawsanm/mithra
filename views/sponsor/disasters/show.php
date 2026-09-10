@@ -68,18 +68,19 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
     <section class="panel panel--half">
         <h2 class="panel__title">Make an offer</h2>
-        <form class="stack" method="post" action="/sponsor/disasters/1/offer">
-            <?= csrf_field() ?>
+        <div class="stack" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+            
 
             <div class="field">
                 <label class="field__label" for="offer_amount">Amount (LKR)</label>
-                <input class="input" type="number" id="offer_amount" name="amount" min="1" step="1" placeholder="25,000" required>
+                <input class="input" type="number" id="offer_amount" name="amount" min="1" step="1" placeholder="25,000" required disabled>
             </div>
 
             <p class="field__hint"><?= e($offerNote) ?></p>
 
-            <button class="btn btn--primary" type="submit">Send offer to liaison</button>
-        </form>
+            <button class="btn btn--primary" type="submit" disabled>Send offer to liaison</button>
+        </div>
     </section>
 </div>
 

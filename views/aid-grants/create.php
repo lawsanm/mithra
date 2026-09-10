@@ -41,12 +41,13 @@ include __DIR__ . '/../../partials/header.php';
     first, then a sponsor liaison approves.
 </p>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/aid-grants" enctype="multipart/form-data">
-    <?= csrf_field() ?>
+<div class="panel panel--wide" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="field">
         <label class="field__label" for="grant-purpose">Purpose</label>
-        <select class="input" id="grant-purpose" name="purpose" required>
+        <select class="input" id="grant-purpose" name="purpose" required disabled>
             <?php foreach ($purposes as $purpose): ?>
                 <option value="<?= e($purpose) ?>"<?= $draft['purpose'] === $purpose ? ' selected' : '' ?>>
                     <?= e($purpose) ?>
@@ -69,7 +70,7 @@ include __DIR__ . '/../../partials/header.php';
             min="1"
             step="1"
             required
-        >
+         disabled>
         <span class="field__hint">
             Grants are sized to need — the liaison may adjust the amount at approval.
         </span>
@@ -88,7 +89,7 @@ include __DIR__ . '/../../partials/header.php';
             value="<?= e($draft['details']) ?>"
             placeholder="Two children starting the new term, need books and shoes…"
             required
-        >
+         disabled>
         <?php if (isset($errors['details'])): ?>
             <span class="field__error"><?= e($errors['details']) ?></span>
         <?php endif; ?>
@@ -99,7 +100,7 @@ include __DIR__ . '/../../partials/header.php';
     <label class="upload-drop">
         <span class="upload-drop__glyph" aria-hidden="true">＋</span>
         <span>Upload supporting documents — helps vouching go faster</span>
-        <input class="visually-hidden" type="file" name="evidence[]" accept="image/*,application/pdf" multiple>
+        <input class="visually-hidden" type="file" name="evidence[]" accept="image/*,application/pdf" multiple disabled>
     </label>
 
     <p class="notice notice--info">
@@ -110,8 +111,8 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/dashboard">Cancel</a>
-        <button class="btn btn--primary" type="submit">Submit request</button>
+        <button class="btn btn--primary" type="submit" disabled>Submit request</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

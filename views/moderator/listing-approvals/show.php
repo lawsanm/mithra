@@ -21,7 +21,7 @@ $sampleChecklist = [
 ];
 
 $sampleListings = [
-    'pressure-washer' => [
+    '1' => [
         'listing' => [
             'title'        => 'Pressure Washer',
             'status'       => 'warning',
@@ -39,7 +39,7 @@ $sampleListings = [
         'photos'  => ['Receipt', 'Photo', 'Photo', 'Photo'],
         'checked' => ['value-matches', 'photos-match'],
     ],
-    'cordless-drill' => [
+    '2' => [
         'listing' => [
             'title'        => 'Cordless Drill — Bosch 18V',
             'status'       => 'warning',
@@ -56,7 +56,7 @@ $sampleListings = [
         'photos'  => ['Receipt', 'Photo', 'Photo', 'Photo'],
         'checked' => ['value-matches'],
     ],
-    'folding-table' => [
+    '3' => [
         'listing' => [
             'title'        => 'Folding Table (6ft)',
             'status'       => 'warning',
@@ -73,7 +73,7 @@ $sampleListings = [
         'photos'  => ['Photo', 'Photo', 'Photo', 'Photo'],
         'checked' => ['photos-match'],
     ],
-    'pressure-washer-kb' => [
+    '4' => [
         'listing' => [
             'title'        => 'Pressure Washer',
             'status'       => 'info',
@@ -91,7 +91,7 @@ $sampleListings = [
         'photos'  => ['Photo', 'Photo', 'Photo', 'Photo'],
         'checked' => [],
     ],
-    'sewing-machine' => [
+    '5' => [
         'listing' => [
             'title'        => 'Sewing Machine — Singer',
             'status'       => 'warning',
@@ -108,7 +108,7 @@ $sampleListings = [
         'photos'  => ['Receipt', 'Photo', 'Photo', 'Photo'],
         'checked' => ['value-matches', 'photos-match', 'rate-in-range'],
     ],
-    'petrol-generator' => [
+    '6' => [
         'listing' => [
             'title'        => 'Petrol Generator',
             'status'       => 'error',
@@ -129,7 +129,14 @@ $sampleListings = [
 ];
 
 $listingId = (string) ($_GET['id'] ?? '');
-$sample    = $sampleListings[$listingId] ?? reset($sampleListings);
+$sample    = $sampleListings[$listingId] ?? null;
+if ($sample === null) {
+    http_response_code(404);
+    $noticeTitle = 'Record not found';
+    $noticeBody = 'This review is no longer available. Return to the queue to choose a record.';
+    include __DIR__ . '/../../errors/notice.php';
+    return;
+}
 
 $listing   ??= $sample['listing'];
 $facts     ??= $sample['facts'];
@@ -160,8 +167,9 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 
 <p class="record-meta"><?= e($listing['meta']) ?></p>
 
-<form class="stack stack--loose" method="post" action="<?= base_url() ?>/moderator/listing-approvals/<?= rawurlencode($listingId) ?>/decision">
-    <?= csrf_field() ?>
+<div class="stack stack--loose" id="decision" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="two-col two-col--wide-main">
         <div class="stack">
@@ -205,7 +213,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                                     name="checks[]"
                                     value="<?= e($check['id']) ?>"
                                     <?= $check['checked'] ? 'checked' : '' ?>
-                                >
+                                 disabled>
                                 <span class="checklist__label"><?= e($check['label']) ?></span>
                             </label>
                         </li>
@@ -220,17 +228,17 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                     id="approval-notes"
                     name="notes"
                     placeholder="Add any notes for the record"
-                ></textarea>
+                 disabled></textarea>
             </div>
 
         </div>
     </div>
 
     <div class="actions">
-        <button class="btn btn--ghost" type="submit" name="decision" value="reject">Reject listing</button>
-        <button class="btn btn--ghost" type="submit" name="decision" value="request-changes">Request changes</button>
-        <button class="btn btn--primary" type="submit" name="decision" value="approve">Approve listing</button>
+        <button class="btn btn--ghost" type="submit" name="decision" value="reject" disabled>Reject listing</button>
+        <button class="btn btn--ghost" type="submit" name="decision" value="request-changes" disabled>Request changes</button>
+        <button class="btn btn--primary" type="submit" name="decision" value="approve" disabled>Approve listing</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

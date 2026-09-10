@@ -129,7 +129,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </div>
 
 <!-- ── Phase 1 content (Battaramulla sample — 6 members, no moderator) ── -->
-<section class="section" id="phase-1-content" style="display: none;">
+<section class="section" id="phase-1-content" <?= $phase['number'] === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
         You are handling member registrations directly. No moderator is needed until approximately 10 members are registered in this division.
     </div>
@@ -152,14 +152,16 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <span class="list-row__title"><?= e($member['name']) ?></span>
                         <span class="list-row__meta">NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?></span>
                     </div>
-                    <form method="post" action="<?= base_url() ?>/admin/moderators/registrations/reject" style="display:inline;">
-                        <?= csrf_field() ?>
-                        <button class="btn btn--ghost" type="submit">Reject</button>
-                    </form>
-                    <form method="post" action="<?= base_url() ?>/admin/moderators/registrations/approve" style="display:inline;">
-                        <?= csrf_field() ?>
-                        <button class="btn btn--primary" type="submit">Approve</button>
-                    </form>
+                    <div style="display:inline;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                        
+                        <button class="btn btn--ghost" type="submit" disabled>Reject</button>
+                    </div>
+                    <div style="display:inline;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                        
+                        <button class="btn btn--primary" type="submit" disabled>Approve</button>
+                    </div>
                 </li>
             <?php endforeach; ?>
         </ul>
@@ -175,7 +177,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </section>
 
 <!-- ── Phase 2 content (Maharagama South — 11 members, no moderator yet) ── -->
-<section class="section" id="phase-2-content" style="display: none;">
+<section class="section" id="phase-2-content" <?= $phase['number'] === 2 ? '' : 'hidden' ?>>
     <div class="notice notice--warning notice--full">
         The division has reached the member threshold. Select and appoint the first moderator from the verified members below. The appointment is announced publicly with a 7-day objection window before it is finalised.
     </div>
@@ -221,7 +223,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         </td>
                         <td>
                             <?php if ($member['conflict'] === null): ?>
-                                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint?division=2&member=<?= e($member['initials']) ?>">Select</a>
+                                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -232,7 +234,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </section>
 
 <!-- ── Phase 3 content (Kaduwela West — 142 members, data-driven pool) ── -->
-<section class="section" id="phase-3-content">
+<section class="section" id="phase-3-content" <?= $phase['number'] === 3 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
         Data-driven eligibility pool active. Members qualifying: 6+ months verified, trust score 70+, 10+ completed transactions, clean record, no conflict of interest.
     </div>
@@ -281,7 +283,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <a class="btn btn--<?= $member['recommended'] ? 'primary' : 'ghost' ?>" href="<?= base_url() ?>/admin/moderators/appoint?division=1&member=<?= e($member['initials']) ?>">Select</a>
+                            <a class="btn btn--<?= $member['recommended'] ? 'primary' : 'ghost' ?>" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -342,46 +344,6 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <?php endif; ?>
 </section>
 
-<script>
-(function () {
-    var pills = document.querySelectorAll('.filter-pills .pill');
-    var phase1 = document.getElementById('phase-1-content');
-    var phase2 = document.getElementById('phase-2-content');
-    var phase3 = document.getElementById('phase-3-content');
-    var phaseCard = document.querySelector('.phase-card');
 
-    var divisionPhases = {
-        '0': { num: 3, label: 'Phase 3 — Data-driven selection', desc: 'Platform has history. Eligibility pool active.' },
-        '1': { num: 3, label: 'Phase 3 — Data-driven selection', desc: 'Platform has history. Eligibility pool active.' },
-        '2': { num: 2, label: 'Phase 2 — First moderator appointment', desc: '~10 members reached. Admin selects and appoints the first moderator.' },
-        '3': { num: 1, label: 'Phase 1 — Admin-run', desc: 'Under 10 members. Admin handles registrations directly.' }
-    };
-
-    function showPhase(divId) {
-        var p = divisionPhases[divId] || divisionPhases['0'];
-        phase1.style.display = p.num === 1 ? '' : 'none';
-        phase2.style.display = p.num === 2 ? '' : 'none';
-        phase3.style.display = p.num === 3 ? '' : 'none';
-
-        phaseCard.className = 'phase-card phase-card--phase-' + p.num;
-        phaseCard.querySelector('.phase-card__title').textContent = p.label;
-        phaseCard.querySelector('.phase-card__meta').textContent = p.desc;
-    }
-
-    pills.forEach(function (pill) {
-        pill.addEventListener('click', function (e) {
-            e.preventDefault();
-            pills.forEach(function (p) { p.classList.remove('pill--active'); p.removeAttribute('aria-current'); });
-            pill.classList.add('pill--active');
-            pill.setAttribute('aria-current', 'true');
-
-            var href = pill.getAttribute('href');
-            var match = href.match(/division=(\d+)/);
-            var divId = match ? match[1] : '0';
-            showPhase(divId);
-        });
-    });
-})();
-</script>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

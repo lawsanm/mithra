@@ -33,7 +33,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 <header class="page-header">
     <h1 class="page-header__title">CSR impact</h1>
-    <a class="btn btn--primary page-header__action" href="/sponsor-liaison/csr-reports/quarterly">Generate quarterly report</a>
+    <a class="btn btn--primary page-header__action" href="<?= base_url() ?>/sponsor-liaison/csr-reports/quarterly">Generate quarterly report</a>
 </header>
 
 <div class="stat-grid">
@@ -59,7 +59,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
                     <span class="list-row__meta"><?= e($sponsor['meta']) ?></span>
                 </div>
                 <span class="list-row__title" style="color: var(--color-success-text);"><?= e($sponsor['contributed']) ?></span>
-                <button class="btn btn--ghost" type="button">Report</button>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/csr-reports/quarterly">Report</a>
             </li>
         <?php endforeach; ?>
     </ul>

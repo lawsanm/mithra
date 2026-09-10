@@ -35,22 +35,23 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <li><a class="pill" href="<?= base_url() ?>/admin/settings/notifications">Notifications</a></li>
 </ul>
 
-<form class="form-card" method="post" action="<?= base_url() ?>/admin/settings/profile">
-    <?= csrf_field() ?>
+<div class="form-card" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="field">
         <label class="label" for="name">Full name</label>
-        <input class="input" type="text" id="name" name="name" value="<?= e($admin['name']) ?>">
+        <input class="input" type="text" id="name" name="name" value="<?= e($admin['name']) ?>" disabled>
     </div>
 
     <div class="field-row">
         <div class="field">
             <label class="label" for="email">Email</label>
-            <input class="input" type="email" id="email" name="email" value="<?= e($admin['email']) ?>">
+            <input class="input" type="email" id="email" name="email" value="<?= e($admin['email']) ?>" disabled>
         </div>
         <div class="field">
             <label class="label" for="phone">Phone</label>
-            <input class="input" type="tel" id="phone" name="phone" value="<?= e($admin['phone']) ?>">
+            <input class="input" type="tel" id="phone" name="phone" value="<?= e($admin['phone']) ?>" disabled>
         </div>
     </div>
 
@@ -71,8 +72,8 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 
     <div class="form-card__actions">
-        <button class="btn btn--primary" type="submit">Save changes</button>
+        <button class="btn btn--primary" type="submit" disabled>Save changes</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

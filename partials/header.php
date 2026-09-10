@@ -24,5 +24,5 @@ $navActive = $navActive ?? '';
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
 <?php include __DIR__ . '/icon-sprite.php'; ?>
-<?php include __DIR__ . '/nav.php'; ?>
+<?php include __DIR__ . (($_GET['context'] ?? '') === 'moderator' ? '/nav-moderator.php' : '/nav.php'); ?>
 <main class="page" id="main">

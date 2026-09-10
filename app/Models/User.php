@@ -7,6 +7,16 @@ declare(strict_types=1);
  */
 final class User extends BaseModel
 {
+    /**
+     * The columns one login attempt is allowed to see, shared by the two
+     * finders below so email and mobile can never drift apart.
+     */
+    private const LOGIN_SELECT = 'SELECT u.id, u.full_name, u.password_hash, u.status,
+                    r.code AS role_code, ud.status AS membership_status
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+          LEFT JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = \'home\'';
+
     protected string $table = 'users';
     protected string $columns = 'id, full_name, email, phone, address, trust_score, status, joined_at';
 
@@ -18,13 +28,149 @@ final class User extends BaseModel
         return $this->selectOne(
             'SELECT u.id, u.full_name, u.email, u.phone, u.address, u.trust_score,
                     u.gift_receive_enabled, u.status, u.joined_at,
-                    d.id AS division_id, d.name AS division_name
+                    d.id AS division_id, d.name AS division_name,
+                    ud.verified_at, ud.status AS membership_status
                FROM users u
                JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = \'home\'
                JOIN gn_divisions  d  ON d.id = ud.gn_division_id
               WHERE u.id = :id',
             ['id' => $id]
         );
+    }
+
+    /**
+     * The account a login attempt may match, found by email address.
+     *
+     * Reads only what authentication needs — the hash is never fetched by the
+     * profile queries above (§9: name the columns). The home membership comes
+     * along because a moderator's rejection lives on that row, not on `users`:
+     * without it a rejected applicant would be told to keep waiting.
+     *
+     * Staff accounts (liaison, admin) hold no division membership, so the join
+     * is a LEFT JOIN and membership_status is NULL for them.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForLoginByEmail(string $email): ?array
+    {
+        return $this->selectOne(
+            self::LOGIN_SELECT . '
+              WHERE u.email = :email
+              ORDER BY u.id
+              LIMIT 1',
+            ['email' => $email]
+        );
+    }
+
+    /**
+     * The same row found by mobile number, compared on the last nine digits.
+     *
+     * Numbers are stored as people write them ("+94 77 123 4567"), so the
+     * comparison runs against the generated `phone_digits` column that
+     * migration 003 keeps in step with `phone` — indexed, so this is a lookup
+     * rather than the scan the inline REPLACE() chain used to cost.
+     *
+     * @param string $digits the last nine digits of the typed number
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForLoginByPhone(string $digits): ?array
+    {
+        return $this->selectOne(
+            self::LOGIN_SELECT . '
+              WHERE u.phone_digits = :digits
+              ORDER BY u.id
+              LIMIT 1',
+            ['digits' => $digits]
+        );
+    }
+
+    /**
+     * Is this email address already spoken for? Registration asks before
+     * inserting so the member gets a field message instead of a duplicate-key
+     * error; the unique index behind it is what actually guarantees it (§8).
+     */
+    public function emailTaken(string $email): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM users WHERE email = :email',
+            ['email' => $email]
+        ) > 0;
+    }
+
+    public function nicTaken(string $nic): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM users WHERE nic = :nic',
+            ['nic' => $nic]
+        ) > 0;
+    }
+
+    /**
+     * @param string $digits the last nine digits of a mobile number
+     */
+    public function phoneTaken(string $digits): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM users WHERE phone_digits = :digits',
+            ['digits' => $digits]
+        ) > 0;
+    }
+
+    /**
+     * Insert one registration and return its id.
+     *
+     * The caller passes an already-validated set and an already-hashed
+     * password — this method makes no business decisions and never hashes (§6).
+     * Every new account starts 'pending': only a moderator's approval moves it
+     * on (Proposal §19.1).
+     *
+     * @param array{role_id:int, full_name:string, nic:string, phone:string,
+     *              email:?string, address:string, password_hash:string} $data
+     */
+    public function create(array $data): int
+    {
+        $statement = $this->pdo->prepare(
+            "INSERT INTO users
+                 (role_id, full_name, nic, phone, email, address, password_hash, status)
+             VALUES
+                 (:role_id, :full_name, :nic, :phone, :email, :address, :password_hash, 'pending')"
+        );
+
+        $statement->execute([
+            'role_id'       => $data['role_id'],
+            'full_name'     => $data['full_name'],
+            'nic'           => $data['nic'],
+            'phone'         => $data['phone'],
+            'email'         => $data['email'],
+            'address'       => $data['address'],
+            'password_hash' => $data['password_hash'],
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Let a verified applicant in. `joined_at` is the start of membership and
+     * is only ever written once — COALESCE keeps the original date if an
+     * account is ever re-approved.
+     */
+    public function markActive(int $id): void
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE users
+                SET status = 'active', joined_at = COALESCE(joined_at, NOW())
+              WHERE id = :id AND status = 'pending'"
+        );
+
+        $statement->execute(['id' => $id]);
+    }
+
+    public function roleIdFor(string $code): ?int
+    {
+        $id = $this->selectValue('SELECT id FROM roles WHERE code = :code', ['code' => $code]);
+
+        return $id === false || $id === null ? null : (int) $id;
     }
 
     /**

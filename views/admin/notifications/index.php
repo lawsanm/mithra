@@ -35,10 +35,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
-    <form method="post" action="<?= base_url() ?>/admin/notifications/mark-all-read" class="page-header__action">
-        <?= csrf_field() ?>
-        <button class="btn btn--ghost" type="submit">Mark all read</button>
-    </form>
+    <div class="page-header__action" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
+        <button class="btn btn--ghost" type="submit" disabled>Mark all read</button>
+    </div>
 </header>
 
 <ul class="filter-pills">

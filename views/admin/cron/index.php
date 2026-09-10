@@ -76,7 +76,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                 <span class="list-row__meta"><?= e($job['schedule']) ?> · Last: <?= e($job['last_run']) ?> · Next: <?= e($job['next_run']) ?></span>
             </div>
             <span class="badge badge--<?= e($job['status']) ?>"><?= e($job['status_label']) ?></span>
-            <button class="btn btn--ghost" type="button" data-modal-open="modal-trigger-job" data-job="<?= e($job['name']) ?>">Trigger now</button>
+            <button class="btn btn--ghost" type="button" data-modal-open="modal-trigger-job" data-job="<?= e($job['name']) ?>" data-last-run="<?= e($job['last_run']) ?>" data-description="<?= e($job['description']) ?>">Trigger now</button>
         </li>
     <?php endforeach; ?>
 </ul>
