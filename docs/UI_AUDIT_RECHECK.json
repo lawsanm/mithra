@@ -1,8 +1,8 @@
 {
   "scope": "GET requests and static form inspection only; no browser rendering or form submissions",
-  "route_count": 89,
+  "route_count": 90,
   "route_statuses": {
-    "200": 88,
+    "200": 89,
     "403": 1
   },
   "route_failures": [
@@ -11,9 +11,9 @@
       "status": 403
     }
   ],
-  "target_count": 217,
+  "target_count": 212,
   "target_statuses": {
-    "200": 217
+    "200": 212
   },
   "broken_targets": [],
   "unsupported_form_occurrences": 0,

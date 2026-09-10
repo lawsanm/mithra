@@ -47,12 +47,16 @@ For an edit, the browser submits a POST. Router first checks the CSRF token. The
 | Admin | Many database-backed read screens; actions such as approvals and settings saves remain pending |
 | Other member, moderator, sponsor and liaison screens | Demonstration templates; many contain sample data |
 | Shared interface | Consistent navigation, account menus, local Inter font, responsive rules and Figma logo/bell assets; browser visual verification remains pending |
-| Identity | A working login and logout against the `users` table; registration, password reset and role-based access enforcement remain pending |
+| Identity | Registration, login, logout and the moderator's approval of a new member, all against the `users` table; every screen is behind the sign-in check. Password reset and role-based access enforcement remain pending |
 | Points transfers, booking lifecycle and scheduled jobs | Do not present these as completed end-to-end features |
 
-Seeded accounts have the development password `password`, and `/login` authenticates them by email or mobile number: signing in stores the member id and role in the session and lands each role on its own home screen. Only `active` accounts are admitted; pending, suspended and closed accounts are refused with the reason.
+Seeded accounts have the development password `password`, and `/login` authenticates them by email or mobile number: signing in stores the member id and role in the session and lands each role on its own home screen. Only `active` accounts are admitted; pending, rejected, suspended and closed accounts are refused with the reason.
 
-What login does **not** yet do: the other screens are not behind it. With no session, they still render as the configured demo member, exactly as before. Do not present this as enforced access control — an `Auth` middleware in the chain is the next piece of that work.
+`/register` opens the other end. An application collects the details Proposal §19.1 asks for, creates a pending account and a pending home membership in one transaction, and cannot sign in yet. The division's moderator sees it under **Verifications**, and approving it opens the account, records who verified it and when, and opens an empty wallet. The 200-point welcome bonus is deliberately not credited: points may only move as an append-only ledger entry, which belongs to the Points module.
+
+Every route except `/login`, `/register` and `/logout` now requires a session — `AuthMiddleware` sends a signed-out visitor to the login screen, and the `demo_member_id` fallback that used to render the app as a configured member is gone.
+
+What sign-in still does **not** do: it does not enforce *which* role may open a screen. Any signed-in account can still reach the admin and liaison screens by typing the URL, exactly as before — an `Rbac` middleware is the next piece of that work. The one exception is member verification, where the service refuses to show or decide an application from a division the signed-in account does not moderate.
 
 Unimplemented submissions are marked as previews and disabled. Sponsor liaison search, filters, detail links and approved-grants CSV operate on sample records. See [the UI fix report](UI_FIXES.md) for verification and remaining limits.
 
