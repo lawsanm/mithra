@@ -189,4 +189,41 @@ final class GnDivision extends BaseModel
             ['div' => $divisionId]
         );
     }
+
+    public function create(string $name, string $district): int
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO gn_divisions (name, district, status) VALUES (:name, :district, :status)'
+        );
+        $stmt->execute([
+            'name'     => $name,
+            'district' => $district,
+            'status'   => 'active',
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+        public function updateDetails(int $id, string $name, string $district): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE gn_divisions SET name = :name, district = :district WHERE id = :id'
+        );
+        return $stmt->execute([
+            'id'       => $id,
+            'name'     => $name,
+            'district' => $district,
+        ]);
+    }
+
+    public function archive(int $id): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE gn_divisions SET status = 'archived' WHERE id = :id"
+        );
+        return $stmt->execute(['id' => $id]);
+    }
+
+
+
 }
