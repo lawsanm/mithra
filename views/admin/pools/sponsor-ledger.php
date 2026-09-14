@@ -60,7 +60,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
     <div class="page-header__action actions">
         <button class="btn btn--ghost" disabled title="Export coming soon">Export CSV</button>
-        <a class="btn btn--ghost" href="/admin/pools">Back to Pools</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools">Back to Pools</a>
     </div>
 </header>
 

@@ -12,7 +12,7 @@ $divisions ??= [];
 
 ?>
 <dialog class="modal modal--sm" id="modal-activate-disaster">
-    <form method="post" action="/admin/disaster/activate">
+    <form method="post" action="<?= base_url() ?>/admin/disaster/activate">
         <?= csrf_field() ?>
 
         <div class="modal__head">

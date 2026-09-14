@@ -42,9 +42,9 @@ include __DIR__ . '/../../../partials/header-admin.php';
 <header class="page-header">
     <h1 class="page-header__title">Six-pool accounting</h1>
     <div class="page-header__action actions">
-        <a class="btn btn--ghost" href="/admin/pools/sponsor-ledger">Sponsor Fund Ledger</a>
-        <a class="btn btn--ghost" href="/admin/ledger">Open ledger</a>
-        <form method="post" action="/admin/pools/run-invariant" style="display:inline">
+        <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/sponsor-ledger">Sponsor Fund Ledger</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/admin/ledger">Open ledger</a>
+        <form method="post" action="<?= base_url() ?>/admin/pools/run-invariant" style="display:inline">
             <?= csrf_field() ?>
             <button class="btn btn--primary" type="submit">Run invariant check now</button>
         </form>
@@ -79,7 +79,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                     <span class="list-row__meta"><?= e($job['schedule']) ?></span>
                 </div>
                 <span class="badge badge--<?= e($job['status']) ?>"><?= e($job['status_label']) ?></span>
-                <form method="post" action="/admin/pools/trigger-job" style="display:inline">
+                <form method="post" action="<?= base_url() ?>/admin/pools/trigger-job" style="display:inline">
                     <?= csrf_field() ?>
                     <input type="hidden" name="job" value="<?= e($job['name']) ?>">
                     <button class="btn btn--ghost" type="submit">Trigger</button>

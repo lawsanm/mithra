@@ -77,7 +77,7 @@ function preview_data(string $view, array $params = []): array
                     'label' => 'Trust score',
                     'value' => (int) ($member['trust_score'] ?? 0) . ' / 100',
                     'note'  => $users->profileStats($me)['completed'] . ' completed transactions',
-                    'href'  => '/trust',
+                    'href'  => base_url() . '/trust',
                 ],
                 [
                     'label' => 'Active borrowings',
@@ -102,7 +102,7 @@ function preview_data(string $view, array $params = []): array
                     'status'       => preview_due_status((string) $b['end_date'])[0],
                     'status_glyph' => preview_due_status((string) $b['end_date'])[1],
                     'status_label' => preview_due_status((string) $b['end_date'])[2],
-                    'href'         => '/bookings/' . $b['id'],
+                    'href'         => base_url() . '/bookings/' . $b['id'],
                 ],
                 $bookings->activeBorrowings($me)
             ),
@@ -116,7 +116,7 @@ function preview_data(string $view, array $params = []): array
                         'meta'  => $who === ''
                             ? 'Available'
                             : sprintf('Lent to %s  ·  due %s', preview_short_name($who), date('j M', strtotime($due))),
-                        'href'  => '/items/' . $i['id'],
+                        'href'  => base_url() . '/items/' . $i['id'],
                     ];
                 },
                 $items->recentListings($me)
@@ -337,7 +337,7 @@ function preview_admin_divisions_index(array $shared, GnDivision $divisions): ar
                 'disaster_mode_active' => (bool) $d['disaster_mode_active'],
                 'status'               => $hasMod ? 'success' : 'warning',
                 'status_label'         => $hasMod ? 'Active' : 'No moderator',
-                'href'                 => '/admin/divisions/' . $d['id'],
+                'href'                 => base_url() . '/admin/divisions/' . $d['id'],
             ];
         }, $rows),
     ];
@@ -431,7 +431,7 @@ function preview_admin_moderators_performance(array $shared, Moderator $moderato
             'status'        => 'success',
             'status_label'  => ucfirst($m['status']),
             'action_style'  => 'ghost',
-            'action_href'   => '/admin/moderators/' . $m['user_id'],
+            'action_href'   => base_url() . '/admin/moderators/' . $m['user_id'],
             'action_label'  => 'View',
             'appointed_at'  => $m['appointed_at'],
         ], $rows),
@@ -516,7 +516,7 @@ function preview_admin_disputes_index(array $shared, Dispute $disputes): array
                 'reason'       => $daysOpen . ' days open',
                 'status'       => $pastTimer ? 'error' : 'warning',
                 'status_label' => $pastTimer ? 'Past timer' : 'Open',
-                'href'         => '/admin/disputes/' . $d['id'],
+                'href'         => base_url() . '/admin/disputes/' . $d['id'],
             ];
         }, $rows),
     ];
@@ -776,7 +776,7 @@ function preview_admin_users_index(array $shared, User $users, GnDivision $divis
             'balance'      => number_format((int) $u['balance']) . ' pts',
             'status'       => $statusMap[$u['status']] ?? 'neutral',
             'status_label' => ucfirst(str_replace('_', ' ', $u['status'])),
-            'href'         => '/admin/users/' . $u['id'],
+            'href'         => base_url() . '/admin/users/' . $u['id'],
         ], $rows),
         'divisions' => $divisions->allNames(),
     ];

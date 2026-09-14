@@ -94,7 +94,7 @@ include __DIR__ . '/../../partials/header.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/bookings">My Bookings</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/bookings">My Bookings</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($booking['item']) ?></span>
 </nav>
@@ -142,7 +142,7 @@ include __DIR__ . '/../../partials/header.php';
                     <span class="thumb thumb--photo-tall"></span>
                 <?php endfor; ?>
             </div>
-            <form method="post" action="/bookings/1/handover-photos" enctype="multipart/form-data">
+            <form method="post" action="<?= base_url() ?>/bookings/1/handover-photos" enctype="multipart/form-data">
                 <?= csrf_field() ?>
                 <label class="upload-drop upload-drop--sm">
                     <span class="upload-drop__glyph" aria-hidden="true">＋</span>
@@ -206,7 +206,7 @@ include __DIR__ . '/../../partials/header.php';
                     <span class="thumb thumb--photo"></span>
                 <?php endfor; ?>
             </div>
-            <form method="post" action="/bookings/1/return-photos" enctype="multipart/form-data">
+            <form method="post" action="<?= base_url() ?>/bookings/1/return-photos" enctype="multipart/form-data">
                 <?= csrf_field() ?>
                 <label class="upload-drop upload-drop--sm">
                     <span aria-hidden="true">＋</span>
@@ -273,23 +273,23 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="actions">
     <?php if ($state === 'awaiting'): ?>
-        <a class="btn btn--ghost" href="/bookings/1/cancel">Cancel request</a>
-        <a class="btn btn--ghost" href="/messages/new">Message lender</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/cancel">Cancel request</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/messages/new">Message lender</a>
     <?php elseif ($state === 'handover'): ?>
-        <a class="btn btn--primary" href="/bookings/1/accept-handover">Accept handover</a>
-        <a class="btn btn--ghost" href="/bookings/1/cancel">Cancel booking</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1/accept-handover">Accept handover</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/cancel">Cancel booking</a>
     <?php elseif ($state === 'in-progress'): ?>
-        <a class="btn btn--primary" href="/bookings/1?state=return">Start return</a>
-        <a class="btn btn--ghost" href="/bookings/1/report">Report a problem</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1?state=return">Start return</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/report">Report a problem</a>
     <?php elseif ($state === 'return'): ?>
-        <a class="btn btn--primary" href="/bookings/1/confirm-return">Confirm return — release escrow</a>
-        <a class="btn btn--ghost" href="/bookings/1/damage-claim" data-modal-open="damage-claim">Raise damage claim</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1/confirm-return">Confirm return — release escrow</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/damage-claim" data-modal-open="damage-claim">Raise damage claim</a>
     <?php elseif ($state === 'overdue'): ?>
-        <a class="btn btn--primary" href="/bookings/1?state=return">Start return now</a>
-        <a class="btn btn--ghost" href="/messages/new">Message lender</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1?state=return">Start return now</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/messages/new">Message lender</a>
     <?php elseif ($state === 'auto-cancelled'): ?>
-        <a class="btn btn--primary" href="/items/browse">Browse similar items</a>
-        <a class="btn btn--ghost" href="/items/1">Request again</a>
+        <a class="btn btn--primary" href="<?= base_url() ?>/items/browse">Browse similar items</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/items/1">Request again</a>
     <?php else: ?>
         <button class="btn btn--primary" type="button" disabled>Awaiting moderator resolution</button>
     <?php endif; ?>

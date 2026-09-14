@@ -89,8 +89,8 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="actions">
     <?php // Without JS this lands on Gifts, which hosts the same form. ?>
-    <a class="btn btn--primary" href="/gifts" data-modal-open="send-gift">Send a gift</a>
-    <a class="btn btn--ghost" href="/aid-grants/create">Request aid grant</a>
+    <a class="btn btn--primary" href="<?= base_url() ?>/gifts" data-modal-open="send-gift">Send a gift</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/create">Request aid grant</a>
 </div>
 
 <h2 class="section-heading">Recent activity</h2>
