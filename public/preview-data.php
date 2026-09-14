@@ -167,6 +167,10 @@ function preview_data(string $view, array $params = []): array
             ];
         })(),
 
+        'profile/show' => preview_profile_show($users, $ratings, $division, $params),
+
+        'profile/edit' => preview_profile_edit($users, $items, $member, $me),
+
         default => [],
     };
 
@@ -210,6 +214,109 @@ function preview_short_name(string $fullName): string
     $parts = explode(' ', trim($fullName));
 
     return end($parts) ?: $fullName;
+}
+
+/**
+ * Public member profile — /members/{id}, for any member including yourself.
+ *
+ * @param  array<string, string> $params route parameters
+ * @return array<string, mixed>
+ */
+function preview_profile_show(User $users, Rating $ratings, int $viewerDivision, array $params): array
+{
+    $id   = (int) ($params['id'] ?? 0);
+    $user = $users->findWithDivision($id);
+
+    if ($user === null) {
+        // Say so rather than falling through to the view's sample member, which
+        // would show a real-looking stranger for an id that does not exist.
+        http_response_code(404);
+
+        return [
+            'member' => [
+                'initials'   => '—',
+                'name'       => 'Member not found',
+                'verified'   => false,
+                'meta'       => 'No member has that id.',
+                'score'      => '—',
+                'score_note' => '',
+            ],
+            'stats'   => [],
+            'reviews' => [],
+        ];
+    }
+
+    $stats    = $users->profileStats($id);
+    $division = (string) ($user['division_name'] ?? '');
+    $sameArea = (int) ($user['division_id'] ?? 0) === $viewerDivision;
+
+    return [
+        'member' => [
+            'initials'   => User::initials((string) $user['full_name']),
+            'name'       => (string) $user['full_name'],
+            'verified'   => ($user['status'] ?? '') === 'active',
+            'meta'       => sprintf(
+                '%s GN Division%s  ·  member since %s',
+                $division,
+                $sameArea ? ' — same community as you' : '',
+                date('M Y', strtotime((string) $user['joined_at']))
+            ),
+            'score'      => (string) (int) $user['trust_score'],
+            'score_note' => sprintf('out of 100  ·  %d transactions', $stats['completed']),
+        ],
+        'stats' => [
+            ['label' => 'On-time returns', 'value' => $stats['on_time'] . '%'],
+            ['label' => 'Items listed',    'value' => (string) $stats['items']],
+            ['label' => 'Times lent',      'value' => (string) $stats['times_lent']],
+            ['label' => 'Disputes',        'value' => (string) $stats['disputes']],
+        ],
+        'reviews' => array_map(
+            static fn (array $r): array => [
+                'initials' => User::initials((string) $r['counterparty']),
+                'author'   => (string) $r['counterparty'],
+                'rating'   => (int) $r['stars'],
+                'text'     => '“' . $r['comment'] . '”',
+                'meta'     => date('j M Y', strtotime((string) $r['created_at']))
+                    . ($r['item_title'] === null ? '' : '  ·  ' . $r['item_title']),
+            ],
+            $ratings->forMember($id, 'received', 5)
+        ),
+    ];
+}
+
+/**
+ * My profile — /profile. The editable half of the same record.
+ *
+ * @param  array<string, mixed> $member the logged-in member, already loaded
+ * @return array<string, mixed>
+ */
+function preview_profile_edit(User $users, Item $items, array $member, int $me): array
+{
+    $stats = $users->profileStats($me);
+
+    return [
+        'member' => [
+            'initials' => User::initials((string) ($member['full_name'] ?? '')),
+            'name'     => (string) ($member['full_name'] ?? ''),
+            'verified' => ($member['status'] ?? '') === 'active',
+            'donor'    => sprintf('Donor · %d items given', $stats['donations']),
+            'meta'     => sprintf(
+                '%s GN Division  ·  member since %s  ·  trust score %d / 100',
+                (string) ($member['division_name'] ?? ''),
+                date('M Y', strtotime((string) ($member['joined_at'] ?? 'now'))),
+                (int) ($member['trust_score'] ?? 0)
+            ),
+            // Your own public profile is the same /members/{id} page everyone
+            // else sees — so it must carry your id, not a hard-coded one.
+            'public_href' => base_url() . '/members/' . $me,
+        ],
+        'draft' => [
+            'display_name' => (string) ($member['full_name'] ?? ''),
+            'mobile'       => (string) ($member['phone'] ?? ''),
+            'email'        => (string) ($member['email'] ?? ''),
+            'address'      => (string) ($member['address'] ?? ''),
+        ],
+    ];
 }
 
 // ── Admin preview-data helpers ──────────────────────────────────────────────
