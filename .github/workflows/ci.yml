@@ -1,7 +1,8 @@
 name: CI
 
 # Every pull request into main is judged here, and the verdict job at the bottom
-# approves it or requests changes. See docs/PR_AUTOMATION.md.
+# posts the result as a comment and moves the PR in or out of draft. The
+# approving review itself stays a human's job (§12). See docs/PR_AUTOMATION.md.
 #
 # Job ids are the names branch protection requires: quality, conventions, hygiene.
 
@@ -178,7 +179,10 @@ jobs:
           # Compatible: take it out of draft, which is what requests the
           # code owner's review and puts it in their queue.
           gh pr ready "$PR" || true
-          gh pr review "$PR" --approve --body-file review.md
+          # A comment, not an approving review: GITHUB_TOKEN is not allowed to
+          # approve pull requests, and §12 wants the approval to come from a
+          # human who read the diff.
+          gh pr comment "$PR" --body-file review.md
           gh pr edit "$PR" --add-label "ci:passed" --remove-label "ci:changes-requested" || true
 
           if [ "$AUTO_MERGE" = "true" ]; then
@@ -221,5 +225,8 @@ jobs:
           # Not compatible: back to draft, so it cannot be merged and the
           # code owner is not asked to review it.
           gh pr ready "$PR" --undo || true
-          gh pr review "$PR" --request-changes --body-file review.md
+          # Same reason as the passing path: GITHUB_TOKEN cannot file reviews,
+          # so the verdict goes in as a comment. Draft status is what actually
+          # holds the PR back.
+          gh pr comment "$PR" --body-file review.md
           gh pr edit "$PR" --add-label "ci:changes-requested" --remove-label "ci:passed" || true
