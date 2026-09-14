@@ -7,36 +7,31 @@ declare(strict_types=1);
  * (70:139, 70:208, 70:271, 70:334). One view per controller action; $step
  * selects which panel of the same action renders.
  *
+ * Every step posts to /items. The controller keeps the half-finished listing in
+ * the session, so a refresh or a Back link never loses what was typed.
+ *
  * @var int    $step       1–4
- * @var array  $categories select options for step 1
+ * @var array  $categories rows from item_categories: id, name
  * @var array  $draft      values entered so far
+ * @var array  $photos     proxy URLs of the photos already uploaded
  * @var array  $errors     per-field messages from the Validator
+ * @var string $summary    one-line recap shown on the last step
  */
 
-// Sample view data — replaced by the controller once ItemController lands.
-$step ??= (int) ($_GET['step'] ?? 1);
-$step = max(1, min(4, $step));
+$step       = $step ?? 1;
+$categories = $categories ?? [];
+$draft      = $draft ?? [];
+$photos     = $photos ?? [];
+$errors     = $errors ?? [];
+$summary    = $summary ?? '';
 
-$categories ??= ['Tools', 'Electronics', 'Kitchen', 'Outdoor', 'Books', 'Baby & Kids', 'Events'];
-
-$draft ??= [
-    'name'           => '',
-    'category'       => '',
-    'photo_count'    => 2,
-    'declared_value' => '300',
-    'listing_type'   => 'rental',
-    'daily_rate'     => '15',
-    'monthly_rate'   => '150',
-    'summary'        => 'Tools  ·  Rental  ·  declared 300 pts  ·  15 pts/day or 150 pts/month',
-];
-
-$errors ??= [];
+$isDonation = ($draft['listing_type'] ?? 'rental') === 'donation';
 
 $steps = [
-    1 => 'Category & photos',
+    1 => 'Item & photos',
     2 => 'Declared value',
     3 => 'Listing type',
-    4 => 'Set rate',
+    4 => $isDonation ? 'Confirm' : 'Set rate',
 ];
 
 $pageTitle = 'List an item';
@@ -86,7 +81,8 @@ include __DIR__ . '/../../partials/header.php';
                 type="text"
                 id="item-name"
                 name="name"
-                value="<?= e($draft['name']) ?>"
+                value="<?= e((string) $draft['name']) ?>"
+                maxlength="150"
                 placeholder="e.g. Bosch Cordless Drill GSB 120"
                 required
             >
@@ -100,9 +96,10 @@ include __DIR__ . '/../../partials/header.php';
             <select class="input" id="item-category" name="category" required>
                 <option value="">Select category</option>
                 <?php foreach ($categories as $category): ?>
-                    <option value="<?= e($category) ?>"<?= $draft['category'] === $category ? ' selected' : '' ?>>
-                        <?= e($category) ?>
-                    </option>
+                    <option
+                        value="<?= e((string) $category['id']) ?>"
+                        <?= (string) $draft['category'] === (string) $category['id'] ? 'selected' : '' ?>
+                    ><?= e((string) $category['name']) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php if (isset($errors['category'])): ?>
@@ -110,20 +107,42 @@ include __DIR__ . '/../../partials/header.php';
             <?php endif; ?>
         </div>
 
+        <div class="field">
+            <label class="field__label" for="item-description">Description — optional</label>
+            <textarea
+                class="input"
+                id="item-description"
+                name="description"
+                rows="4"
+                maxlength="2000"
+                placeholder="Condition, what is included, anything a borrower should know."
+            ><?= e((string) $draft['description']) ?></textarea>
+            <span class="field__hint">Borrowers search this text, so name the brand and the accessories.</span>
+            <?php if (isset($errors['description'])): ?>
+                <span class="field__error"><?= e($errors['description']) ?></span>
+            <?php endif; ?>
+        </div>
+
         <p class="form-card__legend">Photos</p>
 
         <div class="field-row">
-            <?php for ($photo = 1; $photo <= $draft['photo_count']; $photo++): ?>
-                <span class="thumb thumb--upload"></span>
-            <?php endfor; ?>
+            <?php foreach ($photos as $photo): ?>
+                <img class="thumb thumb--sm thumb__img" src="<?= e($photo) ?>" alt="">
+            <?php endforeach; ?>
             <label class="upload-tile">
                 <span aria-hidden="true">＋</span>
                 <span class="visually-hidden">Add a photo</span>
-                <input class="visually-hidden" type="file" name="photos[]" accept="image/*" multiple>
+                <input class="visually-hidden" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple>
             </label>
         </div>
 
-        <p class="field__hint">Add up to 5 photos. Clear, well-lit photos build borrower trust.</p>
+        <p class="field__hint">
+            Add up to 5 photos, 5 MB each. Clear, well-lit photos build borrower trust.
+            Photos upload when you press Continue.
+        </p>
+        <?php if (isset($errors['photos'])): ?>
+            <span class="field__error"><?= e($errors['photos']) ?></span>
+        <?php endif; ?>
 
         <div class="actions">
             <a class="btn btn--ghost" href="<?= base_url() ?>/items">Cancel</a>
@@ -139,7 +158,7 @@ include __DIR__ . '/../../partials/header.php';
                 type="number"
                 id="declared-value"
                 name="declared_value"
-                value="<?= e($draft['declared_value']) ?>"
+                value="<?= e((string) $draft['declared_value']) ?>"
                 min="1"
                 step="1"
                 required
@@ -154,9 +173,14 @@ include __DIR__ . '/../../partials/header.php';
 
         <label class="upload-drop">
             <span class="upload-drop__glyph" aria-hidden="true">＋</span>
-            <span>Upload a receipt, invoice or comparable ad</span>
-            <input class="visually-hidden" type="file" name="value_proof" accept="image/*,application/pdf">
+            <span>
+                <?= $draft['value_proof_path'] !== null ? 'Proof uploaded — choose another to replace it' : 'Upload a photo of a receipt, invoice or comparable ad' ?>
+            </span>
+            <input class="visually-hidden" type="file" name="value_proof" accept="image/jpeg,image/png,image/webp">
         </label>
+        <?php if (isset($errors['value_proof'])): ?>
+            <span class="field__error"><?= e($errors['value_proof']) ?></span>
+        <?php endif; ?>
 
         <p class="notice notice--info">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
@@ -179,7 +203,7 @@ include __DIR__ . '/../../partials/header.php';
                 type="radio"
                 name="listing_type"
                 value="rental"
-                <?= $draft['listing_type'] === 'rental' ? 'checked' : '' ?>
+                <?= !$isDonation ? 'checked' : '' ?>
             >
             <span class="choice__body">
                 <span class="choice__title">Rental</span>
@@ -195,7 +219,7 @@ include __DIR__ . '/../../partials/header.php';
                 type="radio"
                 name="listing_type"
                 value="donation"
-                <?= $draft['listing_type'] === 'donation' ? 'checked' : '' ?>
+                <?= $isDonation ? 'checked' : '' ?>
             >
             <span class="choice__body">
                 <span class="choice__title">Donation</span>
@@ -205,6 +229,10 @@ include __DIR__ . '/../../partials/header.php';
             </span>
         </label>
 
+        <?php if (isset($errors['listing_type'])): ?>
+            <span class="field__error"><?= e($errors['listing_type']) ?></span>
+        <?php endif; ?>
+
         <div class="actions">
             <a class="btn btn--ghost" href="<?= base_url() ?>/items/create?step=2">Back</a>
             <button class="btn btn--primary" type="submit">Continue</button>
@@ -212,43 +240,60 @@ include __DIR__ . '/../../partials/header.php';
 
     <?php else: ?>
 
-        <div class="field-row">
-            <div class="field">
-                <label class="field__label" for="daily-rate">Daily rate (pts)</label>
-                <input
-                    class="input input--narrow"
-                    type="number"
-                    id="daily-rate"
-                    name="daily_rate"
-                    value="<?= e($draft['daily_rate']) ?>"
-                    min="1"
-                    step="1"
-                    required
-                >
-            </div>
-            <div class="field">
-                <label class="field__label" for="monthly-rate">Monthly rate (pts) — optional</label>
-                <input
-                    class="input input--narrow"
-                    type="number"
-                    id="monthly-rate"
-                    name="monthly_rate"
-                    value="<?= e($draft['monthly_rate']) ?>"
-                    min="1"
-                    step="1"
-                >
-            </div>
-        </div>
+        <?php if ($isDonation): ?>
 
-        <p class="notice notice--amber">
-            Pricing tip: similar drills in Kollupitiya rent for 12–18 pts/day. Monthly rates
-            usually run about 10× the daily rate — the system will highlight the cheaper
-            option to borrowers.
-        </p>
+            <p class="notice notice--info">
+                <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
+                A donation moves no points, so it carries no rate. Members in your division
+                request it and you choose who receives it.
+            </p>
+
+        <?php else: ?>
+
+            <div class="field-row">
+                <div class="field">
+                    <label class="field__label" for="daily-rate">Daily rate (pts)</label>
+                    <input
+                        class="input input--narrow"
+                        type="number"
+                        id="daily-rate"
+                        name="daily_rate"
+                        value="<?= e((string) $draft['daily_rate']) ?>"
+                        min="1"
+                        step="1"
+                    >
+                    <?php if (isset($errors['daily_rate'])): ?>
+                        <span class="field__error"><?= e($errors['daily_rate']) ?></span>
+                    <?php endif; ?>
+                </div>
+                <div class="field">
+                    <label class="field__label" for="monthly-rate">Monthly rate (pts) — optional</label>
+                    <input
+                        class="input input--narrow"
+                        type="number"
+                        id="monthly-rate"
+                        name="monthly_rate"
+                        value="<?= e((string) $draft['monthly_rate']) ?>"
+                        min="1"
+                        step="1"
+                    >
+                    <?php if (isset($errors['monthly_rate'])): ?>
+                        <span class="field__error"><?= e($errors['monthly_rate']) ?></span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <p class="notice notice--amber">
+                Set a daily rate, a monthly rate, or both — a rental needs at least one.
+                Monthly rates usually run about 10× the daily rate, and the system shows
+                borrowers whichever works out cheaper.
+            </p>
+
+        <?php endif; ?>
 
         <p class="summary">
             <span class="summary__label">Summary</span>
-            <span class="summary__value"><?= e($draft['summary']) ?></span>
+            <span class="summary__value"><?= e($summary) ?></span>
         </p>
 
         <div class="actions">
