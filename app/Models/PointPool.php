@@ -44,4 +44,29 @@ final class PointPool extends BaseModel
               WHERE job_name = 'check_invariant' ORDER BY started_at DESC LIMIT 1"
         );
     }
+
+    /**
+     * The pool's balance, row-locked until the surrounding transaction ends
+     * (Rules/CONVENTIONS.md §8). Call only inside a transaction.
+     */
+    public function lockBalance(string $poolCode): int
+    {
+        return (int) $this->selectValue(
+            'SELECT balance FROM point_pools WHERE pool_code = :code FOR UPDATE',
+            ['code' => $poolCode]
+        );
+    }
+
+    /**
+     * Apply a signed change to a pool's cached balance. The ledger row written
+     * in the same transaction is the record of truth.
+     */
+    public function adjust(string $poolCode, int $delta): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE point_pools SET balance = balance + :delta WHERE pool_code = :code'
+        );
+
+        $statement->execute(['delta' => $delta, 'code' => $poolCode]);
+    }
 }

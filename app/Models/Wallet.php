@@ -18,9 +18,9 @@ final class Wallet extends BaseModel
      * nothing when the row already exists keeps approval idempotent — the
      * balance of an existing wallet is never touched here (§8).
      *
-     * The 200-point welcome bonus that belongs on this moment (Proposal §16.4)
-     * is deliberately not credited: points may only move as an append-only
-     * ledger entry, which is the Points module's work, not Identity's.
+     * The 200-point welcome bonus (Plan §6.4) is not credited here: points
+     * only move through LedgerService, which writes the append-only ledger
+     * entry in the same transaction as the approval.
      */
     public function openFor(int $memberId): void
     {
@@ -108,5 +108,41 @@ final class Wallet extends BaseModel
         $statement->execute();
 
         return $statement->fetchAll();
+    }
+
+    /**
+     * The spendable balance, row-locked until the surrounding transaction ends
+     * (Rules/CONVENTIONS.md §8). Null when the member has no wallet yet.
+     */
+    public function lockBalance(int $memberId): ?int
+    {
+        $balance = $this->selectValue(
+            'SELECT balance FROM member_wallets WHERE user_id = :id FOR UPDATE',
+            ['id' => $memberId]
+        );
+
+        return $balance === false ? null : (int) $balance;
+    }
+
+    /**
+     * Apply a signed change to a cached wallet balance. The UNSIGNED column
+     * refuses anything that would go negative (Plan §7.7).
+     */
+    public function adjust(int $memberId, int $delta): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE member_wallets SET balance = balance + :delta WHERE user_id = :id'
+        );
+
+        $statement->execute(['delta' => $delta, 'id' => $memberId]);
+    }
+
+    /** The locked moderator conduct bond (Plan §16.7); zero for everyone else. */
+    public function bondLocked(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            'SELECT bond_locked FROM member_wallets WHERE user_id = :id',
+            ['id' => $memberId]
+        );
     }
 }

@@ -3,13 +3,19 @@
 declare(strict_types=1);
 
 /**
- * Photo proxy (Rules/CONVENTIONS.md §7.5).
+ * Photo proxy (Plan §21.1, Rules/CONVENTIONS.md §7.5).
  *
  * Uploads live in /storage/uploads, outside the web root, so Apache cannot
  * serve them and nobody can guess their way through the folder. Every request
- * lands here instead and is answered only when the path is both well formed and
- * actually referenced — by a live listing, or by the asking member's own
- * half-finished create wizard.
+ * lands here instead and is answered only for a signed-in account, and only
+ * when the path is well formed and this account may see it:
+ *
+ *   identity-documents/  the division's moderator and the Admin (Plan §25.3),
+ *                        including proofs sent with an address change
+ *   value-proofs/        the item's owner, its division's moderator, the Admin
+ *   item-photos/         any signed-in account, while the listing is live
+ *
+ * plus anything in the asking member's own half-finished create wizard.
  *
  *     <img src="/photo.php?p=item-photos/<32 hex chars>.jpg">
  */
@@ -52,7 +58,49 @@ function photo_is_in_own_draft(string $path): bool
     return is_array($draft['photos'] ?? null) && in_array($path, $draft['photos'], true);
 }
 
-if (!photo_is_in_own_draft($requested) && !(new Item(Database::connection()))->photoPathExists($requested)) {
+/**
+ * Whether the signed-in account may see this stored file. Fail closed: an
+ * unknown folder or an unreferenced path is refused (§8).
+ */
+function photo_is_visible(string $path, int $userId, string $role): bool
+{
+    if (photo_is_in_own_draft($path)) {
+        return true;
+    }
+
+    $pdo    = Database::connection();
+    $folder = strstr($path, '/', true);
+
+    if ($folder === RegistrationService::DOCUMENT_FOLDER) {
+        $memberships = new UserDivision($pdo);
+        $changes     = new AddressChange($pdo);
+
+        if ($role === 'admin') {
+            return $memberships->isDocument($path) || $changes->isProof($path);
+        }
+
+        return $role === 'moderator'
+            && (in_array($userId, $memberships->documentReviewers($path), true)
+                || in_array($userId, $changes->proofReviewers($path), true));
+    }
+
+    if ($folder === ItemService::PROOF_FOLDER) {
+        $viewers = (new Item($pdo))->valueProofViewers($path);
+
+        if ($viewers === null) {
+            return false;
+        }
+
+        return $role === 'admin' || in_array($userId, $viewers, true);
+    }
+
+    return (new Item($pdo))->photoPathExists($path);
+}
+
+$userId = (int) ($_SESSION['user_id'] ?? 0);
+$role   = (string) ($_SESSION['role'] ?? '');
+
+if ($userId < 1 || !photo_is_visible($requested, $userId, $role)) {
     http_response_code(404);
 
     exit;

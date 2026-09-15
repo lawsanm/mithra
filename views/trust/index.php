@@ -11,9 +11,11 @@ declare(strict_types=1);
 
 // Sample view data — replaced by the controller once TrustController lands.
 $score ??= [
-    'value' => '80',
-    'badge' => ['success', '✓', 'High confidence'],
-    'meta'  => 'Out of 100  ·  23 completed transactions  ·  Kollupitiya  ·  member since 2025',
+    // Computed 0.40·96 + 0.20·46 + 0.20·96 + 0.10·100 + 0.10·30 = 79.8, blended
+    // with the neutral 50: (10·50 + 23·79.8) ÷ (10 + 23) = 70.8 → 71 (Plan §6.3.2).
+    'value' => '71',
+    'badge' => ['success', '✓', 'Good standing'],
+    'meta'  => 'Out of 100  ·  computed 80, blended toward 50 over 23 completed transactions  ·  Kollupitiya',
 ];
 
 $factors ??= [
@@ -26,25 +28,25 @@ $factors ??= [
     [
         'name'    => 'Completed transactions (V)',
         'weight'  => '20%',
-        'percent' => 96,
+        'percent' => 46,
         'note'    => '23 of 50 (capped)  →  46',
     ],
     [
         'name'    => 'Return reliability (L)',
         'weight'  => '20%',
-        'percent' => 90,
-        'note'    => '96% on-time · excl. donations',
+        'percent' => 96,
+        'note'    => '96% on-time · excl. donations  →  96',
     ],
     [
         'name'    => 'Member tenure (T)',
         'weight'  => '10%',
-        'percent' => 62,
-        'note'    => '12 of 12 months (capped)',
+        'percent' => 100,
+        'note'    => '12 of 12 months (capped)  →  100',
     ],
     [
         'name'    => 'Community contribution (C)',
         'weight'  => '10%',
-        'percent' => 100,
+        'percent' => 30,
         'note'    => '3 donations  →  30',
     ],
 ];

@@ -12,35 +12,35 @@ declare(strict_types=1);
 
 // Sample view data — replaced by the controller once TransparencyController lands.
 $pools ??= [
-    ['label' => 'Sponsor Pool',   'value' => '48,200 pts',  'note' => 'funds new-member starting balances'],
+    ['label' => 'Sponsor Pool',   'value' => '48,200 pts',  'note' => 'welcome bonuses, stipends and community rewards'],
     ['label' => 'Aid Pool',       'value' => '12,750 pts',  'note' => 'grants for essential needs'],
-    ['label' => 'Reserve Pool',   'value' => '6,400 pts',   'note' => 'closures & write-off buffer'],
+    ['label' => 'Reserve Pool',   'value' => '6,400 pts',   'note' => 'covers shortfalls so no balance goes negative'],
     ['label' => 'In-Flight Pool', 'value' => '3,180 pts',   'note' => 'rental charges + late-fee buffers · 41 bookings'],
-    ['label' => 'Retired Pool',   'value' => '1,140 pts',   'note' => 'closed accounts, awaiting recycling'],
+    ['label' => 'Retired Pool',   'value' => '1,140 pts',   'note' => 'Type A closures, awaiting recycling'],
     ['label' => 'Member Wallets', 'value' => '121,300 pts', 'note' => 'across 2,412 wallets'],
 ];
 
 $invariant ??= [
     'badge' => 'Nightly invariant check passed',
-    'line'  => 'Last run: 17 Jul 2026, 02:00  ·  total points in = total points out across all pools',
+    'line'  => 'Last run: 17 Jul 2026, 02:00  ·  sum of the six pools = total points created from sponsor contributions',
 ];
 
 $contributions ??= [
     [
         'name'   => 'Lanka Hardware (Pvt) Ltd',
-        'split'  => '70% Sponsor Pool  ·  30% Aid Pool',
+        'split'  => 'General 7,000  ·  Aid 3,000',
         'amount' => '10,000 pts',
         'date'   => '14 Jul 2026',
     ],
     [
         'name'   => 'Ceylon Fresh Mart',
-        'split'  => '50% Sponsor Pool  ·  50% Aid Pool',
+        'split'  => 'General 2,500  ·  Aid 2,500',
         'amount' => '5,000 pts',
         'date'   => '30 Jun 2026',
     ],
     [
         'name'   => 'Sunrise Pharmacy',
-        'split'  => '100% Aid Pool',
+        'split'  => 'Aid 2,500',
         'amount' => '2,500 pts',
         'date'   => '12 Jun 2026',
     ],

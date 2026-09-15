@@ -10,8 +10,10 @@ declare(strict_types=1);
  * applicant typed except the two passwords, which are never sent back to the
  * browser.
  *
- * The fields are the ones Proposal §19.1 asks for — name, address, NIC, GN
- * division, mobile — plus the email address and password that sign-in needs.
+ * The fields are the ones Plan §18.1 asks for — name, address, NIC, a
+ * photograph of the NIC, proof of address, GN division, mobile — plus the email
+ * address and password that sign-in needs. The two documents are seen only by
+ * the division's moderator and the Admin (Plan §25.3).
  *
  * @var array  $errors    per-field messages, plus 'form' for a refusal that
  *                        belongs to the attempt rather than to one field
@@ -33,7 +35,7 @@ include __DIR__ . '/../../partials/header-public.php';
 
 ?>
 
-<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/register">
+<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/register" enctype="multipart/form-data">
     <?= csrf_field() ?>
 
     <h1 class="form-card__title">Join your community</h1>
@@ -173,6 +175,45 @@ include __DIR__ . '/../../partials/header-public.php';
         ><?= e($old('address')) ?></textarea>
         <?php if (isset($errors['address'])): ?>
             <span class="field__error"><?= e($errors['address']) ?></span>
+        <?php endif; ?>
+    </div>
+
+    <div class="field">
+        <label class="field__label" for="register-nic-photo">Photograph of your NIC</label>
+        <input
+            class="input"
+            type="file"
+            id="register-nic-photo"
+            name="nic_photo"
+            accept="image/jpeg,image/png,image/webp"
+            required
+            <?= isset($errors['nic_photo']) ? 'aria-invalid="true"' : '' ?>
+        >
+        <?php if (isset($errors['nic_photo'])): ?>
+            <span class="field__error"><?= e($errors['nic_photo']) ?></span>
+        <?php else: ?>
+            <span class="field__hint">The front of the card, with the number readable. JPG, PNG or WebP, up to 5 MB.</span>
+        <?php endif; ?>
+    </div>
+
+    <div class="field">
+        <label class="field__label" for="register-address-proof">Proof of address</label>
+        <input
+            class="input"
+            type="file"
+            id="register-address-proof"
+            name="address_proof"
+            accept="image/jpeg,image/png,image/webp"
+            required
+            <?= isset($errors['address_proof']) ? 'aria-invalid="true"' : '' ?>
+        >
+        <?php if (isset($errors['address_proof'])): ?>
+            <span class="field__error"><?= e($errors['address_proof']) ?></span>
+        <?php else: ?>
+            <span class="field__hint">
+                A photo of a recent utility bill or a Grama Niladhari letter. Only your division
+                moderator and the Admin can see these documents.
+            </span>
         <?php endif; ?>
     </div>
 

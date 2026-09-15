@@ -22,11 +22,16 @@ final class AuthService
     /** Sri Lankan numbers are matched on their final nine digits. */
     private const PHONE_DIGITS = 9;
 
-    private User $users;
+    /** The throttle scope for sign-in attempts. */
+    public const SCOPE = 'login';
 
-    public function __construct(User $users)
+    private User $users;
+    private LoginThrottle $throttle;
+
+    public function __construct(User $users, LoginThrottle $throttle)
     {
-        $this->users = $users;
+        $this->users    = $users;
+        $this->throttle = $throttle;
     }
 
     /**
@@ -34,6 +39,7 @@ final class AuthService
      *
      * @param string $identifier email address or mobile number, as typed
      * @param string $password   as typed — never trimmed, never logged
+     * @param string $ip         the client address, for throttling
      *
      * @throws ValidationException when the pair does not match an account that
      *                             may sign in. The message is keyed to 'form'
@@ -43,14 +49,21 @@ final class AuthService
      * @return array<string, mixed> id, full_name, status, role_code and the
      *                              home membership's status
      */
-    public function authenticate(string $identifier, string $password): array
+    public function authenticate(string $identifier, string $password, string $ip): array
     {
+        // Refused before the password is even checked, so a locked-out guesser
+        // learns nothing from continuing (§21.1).
+        if ($this->throttle->isBlocked(self::SCOPE, $identifier, $ip)) {
+            throw ValidationException::field('form', LoginThrottle::refusal());
+        }
+
         $account = $this->lookup($identifier);
 
         if ($account === null || !password_verify($password, (string) $account['password_hash'])) {
             // Same refusal either way: which half was wrong is not the
             // attacker's business, and neither is whether the account exists.
             password_verify($password, self::ABSENT_ACCOUNT_HASH);
+            $this->throttle->record(self::SCOPE, $identifier, $ip, false);
 
             throw ValidationException::field(
                 'form',
@@ -69,6 +82,14 @@ final class AuthService
             throw ValidationException::field('form', $refusal);
         }
 
+        $this->throttle->record(self::SCOPE, $identifier, $ip, true);
+
+        // A hash made at an older cost is upgraded while the plain password
+        // is briefly in hand, so the stored hashes keep pace with PHP.
+        if (password_needs_rehash((string) $account['password_hash'], PASSWORD_DEFAULT)) {
+            $this->users->rehashPassword((int) $account['id'], PasswordPolicy::hash($password));
+        }
+
         unset($account['password_hash']);
 
         return $account;
@@ -76,11 +97,12 @@ final class AuthService
 
     /**
      * An identifier holding '@' is an email address; anything else is treated
-     * as a mobile number and reduced to digits.
+     * as a mobile number and reduced to digits. Public because a reset code is
+     * redeemed against the same identifier the member signs in with.
      *
      * @return array<string, mixed>|null
      */
-    private function lookup(string $identifier): ?array
+    public function lookup(string $identifier): ?array
     {
         if (str_contains($identifier, '@')) {
             return $this->users->findForLoginByEmail($identifier);
