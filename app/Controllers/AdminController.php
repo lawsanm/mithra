@@ -127,6 +127,7 @@ final class AdminController
         return $shared + [
             'divisions' => array_map(function (array $d): array {
                 $hasMod = !empty($d['moderator_name']);
+                $isArchived = ($d['status'] ?? '') === 'archived';
                 return [
                     'id'                   => $d['id'],
                     'name'                 => $d['name'],
@@ -135,13 +136,14 @@ final class AdminController
                     'moderator_name'       => $d['moderator_name'],
                     'liaison_name'         => 'Pending',
                     'disaster_mode_active' => (bool) $d['disaster_mode_active'],
-                    'status'               => $hasMod ? 'success' : 'warning',
-                    'status_label'         => $hasMod ? 'Active' : 'No moderator',
+                    'status'               => $isArchived ? 'neutral' : ($hasMod ? 'success' : 'warning'),
+                    'status_label'         => $isArchived ? 'Archived' : ($hasMod ? 'Active' : 'No moderator'),
                     'href'                 => base_url() . '/admin/divisions/' . $d['id'],
                 ];
             }, $rows),
         ];
     }
+
 
     private function divisionsShow(array $shared, GnDivision $divisions, array $params): array
     {
@@ -152,8 +154,10 @@ final class AdminController
         }
         $stats = $divisions->divisionStats($id);
 
-        $statusBadge = $div['moderator_name'] ? 'success' : 'warning';
-        $statusLabel = $div['moderator_name'] ? 'Active' : 'No moderator';
+        $isArchived = ($div['status'] ?? '') === 'archived';
+        $statusBadge = $isArchived ? 'neutral' : ($div['moderator_name'] ? 'success' : 'warning');
+        $statusLabel = $isArchived ? 'Archived' : ($div['moderator_name'] ? 'Active' : 'No moderator');
+
 
         return $shared + [
             'division' => [
@@ -855,4 +859,44 @@ final class AdminController
             ],
         ];
     }
+
+        public function createDivision(): void
+    {
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $district = trim((string) ($_POST['district'] ?? ''));
+
+        if ($name !== '' && $district !== '') {
+            (new GnDivision($this->pdo))->create($name, $district);
+            $_SESSION['flash_success'] = 'Division created successfully.';
+        } else {
+            $_SESSION['flash_error'] = 'Please fill in all required fields.';
+        }
+
+        header('Location: ' . base_url() . '/admin/divisions', true, 303);
+    }
+
+        public function updateDivision(int $id): void
+    {
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $district = trim((string) ($_POST['district'] ?? ''));
+
+        if ($name !== '' && $district !== '') {
+            (new GnDivision($this->pdo))->updateDetails($id, $name, $district);
+            $_SESSION['flash_success'] = 'Division updated successfully.';
+        } else {
+            $_SESSION['flash_error'] = 'Please fill in all required fields.';
+        }
+
+        header('Location: ' . base_url() . '/admin/divisions/' . $id, true, 303);
+    }
+
+    public function archiveDivision(int $id): void
+    {
+        (new GnDivision($this->pdo))->archive($id);
+        $_SESSION['flash_success'] = 'Division archived successfully.';
+
+        header('Location: ' . base_url() . '/admin/divisions', true, 303);
+    }
+
+
 }
