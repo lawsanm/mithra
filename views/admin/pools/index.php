@@ -11,18 +11,18 @@ declare(strict_types=1);
  */
 
 $pools ??= [
-    ['label' => 'Sponsor Pool',   'value' => '48,200 pts',  'note' => 'welcome bonuses · stipends · festival drops'],
-    ['label' => 'Aid Pool',       'value' => '12,750 pts',  'note' => 'aid grants · 15% of every injection'],
+    ['label' => 'Sponsor Pool',   'value' => '48,200 pts',  'note' => 'General contributions · welcome bonuses · stipends · bonds · rewards'],
+    ['label' => 'Aid Pool',       'value' => '12,750 pts',  'note' => 'Aid contributions · parting gifts · approved aid grants only'],
     ['label' => 'Reserve Pool',   'value' => '6,400 pts',   'note' => 'covers shortfalls — no negative balances'],
     ['label' => 'In-Flight Pool', 'value' => '3,180 pts',   'note' => 'rental charges + late-fee buffers, 41 bookings'],
     ['label' => 'Member Wallets', 'value' => '121,300 pts', 'note' => '2,412 wallets'],
-    ['label' => 'Retired Pool',   'value' => '1,140 pts',   'note' => 'closed accounts & write-offs, awaiting recycling'],
+    ['label' => 'Retired Pool',   'value' => '1,140 pts',   'note' => 'Type A closures, awaiting recycling to the Sponsor Pool'],
 ];
 
 $invariant ??= [
     'passed'      => true,
     'total'       => '192,970 pts',
-    'summary'     => 'Σ (Sponsor + Aid + Reserve + In-Flight + Wallets + Retired) = 192,970 pts = Σ inflows − Σ outflows',
+    'summary'     => 'Σ (Sponsor + Aid + Reserve + In-Flight + Wallets + Retired) = 192,970 pts = Σ points created from sponsor contributions',
     'verified_at' => '20 Jul, 02:00',
 ];
 
@@ -91,7 +91,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </section>
 
 <div class="notice notice--info notice--full">
-    The 1:1 cash backing behind these balances is an accounting view visible only to Admin and the Sponsor Liaison. Members and sponsors see the public Transparency Dashboard instead. Reserve write-offs exit via the Retired Pool.
+    The 1:1 cash backing behind these balances is an accounting view visible only to Admin and the Sponsor Liaison. Members and sponsors see the public Transparency Dashboard instead. Points are never destroyed: the Reserve Pool covers shortfalls by paying lenders, and only Type A closures reach the Retired Pool, which is recycled to the Sponsor Pool.
 </div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

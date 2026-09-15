@@ -5,10 +5,19 @@ declare(strict_types=1);
 /**
  * My profile — view and edit. Figma: "My Profile — View / Edit" (94:223).
  *
- * @var array $member initials, name, verified, donor badge, meta
- * @var array $draft  editable field values
- * @var array $errors per-field messages from the Validator
+ * Two forms: contact details (saved at once) and a new home address, which
+ * waits with its proof for the division moderator (Plan §18.1).
+ *
+ * @var array       $member         initials, name, verified, donor badge, meta
+ * @var array       $draft          full_name, phone, email, address as shown in the forms
+ * @var string      $currentAddress the verified address on file
+ * @var array|null  $addressChange  the latest address-change request, if any
+ * @var array       $errors         per-field messages from the last save
+ * @var array|null  $flash
  */
+
+$errors        = $errors ?? [];
+$addressChange = $addressChange ?? null;
 
 $pageTitle = 'My profile';
 $navActive = '';
@@ -41,56 +50,94 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 </section>
 
-<div class="panel panel--wide" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
+<?php include __DIR__ . '/../../partials/flash.php'; ?>
+
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile">
+    <?= csrf_field() ?>
 
     <h2 class="panel__heading">Edit details</h2>
 
     <div class="field">
-        <label class="field__label" for="display-name">Display name</label>
-        <input class="input" type="text" id="display-name" name="display_name" value="<?= e($draft['display_name']) ?>" required disabled>
-        <?php if (isset($errors['display_name'])): ?>
-            <span class="field__error"><?= e($errors['display_name']) ?></span>
+        <label class="field__label" for="full-name">Name</label>
+        <input class="input" type="text" id="full-name" name="full_name" value="<?= e($draft['full_name']) ?>" maxlength="150" autocomplete="name" required
+            <?= isset($errors['full_name']) ? 'aria-invalid="true"' : '' ?>>
+        <?php if (isset($errors['full_name'])): ?>
+            <span class="field__error"><?= e($errors['full_name']) ?></span>
         <?php endif; ?>
     </div>
 
     <div class="field">
         <label class="field__label" for="mobile">Mobile number</label>
-        <input class="input" type="tel" id="mobile" name="mobile" value="<?= e($draft['mobile']) ?>" required disabled>
-        <?php if (isset($errors['mobile'])): ?>
-            <span class="field__error"><?= e($errors['mobile']) ?></span>
+        <input class="input" type="tel" id="mobile" name="phone" value="<?= e($draft['phone']) ?>" maxlength="20" autocomplete="tel" required
+            <?= isset($errors['phone']) ? 'aria-invalid="true"' : '' ?>>
+        <?php if (isset($errors['phone'])): ?>
+            <span class="field__error"><?= e($errors['phone']) ?></span>
+        <?php else: ?>
+            <span class="field__hint">You can sign in with this number.</span>
         <?php endif; ?>
     </div>
 
     <div class="field">
-        <label class="field__label" for="email">Email</label>
-        <input class="input" type="email" id="email" name="email" value="<?= e($draft['email']) ?>" required disabled>
+        <label class="field__label" for="email">Email — optional</label>
+        <input class="input" type="email" id="email" name="email" value="<?= e($draft['email']) ?>" maxlength="150" autocomplete="email"
+            <?= isset($errors['email']) ? 'aria-invalid="true"' : '' ?>>
         <?php if (isset($errors['email'])): ?>
             <span class="field__error"><?= e($errors['email']) ?></span>
+        <?php else: ?>
+            <span class="field__hint">Needed for emailed password-reset links.</span>
         <?php endif; ?>
-    </div>
-
-    <div class="field">
-        <label class="field__label" for="address">Address</label>
-        <input class="input" type="text" id="address" name="address" value="<?= e($draft['address']) ?>" required disabled>
-
-        <label class="upload-inline">
-            <span aria-hidden="true">⬆</span>
-            <span class="upload-inline__label">Upload proof of address</span>
-            <span class="upload-inline__hint">· utility bill or GN certificate (PDF/JPG, max 5 MB)</span>
-            <input class="visually-hidden" type="file" name="address_proof" accept="image/jpeg,application/pdf" disabled>
-        </label>
-
-        <span class="field__hint">
-            Changing your address requires proof of residence and re-verification by your moderator.
-        </span>
     </div>
 
     <div class="actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/dashboard">Cancel</a>
-        <button class="btn btn--primary" type="submit" disabled>Save changes</button>
+        <button class="btn btn--primary" type="submit">Save changes</button>
     </div>
-</div>
+</form>
+
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile/address" enctype="multipart/form-data">
+    <?= csrf_field() ?>
+
+    <h2 class="panel__heading">Home address</h2>
+
+    <p class="record-meta">Verified address: <?= e($currentAddress ?? '') ?></p>
+
+    <?php if ($addressChange !== null && $addressChange['status'] === 'pending'): ?>
+        <p class="notice notice--info">
+            Waiting for your moderator: “<?= e((string) $addressChange['new_address']) ?>”, sent
+            <?= e(date('j M Y', strtotime((string) $addressChange['created_at']))) ?>. Sending another
+            request replaces this one.
+        </p>
+    <?php elseif ($addressChange !== null && $addressChange['status'] === 'rejected'): ?>
+        <p class="notice notice--error">
+            Your moderator could not accept “<?= e((string) $addressChange['new_address']) ?>”:
+            <?= e((string) ($addressChange['reason'] ?? '')) ?>
+        </p>
+    <?php endif; ?>
+
+    <div class="field">
+        <label class="field__label" for="address">New address</label>
+        <input class="input" type="text" id="address" name="address" value="<?= e($draft['address']) ?>" maxlength="255" autocomplete="street-address" required
+            <?= isset($errors['address']) ? 'aria-invalid="true"' : '' ?>>
+        <?php if (isset($errors['address'])): ?>
+            <span class="field__error"><?= e($errors['address']) ?></span>
+        <?php endif; ?>
+    </div>
+
+    <div class="field">
+        <label class="field__label" for="address-proof">Proof of the new address</label>
+        <input class="input" type="file" id="address-proof" name="address_proof" accept="image/jpeg,image/png,image/webp" required
+            <?= isset($errors['address_proof']) ? 'aria-invalid="true"' : '' ?>>
+        <?php if (isset($errors['address_proof'])): ?>
+            <span class="field__error"><?= e($errors['address_proof']) ?></span>
+        <?php else: ?>
+            <span class="field__hint">
+                A photo of a utility bill or GN certificate (JPG, PNG or WebP, up to 5 MB). Only your
+                moderator and the Admin can see it.
+            </span>
+        <?php endif; ?>
+    </div>
+
+    <button class="btn btn--primary" type="submit">Send for verification</button>
+</form>
 
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

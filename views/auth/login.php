@@ -78,13 +78,8 @@ include __DIR__ . '/../../partials/header-public.php';
     <button class="btn btn--primary btn--block" type="submit">Log in</button>
 
     <div class="auth-links">
-        <span class="preview-action">
-            <button class="link" type="button" disabled>Forgot password?</button>
-            <span class="demo-note">Not available yet</span>
-        </span>
-        <span class="preview-action preview-action--end">
-            <a class="link" href="<?= base_url() ?>/register">New here? Register</a>
-        </span>
+        <a class="link" href="<?= base_url() ?>/forgot-password">Forgot password?</a>
+        <a class="link" href="<?= base_url() ?>/register">New here? Register</a>
     </div>
 </form>
 

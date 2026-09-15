@@ -116,4 +116,69 @@ check(
 $checks++;
 check(!password_verify('password', (string) $absent->getValue()), 'The decoy hash must match no known password.');
 
-echo 'Passed: ' . $checks . " identity checks — phone and NIC normalisation, password handling and refusals.\n";
+// ── Password policy (shared by sign-up, reset and change) ───────────────────
+
+expect('policy accepts a long phrase', PasswordPolicy::errors('a good long phrase', 'a good long phrase'), []);
+check(isset(PasswordPolicy::errors('short', 'short')['password']), 'Seven characters or fewer must be refused.');
+check(isset(PasswordPolicy::errors(str_repeat('a', 73), str_repeat('a', 73))['password']), 'Over 72 bytes must be refused.');
+check(isset(PasswordPolicy::errors('a good long phrase', 'a good long phrasE')['password_confirmation']), 'Mismatch must be refused.');
+check(isset(PasswordPolicy::errors('', '')['password']), 'Empty must be refused.');
+check(RegistrationService::MIN_PASSWORD === PasswordPolicy::MIN_LENGTH, 'Sign-up must use the shared rule.');
+$checks += 6;
+
+// ── Reset secrets ───────────────────────────────────────────────────────────
+
+$codes = [];
+for ($i = 0; $i < 200; $i++) {
+    $code = PasswordResetService::newCode();
+    check(preg_match('/^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/', $code) === 1, 'Code shape: ' . $code);
+    $codes[$code] = true;
+}
+check(count($codes) === 200, 'Codes must not repeat.');
+expect('code typed loosely', PasswordResetService::normaliseCode(' abcde fghjk '), 'ABCDEFGHJK');
+expect('code with dash', PasswordResetService::normaliseCode('ABCDE-FGHJK'), 'ABCDEFGHJK');
+check(PasswordResetService::looksLikeToken(bin2hex(random_bytes(32))), 'A real token must look like one.');
+check(!PasswordResetService::looksLikeToken('../../etc/passwd'), 'Junk is not a token.');
+check(!PasswordResetService::looksLikeToken(strtoupper(bin2hex(random_bytes(32)))), 'Tokens are lower-case hex.');
+$checks += 206;
+
+// ── Throttle keys ───────────────────────────────────────────────────────────
+// Every spelling of one account shares a counter; scopes never share one.
+
+$phoneKey = LoginThrottle::identifierHash('login', '077 123 4567');
+foreach (['+94 77 123 4567', '0771234567', '94771234567'] as $spelling) {
+    expect('throttle key for ' . $spelling, LoginThrottle::identifierHash('login', $spelling), $phoneKey);
+    $checks++;
+}
+expect('email case', LoginThrottle::identifierHash('login', ' Lawsan@Email.com'), LoginThrottle::identifierHash('login', 'lawsan@email.com'));
+check(LoginThrottle::identifierHash('reset-code', '0771234567') !== $phoneKey, 'Scopes must be separate.');
+$checks += 2;
+
+// ── Session rules ───────────────────────────────────────────────────────────
+
+$session = new SessionMiddleware();
+$active  = ['status' => 'active', 'password_changed_at' => '2026-09-01 10:00:00', 'role_code' => 'member'];
+$now     = 1_800_000_000;
+
+expect('healthy session', $session->handle($active, 'member', '2026-09-01 10:00:00', $now - 60, $now), null);
+expect('first request after sign-in', $session->handle($active, 'member', '2026-09-01 10:00:00', null, $now), null);
+check($session->handle(null, 'member', null, $now, $now) !== null, 'A deleted account must end the session.');
+check($session->handle(['status' => 'suspended'] + $active, 'member', '2026-09-01 10:00:00', $now, $now) !== null, 'Suspension must end the session.');
+check($session->handle(['status' => 'closed_standard'] + $active, 'member', '2026-09-01 10:00:00', $now, $now) !== null, 'Closure must end the session.');
+check($session->handle($active, 'moderator', '2026-09-01 10:00:00', $now, $now) !== null, 'A changed role must end the session.');
+check($session->handle($active, 'member', null, $now, $now) !== null, 'A password changed elsewhere must end the session.');
+check($session->handle($active, 'member', '2026-08-01 10:00:00', $now, $now) !== null, 'An older stamp must end the session.');
+check($session->handle($active, 'member', '2026-09-01 10:00:00', $now - SessionMiddleware::IDLE_SECONDS - 1, $now) !== null, 'Idle sessions must end.');
+expect('never-changed password', $session->handle(['password_changed_at' => null] + $active, 'member', null, $now, $now), null);
+$checks += 10;
+
+// ── Public pages ────────────────────────────────────────────────────────────
+
+foreach (['/forgot-password', '/reset-password', '/reset-password/code'] as $path) {
+    check(AuthMiddleware::isPublic($path), $path . ' must be reachable while signed out.');
+    $checks++;
+}
+check(!AuthMiddleware::isPublic('/account/password'), 'Changing a password needs a session.');
+$checks++;
+
+echo 'Passed: ' . $checks . " identity checks — normalisation, passwords, reset secrets, throttling, sessions and refusals.\n";

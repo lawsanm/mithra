@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 /**
  * Member verification: the moderator's decision on a home-membership
- * application (Proposal §19.1, module 1.2).
+ * application (Plan §18.1, module 1.2).
  *
  * This is the other half of sign-up. Registration leaves an account pending
  * and unable to sign in; approval here is what lets that member through
- * AuthService. Both steps of an approval — the membership row and the account
- * status — move together or not at all.
+ * AuthService. Every step of an approval — the membership row, the account
+ * status and the 200-point welcome bonus from the Sponsor Pool (Plan §6.4) —
+ * moves together or not at all.
  *
  * Every method takes the acting moderator's id and refuses an application from
  * a division they do not moderate: an id in a URL is never trusted (§8).
@@ -19,19 +20,30 @@ final class VerificationService
     /** Queue filters, as the pills on the screen offer them. */
     public const FILTERS = ['', 'pending', 'active', 'rejected'];
 
+    /** Credited once per verified person, from the Sponsor Pool (Plan §4.3, §6.4). */
+    public const WELCOME_BONUS = 200;
+
     private User $users;
     private UserDivision $memberships;
     private GnDivision $divisions;
     private Wallet $wallets;
+    private LedgerService $ledger;
     private PDO $pdo;
 
-    public function __construct(PDO $pdo, User $users, UserDivision $memberships, GnDivision $divisions, Wallet $wallets)
-    {
+    public function __construct(
+        PDO $pdo,
+        User $users,
+        UserDivision $memberships,
+        GnDivision $divisions,
+        Wallet $wallets,
+        LedgerService $ledger
+    ) {
         $this->pdo         = $pdo;
         $this->users       = $users;
         $this->memberships = $memberships;
         $this->divisions   = $divisions;
         $this->wallets     = $wallets;
+        $this->ledger      = $ledger;
     }
 
     /**
@@ -92,10 +104,12 @@ final class VerificationService
     }
 
     /**
-     * Approve one membership: the community lets them in, and the account they
-     * registered with becomes one they can sign in to.
+     * Approve one membership: the community lets them in, the account they
+     * registered with becomes one they can sign in to, and the welcome bonus
+     * moves from the Sponsor Pool into their new wallet.
      *
-     * @throws ValidationException when the application was already decided
+     * @throws ValidationException when the application was already decided, or
+     *                             the Sponsor Pool cannot fund the bonus
      *
      * @return string the applicant's name, for the confirmation message
      */
@@ -116,7 +130,24 @@ final class VerificationService
             $this->users->markActive($memberId);
             $this->wallets->openFor($memberId);
 
+            // Once per verified person, however many times they are approved.
+            if (!$this->ledger->hasReceived($memberId, 'welcome_bonus')) {
+                $this->ledger->poolToMember('sponsor', $memberId, self::WELCOME_BONUS, 'welcome_bonus');
+            }
+
             $this->pdo->commit();
+        } catch (InsufficientPointsException $exception) {
+            // Fail closed: nobody is approved without the bonus the plan promises.
+            $this->pdo->rollBack();
+
+            throw ValidationException::field(
+                'form',
+                sprintf(
+                    'The Sponsor Pool cannot fund the %d-point welcome bonus right now, so nothing was approved. '
+                    . 'Ask the Sponsor Liaison to record a General contribution, then approve again.',
+                    self::WELCOME_BONUS
+                )
+            );
         } catch (Throwable $exception) {
             $this->pdo->rollBack();
 

@@ -209,7 +209,7 @@ final class ItemController
                     $draft['description'] = $validator->value('description');
                     $draft['photos']      = array_merge(
                         $draft['photos'],
-                        $this->service->storePhotos($this->uploadedFiles('photos'), count($draft['photos']))
+                        $this->service->storePhotos(uploaded_files('photos'), count($draft['photos']))
                     );
 
                     if ($draft['photos'] === []) {
@@ -228,7 +228,8 @@ final class ItemController
                 case 2:
                     $validator
                         ->required('declared_value', 'Declared value')
-                        ->integer('declared_value', 'Declared value', 1, 1000000);
+                        ->integer('declared_value', 'Declared value', 1, 1000000)
+                        ->inList('value_proof_type', 'Kind of proof', array_merge([''], array_keys(ItemService::PROOF_TYPES)));
 
                     if (!$validator->passes()) {
                         $this->renderWizard($step, $draft, $validator->errors(), $validator->values());
@@ -236,17 +237,33 @@ final class ItemController
                         return;
                     }
 
-                    $draft['declared_value'] = $validator->value('declared_value');
+                    $draft['declared_value']   = $validator->value('declared_value');
+                    $draft['value_proof_type'] = $validator->value('value_proof_type') ?: null;
 
-                    $proof = $this->service->storePhotos($this->uploadedFiles('value_proof'), 0);
+                    $proof = $this->service->storeProof(uploaded_files('value_proof'));
 
-                    if ($proof !== []) {
+                    if ($proof !== null) {
                         if ($draft['value_proof_path'] !== null) {
                             $this->service->discardPhotos([(string) $draft['value_proof_path']]);
                         }
 
-                        $draft['value_proof_path'] = $proof[0];
-                        $draft['value_proof_type'] = 'photo';
+                        $draft['value_proof_path'] = $proof;
+                    }
+
+                    // Keep what was accepted so far, then hold the member at this
+                    // step until the proof matches the value's tier (Plan §9.1).
+                    $_SESSION[self::DRAFT_KEY] = $draft;
+
+                    $proofErrors = ItemService::proofErrors(
+                        (int) $draft['declared_value'],
+                        $draft['value_proof_type'],
+                        $draft['value_proof_path']
+                    );
+
+                    if ($proofErrors !== []) {
+                        $this->renderWizard($step, $draft, $proofErrors, $validator->values());
+
+                        return;
                     }
 
                     break;
@@ -340,6 +357,7 @@ final class ItemController
             ->required('declared_value', 'Declared value')
             ->integer('declared_value', 'Declared value', 1, 1000000)
             ->inList('listing_type', 'Listing type', ['rental', 'donation'])
+            ->inList('value_proof_type', 'Kind of proof', array_merge([''], array_keys(ItemService::PROOF_TYPES)))
             ->integer('daily_rate', 'Daily rate', 1, 1000000)
             ->integer('monthly_rate', 'Monthly rate', 1, 1000000);
 
@@ -359,10 +377,13 @@ final class ItemController
         try {
             $photos = array_merge(
                 $kept,
-                $this->service->storePhotos($this->uploadedFiles('photos'), count($kept))
+                $this->service->storePhotos(uploaded_files('photos'), count($kept))
             );
 
-            $requeued = $this->service->update($id, $me, $validator->values(), $photos);
+            $input = $validator->values();
+            $input['value_proof_path'] = $this->service->storeProof(uploaded_files('value_proof'));
+
+            $requeued = $this->service->update($id, $me, $input, $photos);
         } catch (ValidationException $exception) {
             $this->renderEdit($row, $exception->errors(), $validator->values());
 
@@ -596,7 +617,7 @@ final class ItemController
 
         // Only the text fields come back from a failed post; photos and the
         // step counter stay under the draft's control.
-        $textFields = ['name', 'category', 'description', 'declared_value', 'listing_type', 'daily_rate', 'monthly_rate'];
+        $textFields = ['name', 'category', 'description', 'declared_value', 'value_proof_type', 'listing_type', 'daily_rate', 'monthly_rate'];
 
         $merged = array_merge($draft, array_intersect_key($submitted, array_flip($textFields)));
 
@@ -607,6 +628,7 @@ final class ItemController
             'photos'     => $this->photoUrls($draft['photos']),
             'errors'     => $errors,
             'summary'    => $this->draftSummary($merged),
+            'proofTypes' => ItemService::PROOF_TYPES,
         ]);
     }
 
@@ -683,6 +705,8 @@ final class ItemController
             'photos'     => $photos,
             'draft'      => $input,
             'errors'     => $errors,
+            'proofTypes' => ItemService::PROOF_TYPES,
+            'proofOnFile' => $row['value_proof_path'] !== null,
         ]);
     }
 
@@ -706,42 +730,6 @@ final class ItemController
 
     // ── Plumbing ────────────────────────────────────────────────────────────
 
-    /**
-     * $_FILES arrives transposed for multi-file inputs; hand services a plain
-     * list of one array per file so nothing downstream knows about the shape.
-     *
-     * @return list<array{name: string, tmp_name: string, error: int, size: int}>
-     */
-    private function uploadedFiles(string $field): array
-    {
-        $raw = $_FILES[$field] ?? null;
-
-        if (!is_array($raw) || !isset($raw['name'])) {
-            return [];
-        }
-
-        if (!is_array($raw['name'])) {
-            return [[
-                'name'     => (string) $raw['name'],
-                'tmp_name' => (string) ($raw['tmp_name'] ?? ''),
-                'error'    => (int) ($raw['error'] ?? UPLOAD_ERR_NO_FILE),
-                'size'     => (int) ($raw['size'] ?? 0),
-            ]];
-        }
-
-        $files = [];
-
-        foreach (array_keys($raw['name']) as $index) {
-            $files[] = [
-                'name'     => (string) $raw['name'][$index],
-                'tmp_name' => (string) ($raw['tmp_name'][$index] ?? ''),
-                'error'    => (int) ($raw['error'][$index] ?? UPLOAD_ERR_NO_FILE),
-                'size'     => (int) ($raw['size'][$index] ?? 0),
-            ];
-        }
-
-        return $files;
-    }
 
     /**
      * @return array<string, mixed>
@@ -780,6 +768,7 @@ final class ItemController
             'category'       => (string) $row['category_id'],
             'description'    => (string) ($row['description'] ?? ''),
             'declared_value' => (string) $row['declared_value'],
+            'value_proof_type' => (string) ($row['value_proof_type'] ?? ''),
             'listing_type'   => (string) $row['listing_type'],
             'daily_rate'     => (string) ($row['daily_rate'] ?? ''),
             'monthly_rate'   => (string) ($row['monthly_rate'] ?? ''),

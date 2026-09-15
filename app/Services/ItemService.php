@@ -10,8 +10,15 @@ declare(strict_types=1);
  * allowed to leave the shelf. Controllers do the HTTP work, models do the SQL.
  *
  * A member's own write path ends at 'pending_approval' — flipping a listing to
- * 'active' or 'rejected' is the moderator module's job (Proposal §9), so no
- * method here ever sets those.
+ * 'active' or 'rejected' is the moderator's decision (Plan §9.2, see
+ * ListingReviewService), so no method here ever sets those.
+ *
+ * The declared value anchors pricing guidance and damage penalties, so the
+ * proof it needs rises with it (Plan §9.1):
+ *
+ *   up to 2,000 points     photos and a description are enough
+ *   2,001 to 10,000        plus a receipt, warranty card or retail price reference
+ *   above 10,000           a receipt or warranty card, or an in-person inspection
  */
 final class ItemService
 {
@@ -19,6 +26,24 @@ final class ItemService
 
     /** Folder under storage/uploads that item photos live in. */
     private const PHOTO_FOLDER = 'item-photos';
+
+    /**
+     * Proofs of value are kept apart from listing photos: they are shown to
+     * the owner and the reviewing moderator, not to every borrower.
+     */
+    public const PROOF_FOLDER = 'value-proofs';
+
+    /** Plan §9.1 thresholds, in points (proposed values, Plan §28). */
+    public const PROOF_FREE_UP_TO = 2000;
+    public const DOCUMENT_UP_TO   = 10000;
+
+    /** Proof kinds a member can offer, with the words the screens use. */
+    public const PROOF_TYPES = [
+        'receipt'         => 'Purchase receipt',
+        'warranty'        => 'Warranty card',
+        'price_reference' => 'Current retail price reference',
+        'inspection'      => 'In-person inspection by the moderator',
+    ];
 
     /** Points: a plausible declared value for a household item. */
     private const MAX_DECLARED_VALUE = 1000000;
@@ -61,6 +86,62 @@ final class ItemService
         }
 
         return $this->photos->storeMany($uploads, self::PHOTO_FOLDER, 'photos', $room);
+    }
+
+    /**
+     * Store one proof-of-value document on its own, before the listing exists.
+     *
+     * @param  list<array{name?: string, tmp_name?: string, error?: int, size?: int}> $uploads
+     * @return string|null the stored path, or null when nothing was uploaded
+     */
+    public function storeProof(array $uploads): ?string
+    {
+        $stored = $this->photos->storeMany($uploads, self::PROOF_FOLDER, 'value_proof', 1);
+
+        return $stored[0] ?? null;
+    }
+
+    /**
+     * What a declared value asks of the lister, in words for the form.
+     */
+    public static function proofRequirement(int $declaredValue): string
+    {
+        if ($declaredValue <= self::PROOF_FREE_UP_TO) {
+            return 'Up to 2,000 points: your photos and description are enough.';
+        }
+
+        if ($declaredValue <= self::DOCUMENT_UP_TO) {
+            return '2,001 to 10,000 points: add a purchase receipt, warranty card or current retail price reference.';
+        }
+
+        return 'Above 10,000 points: add a purchase receipt or warranty card, or ask your moderator to inspect the item in person.';
+    }
+
+    /**
+     * Whether this proof meets the tier its declared value falls in (Plan §9.1).
+     *
+     * @return array<string, string> field => message; empty when it does
+     */
+    public static function proofErrors(int $declaredValue, ?string $proofType, ?string $proofPath): array
+    {
+        if ($declaredValue <= self::PROOF_FREE_UP_TO) {
+            return [];
+        }
+
+        $accepted = $declaredValue <= self::DOCUMENT_UP_TO
+            ? ['receipt', 'warranty', 'price_reference']
+            : ['receipt', 'warranty', 'inspection'];
+
+        if ($proofType === null || !in_array($proofType, $accepted, true)) {
+            return ['value_proof_type' => self::proofRequirement($declaredValue)];
+        }
+
+        // An inspection is arranged in person, so it carries no document.
+        if ($proofType !== 'inspection' && $proofPath === null) {
+            return ['value_proof' => 'Upload a photo of the ' . strtolower(self::PROOF_TYPES[$proofType]) . '.'];
+        }
+
+        return [];
     }
 
     /**
@@ -131,8 +212,24 @@ final class ItemService
             );
         }
 
-        $clean = $this->cleanFields($input, $photoPaths);
-        $requeued = $this->needsReapproval($current, $clean);
+        // Proof already on file still stands unless the edit replaces it.
+        $newProof = $this->nullableString($input['value_proof_path'] ?? null);
+        $input['value_proof_type'] = $this->nullableString($input['value_proof_type'] ?? null) ?? $current['value_proof_type'];
+        $input['value_proof_path'] = $newProof ?? $current['value_proof_path'];
+
+        try {
+            $clean = $this->cleanFields($input, $photoPaths);
+        } catch (ValidationException $exception) {
+            if ($newProof !== null) {
+                $this->photos->delete($newProof);
+            }
+
+            throw $exception;
+        }
+
+        $requeued = $this->needsReapproval($current, $clean)
+            || $clean['value_proof_type'] !== $current['value_proof_type']
+            || $clean['value_proof_path'] !== $current['value_proof_path'];
 
         $this->items->updateOwned($id, $ownerId, [
             'category_id'    => $clean['category_id'],
@@ -140,6 +237,8 @@ final class ItemService
             'description'    => $clean['description'],
             'listing_type'   => $clean['listing_type'],
             'declared_value' => $clean['declared_value'],
+            'value_proof_type' => $clean['value_proof_type'],
+            'value_proof_path' => $clean['value_proof_path'],
             'photos'         => $clean['photos'],
             'daily_rate'     => $clean['daily_rate'],
             'monthly_rate'   => $clean['monthly_rate'],
@@ -149,6 +248,10 @@ final class ItemService
         // Files dropped from the set are no longer reachable — delete them last,
         // so a failed UPDATE never leaves the row pointing at missing photos.
         $this->discardPhotos(array_values(array_diff($this->decodePhotos($current), $clean['photos'])));
+
+        if ($current['value_proof_path'] !== null && $current['value_proof_path'] !== $clean['value_proof_path']) {
+            $this->photos->delete((string) $current['value_proof_path']);
+        }
 
         return $requeued;
     }
@@ -277,6 +380,15 @@ final class ItemService
                 . number_format(self::MAX_DECLARED_VALUE) . ' points.';
         }
 
+        $proofType = $this->nullableString($input['value_proof_type'] ?? null);
+        $proofPath = $this->nullableString($input['value_proof_path'] ?? null);
+
+        if ($proofType !== null && !isset(self::PROOF_TYPES[$proofType])) {
+            $errors['value_proof_type'] = 'Choose the kind of proof you are offering.';
+        } elseif (!isset($errors['declared_value'])) {
+            $errors += self::proofErrors($declaredValue, $proofType, $proofPath);
+        }
+
         if ($photoPaths === []) {
             $errors['photos'] = 'Add at least one photo so borrowers can see the item.';
         }
@@ -308,8 +420,8 @@ final class ItemService
             'description'      => $description === '' ? null : $description,
             'listing_type'     => $listingType,
             'declared_value'   => $declaredValue,
-            'value_proof_type' => $this->nullableString($input['value_proof_type'] ?? null),
-            'value_proof_path' => $this->nullableString($input['value_proof_path'] ?? null),
+            'value_proof_type' => $proofType,
+            'value_proof_path' => $proofType === 'inspection' ? null : $proofPath,
             'photos'           => array_values($photoPaths),
             'daily_rate'       => $dailyRate,
             'monthly_rate'     => $monthlyRate,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * The moderator's verification queue — the decision that turns a pending
- * registration into an account that can sign in (Proposal §19.1).
+ * registration into an account that can sign in (Plan §18.1).
  *
  * Each action reads validated input, calls one service method, then renders a
  * view or redirects. Which applications this moderator may see and decide is a
@@ -28,7 +28,8 @@ final class ModerationController
             new User($pdo),
             new UserDivision($pdo),
             new GnDivision($pdo),
-            new Wallet($pdo)
+            new Wallet($pdo),
+            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), new Wallet($pdo))
         );
     }
 
@@ -76,7 +77,8 @@ final class ModerationController
                 'status_label' => $this->labelFor((string) $application['status']),
                 'submitted'    => $this->submittedLine($application),
             ],
-            'facts'    => $this->facts($application),
+            'facts'     => $this->facts($application),
+            'documents' => $this->documents($application),
             'decided'  => $application['status'] !== 'pending',
             'recordId' => (int) $application['id'],
         ]);
@@ -166,6 +168,30 @@ final class ModerationController
             ['label' => 'Mobile',          'value' => (string) $application['phone']],
             ['label' => 'Email',           'value' => (string) ($application['email'] ?? '') ?: '—'],
         ];
+    }
+
+    /**
+     * The applicant's uploads, as proxy URLs — the files themselves live
+     * outside the web root (§7.5).
+     *
+     * @param array<string, mixed> $application
+     *
+     * @return list<array{label: string, url: string}>
+     */
+    private function documents(array $application): array
+    {
+        $documents = [];
+
+        foreach (['nic_photo_path' => 'NIC photograph', 'proof_file_path' => 'Proof of address'] as $column => $label) {
+            if (($application[$column] ?? null) !== null) {
+                $documents[] = [
+                    'label' => $label,
+                    'url'   => base_url() . '/photo.php?p=' . rawurlencode((string) $application[$column]),
+                ];
+            }
+        }
+
+        return $documents;
     }
 
     /**

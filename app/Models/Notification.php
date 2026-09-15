@@ -16,7 +16,7 @@ final class Notification extends BaseModel
     private const GROUPS = [
         'bookings'   => ['booking_accepted', 'booking_requested', 'return_due', 'handover_ready'],
         'gifts-aid'  => ['gift_received', 'aid_grant_vouched', 'aid_grant_approved'],
-        'system'     => ['listing_approved', 'listing_rejected', 'account_notice'],
+        'system'     => ['listing_approved', 'listing_adjusted', 'listing_rejected', 'account_notice'],
     ];
 
     /**
@@ -56,5 +56,23 @@ final class Notification extends BaseModel
     public static function groups(): array
     {
         return array_keys(self::GROUPS);
+    }
+
+    /**
+     * Leave one in-app notification (Plan §21.4).
+     *
+     * @param array{title:string, detail:string, icon:string, href:string} $payload
+     */
+    public function push(int $userId, string $type, array $payload): void
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO notifications (user_id, type, payload) VALUES (:user, :type, :payload)'
+        );
+
+        $statement->execute([
+            'user'    => $userId,
+            'type'    => $type,
+            'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+        ]);
     }
 }

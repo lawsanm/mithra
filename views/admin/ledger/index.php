@@ -19,7 +19,7 @@ $filters ??= [
     ['label' => 'Aid',        'slug' => 'aid'],
     ['label' => 'Fees',       'slug' => 'fees'],
     ['label' => 'Sponsor',    'slug' => 'sponsor'],
-    ['label' => 'Write-offs', 'slug' => 'writeoffs'],
+    ['label' => 'Reserve',    'slug' => 'reserve'],
 ];
 
 $entries ??= [
@@ -28,7 +28,7 @@ $entries ??= [
     ['ref' => '#TX-98407', 'date' => '19 Jul, 17:30', 'title' => 'In-flight pool release — booking #B-2188',    'meta' => 'In-flight → T.H.K. Madushan',    'amount' => '+25 pts',     'amount_class' => 'success'],
     ['ref' => '#TX-98395', 'date' => '19 Jul, 11:05', 'title' => 'Aid grant release — #A-1042',                 'meta' => 'Aid Pool → M. Lawsan',            'amount' => '+300 pts',    'amount_class' => 'success'],
     ['ref' => '#TX-98380', 'date' => '18 Jul, 21:40', 'title' => 'Late fee — booking #B-2160',                  'meta' => 'M. Lawsan → A. Akalvily',         'amount' => '10 pts',      'amount_class' => ''],
-    ['ref' => '#TX-98371', 'date' => '18 Jul, 10:12', 'title' => 'Sponsor injection — INV-0312',                'meta' => 'Northwind Co → pools',            'amount' => '+10,000 pts', 'amount_class' => 'success'],
+    ['ref' => '#TX-98371', 'date' => '18 Jul, 10:12', 'title' => 'Sponsor contribution — INV-0312',             'meta' => 'Northwind Co → pools',            'amount' => '+10,000 pts', 'amount_class' => 'success'],
 ];
 
 $search    ??= '';

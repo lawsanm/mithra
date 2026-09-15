@@ -18,4 +18,17 @@ return [
         'password' => '',
         'charset'  => 'utf8mb4',
     ],
+    'app' => [
+        // 'local' shows password-reset links on screen when mail is off.
+        // Anything else never does. Set 'production' on a real server.
+        'env' => 'local',
+        // Absolute base URL used in reset emails, e.g. https://mithra.example.lk
+        // Required outside 'local' — the request's Host header is never trusted.
+        'url' => '',
+    ],
+    'mail' => [
+        // XAMPP has no mail server; turn on where PHP mail() can deliver.
+        'enabled' => false,
+        'from'    => 'no-reply@mithra.lk',
+    ],
 ];

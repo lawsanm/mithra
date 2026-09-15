@@ -7,23 +7,20 @@ declare(strict_types=1);
  *
  * Everything that could change for a business reason lives here — the shape of
  * an NIC, what counts as a Sri Lankan mobile number, how long a password must
- * be, and the fact that a new account starts pending (Proposal §19.1). The
- * controller does the HTTP work, the models do the SQL (Rules/CONVENTIONS.md §6).
+ * be, the two documents an application carries (a photograph of the NIC and a
+ * proof of address), and the fact that a new account starts pending
+ * (Plan §18.1). The controller does the HTTP work, the models do the SQL
+ * (Rules/CONVENTIONS.md §6).
  *
  * The write path ends at 'pending'. Nothing here ever sets a member 'active':
  * that is the moderator's decision, and it lives in VerificationService.
  */
 final class RegistrationService
 {
-    /** Length beats composition rules, so length is all we ask for. */
-    public const MIN_PASSWORD = 8;
+    /** Kept for callers and tests; the rule itself lives in PasswordPolicy. */
+    public const MIN_PASSWORD = PasswordPolicy::MIN_LENGTH;
 
-    /**
-     * bcrypt reads 72 bytes and silently ignores the rest — a longer password
-     * would be accepted at sign-up and "work" with any 72-byte prefix later.
-     * Refusing it is the honest option.
-     */
-    public const MAX_PASSWORD_BYTES = 72;
+    public const MAX_PASSWORD_BYTES = PasswordPolicy::MAX_BYTES;
 
     /** Public sign-up only ever creates members (§7.4). */
     private const MEMBER_ROLE = 'member';
@@ -31,17 +28,33 @@ final class RegistrationService
     /** Sri Lankan mobile numbers, stored the way the seeded accounts write them. */
     private const PHONE_DIGITS = 9;
 
+    /**
+     * Identity documents are kept apart from item photos: they are served only
+     * to the verifying moderator and the Admin (Plan §25.3).
+     */
+    public const DOCUMENT_FOLDER = 'identity-documents';
+
+    /** How the proof of address is labelled on the membership row. */
+    private const ADDRESS_PROOF = 'address';
+
     private PDO $pdo;
     private User $users;
     private UserDivision $memberships;
     private GnDivision $divisions;
+    private PhotoStore $documents;
 
-    public function __construct(PDO $pdo, User $users, UserDivision $memberships, GnDivision $divisions)
-    {
+    public function __construct(
+        PDO $pdo,
+        User $users,
+        UserDivision $memberships,
+        GnDivision $divisions,
+        PhotoStore $documents
+    ) {
         $this->pdo         = $pdo;
         $this->users       = $users;
         $this->memberships = $memberships;
         $this->divisions   = $divisions;
+        $this->documents   = $documents;
     }
 
     /**
@@ -52,12 +65,15 @@ final class RegistrationService
      *                                                     length-checked by the controller
      * @param string $password     as typed — never trimmed, never logged
      * @param string $confirmation the second password box
+     * @param array{nic_photo: list<array<string, mixed>>, address_proof: list<array<string, mixed>>} $uploads
+     *                             the two document uploads, normalised from
+     *                             the request by the controller
      *
      * @throws ValidationException with one message per offending field
      *
      * @return int the new member's id
      */
-    public function register(array $input, string $password, string $confirmation): int
+    public function register(array $input, string $password, string $confirmation, array $uploads): int
     {
         $errors = [];
 
@@ -81,7 +97,8 @@ final class RegistrationService
             $errors['gn_division_id'] = 'Choose the GN division you live in.';
         }
 
-        $errors += $this->passwordErrors($password, $confirmation);
+        $errors += PasswordPolicy::errors($password, $confirmation);
+        $errors += $this->documentErrors($uploads);
 
         // Only ask the database about values that are well-formed: a malformed
         // NIC has no business generating a "taken" message as well.
@@ -99,15 +116,21 @@ final class RegistrationService
             throw new RuntimeException('The member role is missing from the roles table.');
         }
 
+        // Stored only once everything else is valid, so a typo in the NIC does
+        // not leave orphaned identity documents behind.
+        $nicPhoto     = $this->storeDocument($uploads['nic_photo'], 'nic_photo');
+        $addressProof = $this->storeDocument($uploads['address_proof'], 'address_proof', [$nicPhoto]);
+
         return $this->insert([
+            'nic_photo_path' => $nicPhoto,
             'role_id'       => $roleId,
             'full_name'     => trim($input['full_name']),
             'nic'           => (string) $nic,
             'phone'         => (string) $phone,
             'email'         => $email === '' ? null : $email,
             'address'       => trim($input['address']),
-            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-        ], $divisionId);
+            'password_hash' => PasswordPolicy::hash($password),
+        ], $divisionId, $addressProof);
     }
 
     /**
@@ -165,27 +188,61 @@ final class RegistrationService
     // ── Rules ───────────────────────────────────────────────────────────────
 
     /**
+     * Both documents are required, one file each.
+     *
+     * @param array<string, list<array<string, mixed>>> $uploads
+     *
      * @return array<string, string>
      */
-    private function passwordErrors(string $password, string $confirmation): array
+    private function documentErrors(array $uploads): array
     {
-        if ($password === '') {
-            return ['password' => 'Password is required.'];
+        $errors = [];
+        $labels = [
+            'nic_photo'     => 'Add a clear photograph of the front of your NIC.',
+            'address_proof' => 'Add a proof of address, such as a utility bill or a Grama Niladhari letter.',
+        ];
+
+        foreach ($labels as $field => $message) {
+            $files = array_values(array_filter(
+                $uploads[$field] ?? [],
+                static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE
+            ));
+
+            if (count($files) !== 1) {
+                $errors[$field] = $message;
+            }
         }
 
-        if (mb_strlen($password) < self::MIN_PASSWORD) {
-            return ['password' => sprintf('Choose a password of at least %d characters.', self::MIN_PASSWORD)];
+        return $errors;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $upload
+     * @param list<string>               $discardOnFailure documents already stored for this application
+     *
+     * @throws ValidationException
+     */
+    private function storeDocument(array $upload, string $field, array $discardOnFailure = []): string
+    {
+        try {
+            $stored = $this->documents->storeMany($upload, self::DOCUMENT_FOLDER, $field, 1);
+        } catch (ValidationException $exception) {
+            $this->discard($discardOnFailure);
+
+            throw $exception;
         }
 
-        if (strlen($password) > self::MAX_PASSWORD_BYTES) {
-            return ['password' => sprintf('Choose a password of %d characters or fewer.', self::MAX_PASSWORD_BYTES)];
-        }
+        return $stored[0];
+    }
 
-        if ($password !== $confirmation) {
-            return ['password_confirmation' => 'The two passwords do not match.'];
+    /**
+     * @param list<string> $paths
+     */
+    private function discard(array $paths): void
+    {
+        foreach ($paths as $path) {
+            $this->documents->delete($path);
         }
-
-        return [];
     }
 
     /**
@@ -219,20 +276,21 @@ final class RegistrationService
      * identifier between the check above and this insert — rare, and reported
      * as the same field message rather than a 500.
      *
-     * @param array{role_id:int, full_name:string, nic:string, phone:string,
-     *              email:?string, address:string, password_hash:string} $account
+     * @param array{role_id:int, full_name:string, nic:string, nic_photo_path:string,
+     *              phone:string, email:?string, address:string, password_hash:string} $account
      */
-    private function insert(array $account, int $divisionId): int
+    private function insert(array $account, int $divisionId, string $addressProof): int
     {
         $this->pdo->beginTransaction();
 
         try {
             $userId = $this->users->create($account);
-            $this->memberships->createHome($userId, $divisionId);
+            $this->memberships->createHome($userId, $divisionId, self::ADDRESS_PROOF, $addressProof);
 
             $this->pdo->commit();
         } catch (PDOException $exception) {
             $this->pdo->rollBack();
+            $this->discard([$account['nic_photo_path'], $addressProof]);
 
             if ($exception->getCode() === '23000') {
                 throw ValidationException::field(
@@ -244,6 +302,7 @@ final class RegistrationService
             throw $exception;
         } catch (Throwable $exception) {
             $this->pdo->rollBack();
+            $this->discard([$account['nic_photo_path'], $addressProof]);
 
             throw $exception;
         }

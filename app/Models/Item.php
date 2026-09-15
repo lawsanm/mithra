@@ -281,10 +281,13 @@ final class Item extends BaseModel
                     description    = :description,
                     listing_type   = :listing_type,
                     declared_value = :declared_value,
+                    value_proof_type = :value_proof_type,
+                    value_proof_path = :value_proof_path,
                     photos         = :photos,
                     daily_rate     = :daily_rate,
                     monthly_rate   = :monthly_rate,
-                    status         = :status
+                    status         = :status,
+                    value_status   = IF(:requeued = 1, \'pending\', value_status)
               WHERE id = :id AND owner_id = :owner'
         );
 
@@ -294,10 +297,13 @@ final class Item extends BaseModel
             'description'    => $data['description'],
             'listing_type'   => $data['listing_type'],
             'declared_value' => $data['declared_value'],
+            'value_proof_type' => $data['value_proof_type'],
+            'value_proof_path' => $data['value_proof_path'],
             'photos'         => json_encode($data['photos']),
             'daily_rate'     => $data['daily_rate'],
             'monthly_rate'   => $data['monthly_rate'],
             'status'         => $data['status'],
+            'requeued'       => $data['status'] === 'pending_approval' ? 1 : 0,
             'id'             => $id,
             'owner'          => $ownerId,
         ]);
@@ -326,5 +332,138 @@ final class Item extends BaseModel
               WHERE JSON_CONTAINS(photos, JSON_QUOTE(:path)) AND status <> 'archived'",
             ['path' => $path]
         ) > 0;
+    }
+
+    /**
+     * Who may see a listing's proof of value: its owner and its division's
+     * moderator. Null when no listing carries this proof.
+     *
+     * @return list<int>|null
+     */
+    public function valueProofViewers(string $path): ?array
+    {
+        $row = $this->selectOne(
+            'SELECT i.owner_id, d.moderator_id
+               FROM items i
+               JOIN gn_divisions d ON d.id = i.gn_division_id
+              WHERE i.value_proof_path = :path
+              LIMIT 1',
+            ['path' => $path]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return array_values(array_filter(
+            [(int) $row['owner_id'], (int) ($row['moderator_id'] ?? 0)],
+            static fn (int $id): bool => $id > 0
+        ));
+    }
+
+    /**
+     * Listings awaiting (or past) a value review, with who listed them and
+     * whether that person moderates the division — the fact that decides who
+     * may review it (Plan §16.5).
+     *
+     * @param list<int> $divisionIds divisions to look in; empty means every division
+     * @param string    $state       '' | 'pending' | 'approved' | 'rejected'
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function reviewQueue(array $divisionIds, string $state): array
+    {
+        $params = [];
+        $where  = [];
+
+        if ($divisionIds !== []) {
+            $names = [];
+            foreach (array_values($divisionIds) as $index => $divisionId) {
+                $names[]                 = ':division' . $index;
+                $params['division' . $index] = $divisionId;
+            }
+            $where[] = 'i.gn_division_id IN (' . implode(', ', $names) . ')';
+        }
+
+        $where[] = match ($state) {
+            'pending'  => "i.status = 'pending_approval'",
+            'approved' => "i.value_status IN ('validated','adjusted')",
+            'rejected' => "i.status = 'rejected'",
+            default    => "(i.status = 'pending_approval' OR i.value_status <> 'pending')",
+        };
+
+        return $this->select(
+            'SELECT i.id, i.title, i.declared_value, i.value_proof_type, i.status, i.value_status,
+                    i.created_at, i.updated_at, i.owner_id, i.gn_division_id,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, \'$[0]\')) AS photo,
+                    u.full_name AS owner_name,
+                    d.name AS division_name, d.moderator_id
+               FROM items i
+               JOIN users u        ON u.id = i.owner_id
+               JOIN gn_divisions d ON d.id = i.gn_division_id
+              WHERE ' . implode(' AND ', $where) . '
+              ORDER BY (i.status = \'pending_approval\') DESC, i.updated_at ASC
+              LIMIT ' . self::PER_PAGE,
+            $params
+        );
+    }
+
+    /**
+     * One listing as the reviewer sees it, proof included.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForReview(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT i.id, i.title, i.description, i.listing_type, i.declared_value,
+                    i.value_proof_type, i.value_proof_path, i.photos, i.daily_rate, i.monthly_rate,
+                    i.status, i.value_status, i.created_at, i.owner_id, i.gn_division_id,
+                    c.name AS category_name,
+                    u.full_name AS owner_name, u.trust_score,
+                    d.name AS division_name, d.moderator_id
+               FROM items i
+               JOIN item_categories c ON c.id = i.category_id
+               JOIN users u           ON u.id = i.owner_id
+               JOIN gn_divisions d    ON d.id = i.gn_division_id
+              WHERE i.id = :id',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * Record a reviewer's decision on a listing still awaiting one. The status
+     * guard makes a second, concurrent decision a no-op.
+     *
+     * @return bool false when the listing was no longer pending
+     */
+    public function recordReview(int $id, string $status, string $valueStatus, int $declaredValue, int $reviewerId): bool
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE items
+                SET status = :status, value_status = :value_status, declared_value = :declared_value,
+                    approved_by = :reviewer, approved_at = NOW()
+              WHERE id = :id AND status = 'pending_approval'"
+        );
+
+        $statement->execute([
+            'status'         => $status,
+            'value_status'   => $valueStatus,
+            'declared_value' => $declaredValue,
+            'reviewer'       => $reviewerId,
+            'id'             => $id,
+        ]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /** Take every live or queued listing of a closing account off the shelf. */
+    public function archiveAllFor(int $ownerId): void
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE items SET status = 'archived'
+              WHERE owner_id = :owner AND status IN ('pending_approval','active','paused','rejected')"
+        );
+        $statement->execute(['owner' => $ownerId]);
     }
 }
