@@ -3,49 +3,25 @@
 declare(strict_types=1);
 
 /**
- * Admin dashboard. 
+ * Admin dashboard.
  *
  * @var array $admin       name
  * @var array $globalMeta  division_count, member_count
  * @var array $stats       label, value, note, primary(bool)
- * @var array $invariant   passed(bool), last_run, summary, diff(array when failed)
- * @var array $cronJobs    name, schedule, last_run, status, status_label
+ * @var array $invariant   passed(bool), last_run, summary
+ * @var array $cronJobs    name, last_run, status, status_label
  */
-
-$admin ??= ['name' => 'Madushan'];
-
-$globalMeta ??= ['division_count' => 38, 'member_count' => '2,412'];
-
-$stats ??= [
-    ['label' => 'Total members',      'value' => '2,412', 'note' => '+64 this month',       'primary' => true],
-    ['label' => 'Active bookings',     'value' => '41',    'note' => '3,180 pts in escrow',  'primary' => false],
-    ['label' => 'Escalated disputes',  'value' => '2',     'note' => '1 past 7-day timer',   'primary' => false, 'error' => true],
-    ['label' => 'Points in system',    'value' => '121,300', 'note' => 'All wallets + pools', 'primary' => true],
-];
-
-$invariant ??= [
-    'passed'   => true,
-    'last_run' => '20 Jul, 02:00',
-    'summary'  => 'total points in = total points out across all six pools · ledger hash verified',
-    'diff'     => [],
-];
-
-$cronJobs ??= [
-    ['name' => 'Nightly invariant check',  'schedule' => '02:00 daily',  'last_run' => 'last run 20 Jul, 02:00', 'status' => 'success', 'status_label' => 'On schedule'],
-    ['name' => '48-hour auto-cancel sweep', 'schedule' => 'Hourly',      'last_run' => 'last run 20 Jul, 09:00', 'status' => 'success', 'status_label' => 'On schedule'],
-    ['name' => 'Overdue booking flagger',   'schedule' => '06:00 daily', 'last_run' => 'last run 20 Jul, 06:00', 'status' => 'success', 'status_label' => 'On schedule'],
-    ['name' => 'Trust score refresh',       'schedule' => '03:00 daily',  'last_run' => 'last run 19 Jul, 03:00', 'status' => 'warning', 'status_label' => 'Overdue - expected 20 Jul'],
-];
 
 $pageTitle = 'Dashboard';
 $navActive = 'dashboard';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
 <header class="page-intro page-intro--dashboard">
-    <h1 class="page-intro__title">Good morning, <?= e($admin['name']) ?></h1>
+    <h1 class="page-intro__title">Welcome back, <?= e($admin['name']) ?></h1>
     <p class="page-intro__meta">System Administrator · <?= e((string) $globalMeta['division_count']) ?> GN divisions · <?= e((string) $globalMeta['member_count']) ?> members</p>
 </header>
 
@@ -69,23 +45,6 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <span>&times;</span>
         <span>NIGHTLY INVARIANT CHECK FAILED - <?= e($invariant['last_run']) ?>. <?= e($invariant['summary']) ?></span>
     </div>
-
-    <?php if ($invariant['diff'] !== []): ?>
-        <div class="form-card">
-            <h3 class="form-card__legend">Reconciliation snapshot</h3>
-            <?php foreach ($invariant['diff'] as $row): ?>
-                <div class="line-item">
-                    <span class="line-item__label"><?= e($row['label']) ?></span>
-                    <span class="line-item__value"><?= e($row['value']) ?></span>
-                </div>
-            <?php endforeach; ?>
-        </div>
-
-        <div class="actions">
-            <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Download diff report</button><span class="demo-note">Not available in this demo</span></span>
-            <a class="btn btn--primary" href="<?= base_url() ?>/admin/ledger">Open ledger at <?= e($invariant['diff'][count($invariant['diff']) - 1]['label'] ?? '') ?></a>
-        </div>
-    <?php endif; ?>
 <?php endif; ?>
 
 <section class="panel section cron-panel">
@@ -99,7 +58,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
             <li class="list-row">
                 <div class="list-row__body">
                     <span class="list-row__title"><?= e($job['name']) ?></span>
-                    <span class="list-row__meta"><?= e($job['schedule']) ?> · <?= e($job['last_run']) ?></span>
+                    <span class="list-row__meta"><?= e($job['last_run']) ?></span>
                 </div>
                 <span class="badge badge--<?= e($job['status']) ?>"><?= e($job['status_label']) ?></span>
             </li>

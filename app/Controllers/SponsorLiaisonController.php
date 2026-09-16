@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
-/** Navigation for the liaison's sample records; no contributions are written. */
-final class SponsorLiaisonController
+/**
+ * Design preview of the liaison's screens over fixed sample records, so the
+ * lists, filters and detail pages can be clicked through. Nothing is read from
+ * or written to the database until the Sponsor module is built.
+ */
+final class SponsorLiaisonController extends Controller
 {
     private const SPONSORS = [
     ['id' => 1, 'name' => 'Northwind Co', 'email' => 'contact@northwind.lk', 'points' => '16,000 pts'],
@@ -28,10 +32,6 @@ final class SponsorLiaisonController
     ['id' => 5, 'initials' => 'AA', 'name' => 'J. Kavipriya',    'meta' => '400 pts · declined 28 Jun · insufficient evidence, may re-apply',   'status' => 'error',   'status_label' => 'Declined',          'action' => 'view'],
 ];
 
-    public function __construct(private PDO $pdo)
-    {
-    }
-
     public function sponsors(): void
     {
         $search = $this->queryValue('q');
@@ -48,7 +48,7 @@ final class SponsorLiaisonController
             usort($sponsors, static fn (array $a, array $b): int =>
                 (int) str_replace(',', '', $b['points']) <=> (int) str_replace(',', '', $a['points']));
         }
-        $this->render('sponsors/index', compact('sponsors', 'search', 'sort', 'status'));
+        $this->render('sponsor-liaison/sponsors/index', compact('sponsors', 'search', 'sort', 'status'));
     }
 
     public function sponsor(int $id): void
@@ -65,7 +65,7 @@ final class SponsorLiaisonController
             str_contains(strtolower($row['receipt']), strtolower($search))
             && ($sponsor === '' || $row['sponsor'] === $sponsor)
             && ($dateRange === '' || str_contains(strtolower($row['date']), strtolower($dateRange)))));
-        $this->render('purchases/index', compact('purchases', 'search', 'sponsor', 'dateRange'));
+        $this->render('sponsor-liaison/purchases/index', compact('purchases', 'search', 'sponsor', 'dateRange'));
     }
 
     public function purchase(int $id): void
@@ -80,14 +80,14 @@ final class SponsorLiaisonController
             'approved' => 'Approved', 'declined' => 'Declined'];
         $grants = array_values(array_filter(self::GRANTS, static fn (array $row): bool =>
             $status === '' || $row['status_label'] === ($labels[$status] ?? '')));
-        $this->render('aid-grants/index', compact('grants', 'status'));
+        $this->render('sponsor-liaison/aid-grants/index', compact('grants', 'status'));
     }
 
     public function grant(int $id): void
     {
         $row = $this->find(self::GRANTS, $id);
         if ($row === null) {
-            $this->missing();
+            $this->notice(404, 'Record not found', 'Return to the list to select a sponsor, contribution or aid grant.');
             return;
         }
         $parts = explode(' · ', $row['meta']);
@@ -97,7 +97,7 @@ final class SponsorLiaisonController
             'note' => $row['meta']];
         $vouch = ['initials' => 'JK', 'name' => 'Moderator review', 'note' => $parts[2] ?? 'See request status'];
         $draft = ['approved_amount' => (string) (int) $parts[0], 'reason' => ''];
-        $this->render('aid-grants/show', compact('grant', 'request', 'vouch', 'draft'));
+        $this->render('sponsor-liaison/aid-grants/show', compact('grant', 'request', 'vouch', 'draft'));
     }
 
     public function exportGrants(): void
@@ -118,10 +118,10 @@ final class SponsorLiaisonController
     {
         $record = $this->find($rows, $id);
         if ($record === null) {
-            $this->missing();
+            $this->notice(404, 'Record not found', 'Return to the list to select a sponsor, contribution or aid grant.');
             return;
         }
-        $this->render($view, compact('record'));
+        $this->render('sponsor-liaison/' . $view, compact('record'));
     }
 
     private function find(array $rows, int $id): ?array
@@ -135,19 +135,5 @@ final class SponsorLiaisonController
     private function queryValue(string $key): string
     {
         return is_string($_GET[$key] ?? null) ? trim($_GET[$key]) : '';
-    }
-
-    private function missing(): void
-    {
-        http_response_code(404);
-        $noticeTitle = 'Record not found';
-        $noticeBody = 'Return to the list to select a sponsor, contribution or aid grant.';
-        require dirname(__DIR__, 2) . '/views/errors/notice.php';
-    }
-
-    private function render(string $view, array $data): void
-    {
-        extract($data, EXTR_SKIP);
-        require dirname(__DIR__, 2) . '/views/sponsor-liaison/' . $view . '.php';
     }
 }

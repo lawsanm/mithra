@@ -21,7 +21,8 @@ $pageTitle = 'Settings — Notifications';
 $navActive = 'settings';
 $settingsTab = 'notifications';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -37,8 +38,6 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <div class="form-card" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <table class="data-table">
         <thead>
             <tr>

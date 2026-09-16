@@ -44,7 +44,8 @@ $draft ??= [
 $pageTitle = $grant['name'] . ' — aid grant review';
 $navActive = 'aid-grants';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -104,8 +105,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
     <div>
         <div class="form-card" style="width: 100%;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-            
+            <p class="demo-note">Preview only. Saving is not available yet.</p>
             <h2 class="form-card__legend" style="font-size: var(--text-lede);">Your decision</h2>
 
             <div class="field">

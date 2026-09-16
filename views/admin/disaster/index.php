@@ -8,45 +8,11 @@ declare(strict_types=1);
  * @var array $divisions  rows: id, name, active(bool), meta, status, status_label
  */
 
-$divisions ??= [
-    [
-        'id'           => 2,
-        'name'         => 'Wellawatte',
-        'active'       => true,
-        'meta'         => 'Flooding · activated 15 Jul by Mod. J. Kavipriya · ends 22 Jul',
-        'status'       => 'error',
-        'status_label' => 'Active',
-    ],
-    [
-        'id'           => 1,
-        'name'         => 'Kollupitiya',
-        'active'       => false,
-        'meta'         => 'No active disaster',
-        'status'       => 'success',
-        'status_label' => 'Normal',
-    ],
-    [
-        'id'           => 3,
-        'name'         => 'Dehiwala',
-        'active'       => false,
-        'meta'         => 'No active disaster',
-        'status'       => 'success',
-        'status_label' => 'Normal',
-    ],
-    [
-        'id'           => 4,
-        'name'         => 'Bambalapitiya',
-        'active'       => false,
-        'meta'         => 'Deactivated 3 Jul · flood response closed after 37 hrs',
-        'status'       => 'success',
-        'status_label' => 'Normal',
-    ],
-];
-
 $pageTitle = 'Disaster Mode control';
 $navActive = 'dashboard';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

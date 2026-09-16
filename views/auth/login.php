@@ -20,7 +20,8 @@ $identifier = $identifier ?? '';
 $pageTitle = 'Log in';
 $navActive = 'login';
 
-include __DIR__ . '/../../partials/header-public.php';
+$chrome = 'public';
+include __DIR__ . '/../../partials/header.php';
 
 ?>
 

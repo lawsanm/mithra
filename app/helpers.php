@@ -31,6 +31,25 @@ function csrf_field(): string
     return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
 }
 
+// Which navigation bar a role uses. Signed-out visitors get the public bar.
+function chrome_for(?string $role): string
+{
+    return match ($role) {
+        'member'          => 'member',
+        'moderator'       => 'moderator',
+        'admin'           => 'admin',
+        'sponsor_liaison' => 'sponsor-liaison',
+        'sponsor'         => 'sponsor',
+        default           => 'public',
+    };
+}
+
+// Stored upload paths are served through the access-checked proxy (§7.5).
+function photo_url(string $path): string
+{
+    return base_url() . '/photo.php?p=' . rawurlencode($path);
+}
+
 /**
  * One form field's uploads as a plain list, whether the input was single or
  * multiple. Controllers call this so services never read $_FILES (§6).

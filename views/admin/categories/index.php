@@ -8,18 +8,11 @@ declare(strict_types=1);
  * @var array $categories  rows: id, name, listing_count, status, status_label
  */
 
-$categories ??= [
-    ['id' => 1, 'name' => 'Tools & Equipment',      'listing_count' => 1204, 'status' => 'success', 'status_label' => 'Active'],
-    ['id' => 2, 'name' => 'Kitchen & Appliances',    'listing_count' => 986,  'status' => 'success', 'status_label' => 'Active'],
-    ['id' => 3, 'name' => 'Baby & Kids',             'listing_count' => 643,  'status' => 'success', 'status_label' => 'Active'],
-    ['id' => 4, 'name' => 'Events & Celebrations',   'listing_count' => 418,  'status' => 'success', 'status_label' => 'Active'],
-    ['id' => 5, 'name' => 'Electronics',             'listing_count' => 352,  'status' => 'warning', 'status_label' => 'Hidden - under review'],
-];
-
 $pageTitle = 'Category management';
 $navActive = 'categories';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

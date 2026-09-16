@@ -6,41 +6,15 @@ declare(strict_types=1);
  * User detail — admin view of an individual member.
  *
  * @var array $user       initials, name, division, role, status, status_label, email, phone, joined_at, trust_score, balance
- * @var array $activity   recent activity items: icon_type, title, meta
+ * @var array $activity   the account's latest point movements: icon_type, title, meta
  * @var array $stats      label, value
  */
 
-$user ??= [
-    'id'           => 1,
-    'initials'     => 'ML',
-    'name'         => 'M. Lawsan',
-    'division'     => 'Kollupitiya',
-    'role'         => 'Member',
-    'status'       => 'success',
-    'status_label' => 'Active',
-    'email'        => 'lawsan@example.com',
-    'phone'        => '+94 77 234 5678',
-    'joined_at'    => '15 Nov 2025',
-    'trust_score'  => 85,
-    'balance'      => '120 pts',
-];
-
-$stats ??= [
-    ['label' => 'Items listed',   'value' => '4'],
-    ['label' => 'Transactions',   'value' => '18'],
-    ['label' => 'Disputes',       'value' => '0'],
-];
-
-$activity ??= [
-    ['icon_type' => 'lend',   'title' => 'Borrowed Pressure Washer',    'meta' => '2 days ago'],
-    ['icon_type' => 'return', 'title' => 'Returned Rice Cooker',         'meta' => '5 days ago'],
-    ['icon_type' => 'lend',   'title' => 'Listed Camping Tent',          'meta' => '1 week ago'],
-];
-
-$pageTitle = e($user['name']) . ' — User';
+$pageTitle = $user['name'] . ' — User';
 $navActive = 'users';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -91,7 +65,10 @@ include __DIR__ . '/../../../partials/header-admin.php';
         </div>
 
         <section class="section" style="margin-top: var(--space-6);">
-            <h2 class="section__title">Recent activity</h2>
+            <h2 class="section__title">Recent point movements</h2>
+            <?php if ($activity === []): ?>
+                <p class="empty-state__body">No point movements yet.</p>
+            <?php endif; ?>
             <div class="activity-list">
                 <?php foreach ($activity as $item): ?>
                     <div class="activity-item">

@@ -47,15 +47,15 @@ $notifications ??= [
 $pageTitle = 'Notifications';
 $navActive = 'notifications';
 
-include __DIR__ . '/../../../partials/header-sponsor.php';
+$chrome = 'sponsor';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
     <div class="page-header__action" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <button class="btn btn--ghost" type="submit" disabled>Mark all as read</button>
     </div>
 </header>

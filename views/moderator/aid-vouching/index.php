@@ -75,7 +75,8 @@ $filterSummary ??= count(array_filter($sampleRows, static fn (array $row): bool 
 $pageTitle = 'Aid vouching';
 $navActive = 'disasters';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -126,8 +127,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                 <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
                 <?php if ($request['vouchable']): ?>
                     <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                        
+                        <p class="demo-note">Preview only. Saving is not available yet.</p>
                         <button class="btn btn--primary" type="submit" disabled>Vouch</button>
                     </div>
                 <?php endif; ?>

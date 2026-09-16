@@ -2,907 +2,1033 @@
 
 declare(strict_types=1);
 
-/** Read-only interim screens. Items has its own controller for saved changes. */
-final class AdminController
+/**
+ * The Admin's screens. routes.php maps most of them by view name to show();
+ * each builds its page from the database, and a missing record is a 404.
+ * Division create / update / archive are the Admin's working CRUD.
+ */
+final class AdminController extends Controller
 {
-    public function __construct(private PDO $pdo)
-    {
-    }
+    /** Ledger reasons in the words the ledger page uses. */
+    private const LEDGER_REASONS = [
+        'sponsor_contribution' => 'Sponsor contribution',
+        'welcome_bonus'        => 'Welcome bonus',
+        'moderator_stipend'    => 'Moderator stipend',
+        'community_reward'     => 'Community reward',
+        'reserve_topup'        => 'Reserve top-up',
+        'damage_penalty'       => 'Damage penalty',
+        'aid_return'           => 'Aid return',
+        'bond_forfeit'         => 'Bond forfeited',
+        'account_closure'      => 'Account closure (Type A)',
+        'parting_gift'         => 'Parting gift (Type B)',
+        'recycle'              => 'Retired recycling',
+        'rental_charge'        => 'Rental charge',
+        'rental_payout'        => 'Rental payout',
+        'late_fee'             => 'Late fee',
+        'gift'                 => 'Gift',
+        'aid_grant'            => 'Aid grant',
+        'bond_hold'            => 'Bond hold',
+        'bond_return'          => 'Bond return',
+        'shortfall_cover'      => 'Reserve shortfall cover',
+        'buffer_hold'          => 'Buffer hold',
+        'buffer_refund'        => 'Buffer refund',
+    ];
 
+    /** Account status => badge class. */
+    private const USER_BADGES = [
+        'active'          => 'success',
+        'pending'         => 'warning',
+        'suspended'       => 'error',
+        'closed_standard' => 'neutral',
+        'closed_donation' => 'neutral',
+    ];
+
+    /**
+     * GET routes mapped by view name.
+     *
+     * @param array{id?: string} $params the {id} from the URL, when the route has one
+     */
     public function show(string $view, array $params = []): void
     {
-        $_GET = $params + $_GET;
-        extract($this->data($view, $params), EXTR_SKIP);
-        require dirname(__DIR__, 2) . '/views/' . $view . '.php';
-    }
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
 
-    private function data(string $view, array $params): array
-    {
-        $pdo = $this->pdo;
+        if ($view === 'admin/moderators/appoint' && $id === 0) {
+            $id = (int) ($_GET['division'] ?? 0);
 
-        $divisions  = new GnDivision($pdo);
-        $disputes   = new Dispute($pdo);
-        $cronRuns   = new CronRun($pdo);
-        $moderators = new Moderator($pdo);
-        $ledger     = new PointLedger($pdo);
-        $covers     = new ShortfallCover($pdo);
-        $users      = new User($pdo);
-        $cats       = new ItemCategory($pdo);
-        $pools      = new PointPool($pdo);
-        $bookings   = new Booking($pdo);
-        $sponsors   = new Sponsor($pdo);
+            if ($id === 0) {
+                $this->redirect('/admin/moderators');
 
-        // RbacMiddleware only lets an admin session this far (§7.4).
-        $adminUser = $users->find((int) ($_SESSION['user_id'] ?? 0)) ?? ['full_name' => 'System Admin'];
-
-        $shared = [
-            'currentAdmin' => [
-                'initials'  => User::initials((string) $adminUser['full_name']),
-                'full_name' => (string) $adminUser['full_name'],
-            ],
-        ];
+                return;
+            }
+        }
 
         $data = match ($view) {
-            'admin/dashboard/index'        => $this->dashboard($shared, $users, $disputes, $pools, $bookings, $cronRuns, $divisions),
-            'admin/divisions/index'        => $this->divisionsIndex($shared, $divisions),
-            'admin/divisions/show'         => $this->divisionsShow($shared, $divisions, $params),
-            'admin/divisions/approvals'    => $this->divisionsApprovals($shared, $divisions, $params),
-            'admin/moderators/index'       => $this->moderatorsIndex($shared, $divisions, $moderators),
-            'admin/moderators/performance' => $this->moderatorsPerformance($shared, $moderators),
-            'admin/moderators/appoint'     => $this->moderatorsAppoint($shared, $divisions, $moderators, $params),
-            'admin/moderators/objections'  => $shared,
-            'admin/moderators/show'        => $this->moderatorsShow($shared, $moderators, $params),
-            'admin/disputes/index'         => $this->disputesIndex($shared, $disputes),
-            'admin/disputes/show'          => $this->disputesShow($shared, $disputes, $params),
-            'admin/disaster/index'         => $this->disasterIndex($shared, $divisions),
-            'admin/categories/index'       => $this->categoriesIndex($shared, $cats),
-            'admin/pools/index'            => $this->poolsIndex($shared, $pools, $cronRuns),
-            'admin/pools/reserve'          => $this->reserveIndex($shared, $covers, $pools),
-            'admin/pools/sponsor-ledger'   => $this->sponsorLedger($shared, $sponsors, $pools),
-            'admin/pools/policies'         => $this->policies($shared),
-            'admin/ledger/index'           => $this->ledgerIndex($shared, $ledger),
-            'admin/users/index'            => $this->usersIndex($shared, $users, $divisions),
-            'admin/users/show'             => $this->usersShow($shared, $pdo, $users, $params),
-            'admin/cron/index'             => $this->cronIndex($shared, $cronRuns),
-            'admin/notifications/index'    => $this->notificationsIndex($shared, $disputes, $cronRuns, $sponsors, $users, $divisions, $moderators),
-            'admin/settings/profile'       => $this->settings($shared, $adminUser, 'profile'),
-            'admin/settings/security'      => $this->settings($shared, $adminUser, 'security'),
-            'admin/settings/notifications' => $this->settings($shared, $adminUser, 'notifications'),
-            default => $shared,
+            'admin/dashboard/index'        => $this->dashboard(),
+            'admin/divisions/index'        => $this->divisions(),
+            'admin/divisions/show'         => $this->division($id),
+            'admin/divisions/approvals'    => $this->divisionApprovals($id),
+            'admin/moderators/index'       => $this->moderators(),
+            'admin/moderators/performance' => $this->moderatorPerformance(),
+            'admin/moderators/appoint'     => $this->appointment($id),
+            'admin/moderators/show'        => $this->moderator($id),
+            'admin/disputes/index'         => $this->disputes(),
+            'admin/disputes/show'          => $this->dispute($id),
+            'admin/disaster/index'         => $this->disaster(),
+            'admin/categories/index'       => $this->categories(),
+            'admin/pools/index'            => $this->pools(),
+            'admin/pools/reserve'          => $this->reserve(),
+            'admin/pools/sponsor-ledger'   => $this->sponsorLedger(),
+            'admin/pools/policies'         => $this->policies(),
+            'admin/ledger/index'           => $this->ledger(),
+            'admin/users/index'            => $this->users(),
+            'admin/users/show'             => $this->user($id),
+            'admin/cron/index'             => $this->cron(),
+            'admin/notifications/index'    => $this->notifications(),
+            'admin/settings/profile',
+            'admin/settings/security',
+            'admin/settings/notifications' => $this->settings(),
+            // Design previews with no backend yet render their own sample content.
+            default                        => [],
         };
 
-        return $data;
-    }
+        if ($data === null) {
+            $this->notice(404, 'Record not found', 'It may have been removed. Return to the list to choose another.');
 
-    // Dashboard
-
-    private function dashboard(array $shared, User $users, Dispute $disputes, PointPool $pools, Booking $bookings, CronRun $cronRuns, GnDivision $divisions): array
-    {
-        $totalMembers = $users->countByRole('member');
-        $newThisMonth = $users->countNewMembersThisMonth();
-        $activeBookings = $bookings->countActive();
-        $escrowPts = $bookings->activeEscrowPoints();
-        $openDisputes = $disputes->countOpen();
-        $pastTimer = $disputes->countPastTimer();
-        $totalPts = $pools->totalBalance();
-
-        $invariantRun = $cronRuns->lastInvariantResult();
-        $invariantPassed = $invariantRun !== null && $invariantRun['status'] === 'success';
-
-        $cronJobs = array_map(function (array $job): array {
-            return [
-                'name'         => str_replace('_', ' ', ucfirst($job['job_name'])),
-                'schedule'     => 'Last ' . ($job['started_at'] ? date('j M H:i', strtotime($job['started_at'])) : 'never'),
-                'last_run'     => $job['started_at'] ?? '',
-                'status'       => $job['status'] === 'success' ? 'success' : 'error',
-                'status_label' => $job['status'] === 'success' ? 'OK' : 'Failed',
-            ];
-        }, $cronRuns->recentJobs(5));
-
-        $divisionCount = $divisions->countAll();
-
-        return $shared + [
-            'admin' => ['name' => trim((string) strrchr($shared['currentAdmin']['full_name'], ' ')) ?: $shared['currentAdmin']['full_name']],
-            'globalMeta' => ['division_count' => $divisionCount, 'member_count' => number_format($totalMembers)],
-            'stats' => [
-                ['label' => 'Total members', 'value' => number_format($totalMembers), 'note' => '+' . $newThisMonth . ' this month', 'primary' => true],
-                ['label' => 'Active bookings', 'value' => number_format($activeBookings), 'note' => number_format($escrowPts) . ' pts in escrow'],
-                ['label' => 'Open disputes', 'value' => (string) $openDisputes, 'note' => $pastTimer . ' past 7-day timer'],
-                ['label' => 'Points in system', 'value' => number_format($totalPts), 'note' => 'All wallets + pools', 'primary' => true],
-            ],
-            'invariant' => [
-                'passed'   => $invariantPassed,
-                'last_run' => $invariantRun['finished_at'] ?? '',
-                'summary'  => $invariantRun['notes'] ?? 'No invariant run recorded',
-            ],
-            'cronJobs' => $cronJobs,
-        ];
-    }
-
-    // Divisions
-
-    private function divisionsIndex(array $shared, GnDivision $divisions): array
-    {
-        $rows = $divisions->allWithStaff();
-
-        return $shared + [
-            'divisions' => array_map(function (array $d): array {
-                $hasMod = !empty($d['moderator_name']);
-                $isArchived = ($d['status'] ?? '') === 'archived';
-                return [
-                    'id'                   => $d['id'],
-                    'name'                 => $d['name'],
-                    'district'             => $d['district'],
-                    'member_count'         => (int) $d['member_count'],
-                    'moderator_name'       => $d['moderator_name'],
-                    'liaison_name'         => 'Pending',
-                    'disaster_mode_active' => (bool) $d['disaster_mode_active'],
-                    'status'               => $isArchived ? 'neutral' : ($hasMod ? 'success' : 'warning'),
-                    'status_label'         => $isArchived ? 'Archived' : ($hasMod ? 'Active' : 'No moderator'),
-                    'href'                 => base_url() . '/admin/divisions/' . $d['id'],
-                ];
-            }, $rows),
-        ];
-    }
-
-
-    private function divisionsShow(array $shared, GnDivision $divisions, array $params): array
-    {
-        $id = (int) ($params['id'] ?? 1);
-        $div = $divisions->findWithStaff($id);
-        if ($div === null) {
-            return $shared;
+            return;
         }
+
+        $this->render($view, $data);
+    }
+
+    // ── Division CRUD ───────────────────────────────────────────────────────
+
+    /**
+     * POST /admin/divisions.
+     */
+    public function createDivision(): void
+    {
+        $validator = $this->divisionInput();
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $id = $this->divisionService()->create($validator->value('name'), $validator->value('district'));
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/admin/divisions');
+
+            return;
+        }
+
+        $this->flash($validator->value('name') . ' division created.');
+        $this->redirect('/admin/divisions/' . $id);
+    }
+
+    /**
+     * POST /admin/divisions/{id}.
+     */
+    public function updateDivision(int $id): void
+    {
+        $validator = $this->divisionInput();
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $this->divisionService()->update($id, $validator->value('name'), $validator->value('district'));
+            $this->flash('Division details saved.');
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Division not found', 'Return to the division list to choose another.');
+
+            return;
+        }
+
+        $this->redirect('/admin/divisions/' . $id);
+    }
+
+    /**
+     * POST /admin/divisions/{id}/archive — the soft delete.
+     */
+    public function archiveDivision(int $id): void
+    {
+        try {
+            $name = $this->divisionService()->archive($id);
+            $this->flash($name . ' division archived. It no longer accepts new members.');
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Division not found', 'Return to the division list to choose another.');
+
+            return;
+        }
+
+        $this->redirect('/admin/divisions');
+    }
+
+    private function divisionInput(): Validator
+    {
+        return (new Validator($_POST))
+            ->required('name', 'Division name')
+            ->maxLength('name', 'Division name', 120)
+            ->required('district', 'District')
+            ->maxLength('district', 'District', 100);
+    }
+
+    private function divisionService(): DivisionService
+    {
+        return new DivisionService(new GnDivision($this->pdo));
+    }
+
+    // ── Dashboard ───────────────────────────────────────────────────────────
+
+    /** @return array<string, mixed> */
+    private function dashboard(): array
+    {
+        $users     = new User($this->pdo);
+        $bookings  = new Booking($this->pdo);
+        $disputes  = new Dispute($this->pdo);
+        $cronRuns  = new CronRun($this->pdo);
+        $members   = $users->countByRole('member');
+        $invariant = $cronRuns->lastInvariantResult();
+        $admin     = (string) ($users->find($this->userId())['full_name'] ?? '');
+
+        return [
+            'admin'      => ['name' => $this->lastName($admin)],
+            'globalMeta' => [
+                'division_count' => (new GnDivision($this->pdo))->countAll(),
+                'member_count'   => number_format($members),
+            ],
+            'stats' => [
+                ['label' => 'Total members',    'value' => number_format($members), 'note' => '+' . $users->countNewMembersThisMonth() . ' this month'],
+                ['label' => 'Active bookings',  'value' => number_format($bookings->countActive()), 'note' => number_format($bookings->activeEscrowPoints()) . ' pts in escrow'],
+                ['label' => 'Open disputes',    'value' => (string) $disputes->countOpen(), 'note' => $disputes->countPastTimer() . ' past 7-day timer'],
+                ['label' => 'Points in system', 'value' => number_format((new PointPool($this->pdo))->totalBalance()), 'note' => 'All wallets + pools'],
+            ],
+            'invariant' => $this->invariantSummary($invariant),
+            'cronJobs'  => array_map(fn (array $job): array => $this->jobRow($job), $cronRuns->recentJobs(5)),
+        ];
+    }
+
+    // ── Divisions ───────────────────────────────────────────────────────────
+
+    /** @return array<string, mixed> */
+    private function divisions(): array
+    {
+        return [
+            'divisions' => array_map(
+                fn (array $row): array => [
+                    'id'             => (int) $row['id'],
+                    'name'           => (string) $row['name'],
+                    'district'       => (string) $row['district'],
+                    'member_count'   => (int) $row['member_count'],
+                    'moderator_name' => $row['moderator_name'],
+                    'href'           => base_url() . '/admin/divisions/' . $row['id'],
+                ] + $this->divisionBadge($row),
+                (new GnDivision($this->pdo))->allWithStaff()
+            ),
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    private function division(int $id): ?array
+    {
+        $divisions = new GnDivision($this->pdo);
+        $row       = $divisions->findWithStaff($id);
+
+        if ($row === null) {
+            return null;
+        }
+
         $stats = $divisions->divisionStats($id);
 
-        $isArchived = ($div['status'] ?? '') === 'archived';
-        $statusBadge = $isArchived ? 'neutral' : ($div['moderator_name'] ? 'success' : 'warning');
-        $statusLabel = $isArchived ? 'Archived' : ($div['moderator_name'] ? 'Active' : 'No moderator');
-
-
-        return $shared + [
+        return [
             'division' => [
-                'id'                   => $div['id'],
-                'name'                 => $div['name'],
-                'district'             => $div['district'],
-                'disaster_mode_active' => (bool) $div['disaster_mode_active'],
-                'moderator_name'       => $div['moderator_name'],
-                'moderator_since'      => $div['moderator_since'] ? date('Y-m-d', strtotime($div['moderator_since'])) : null,
-                'status'               => $statusBadge,
-                'status_label'         => $statusLabel,
-            ],
+                'id'              => (int) $row['id'],
+                'name'            => (string) $row['name'],
+                'district'        => (string) $row['district'],
+                'archived'        => $row['status'] === 'archived',
+                'moderator_name'  => $row['moderator_name'],
+                'moderator_since' => $row['moderator_since'] === null ? '' : date('j M Y', strtotime((string) $row['moderator_since'])),
+            ] + $this->divisionBadge($row),
             'stats' => [
-                ['label' => 'Members', 'value' => (string) $stats['members'], 'note' => 'verified residents', 'primary' => true],
-                ['label' => 'Active listings', 'value' => (string) $stats['items_listed'], 'note' => 'items available'],
-                ['label' => 'Open disputes', 'value' => (string) $stats['disputes'], 'note' => 'pending resolution', 'error' => $stats['disputes'] > 0],
+                ['label' => 'Members',         'value' => (string) $stats['members'],      'note' => 'verified residents'],
+                ['label' => 'Active listings', 'value' => (string) $stats['items_listed'], 'note' => 'not archived or rejected'],
+                ['label' => 'Open disputes',   'value' => (string) $stats['disputes'],     'note' => 'awaiting a ruling', 'error' => $stats['disputes'] > 0],
             ],
         ];
     }
 
-    private function divisionsApprovals(array $shared, GnDivision $divisions, array $params): array
+    /** @return array<string, mixed>|null */
+    private function divisionApprovals(int $id): ?array
     {
-        $id = (int) ($params['id'] ?? 1);
-        $div = $divisions->findWithStaff($id);
-        $approvalStats = $divisions->approvalStats($id);
-        $pending = $divisions->pendingApprovals($id);
+        $divisions = new GnDivision($this->pdo);
+        $row       = $divisions->findWithStaff($id);
 
-        return $shared + [
-            'division'      => ['id' => $id, 'name' => $div['name'] ?? 'Division'],
-            'pending'       => array_map(fn(array $p): array => [
-                'id'         => $p['id'],
-                'full_name'  => $p['full_name'],
-                'nic'        => $p['nic'],
-                'applied_at' => $p['applied_at'],
-                'address'    => $p['address'],
-            ], $pending),
+        if ($row === null) {
+            return null;
+        }
+
+        $counts = $divisions->approvalStats($id);
+
+        return [
+            'division'      => ['id' => $id, 'name' => (string) $row['name']],
             'approvalStats' => [
-                ['label' => 'Pending', 'value' => (string) $approvalStats['pending']],
-                ['label' => 'Approved', 'value' => (string) $approvalStats['approved']],
-                ['label' => 'Progress', 'value' => $approvalStats['approved'] . ' / ' . ($approvalStats['approved'] + $approvalStats['pending'])],
+                ['label' => 'Pending requests',            'value' => (string) $counts['pending']],
+                ['label' => 'Approved members',            'value' => (string) $counts['approved']],
+                ['label' => 'Progress to first moderator', 'value' => min($counts['approved'], 10) . ' / 10'],
             ],
+            'pendingMembers' => array_map(
+                fn (array $member): array => $this->applicantRow($member),
+                $divisions->pendingApprovals($id)
+            ),
         ];
     }
 
-    // Moderators
-
-    private function moderatorsIndex(array $shared, GnDivision $divisions, Moderator $moderators): array
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return array{status: string, status_label: string}
+     */
+    private function divisionBadge(array $row): array
     {
-        $rows = $divisions->allWithStaff();
-        $requested = filter_var($_GET['division'] ?? null, FILTER_VALIDATE_INT);
-        $id = $requested ?: (int) ($rows[0]['id'] ?? 1);
-        $detail = $this->moderatorsAppoint($shared, $divisions, $moderators, ['id' => $id]);
-        $division = $divisions->findWithStaff($id);
-        $phase = empty($division['moderator_name']) ? ((int) ($division['member_count'] ?? 0) < 10 ? 1 : 2) : 3;
-        $labels = [1 => 'Admin-run division', 2 => 'First moderator appointment', 3 => 'Moderator management'];
-        $active = array_values(array_filter($moderators->allActive(), static fn (array $row): bool => (int) $row['division_id'] === $id));
-        return $detail + [
+        if ($row['status'] === 'archived') {
+            return ['status' => 'neutral', 'status_label' => 'Archived'];
+        }
+
+        if (!empty($row['disaster_mode_active'])) {
+            return ['status' => 'error', 'status_label' => 'Disaster mode'];
+        }
+
+        return $row['moderator_name'] === null
+            ? ['status' => 'warning', 'status_label' => 'No moderator']
+            : ['status' => 'success', 'status_label' => 'Active'];
+    }
+
+    // ── Moderators ──────────────────────────────────────────────────────────
+
+    /** @return array<string, mixed>|null */
+    private function moderators(): ?array
+    {
+        $divisions = new GnDivision($this->pdo);
+        $rows      = $divisions->allWithStaff();
+
+        if ($rows === []) {
+            return null;
+        }
+
+        $requested = (int) ($_GET['division'] ?? 0);
+        $ids       = array_map('intval', array_column($rows, 'id'));
+        $id        = in_array($requested, $ids, true) ? $requested : $ids[0];
+        $selected  = $rows[array_search($id, $ids, true)];
+        $members   = (int) $selected['member_count'];
+        $phase     = $selected['moderator_name'] !== null ? 3 : ($members < 10 ? 1 : 2);
+        $labels    = [1 => 'Admin-run division', 2 => 'First moderator appointment', 3 => 'Moderator management'];
+
+        $candidates = $this->candidateRows($id);
+        $active     = array_values(array_filter(
+            (new Moderator($this->pdo))->allActive(),
+            static fn (array $row): bool => (int) $row['division_id'] === $id
+        ));
+
+        return [
             'selectedDivision' => $id,
-            'divisions' => array_map(static fn (array $row): array => $row + ['active' => (int) $row['id'] === $id], $rows),
-            'phase' => ['number' => $phase, 'label' => $labels[$phase], 'description' => $detail['division']['name'] . ' · Review the selected division.'],
-            'divisionStats' => [['label' => 'Members', 'value' => (string) ($division['member_count'] ?? 0)],
+            'division'         => ['id' => $id, 'name' => (string) $selected['name']],
+            'divisions'        => array_map(static fn (array $row): array => $row + ['active' => (int) $row['id'] === $id], $rows),
+            'phase'            => [
+                'number'      => $phase,
+                'label'       => $labels[$phase],
+                'description' => $selected['name'] . ' · ' . $members . ' verified members',
+            ],
+            'divisionStats' => [
+                ['label' => 'Members',           'value' => (string) $members],
                 ['label' => 'Active moderators', 'value' => (string) count($active)],
-                ['label' => 'Candidates', 'value' => (string) count($detail['candidates'])]],
-            'verifiedMembers' => $detail['candidates'], 'eligibilityPool' => $detail['candidates'],
-            'pendingMembers' => array_map(static fn (array $row): array => ['initials' => User::initials($row['full_name']),
-                'name' => $row['full_name'], 'nic_ending' => substr($row['nic'], -4), 'address' => $row['address'],
-                'applied_ago' => date('j M Y', strtotime($row['applied_at']))], $divisions->pendingApprovals($id)),
-            'activeMods' => array_map(static fn (array $row): array => ['initials' => User::initials($row['full_name']),
-                'name' => $row['full_name'], 'division' => $row['division_name'], 'appointed_at' => $row['appointed_at'],
+                ['label' => 'Candidates',        'value' => (string) count($candidates)],
+            ],
+            'candidates'      => $candidates,
+            'verifiedMembers' => $candidates,
+            'eligibilityPool' => $candidates,
+            'pendingMembers'  => array_map(fn (array $member): array => $this->applicantRow($member), $divisions->pendingApprovals($id)),
+            'activeMods'      => array_map(static fn (array $row): array => [
+                'initials'         => User::initials((string) $row['full_name']),
+                'name'             => (string) $row['full_name'],
+                'division'         => (string) $row['division_name'],
+                'appointed_at'     => (string) $row['appointed_at'],
                 'objection_status' => $row['status'] === 'active' ? 'success' : 'warning',
-                'objection_label' => ucfirst($row['status']), 'trust_score' => $row['trust_score'],
-                'bond' => $row['bond_points'] . ' pts', 'href' => base_url() . '/admin/moderators/' . $row['user_id']], $active),
+                'objection_label'  => ucfirst((string) $row['status']),
+                'trust_score'      => (int) $row['trust_score'],
+                'bond'             => $row['bond_points'] . ' pts',
+                'href'             => base_url() . '/admin/moderators/' . $row['user_id'],
+            ], $active),
         ];
     }
 
-    private function moderatorsPerformance(array $shared, Moderator $moderators): array
+    /** @return array<string, mixed> */
+    private function moderatorPerformance(): array
     {
-        $rows = $moderators->allWithPerformance();
-
-        return $shared + [
-            'moderators' => array_map(fn(array $m): array => [
-                'id'            => $m['user_id'],
-                'initials'      => User::initials($m['full_name']),
-                'name'          => $m['full_name'],
-                'full_name'     => $m['full_name'],
-                'trust_score'   => (int) $m['trust_score'],
-                'division'      => $m['division_name'],
-                'division_name' => $m['division_name'],
-                'meta'          => 'Trust ' . $m['trust_score'] . ' · ' . $m['items_reviewed'] . ' items reviewed · ' . $m['disputes_resolved'] . ' disputes resolved',
-                'bond_balance'  => (int) $m['bond_points'],
-                'bond_status'   => $m['bond_status'],
-                'status'        => 'success',
-                'status_label'  => ucfirst($m['status']),
-                'action_style'  => 'ghost',
-                'action_href'   => base_url() . '/admin/moderators/' . $m['user_id'],
-                'action_label'  => 'View',
-                'appointed_at'  => $m['appointed_at'],
-            ], $rows),
+        return [
+            'moderators' => array_map(static fn (array $row): array => [
+                'initials'     => User::initials((string) $row['full_name']),
+                'name'         => (string) $row['full_name'],
+                'division'     => (string) $row['division_name'],
+                'meta'         => sprintf(
+                    'Trust %d · %d items reviewed · %d disputes resolved · bond %d pts',
+                    (int) $row['trust_score'],
+                    (int) $row['items_reviewed'],
+                    (int) $row['disputes_resolved'],
+                    (int) $row['bond_points']
+                ),
+                'status'       => $row['status'] === 'active' ? 'success' : 'info',
+                'status_label' => ucfirst((string) $row['status']),
+                'action_href'  => base_url() . '/admin/moderators/' . $row['user_id'],
+            ], (new Moderator($this->pdo))->allWithPerformance()),
         ];
     }
 
-    private function moderatorsAppoint(array $shared, GnDivision $divisions, Moderator $moderators, array $params): array
+    /** @return array<string, mixed>|null */
+    private function appointment(int $divisionId): ?array
     {
-        $id = (int) ($params['id'] ?? filter_var($_GET['division'] ?? 1, FILTER_VALIDATE_INT) ?: 1);
-        $div = $divisions->findWithStaff($id);
-        $candidates = $moderators->eligibleCandidates($id);
+        $row = (new GnDivision($this->pdo))->findWithStaff($divisionId);
 
-        $data = $shared + [
-            'division'   => ['id' => $id, 'name' => $div['name'] ?? 'Division'],
-            'candidates' => array_map(function (array $c, int $i): array {
-                $months = $c['joined_at'] ? max(1, (int) round((time() - strtotime($c['joined_at'])) / 2592000)) : 0;
-                return [
-                    'id'           => $c['id'],
-                    'name'         => $c['full_name'],
-                    'full_name'    => $c['full_name'],
-                    'initials'     => User::initials($c['full_name']),
-                    'trust_score'  => (int) $c['trust_score'],
-                    'address'      => $c['address'],
-                    'verified_at'  => $c['verified_at'] ?? '',
-                    'member_since' => $c['joined_at'] ? date('M Y', strtotime($c['joined_at'])) : '',
-                    'transactions' => (int) $c['completed_bookings'],
-                    'months'       => $months,
-                    'record'       => 'No disputes on record',
-                    'gn_endorsed'  => false,
-                    'conflict' => null,
-                    'recommended'  => $i === 0,
-                ];
-            }, $candidates, array_keys($candidates)),
-        ];
-        $selectedId = filter_var($_GET['member'] ?? null, FILTER_VALIDATE_INT);
-        $data['selected'] = null;
-        foreach ($data['candidates'] as $candidate) {
-            if ((int) $candidate['id'] === $selectedId) $data['selected'] = $candidate;
-        }
-        $data['currentStep'] = $data['selected'] === null ? 1 : 2;
-        return $data;
-    }
-
-    private function moderatorsShow(array $shared, Moderator $moderators, array $params): array
-    {
-        $id = (int) ($params['id'] ?? 1);
-        $mod = $moderators->findByUserId($id);
-
-        if (!$mod) {
-            return $shared;
+        if ($row === null) {
+            return null;
         }
 
-        return $shared + [
+        $candidates = $this->candidateRows($divisionId);
+        $chosen     = (int) ($_GET['member'] ?? 0);
+        $selected   = null;
+
+        foreach ($candidates as $candidate) {
+            if ($candidate['id'] === $chosen) {
+                $selected = $candidate;
+            }
+        }
+
+        return [
+            'division'    => ['id' => $divisionId, 'name' => (string) $row['name']],
+            'candidates'  => $candidates,
+            'selected'    => $selected,
+            'currentStep' => $selected === null ? 1 : 2,
+            // The objection window only opens once an appointment is made.
+            'objections'  => [],
+            'countdown'   => 'Opens when the appointment is made',
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    private function moderator(int $userId): ?array
+    {
+        $moderators = new Moderator($this->pdo);
+        $row        = $moderators->findByUserId($userId);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $performance = [];
+        foreach ($moderators->allWithPerformance() as $candidate) {
+            if ((int) $candidate['user_id'] === $userId) {
+                $performance = $candidate;
+            }
+        }
+
+        $months = (int) floor((time() - strtotime((string) $row['appointed_at'])) / (30 * 86400));
+
+        return [
             'moderator' => [
-                'id'           => $mod['user_id'],
-                'name'         => $mod['full_name'],
-                'initials'     => User::initials($mod['full_name']),
-                'trust_score'  => (int) $mod['trust_score'],
-                'phone'        => $mod['phone'] ?? '',
-                'email'        => $mod['email'] ?? '',
-                'address'      => $mod['address'] ?? '',
-                'division'     => $mod['division_name'],
-                'division_id'  => $mod['division_id'],
-                'bond_balance' => (int) $mod['bond_points'],
-                'bond_status'  => $mod['bond_status'],
-                'status'       => $mod['status'] === 'active' ? 'success' : 'info',
-                'status_label' => ucfirst($mod['status']),
-                'appointed_at' => $mod['appointed_at'] ? date('j M Y', strtotime($mod['appointed_at'])) : '',
+                'initials'     => User::initials((string) $row['full_name']),
+                'name'         => (string) $row['full_name'],
+                'division'     => (string) $row['division_name'],
+                'status'       => $row['status'] === 'active' ? 'success' : 'info',
+                'status_label' => ucfirst((string) $row['status']),
+                'appointed_at' => date('j M Y', strtotime((string) $row['appointed_at'])),
+            ],
+            'bond' => [
+                'value'        => (int) $row['bond_points'],
+                'status'       => match ($row['bond_status']) {
+                    'held'      => 'success',
+                    'forfeited' => 'error',
+                    default     => 'neutral',
+                },
+                'status_label' => ucfirst((string) $row['bond_status']),
+            ],
+            'activityStats' => [
+                ['label' => 'Listings reviewed', 'value' => (string) (int) ($performance['items_reviewed'] ?? 0)],
+                ['label' => 'Disputes resolved', 'value' => (string) (int) ($performance['disputes_resolved'] ?? 0)],
+                ['label' => 'Months active',     'value' => (string) max(0, $months)],
             ],
         ];
     }
 
-    // Disputes
-
-    private function disputesIndex(array $shared, Dispute $disputes): array
+    /**
+     * Members of one division eligible for appointment (Plan §16.2).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function candidateRows(int $divisionId): array
     {
-        $rows = $disputes->openList();
+        $rows = (new Moderator($this->pdo))->eligibleCandidates($divisionId);
 
-        return $shared + [
-            'disputes' => array_map(function (array $d): array {
-                $daysOpen = (int) $d['days_open'];
-                $pastTimer = $daysOpen > 7;
-                return [
-                    'id'           => $d['id'],
-                    'title'        => $d['item_title'] ?? 'Dispute #' . $d['id'],
-                    'case_number'  => 'DC-' . str_pad((string) $d['id'], 4, '0', STR_PAD_LEFT),
-                    'division'     => $d['division_name'] ?? '',
-                    'parties'      => ($d['lender_name'] ?? '') . ' vs ' . ($d['borrower_name'] ?? ''),
-                    'escalated_at' => date('d M Y', strtotime($d['created_at'])),
-                    'reason'       => $daysOpen . ' days open',
-                    'status'       => $pastTimer ? 'error' : 'warning',
-                    'status_label' => $pastTimer ? 'Past timer' : 'Open',
-                    'href'         => base_url() . '/admin/disputes/' . $d['id'],
-                ];
-            }, $rows),
+        return array_map(static fn (array $row, int $index): array => [
+            'id'           => (int) $row['id'],
+            'name'         => (string) $row['full_name'],
+            'initials'     => User::initials((string) $row['full_name']),
+            'trust_score'  => (int) $row['trust_score'],
+            'address'      => (string) $row['address'],
+            'verified_at'  => (string) ($row['verified_at'] ?? ''),
+            'member_since' => $row['joined_at'] === null ? '' : date('M Y', strtotime((string) $row['joined_at'])),
+            'months'       => $row['joined_at'] === null ? 0 : max(1, (int) round((time() - strtotime((string) $row['joined_at'])) / (30 * 86400))),
+            'transactions' => (int) $row['completed_bookings'],
+            'record'       => (int) $row['disputes'] === 0 ? 'Clean' : $row['disputes'] . ' disputes',
+            'gn_endorsed'  => (bool) $row['gn_endorsed'],
+            // Conflict-of-interest checks are not built yet, so none is reported.
+            'conflict'     => null,
+            'recommended'  => $index === 0,
+        ], $rows, array_keys($rows));
+    }
+
+    /**
+     * @param array<string, mixed> $member a pending_approvals row
+     *
+     * @return array<string, mixed>
+     */
+    private function applicantRow(array $member): array
+    {
+        return [
+            'id'          => (int) $member['id'],
+            'initials'    => User::initials((string) $member['full_name']),
+            'name'        => (string) $member['full_name'],
+            'nic_ending'  => substr((string) $member['nic'], -4),
+            'address'     => (string) $member['address'],
+            'applied_ago' => 'Applied ' . date('j M Y', strtotime((string) $member['applied_at'])),
         ];
     }
 
-    private function disputesShow(array $shared, Dispute $disputes, array $params): array
+    // ── Disputes ────────────────────────────────────────────────────────────
+
+    /** @return array<string, mixed> */
+    private function disputes(): array
     {
-        $id = (int) ($params['id'] ?? 1);
-        $d = $disputes->findWithHistory($id);
-        if ($d === null) {
-            return $shared;
+        return [
+            'disputes' => array_map(fn (array $row): array => [
+                'title'        => (string) ($row['item_title'] ?? 'Dispute #' . $row['id']),
+                'case_number'  => $this->caseNumber((int) $row['id']),
+                'division'     => (string) ($row['division_name'] ?? ''),
+                'parties'      => ($row['lender_name'] ?? '') . ' vs ' . ($row['borrower_name'] ?? ''),
+                'escalated_at' => date('d M Y', strtotime((string) $row['created_at'])),
+                'reason'       => (int) $row['days_open'] . ' days open',
+                'status'       => (int) $row['days_open'] > 7 ? 'error' : 'warning',
+                'status_label' => (int) $row['days_open'] > 7 ? 'Past timer' : 'Open',
+                'href'         => base_url() . '/admin/disputes/' . $row['id'],
+            ], (new Dispute($this->pdo))->openList()),
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    private function dispute(int $id): ?array
+    {
+        $row = (new Dispute($this->pdo))->findWithHistory($id);
+
+        if ($row === null) {
+            return null;
         }
 
-        return $shared + [
+        $history = [[
+            'text' => sprintf('Dispute raised: %s', $row['reason']),
+            'date' => date('j M Y', strtotime((string) $row['created_at'])),
+        ]];
+
+        if ($row['ruling_at'] !== null) {
+            $history[] = [
+                'text' => 'Ruling recorded: ' . ($row['resolution'] ?? ''),
+                'date' => date('j M Y', strtotime((string) $row['ruling_at'])),
+            ];
+        }
+
+        return [
             'dispute' => [
-                'id'             => $d['id'],
-                'item_title'     => $d['item_title'] ?? '',
-                'claim_number'   => 'DC-' . str_pad((string) $d['id'], 4, '0', STR_PAD_LEFT),
-                'lender_name'    => $d['lender_name'] ?? '',
-                'borrower_name'  => $d['borrower_name'] ?? '',
-                'moderator_name' => $d['moderator_name'] ?? '',
-                'reason'         => $d['reason'],
-                'resolution'     => $d['resolution'],
-                'status'         => $d['status'],
-                'created_at'     => $d['created_at'],
-                'division_name'  => $d['division_name'] ?? '',
+                'title'        => (string) ($row['item_title'] ?? 'Dispute'),
+                'case_number'  => $this->caseNumber($id),
+                'status'       => $row['status'] === 'open' ? 'error' : 'success',
+                'status_label' => ucfirst((string) $row['status']),
             ],
-            'evidence' => [],
+            'history'      => $history,
+            'proposed_pts' => '',
         ];
     }
 
-    // Disaster
-
-    private function disasterIndex(array $shared, GnDivision $divisions): array
+    private function caseNumber(int $id): string
     {
-        $allDivs = $divisions->allWithStaff();
+        return 'DC-' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+    }
 
-        return $shared + [
-            'divisions' => array_map(function (array $d): array {
-                $active = (bool) $d['disaster_mode_active'];
-                return [
-                    'id'     => $d['id'],
-                    'name'   => $d['name'],
-                    'active' => $active,
-                    'meta'   => $active
-                        ? 'Disaster mode active'
-                        : 'Mod: ' . ($d['moderator_name'] ?? 'Vacant') . ' · no active disaster',
-                    'status'       => $active ? 'error' : 'success',
-                    'status_label' => $active ? 'Active' : 'Normal',
-                ];
-            }, $allDivs),
+    // ── Disaster mode, categories ───────────────────────────────────────────
+
+    /** @return array<string, mixed> */
+    private function disaster(): array
+    {
+        return [
+            'divisions' => array_map(static fn (array $row): array => [
+                'id'           => (int) $row['id'],
+                'name'         => (string) $row['name'],
+                'active'       => (bool) $row['disaster_mode_active'],
+                'meta'         => $row['disaster_mode_active']
+                    ? 'Disaster mode active'
+                    : 'Mod: ' . ($row['moderator_name'] ?? 'vacant') . ' · no active disaster',
+                'status'       => $row['disaster_mode_active'] ? 'error' : 'success',
+                'status_label' => $row['disaster_mode_active'] ? 'Active' : 'Normal',
+            ], (new GnDivision($this->pdo))->allWithStaff()),
         ];
     }
 
-    // Categories
-
-    private function categoriesIndex(array $shared, ItemCategory $cats): array
+    /** @return array<string, mixed> */
+    private function categories(): array
     {
-        $rows = $cats->allWithListingCount();
-
-        return $shared + [
-            'categories' => array_map(fn(array $c): array => [
-                'id'            => $c['id'],
-                'name'          => $c['name'],
-                'listing_count' => (int) $c['listing_count'],
-                'status'        => $c['active'] ? 'success' : 'neutral',
-                'status_label'  => $c['active'] ? 'Active' : 'Hidden',
-            ], $rows),
+        return [
+            'categories' => array_map(static fn (array $row): array => [
+                'id'            => (int) $row['id'],
+                'name'          => (string) $row['name'],
+                'listing_count' => (int) $row['listing_count'],
+                'status'        => $row['active'] ? 'success' : 'neutral',
+                'status_label'  => $row['active'] ? 'Active' : 'Hidden',
+            ], (new ItemCategory($this->pdo))->allWithListingCount()),
         ];
     }
 
-    // Pools
+    // ── Pools and ledger ────────────────────────────────────────────────────
 
-    private function poolsIndex(array $shared, PointPool $pools, CronRun $cronRuns): array
+    /** @return array<string, mixed> */
+    private function pools(): array
     {
-        $allPools = $pools->all();
-        $invariant = $pools->lastInvariantRun();
-        $totalPts = array_sum(array_column($allPools, 'balance'));
-        $invariantPassed = $invariant !== null && $invariant['status'] === 'success';
-
-        $poolDescriptions = [
+        $pools = (new PointPool($this->pdo))->all();
+        $notes = [
             'sponsor'        => 'General contributions · welcome bonuses · stipends · bonds · rewards',
             'aid'            => 'Aid contributions · parting gifts · approved aid grants only',
-            'reserve'        => 'covers shortfalls — no negative balances',
-            'in_flight'      => 'rental charges + late-fee buffers',
-            'member_wallets' => 'sum of all member wallet balances',
+            'reserve'        => 'Covers shortfalls — no negative balances',
+            'in_flight'      => 'Rental charges + late-fee buffers',
+            'member_wallets' => 'Sum of all member wallet balances',
             'retired'        => 'Type A closures, awaiting recycling to the Sponsor Pool',
         ];
 
-        return $shared + [
-            'pools' => array_map(fn(array $p) => [
-                'label' => $p['name'],
-                'value' => number_format((int) $p['balance']) . ' pts',
-                'note'  => $poolDescriptions[$p['pool_code']] ?? '',
-            ], $allPools),
-            'invariant' => [
-                'passed'      => $invariantPassed,
-                'total'       => number_format($totalPts) . ' pts',
-                'summary'     => $invariant['notes'] ?? 'No invariant run recorded',
-                'verified_at' => $invariant['finished_at'] ? date('j M, H:i', strtotime($invariant['finished_at'])) : 'never',
-            ],
-            'jobs' => array_map(fn(array $j) => [
-                'name'         => str_replace('_', ' ', ucfirst($j['job_name'])),
-                'schedule'     => 'Last ' . date('j M H:i', strtotime($j['started_at'])),
-                'status'       => $j['status'] === 'success' ? 'success' : 'error',
-                'status_label' => $j['status'] === 'success' ? 'OK' : 'Failed',
-            ], $cronRuns->recentJobs(3)),
+        return [
+            'pools' => array_map(static fn (array $pool): array => [
+                'label' => (string) $pool['name'],
+                'value' => number_format((int) $pool['balance']) . ' pts',
+                'note'  => $notes[$pool['pool_code']] ?? '',
+            ], $pools),
+            'invariant' => $this->invariantSummary((new CronRun($this->pdo))->lastInvariantResult())
+                + ['total' => number_format(array_sum(array_column($pools, 'balance'))) . ' pts'],
+            'jobs' => array_map(fn (array $job): array => $this->jobRow($job), (new CronRun($this->pdo))->recentJobs(3)),
         ];
     }
 
-    private function reserveIndex(array $shared, ShortfallCover $covers, PointPool $pools): array
+    /** @return array<string, mixed> */
+    private function reserve(): array
     {
-        $yearStats = $covers->yearStats();
+        $covers = new ShortfallCover($this->pdo);
+        $year   = $covers->yearStats();
 
-        return $shared + [
+        return [
             'stats' => [
-                ['label' => 'Reserve Pool balance',     'value' => number_format($pools->balance('reserve')) . ' pts', 'note' => 'Safety net — no member balance goes negative'],
-                ['label' => 'Shortfalls covered (' . date('Y') . ')', 'value' => number_format($yearStats['total_pts']) . ' pts', 'note' => $yearStats['covers'] . ' covers paid to lenders'],
-                ['label' => 'Top-ups from Sponsor Pool', 'value' => number_format($covers->topUpsThisYear()) . ' pts', 'note' => 'Recorded by the Sponsor Liaison this year'],
+                ['label' => 'Reserve Pool balance',                   'value' => number_format((new PointPool($this->pdo))->balance('reserve')) . ' pts', 'note' => 'Safety net — no member balance goes negative'],
+                ['label' => 'Shortfalls covered (' . date('Y') . ')', 'value' => number_format($year['total_pts']) . ' pts',   'note' => $year['covers'] . ' covers paid to lenders'],
+                ['label' => 'Top-ups from Sponsor Pool',              'value' => number_format($covers->topUpsThisYear()) . ' pts', 'note' => 'Recorded by the Sponsor Liaison this year'],
             ],
-            'covers' => array_map(fn(array $c): array => [
-                'initials' => User::initials((string) ($c['borrower_name'] ?? '')),
-                'title'    => ($c['borrower_name'] ?? 'Unknown borrower') . ' → ' . ($c['lender_name'] ?? 'lender'),
-                'meta'     => trim(($c['division_name'] ?? '') . ' · booking #' . ($c['booking_id'] ?? '—')
-                    . ' · ' . date('j M Y', strtotime((string) $c['created_at'])), ' ·'),
-                'amount'   => '+' . number_format((int) $c['amount']) . ' pts',
+            'covers' => array_map(static fn (array $cover): array => [
+                'initials' => User::initials((string) ($cover['borrower_name'] ?? '')),
+                'title'    => ($cover['borrower_name'] ?? 'Unknown borrower') . ' → ' . ($cover['lender_name'] ?? 'lender'),
+                'meta'     => trim(($cover['division_name'] ?? '') . ' · booking #' . ($cover['booking_id'] ?? '—')
+                    . ' · ' . date('j M Y', strtotime((string) $cover['created_at'])), ' ·'),
+                'amount'   => '+' . number_format((int) $cover['amount']) . ' pts',
             ], $covers->recent()),
         ];
     }
 
-    private function sponsorLedger(array $shared, Sponsor $sponsors, PointPool $pools): array
+    /** @return array<string, mixed> */
+    private function sponsorLedger(): array
     {
-        $inflows = $sponsors->allContributions();
+        $inflows  = (new Sponsor($this->pdo))->allContributions();
+        $received = array_sum(array_map('intval', array_column($inflows, 'points')));
+        $held     = (new PointPool($this->pdo))->balance('sponsor');
 
-        $totalReceived = array_sum(array_map('intval', array_column($inflows, 'points')));
-
-        $sponsorPool = $pools->balance('sponsor');
-
-        return $shared + [
+        return [
             'summary' => [
-                'totalReceived' => ['value' => number_format($totalReceived) . ' pts', 'sub' => 'Rs ' . number_format($totalReceived) . ' converted at 1:1 ratio'],
-                'totalUsed'     => ['value' => number_format($totalReceived - (int) $sponsorPool) . ' pts', 'sub' => 'Welcome bonuses · Stipends · Infrastructure'],
-                'remaining'     => ['value' => number_format((int) $sponsorPool) . ' pts', 'sub' => 'Held in Sponsor Pool'],
+                'totalReceived' => ['value' => number_format($received) . ' pts', 'sub' => 'Rs ' . number_format($received) . ' converted at 1:1'],
+                'totalUsed'     => ['value' => number_format($received - $held) . ' pts', 'sub' => 'Welcome bonuses · stipends · bonds'],
+                'remaining'     => ['value' => number_format($held) . ' pts', 'sub' => 'Held in the Sponsor Pool'],
             ],
-            'inflows' => array_map(fn(array $r): array => [
-                'date'     => date('d M Y', strtotime($r['recorded_at'])),
-                'sponsor'  => $r['company_name'],
-                'ref'      => $r['receipt_number'],
-                'category' => sprintf('General %s · Aid %s', number_format((int) $r['general_points']), number_format((int) $r['aid_points'])),
-                'cash'     => 'Rs ' . number_format((int) $r['cash_amount']),
-                'pts'      => '+' . number_format((int) $r['points']),
-                'status'   => 'success',
+            'inflows' => array_map(static fn (array $row): array => [
+                'date'         => date('d M Y', strtotime((string) $row['recorded_at'])),
+                'sponsor'      => (string) $row['company_name'],
+                'ref'          => (string) $row['receipt_number'],
+                'category'     => sprintf('General %s · Aid %s', number_format((int) $row['general_points']), number_format((int) $row['aid_points'])),
+                'cash'         => 'Rs ' . number_format((int) $row['cash_amount']),
+                'pts'          => '+' . number_format((int) $row['points']),
+                'status'       => 'success',
                 'status_label' => 'Settled',
             ], $inflows),
         ];
     }
 
-    private function policies(array $shared): array
+    /** @return array<string, mixed> */
+    private function policies(): array
     {
-        return $shared + [
-            'policies' => [
-                ['name' => 'Daily gift cap', 'value' => '200 pts', 'description' => 'Maximum points a member can gift per day'],
-                ['name' => 'Annual gift cap', 'value' => '2,000 pts', 'description' => 'Maximum points a member can gift per year'],
-                ['name' => 'Moderator bond', 'value' => '500 pts', 'description' => 'Conduct bond deposited on appointment'],
-                ['name' => 'Welcome bonus', 'value' => '200 pts', 'description' => 'Credited once from the Sponsor Pool after moderator verification'],
-                ['name' => 'Moderator stipend', 'value' => '100 pts / month', 'description' => 'Paid from the Sponsor Pool when the moderator acted that month'],
-                ['name' => 'Aid grant cap', 'value' => '500 pts / year', 'description' => 'Per member; one active grant, 60-day cooling period'],
-                ['name' => 'Dispute escalation timer', 'value' => '7 days', 'description' => 'Moderator disputes auto-escalate to admin after this period'],
+        // Values the code enforces come from their constants; the rest are the
+        // plan's figures until their modules are built.
+        return [
+            'groups' => [
+                'Earning' => [
+                    ['label' => 'Welcome bonus',     'value' => VerificationService::WELCOME_BONUS . ' pts, once, from the Sponsor Pool after moderator verification'],
+                    ['label' => 'Moderator stipend', 'value' => '100 pts / month from the Sponsor Pool when the moderator acted that month'],
+                ],
+                'Gifting' => [
+                    ['label' => 'Daily gift cap',  'value' => number_format(Gift::DAILY_CAP) . ' pts per member per day'],
+                    ['label' => 'Annual gift cap', 'value' => number_format(Gift::ANNUAL_CAP) . ' pts per member per year'],
+                ],
+                'Moderation' => [
+                    ['label' => 'Moderator bond',           'value' => '500 pts conduct bond, locked on appointment'],
+                    ['label' => 'Dispute escalation timer', 'value' => 'Moderator disputes escalate to the Admin after 7 days'],
+                ],
+                'Aid' => [
+                    ['label' => 'Aid grant cap', 'value' => '500 pts per member per year · one active grant · 60-day cooling period'],
+                ],
             ],
         ];
     }
 
-    // Ledger
-
-    private function ledgerIndex(array $shared, PointLedger $ledger): array
+    /** @return array<string, mixed> */
+    private function ledger(): array
     {
-        $filter = $_GET['filter'] ?? 'all';
-        $search = $_GET['q'] ?? '';
+        $filter = (string) ($_GET['filter'] ?? '');
+        $filter = array_key_exists($filter, PointLedger::GROUPS) ? $filter : '';
+        $search = trim((string) ($_GET['q'] ?? ''));
         $page   = max(1, (int) ($_GET['page'] ?? 1));
+        $result = (new PointLedger($this->pdo))->adminList($filter, $search, $page);
 
-        $result = $ledger->adminList($filter, $search, $page);
+        $filters = [['label' => 'All types', 'slug' => '', 'active' => $filter === '']];
+        foreach (array_keys(PointLedger::GROUPS) as $group) {
+            $filters[] = ['label' => ucfirst($group), 'slug' => $group, 'active' => $filter === $group];
+        }
 
-        $reasonLabels = [
-            'sponsor_contribution' => 'Sponsor contribution',
-            'welcome_bonus'     => 'Welcome bonus',
-            'moderator_stipend' => 'Moderator stipend',
-            'community_reward'  => 'Community reward',
-            'reserve_topup'     => 'Reserve top-up',
-            'damage_penalty'    => 'Damage penalty',
-            'aid_return'        => 'Aid return',
-            'bond_forfeit'      => 'Bond forfeited',
-            'account_closure'   => 'Account closure (Type A)',
-            'parting_gift'      => 'Parting gift (Type B)',
-            'recycle'           => 'Retired recycling',
-            'rental_charge'     => 'Rental charge',
-            'rental_payout'     => 'Rental payout',
-            'late_fee'          => 'Late fee',
-            'gift'              => 'Gift',
-            'aid_grant'         => 'Aid grant',
-            'bond_hold'         => 'Bond hold',
-            'bond_return'       => 'Bond return',
-            'shortfall_cover'   => 'Reserve shortfall cover',
-            'buffer_hold'       => 'Buffer hold',
-            'buffer_refund'     => 'Buffer refund',
-        ];
-
-        return $shared + [
-            'filter'  => $filter,
-            'search'  => $search,
-            'page'    => $page,
-            'entries' => array_map(function (array $r) use ($reasonLabels): array {
-                $fromLabel = $r['from_pool_code'] ?? $r['from_user_name'] ?? '—';
-                $toLabel   = $r['to_pool_code'] ?? $r['to_user_name'] ?? '—';
-                $incoming  = $r['to_user_id'] !== null;
+        return [
+            'filters'     => $filters,
+            'filter'      => $filter,
+            'search'      => $search,
+            'page'        => $page,
+            'hasNextPage' => $page * $result['per_page'] < $result['total'],
+            'entries'     => array_map(static function (array $row): array {
+                $incoming = $row['to_user_id'] !== null;
 
                 return [
-                    'ref'          => 'TXN-' . $r['id'],
-                    'date'         => date('d M Y', strtotime($r['created_at'])),
-                    'title'        => $reasonLabels[$r['reason']] ?? ucfirst(str_replace('_', ' ', $r['reason'])),
-                    'meta'         => $fromLabel . ' → ' . $toLabel,
-                    'amount'       => ($incoming ? '+' : '−') . number_format((int) $r['amount']) . ' pts',
+                    'ref'          => 'TXN-' . $row['id'],
+                    'date'         => date('d M Y', strtotime((string) $row['created_at'])),
+                    'title'        => self::LEDGER_REASONS[$row['reason']] ?? ucfirst(str_replace('_', ' ', (string) $row['reason'])),
+                    'meta'         => ($row['from_pool_code'] ?? $row['from_user_name'] ?? '—') . ' → ' . ($row['to_pool_code'] ?? $row['to_user_name'] ?? '—'),
+                    'amount'       => ($incoming ? '+' : '−') . number_format((int) $row['amount']) . ' pts',
                     'amount_class' => $incoming ? 'success' : 'error',
                 ];
             }, $result['rows']),
         ];
     }
 
-    // Users
+    // ── Users ───────────────────────────────────────────────────────────────
 
-    private function usersIndex(array $shared, User $users, GnDivision $divisions): array
+    /** @return array<string, mixed> */
+    private function users(): array
     {
-        $statusFilter = $_GET['status'] ?? '';
-        $search = $_GET['q'] ?? '';
+        $users  = new User($this->pdo);
+        $status = (string) ($_GET['status'] ?? '');
+        $status = array_key_exists($status, self::USER_BADGES) ? $status : '';
+        $search = trim((string) ($_GET['q'] ?? ''));
 
-        $rows = $users->adminList($statusFilter, $search);
-
-        $totalUsers = $users->countAll();
-        $activeUsers = $users->countByStatus('active');
-        $frozenUsers = $users->countByStatus('suspended');
-        $newMonth = $users->countJoinedThisMonth();
-
-        $statusMap = ['active' => 'success', 'suspended' => 'error', 'pending' => 'warning', 'closed_standard' => 'neutral', 'closed_donation' => 'neutral'];
-
-        return $shared + [
-            'stats' => [
-                ['label' => 'Total users', 'value' => number_format($totalUsers)],
-                ['label' => 'Active', 'value' => number_format($activeUsers)],
-                ['label' => 'Frozen', 'value' => number_format($frozenUsers)],
-                ['label' => 'New this month', 'value' => number_format($newMonth)],
-            ],
-            'search' => $search,
-            'users'  => array_map(fn(array $u): array => [
-                'initials'     => User::initials($u['full_name']),
-                'name'         => $u['full_name'],
-                'division'     => $u['division_name'] ?? '—',
-                'role'         => $u['role_name'],
-                'balance'      => number_format((int) $u['balance']) . ' pts',
-                'status'       => $statusMap[$u['status']] ?? 'neutral',
-                'status_label' => ucfirst(str_replace('_', ' ', $u['status'])),
-                'href'         => base_url() . '/admin/users/' . $u['id'],
-            ], $rows),
-            'divisions' => $divisions->allNames(),
-        ];
-    }
-
-    private function usersShow(array $shared, PDO $pdo, User $users, array $params): array
-    {
-        $id = (int) ($params['id'] ?? 1);
-        $user = $users->findWithDivision($id);
-        if ($user === null) {
-            return $shared;
+        $filters = [];
+        foreach (['' => 'All', 'active' => 'Active', 'pending' => 'Pending', 'suspended' => 'Suspended'] as $slug => $label) {
+            $filters[] = ['label' => $label, 'slug' => $slug, 'active' => $status === $slug];
         }
 
-        $wallets = new Wallet($pdo);
-        $balance = $wallets->balance($id);
-        $pStats = $users->profileStats($id);
-
-        $roleName = $users->roleName($id);
-
-        $statusMap = ['active' => 'success', 'suspended' => 'error', 'pending' => 'warning'];
-
-        return $shared + [
-            'user' => [
-                'id'           => $user['id'],
-                'name'         => $user['full_name'],
-                'full_name'    => $user['full_name'],
-                'initials'     => User::initials($user['full_name']),
-                'email'        => $user['email'] ?? '',
-                'phone'        => $user['phone'] ?? '',
-                'address'      => $user['address'] ?? '',
-                'trust_score'  => (int) $user['trust_score'],
-                'division'     => $user['division_name'] ?? '',
-                'role'         => $roleName,
-                'balance'      => number_format($balance) . ' pts',
-                'status'       => $statusMap[$user['status'] ?? 'active'] ?? 'neutral',
-                'status_label' => ucfirst(str_replace('_', ' ', $user['status'] ?? 'active')),
-                'joined_at'    => $user['joined_at'] ? date('j M Y', strtotime($user['joined_at'])) : '',
-            ],
+        return [
             'stats' => [
-                ['label' => 'Items listed', 'value' => (string) $pStats['items']],
-                ['label' => 'Transactions', 'value' => (string) $pStats['completed']],
-                ['label' => 'Disputes', 'value' => (string) $pStats['disputes']],
+                ['label' => 'Total users',    'value' => number_format($users->countAll())],
+                ['label' => 'Active',         'value' => number_format($users->countByStatus('active'))],
+                ['label' => 'Suspended',      'value' => number_format($users->countByStatus('suspended'))],
+                ['label' => 'New this month', 'value' => number_format($users->countJoinedThisMonth())],
             ],
+            'filters' => $filters,
+            'status'  => $status,
+            'search'  => $search,
+            'users'   => array_map(fn (array $row): array => [
+                'initials' => User::initials((string) $row['full_name']),
+                'name'     => (string) $row['full_name'],
+                'division' => (string) ($row['division_name'] ?? '—'),
+                'role'     => (string) $row['role_name'],
+                'balance'  => number_format((int) $row['balance']) . ' pts',
+                'href'     => base_url() . '/admin/users/' . $row['id'],
+            ] + $this->userBadge((string) $row['status']), $users->adminList($status, $search)),
         ];
     }
 
-    // Cron
-
-    private function cronIndex(array $shared, CronRun $cronRuns): array
+    /** @return array<string, mixed>|null */
+    private function user(int $id): ?array
     {
-        $jobs = $cronRuns->allJobs();
+        $users = new User($this->pdo);
+        $row   = $users->findWithDivision($id);
 
-        return $shared + [
-            'jobs' => array_map(fn(array $j): array => [
-                'name'         => $j['job_name'],
-                'description'  => str_replace('_', ' ', ucfirst($j['job_name'])),
-                'schedule'     => '',
-                'last_run'     => $j['started_at'] ?? '',
-                'next_run'     => '',
-                'status'       => $j['status'] === 'success' ? 'success' : ($j['status'] === 'failed' ? 'error' : 'info'),
-                'status_label' => ucfirst($j['status']),
-                'notes'        => $j['notes'] ?? '',
-            ], $jobs),
+        if ($row === null) {
+            return null;
+        }
+
+        $stats = $users->profileStats($id);
+
+        return [
+            'user' => [
+                'initials'    => User::initials((string) $row['full_name']),
+                'name'        => (string) $row['full_name'],
+                'email'       => (string) ($row['email'] ?? '') ?: '—',
+                'phone'       => (string) $row['phone'],
+                'trust_score' => (int) $row['trust_score'],
+                'division'    => (string) ($row['division_name'] ?? '—'),
+                'role'        => $users->roleName($id),
+                'balance'     => number_format((new Wallet($this->pdo))->balance($id)) . ' pts',
+                'joined_at'   => $row['joined_at'] === null ? '—' : date('j M Y', strtotime((string) $row['joined_at'])),
+            ] + $this->userBadge((string) $row['status']),
+            'stats' => [
+                ['label' => 'Items listed', 'value' => (string) $stats['items']],
+                ['label' => 'Transactions', 'value' => (string) $stats['completed']],
+                ['label' => 'Disputes',     'value' => (string) $stats['disputes']],
+            ],
+            // The account's point movements, newest first.
+            'activity' => array_map(static fn (array $entry): array => [
+                'icon_type' => $entry['incoming'] ? 'return' : 'lend',
+                'title'     => (self::LEDGER_REASONS[$entry['reason']] ?? ucfirst(str_replace('_', ' ', (string) $entry['reason'])))
+                    . ' · ' . ($entry['incoming'] ? '+' : '−') . number_format((int) $entry['amount']) . ' pts',
+                'meta'      => date('j M Y', strtotime((string) $entry['created_at'])),
+            ], (new Wallet($this->pdo))->activity($id, 5)),
         ];
     }
-
-    // Notifications
 
     /**
-     * Admin notifications are system-generated, not user-addressed rows in
-     * `notifications` — an admin cares about platform-wide events (disputes,
-     * pool health, account actions, staffing), not personal messages. This
-     * synthesizes that feed from the tables that actually drive each event.
+     * @return array{status: string, status_label: string}
      */
-    private function notificationsIndex(array $shared, Dispute $disputes, CronRun $cronRuns, Sponsor $sponsors, User $users, GnDivision $divisions, Moderator $moderators): array
+    private function userBadge(string $status): array
     {
-        $typeFilter = $_GET['type'] ?? '';
+        return [
+            'status'       => self::USER_BADGES[$status] ?? 'neutral',
+            'status_label' => ucfirst(str_replace('_', ' ', $status)),
+        ];
+    }
 
+    // ── Cron, notifications, settings ───────────────────────────────────────
+
+    /** @return array<string, mixed> */
+    private function cron(): array
+    {
+        return [
+            'jobs' => array_map(fn (array $job): array => $this->jobRow($job) + [
+                'description' => (string) ($job['notes'] ?? ''),
+            ], (new CronRun($this->pdo))->allJobs()),
+        ];
+    }
+
+    /**
+     * The Admin's feed is built from platform events — disputes, pool health,
+     * account actions, staffing — not from rows addressed to the Admin.
+     *
+     * @return array<string, mixed>
+     */
+    private function notifications(): array
+    {
+        $type    = (string) ($_GET['type'] ?? '');
+        $cronRuns = new CronRun($this->pdo);
         $notices = [];
 
-        // Disputes — new/open cases needing moderator or admin attention.
-        $disputeRows = $disputes->recentOpen(10);
-        foreach ($disputeRows as $d) {
-            $daysOpen = (int) floor((time() - strtotime($d['created_at'])) / 86400);
+        foreach ((new Dispute($this->pdo))->recentOpen(10) as $row) {
             $notices[] = [
-                'icon'     => '⚠',
-                'category' => 'disputes',
-                'title'    => 'Open dispute — case #DC-' . str_pad((string) $d['id'], 4, '0', STR_PAD_LEFT),
-                'meta'     => ($d['lender_name'] ?? '?') . ' vs ' . ($d['borrower_name'] ?? '?') . ' · ' . $d['reason'],
-                'created_at' => $d['created_at'],
-                'read'     => $daysOpen > 7 ? false : true,
+                'icon'       => '⚠',
+                'category'   => 'disputes',
+                'title'      => 'Open dispute — case #' . $this->caseNumber((int) $row['id']),
+                'meta'       => ($row['lender_name'] ?? '?') . ' vs ' . ($row['borrower_name'] ?? '?') . ' · ' . $row['reason'],
+                'created_at' => (string) $row['created_at'],
+                'read'       => (time() - strtotime((string) $row['created_at'])) <= 7 * 86400,
             ];
         }
 
-        // Pools — nightly invariant check outcome.
         $invariant = $cronRuns->lastInvariantResult();
-        if ($invariant) {
-            $passed = $invariant['status'] === 'success';
+        if ($invariant !== null) {
+            $passed    = $invariant['status'] === 'success';
             $notices[] = [
-                'icon'     => $passed ? '✓' : '✕',
-                'category' => 'pools',
-                'title'    => $passed ? 'Invariant check passed' : 'Invariant check FAILED',
-                'meta'     => (string) ($invariant['notes'] ?? ''),
-                'created_at' => $invariant['finished_at'] ?? $invariant['started_at'] ?? date('Y-m-d H:i:s'),
-                'read'     => $passed,
+                'icon'       => $passed ? '✓' : '✕',
+                'category'   => 'pools',
+                'title'      => $passed ? 'Invariant check passed' : 'Invariant check FAILED',
+                'meta'       => (string) ($invariant['notes'] ?? ''),
+                'created_at' => (string) ($invariant['finished_at'] ?? $invariant['started_at']),
+                'read'       => $passed,
             ];
         }
 
-        // Pools — recent sponsor contributions.
-        $sponsorRows = $sponsors->recentContributions(5);
-        foreach ($sponsorRows as $s) {
+        foreach ((new Sponsor($this->pdo))->recentContributions(5) as $row) {
             $notices[] = [
-                'icon'     => '⚡',
-                'category' => 'pools',
-                'title'    => 'Sponsor contribution recorded — ' . $s['receipt_number'],
-                'meta'     => $s['company_name'] . ' · +' . number_format((int) $s['points']) . ' pts',
-                'created_at' => $s['recorded_at'],
-                'read'     => true,
+                'icon'       => '⚡',
+                'category'   => 'pools',
+                'title'      => 'Sponsor contribution recorded — ' . $row['receipt_number'],
+                'meta'       => $row['company_name'] . ' · +' . number_format((int) $row['points']) . ' pts',
+                'created_at' => (string) $row['recorded_at'],
+                'read'       => true,
             ];
         }
 
-        // Users — frozen / suspended accounts.
-        $frozenRows = $users->recentlySuspended(5);
-        foreach ($frozenRows as $u) {
+        foreach ((new User($this->pdo))->recentlySuspended(5) as $row) {
             $notices[] = [
-                'icon'     => '🔒',
-                'category' => 'users',
-                'title'    => 'Account frozen — ' . $u['full_name'],
-                'meta'     => 'Status set to suspended',
-                'created_at' => $u['updated_at'],
-                'read'     => true,
+                'icon'       => '🔒',
+                'category'   => 'users',
+                'title'      => 'Account suspended — ' . $row['full_name'],
+                'meta'       => 'Status set to suspended',
+                'created_at' => (string) $row['updated_at'],
+                'read'       => true,
             ];
         }
 
-        // Users — pending division approvals (new residents awaiting verification).
-        $pendingRows = $divisions->recentPendingApprovals(5);
-        foreach ($pendingRows as $p) {
+        $divisions = new GnDivision($this->pdo);
+
+        foreach ($divisions->recentPendingApprovals(5) as $row) {
             $notices[] = [
-                'icon'     => '📋',
-                'category' => 'users',
-                'title'    => 'New verification pending — ' . $p['full_name'],
-                'meta'     => $p['division_name'] . ' · awaiting moderator approval',
-                'created_at' => $p['created_at'],
-                'read'     => false,
+                'icon'       => '📋',
+                'category'   => 'users',
+                'title'      => 'New verification pending — ' . $row['full_name'],
+                'meta'       => $row['division_name'] . ' · awaiting moderator approval',
+                'created_at' => (string) $row['created_at'],
+                'read'       => false,
             ];
         }
 
-        // System — moderator appointments.
-        $modRows = $moderators->recentAppointments(5);
-        foreach ($modRows as $m) {
+        foreach ((new Moderator($this->pdo))->recentAppointments(5) as $row) {
             $notices[] = [
-                'icon'     => '👤',
-                'category' => 'system',
-                'title'    => 'Moderator appointed — ' . $m['full_name'],
-                'meta'     => $m['division_name'] . ' division · appointed by Admin',
-                'created_at' => $m['appointed_at'],
-                'read'     => true,
+                'icon'       => '👤',
+                'category'   => 'system',
+                'title'      => 'Moderator appointed — ' . $row['full_name'],
+                'meta'       => $row['division_name'] . ' division',
+                'created_at' => (string) $row['appointed_at'],
+                'read'       => true,
             ];
         }
 
-        // System — divisions with no moderator (vacant staffing gap).
-        $vacantRows = $divisions->vacant();
-        foreach ($vacantRows as $v) {
+        foreach ($divisions->vacant() as $row) {
             $notices[] = [
-                'icon'     => '⚠',
-                'category' => 'system',
-                'title'    => 'Moderator vacancy — ' . $v['name'],
-                'meta'     => 'No moderator appointed for this division',
-                'created_at' => $v['created_at'],
-                'read'     => false,
+                'icon'       => '⚠',
+                'category'   => 'system',
+                'title'      => 'Moderator vacancy — ' . $row['name'],
+                'meta'       => 'No moderator appointed for this division',
+                'created_at' => (string) $row['created_at'],
+                'read'       => false,
             ];
         }
 
-        // System — failed cron jobs.
-        $failedJobs = $cronRuns->recentFailed(5);
-        foreach ($failedJobs as $j) {
+        foreach ($cronRuns->recentFailed(5) as $row) {
             $notices[] = [
-                'icon'     => '✕',
-                'category' => 'system',
-                'title'    => 'Cron job failed — ' . str_replace('_', ' ', $j['job_name']),
-                'meta'     => (string) ($j['notes'] ?? 'Check logs for details'),
-                'created_at' => $j['started_at'],
-                'read'     => false,
+                'icon'       => '✕',
+                'category'   => 'system',
+                'title'      => 'Cron job failed — ' . str_replace('_', ' ', (string) $row['job_name']),
+                'meta'       => (string) ($row['notes'] ?? 'Check logs for details'),
+                'created_at' => (string) $row['started_at'],
+                'read'       => false,
             ];
         }
 
-        if ($typeFilter !== '') {
-            $notices = array_values(array_filter($notices, fn(array $n): bool => $n['category'] === $typeFilter));
+        if ($type !== '') {
+            $notices = array_values(array_filter($notices, static fn (array $notice): bool => $notice['category'] === $type));
         }
 
-        usort($notices, fn(array $a, array $b): int => strtotime($b['created_at']) <=> strtotime($a['created_at']));
+        usort($notices, static fn (array $a, array $b): int => strtotime($b['created_at']) <=> strtotime($a['created_at']));
 
-        $notices = array_map(function (array $n): array {
-            $n['time'] = $this->relativeTime($n['created_at']);
-            unset($n['category'], $n['created_at']);
-            return $n;
-        }, array_slice($notices, 0, 20));
+        $filters = [];
+        foreach (['' => 'All', 'disputes' => 'Disputes', 'pools' => 'Pools', 'users' => 'Users', 'system' => 'System'] as $slug => $label) {
+            $filters[] = ['label' => $label, 'slug' => $slug, 'active' => $type === $slug];
+        }
 
-        $filters = [
-            ['label' => 'All',       'slug' => '',        'active' => $typeFilter === ''],
-            ['label' => 'Disputes',  'slug' => 'disputes', 'active' => $typeFilter === 'disputes'],
-            ['label' => 'Pools',     'slug' => 'pools',    'active' => $typeFilter === 'pools'],
-            ['label' => 'Users',     'slug' => 'users',    'active' => $typeFilter === 'users'],
-            ['label' => 'System',    'slug' => 'system',   'active' => $typeFilter === 'system'],
-        ];
-
-        return $shared + [
+        return [
             'filters' => $filters,
-            'notices' => $notices,
+            'notices' => array_map(function (array $notice): array {
+                $notice['time'] = $this->relativeTime($notice['created_at']);
+                unset($notice['category'], $notice['created_at']);
+
+                return $notice;
+            }, array_slice($notices, 0, 20)),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function settings(): array
+    {
+        $admin = (new User($this->pdo))->find($this->userId()) ?? [];
+
+        return [
+            'admin' => [
+                'name'     => (string) ($admin['full_name'] ?? ''),
+                'email'    => (string) ($admin['email'] ?? ''),
+                'phone'    => (string) ($admin['phone'] ?? ''),
+                'division' => 'All divisions',
+                'role'     => 'System Administrator',
+                'joined'   => empty($admin['joined_at']) ? '—' : date('F Y', strtotime((string) $admin['joined_at'])),
+            ],
+        ];
+    }
+
+    // ── Shared formatting ───────────────────────────────────────────────────
+
+    /**
+     * @param array<string, mixed>|null $run the last invariant cron run
+     *
+     * @return array{passed: bool, last_run: string, summary: string}
+     */
+    private function invariantSummary(?array $run): array
+    {
+        return [
+            'passed'   => $run !== null && $run['status'] === 'success',
+            'last_run' => empty($run['finished_at']) ? 'never' : date('j M, H:i', strtotime((string) $run['finished_at'])),
+            'summary'  => (string) ($run['notes'] ?? 'No invariant run recorded yet'),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $job a cron_runs row
+     *
+     * @return array{name: string, last_run: string, status: string, status_label: string}
+     */
+    private function jobRow(array $job): array
+    {
+        return [
+            'name'         => ucfirst(str_replace('_', ' ', (string) $job['job_name'])),
+            'last_run'     => empty($job['started_at']) ? 'Never run' : 'Last run ' . date('j M, H:i', strtotime((string) $job['started_at'])),
+            'status'       => match ($job['status']) {
+                'success' => 'success',
+                'failed'  => 'error',
+                default   => 'info',
+            },
+            'status_label' => ucfirst((string) $job['status']),
         ];
     }
 
     private function relativeTime(string $datetime): string
     {
-        $diff = time() - strtotime($datetime);
+        $seconds = time() - strtotime($datetime);
 
-        if ($diff < 60) {
-            return 'just now';
-        }
-        if ($diff < 3600) {
-            return (int) floor($diff / 60) . ' min ago';
-        }
-        if ($diff < 86400) {
-            return (int) floor($diff / 3600) . ' hours ago';
-        }
-        if ($diff < 172800) {
-            return 'Yesterday';
-        }
-        if ($diff < 604800) {
-            return (int) floor($diff / 86400) . ' days ago';
-        }
-
-        return (int) floor($diff / 604800) . ' week' . ((int) floor($diff / 604800) === 1 ? '' : 's') . ' ago';
+        return match (true) {
+            $seconds < 60     => 'just now',
+            $seconds < 3600   => intdiv($seconds, 60) . ' min ago',
+            $seconds < 86400  => intdiv($seconds, 3600) . ' hours ago',
+            $seconds < 172800 => 'Yesterday',
+            $seconds < 604800 => intdiv($seconds, 86400) . ' days ago',
+            default           => intdiv($seconds, 604800) . (intdiv($seconds, 604800) === 1 ? ' week ago' : ' weeks ago'),
+        };
     }
 
-    // Settings
-
-    private function settings(array $shared, array $adminUser, string $tab): array
+    private function lastName(string $fullName): string
     {
-        // One-shot confirmation left by AccountController after a password change.
-        $flash = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
+        $parts = explode(' ', trim($fullName));
 
-        return $shared + [
-            'activeTab' => $tab,
-            'flash'     => is_array($flash) ? ['type' => (string) $flash['type'], 'message' => (string) $flash['message']] : null,
-            'admin' => [
-                'id'        => $adminUser['id'] ?? 6,
-                'name'      => $adminUser['full_name'],
-                'full_name' => $adminUser['full_name'],
-                'email'     => $adminUser['email'] ?? 'admin@mithra.lk',
-                'phone'     => $adminUser['phone'] ?? '',
-                'division'  => 'All Divisions',
-                'role'      => 'System Administrator',
-                'joined'    => isset($adminUser['joined_at']) ? date('F Y', strtotime($adminUser['joined_at'])) : 'September 2024',
-            ],
-        ];
+        return end($parts) ?: $fullName;
     }
-
-        public function createDivision(): void
-    {
-        $name = trim((string) ($_POST['name'] ?? ''));
-        $district = trim((string) ($_POST['district'] ?? ''));
-
-        if ($name !== '' && $district !== '') {
-            (new GnDivision($this->pdo))->create($name, $district);
-            $_SESSION['flash_success'] = 'Division created successfully.';
-        } else {
-            $_SESSION['flash_error'] = 'Please fill in all required fields.';
-        }
-
-        header('Location: ' . base_url() . '/admin/divisions', true, 303);
-    }
-
-        public function updateDivision(int $id): void
-    {
-        $name = trim((string) ($_POST['name'] ?? ''));
-        $district = trim((string) ($_POST['district'] ?? ''));
-
-        if ($name !== '' && $district !== '') {
-            (new GnDivision($this->pdo))->updateDetails($id, $name, $district);
-            $_SESSION['flash_success'] = 'Division updated successfully.';
-        } else {
-            $_SESSION['flash_error'] = 'Please fill in all required fields.';
-        }
-
-        header('Location: ' . base_url() . '/admin/divisions/' . $id, true, 303);
-    }
-
-    public function archiveDivision(int $id): void
-    {
-        (new GnDivision($this->pdo))->archive($id);
-        $_SESSION['flash_success'] = 'Division archived successfully.';
-
-        header('Location: ' . base_url() . '/admin/divisions', true, 303);
-    }
-
-
 }

@@ -35,17 +35,6 @@ final class PointPool extends BaseModel
     }
 
     /**
-     * @return array<string, mixed>|null
-     */
-    public function lastInvariantRun(): ?array
-    {
-        return $this->selectOne(
-            "SELECT status, finished_at, notes FROM cron_runs
-              WHERE job_name = 'check_invariant' ORDER BY started_at DESC LIMIT 1"
-        );
-    }
-
-    /**
      * The pool's balance, row-locked until the surrounding transaction ends
      * (Rules/CONVENTIONS.md §8). Call only inside a transaction.
      */

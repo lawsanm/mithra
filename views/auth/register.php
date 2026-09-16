@@ -31,7 +31,8 @@ $old = static fn (string $field): string => (string) ($input[$field] ?? '');
 $pageTitle = 'Register';
 $navActive = 'register';
 
-include __DIR__ . '/../../partials/header-public.php';
+$chrome = 'public';
+include __DIR__ . '/../../partials/header.php';
 
 ?>
 

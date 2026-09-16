@@ -19,82 +19,11 @@ declare(strict_types=1);
  * @var array  $activeMods      initials, name, division, appointed_at, objection_status, objection_label, trust_score, bond, href
  */
 
-$divisions ??= [
-    ['id' => 0, 'name' => 'All divisions',    'active' => true],
-    ['id' => 1, 'name' => 'Kaduwela West',    'active' => false],
-    ['id' => 2, 'name' => 'Maharagama South',  'active' => false],
-    ['id' => 3, 'name' => 'Battaramulla',      'active' => false],
-];
-
-$phase ??= ['number' => 3, 'label' => 'Phase 3 — Data-driven selection', 'description' => 'Platform has history. Eligibility pool active.'];
-
-$divisionStats ??= [
-    ['label' => 'Active moderators',    'value' => '2'],
-    ['label' => 'Pending appointments', 'value' => '1'],
-    ['label' => 'Divisions covered',    'value' => '2 / 3'],
-];
-
-$pendingMembers ??= [
-    [
-        'initials'    => 'NF',
-        'name'        => 'Nadeeka Fernando',
-        'nic_ending'  => '5523',
-        'address'     => '18, Lake View Rd, Battaramulla',
-        'applied_ago' => 'Applied 3 days ago',
-    ],
-    [
-        'initials'    => 'RJ',
-        'name'        => 'Ruwan Jayawardena',
-        'nic_ending'  => '7891',
-        'address'     => '42/1, Kotte Rd, Battaramulla',
-        'applied_ago' => 'Applied 1 day ago',
-    ],
-];
-
-$verifiedMembers ??= [
-    ['initials' => 'SK', 'name' => 'Sita Kumari',       'verified_at' => '2026-05-12', 'gn_endorsed' => true,  'conflict' => null],
-    ['initials' => 'AP', 'name' => 'Amara Peris',       'verified_at' => '2026-04-28', 'gn_endorsed' => true,  'conflict' => null],
-    ['initials' => 'DN', 'name' => 'Dinesh Nanayakkara', 'verified_at' => '2026-05-30', 'gn_endorsed' => false, 'conflict' => null],
-    ['initials' => 'PS', 'name' => 'Priyanka Silva',    'verified_at' => '2026-06-01', 'gn_endorsed' => false, 'conflict' => 'Runs rental business'],
-];
-
-$eligibilityPool ??= [
-    ['initials' => 'PR', 'name' => 'Priya Rathnayake', 'trust_score' => 96, 'months' => 14, 'transactions' => 34, 'record' => 'Clean', 'gn_endorsed' => true,  'recommended' => true],
-    ['initials' => 'AB', 'name' => 'Amara Bandara',    'trust_score' => 91, 'months' => 12, 'transactions' => 28, 'record' => 'Clean', 'gn_endorsed' => true,  'recommended' => false],
-    ['initials' => 'CW', 'name' => 'Chathura Wijesinghe', 'trust_score' => 85, 'months' => 10, 'transactions' => 22, 'record' => 'Clean', 'gn_endorsed' => false, 'recommended' => false],
-    ['initials' => 'NP', 'name' => 'Nadeesha Peris',   'trust_score' => 78, 'months' => 8,  'transactions' => 15, 'record' => 'Clean', 'gn_endorsed' => false, 'recommended' => false],
-    ['initials' => 'SW', 'name' => 'Sandun Weerasinghe', 'trust_score' => 72, 'months' => 7,  'transactions' => 12, 'record' => 'Clean', 'gn_endorsed' => true,  'recommended' => false],
-];
-
-$activeMods ??= [
-    [
-        'initials'        => 'KP',
-        'name'            => 'Kamal Perera',
-        'division'        => 'Kaduwela West',
-        'appointed_at'    => '15 Jan 2026',
-        'objection_status' => 'success',
-        'objection_label' => 'Confirmed',
-        'trust_score'     => 92,
-        'bond'            => '500 pts',
-        'href'            => base_url() . '/admin/moderators/1',
-    ],
-    [
-        'initials'        => 'SK',
-        'name'            => 'Sita Kumari',
-        'division'        => 'Maharagama South',
-        'appointed_at'    => '22 Jul 2026',
-        'objection_status' => 'warning',
-        'objection_label' => '5 days left',
-        'trust_score'     => null,
-        'bond'            => '—',
-        'href'            => base_url() . '/admin/moderators/objections/2',
-    ],
-];
-
 $pageTitle = 'Moderator management';
 $navActive = 'moderators';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -153,13 +82,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <span class="list-row__meta">NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?></span>
                     </div>
                     <div style="display:inline;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                        
+                        <p class="demo-note">Preview only. Saving is not available yet.</p>
                         <button class="btn btn--ghost" type="submit" disabled>Reject</button>
                     </div>
                     <div style="display:inline;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                        
+                        <p class="demo-note">Preview only. Saving is not available yet.</p>
                         <button class="btn btn--primary" type="submit" disabled>Approve</button>
                     </div>
                 </li>
@@ -274,7 +201,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <td><strong style="color: var(--color-primary);"><?= e((string) $member['trust_score']) ?></strong></td>
                         <td><?= e((string) $member['months']) ?></td>
                         <td><?= e((string) $member['transactions']) ?></td>
-                        <td><span class="badge badge--success">✓ <?= e($member['record']) ?></span></td>
+                        <td><span class="badge badge--<?= $member['record'] === 'Clean' ? 'success' : 'warning' ?>"><?= e($member['record']) ?></span></td>
                         <td>
                             <?php if ($member['gn_endorsed']): ?>
                                 <span class="badge badge--success">✓</span>
@@ -343,7 +270,5 @@ include __DIR__ . '/../../../partials/header-admin.php';
         </div>
     <?php endif; ?>
 </section>
-
-
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

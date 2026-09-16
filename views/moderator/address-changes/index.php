@@ -17,7 +17,8 @@ $errors  = $errors ?? [];
 $pageTitle = 'Address changes';
 $navActive = 'verifications';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

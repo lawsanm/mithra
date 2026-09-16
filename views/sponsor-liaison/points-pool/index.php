@@ -27,7 +27,8 @@ $ledger ??= [
 $pageTitle = 'Points pool';
 $navActive = 'points-pool';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

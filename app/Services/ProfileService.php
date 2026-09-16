@@ -115,14 +115,6 @@ final class ProfileService
         }
     }
 
-    /**
-     * @return array<string, mixed>|null the member's latest address change
-     */
-    public function latestAddressChange(int $userId): ?array
-    {
-        return $this->changes->latestFor($userId);
-    }
-
     public function setGiftReceive(int $userId, bool $enabled): void
     {
         $this->users->setGiftReceive($userId, $enabled);

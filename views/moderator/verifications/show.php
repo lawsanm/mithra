@@ -36,7 +36,8 @@ $recordId  = (int) ($recordId ?? 0);
 $pageTitle = (string) $applicant['name'];
 $navActive = 'verifications';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

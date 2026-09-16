@@ -42,7 +42,8 @@ $footerNote ??= 'Relief reaches members through the moderator — sponsors never
 $pageTitle = 'Disaster relief';
 $navActive = 'dashboard';
 
-include __DIR__ . '/../../../partials/header-sponsor.php';
+$chrome = 'sponsor';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -69,9 +70,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
     <section class="panel panel--half">
         <h2 class="panel__title">Make an offer</h2>
         <div class="stack" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-            
-
+            <p class="demo-note">Preview only. Saving is not available yet.</p>
             <div class="field">
                 <label class="field__label" for="offer_amount">Amount (LKR)</label>
                 <input class="input" type="number" id="offer_amount" name="amount" min="1" step="1" placeholder="25,000" required disabled>

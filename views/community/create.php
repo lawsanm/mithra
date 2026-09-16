@@ -36,8 +36,6 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="panel panel--wide" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="field">
         <label class="field__label" for="home-community">Home community</label>
         <input class="input" type="text" id="home-community" value="<?= e($homeCommunity) ?>" readonly disabled>

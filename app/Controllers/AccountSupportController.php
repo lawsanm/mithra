@@ -14,12 +14,8 @@ declare(strict_types=1);
  * PasswordResetService. RbacMiddleware has already limited each path to its
  * role.
  */
-final class AccountSupportController
+final class AccountSupportController extends Controller
 {
-    public function __construct(private PDO $pdo)
-    {
-    }
-
     // ── Address changes (moderator) ─────────────────────────────────────────
 
     /**
@@ -75,7 +71,7 @@ final class AccountSupportController
         }
 
         try {
-            $issued = $this->resets()->issueCode($this->userId(), $this->role(), $lookup);
+            $issued = $this->passwordResets()->issueCode($this->userId(), $this->role(), $lookup);
         } catch (ValidationException $exception) {
             http_response_code(422);
             $this->render('moderator/reset-codes/index', ['errors' => $exception->errors(), 'lookup' => $lookup, 'issued' => null]);
@@ -110,16 +106,13 @@ final class AccountSupportController
 
             return;
         } catch (AccessDeniedException | RecordNotFoundException $exception) {
-            $this->renderNotice(404, 'Request not found', 'This address change is not in your division, or it no longer exists.');
+            $this->notice(404, 'Request not found', 'This address change is not in your division, or it no longer exists.');
 
             return;
         }
 
-        $_SESSION['flash'] = [
-            'type'    => 'success',
-            'message' => $approve ? "{$name}'s new address is now on file." : "{$name}'s address change was rejected.",
-        ];
-        header('Location: ' . base_url() . '/moderator/address-changes', true, 303);
+        $this->flash($approve ? "{$name}'s new address is now on file." : "{$name}'s address change was rejected.");
+        $this->redirect('/moderator/address-changes');
     }
 
     /**
@@ -130,7 +123,7 @@ final class AccountSupportController
         try {
             $rows = $this->profiles()->addressQueue($this->userId());
         } catch (AccessDeniedException $exception) {
-            $this->renderNotice(403, 'No queue here', 'This account does not moderate a division.');
+            $this->notice(403, 'No queue here', 'This account does not moderate a division.');
 
             return;
         }
@@ -144,87 +137,21 @@ final class AccountSupportController
                 'from'     => (string) $row['current_address'],
                 'to'       => (string) $row['new_address'],
                 'sent'     => date('j M Y', strtotime((string) $row['created_at'])),
-                'proof'    => base_url() . '/photo.php?p=' . rawurlencode((string) $row['proof_file_path']),
+                'proof'    => photo_url((string) $row['proof_file_path']),
             ], $rows),
         ]);
     }
 
     /**
+     * Moderator and Admin share these screens, each in its own navigation.
+     *
      * @param array<string, mixed> $data
      */
-    private function render(string $view, array $data): void
+    protected function render(string $view, array $data = []): void
     {
-        $account  = (new User($this->pdo))->findAccount($this->userId()) ?? ['full_name' => ''];
-        $initials = User::initials((string) $account['full_name']);
+        $data['chrome']   = $this->role() === 'admin' ? 'admin' : 'moderator';
+        $data['basePath'] = base_url() . ($this->role() === 'admin' ? '/admin/reset-codes' : '/moderator/reset-codes');
 
-        $data['chrome']           = $this->role() === 'admin' ? 'admin' : 'moderator';
-        $data['basePath']         = base_url() . ($this->role() === 'admin' ? '/admin/reset-codes' : '/moderator/reset-codes');
-        $data['currentAdmin']     = ['initials' => $initials];
-        $data['currentModerator'] = [
-            'initials' => $initials,
-            'bond'     => 'Bond: ' . number_format((new Wallet($this->pdo))->bondLocked($this->userId())) . ' pts',
-        ];
-        $data['flash'] = $this->takeFlash();
-
-        extract($data, EXTR_SKIP);
-
-        include dirname(__DIR__, 2) . '/views/' . $view . '.php';
-    }
-
-    private function renderNotice(int $status, string $title, string $body): void
-    {
-        http_response_code($status);
-
-        $noticeTitle = $title;
-        $noticeBody  = $body;
-
-        include dirname(__DIR__, 2) . '/views/errors/notice.php';
-    }
-
-    private function profiles(): ProfileService
-    {
-        return new ProfileService(
-            $this->pdo,
-            new User($this->pdo),
-            new UserDivision($this->pdo),
-            new AddressChange($this->pdo),
-            new GnDivision($this->pdo),
-            new PhotoStore(dirname(__DIR__, 2) . '/storage/uploads')
-        );
-    }
-
-    private function resets(): PasswordResetService
-    {
-        $throttle = new LoginThrottle(new LoginAttempt($this->pdo));
-
-        return new PasswordResetService(
-            $this->pdo,
-            new User($this->pdo),
-            new PasswordReset($this->pdo),
-            new GnDivision($this->pdo),
-            new AuthService(new User($this->pdo), $throttle),
-            $throttle
-        );
-    }
-
-    private function userId(): int
-    {
-        return (int) ($_SESSION['user_id'] ?? 0);
-    }
-
-    private function role(): string
-    {
-        return (string) ($_SESSION['role'] ?? '');
-    }
-
-    /**
-     * @return array{type: string, message: string}|null
-     */
-    private function takeFlash(): ?array
-    {
-        $flash = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
-
-        return is_array($flash) ? ['type' => (string) $flash['type'], 'message' => (string) $flash['message']] : null;
+        parent::render($view, $data);
     }
 }

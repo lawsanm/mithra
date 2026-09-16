@@ -8,10 +8,7 @@ declare(strict_types=1);
 ?>
 <dialog aria-labelledby="modal-deactivate-disaster-title" class="modal modal--sm" id="modal-deactivate-disaster">
     <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="modal__head">
             <h2 class="modal__title" id="modal-deactivate-disaster-title">Deactivate Disaster Mode</h2>
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>

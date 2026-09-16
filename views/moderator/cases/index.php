@@ -78,7 +78,8 @@ $filterSummary ??= count(array_filter($sampleRows, static fn (array $row): bool 
 $pageTitle = 'Damage cases';
 $navActive = 'cases';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

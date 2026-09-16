@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 $pageTitle = $record['receipt'];
 $navActive = 'purchases';
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 ?>
 <nav class="breadcrumb" aria-label="Breadcrumb">
     <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/purchases">Contributions</a>
