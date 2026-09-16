@@ -5,40 +5,26 @@ declare(strict_types=1);
 /**
  * Global ledger — admin append-only transaction log with filters.
  *
- * @var array  $filters   label, slug, active(bool)
- * @var array  $entries   ref, date, title, meta, amount, amount_class
- * @var string $search
- * @var string $dateRange
- * @var string $division
+ * @var array  $filters     label, slug, active(bool)
+ * @var array  $entries     ref, date, title, meta, amount, amount_class
+ * @var string $filter      the active reason group ('' for all)
+ * @var string $search      member name search
+ * @var int    $page
+ * @var bool   $hasNextPage
  */
 
-$filters ??= [
-    ['label' => 'All types',  'slug' => '',          'active' => true],
-    ['label' => 'Escrow',     'slug' => 'escrow'],
-    ['label' => 'Gifts',      'slug' => 'gifts'],
-    ['label' => 'Aid',        'slug' => 'aid'],
-    ['label' => 'Fees',       'slug' => 'fees'],
-    ['label' => 'Sponsor',    'slug' => 'sponsor'],
-    ['label' => 'Reserve',    'slug' => 'reserve'],
-];
-
-$entries ??= [
-    ['ref' => '#TX-98412', 'date' => '20 Jul, 09:14', 'title' => 'In-flight pool hold — booking #B-2201',      'meta' => 'M. Lawsan → In-flight pool',      'amount' => '−75 pts',     'amount_class' => 'error'],
-    ['ref' => '#TX-98411', 'date' => '20 Jul, 08:52', 'title' => 'Gift — daily cap OK',                         'meta' => 'J. Kavipriya → T.H.K. Madushan', 'amount' => '15 pts',      'amount_class' => ''],
-    ['ref' => '#TX-98407', 'date' => '19 Jul, 17:30', 'title' => 'In-flight pool release — booking #B-2188',    'meta' => 'In-flight → T.H.K. Madushan',    'amount' => '+25 pts',     'amount_class' => 'success'],
-    ['ref' => '#TX-98395', 'date' => '19 Jul, 11:05', 'title' => 'Aid grant release — #A-1042',                 'meta' => 'Aid Pool → M. Lawsan',            'amount' => '+300 pts',    'amount_class' => 'success'],
-    ['ref' => '#TX-98380', 'date' => '18 Jul, 21:40', 'title' => 'Late fee — booking #B-2160',                  'meta' => 'M. Lawsan → A. Akalvily',         'amount' => '10 pts',      'amount_class' => ''],
-    ['ref' => '#TX-98371', 'date' => '18 Jul, 10:12', 'title' => 'Sponsor contribution — INV-0312',             'meta' => 'Northwind Co → pools',            'amount' => '+10,000 pts', 'amount_class' => 'success'],
-];
-
-$search    ??= '';
-$dateRange ??= '';
-$division  ??= '';
+$pageQuery = static function (array $changes) use ($filter, $search, $page): string {
+    return base_url() . '/admin/ledger?' . http_build_query(array_filter(
+        $changes + ['filter' => $filter, 'q' => $search, 'page' => $page],
+        static fn (mixed $value): bool => $value !== '' && $value !== 1
+    ));
+};
 
 $pageTitle = 'Global ledger';
 $navActive = 'ledger';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -48,32 +34,28 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </header>
 
 <ul class="filter-pills">
-    <?php foreach ($filters as $filter): ?>
+    <?php foreach ($filters as $pill): ?>
         <li>
             <a
-                class="pill<?= !empty($filter['active']) ? ' pill--active' : '' ?>"
-                href="<?= base_url() ?>/admin/ledger?type=<?= e(rawurlencode($filter['slug'])) ?>"
-                <?= !empty($filter['active']) ? 'aria-current="true"' : '' ?>
-            ><?= e($filter['label']) ?></a>
+                class="pill<?= !empty($pill['active']) ? ' pill--active' : '' ?>"
+                href="<?= e($pageQuery(['filter' => $pill['slug'], 'page' => 1])) ?>"
+                <?= !empty($pill['active']) ? 'aria-current="true"' : '' ?>
+            ><?= e($pill['label']) ?></a>
         </li>
     <?php endforeach; ?>
 </ul>
 
-<div class="field-row">
+<form class="field-row" method="get" action="<?= base_url() ?>/admin/ledger" role="search">
+    <input type="hidden" name="filter" value="<?= e($filter) ?>">
     <div class="field">
-        <input class="input" type="search" name="q" placeholder="Search reference / member" value="<?= e($search) ?>">
+        <input class="input" type="search" name="q" placeholder="Search by member name" aria-label="Search by member name" value="<?= e($search) ?>">
     </div>
-    <div class="field">
-        <select class="input" name="date_range">
-            <option value="">Date range</option>
-        </select>
-    </div>
-    <div class="field">
-        <select class="input" name="division">
-            <option value="">All divisions</option>
-        </select>
-    </div>
-</div>
+    <button class="btn btn--ghost" type="submit">Search</button>
+</form>
+
+<?php if ($entries === []): ?>
+    <p class="empty-state__body">No ledger entries match.</p>
+<?php endif; ?>
 
 <table class="data-table">
     <thead>
@@ -106,6 +88,17 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <?php endforeach; ?>
     </tbody>
 </table>
+
+<?php if ($page > 1 || $hasNextPage): ?>
+    <div class="actions">
+        <?php if ($page > 1): ?>
+            <a class="btn btn--ghost" href="<?= e($pageQuery(['page' => $page - 1])) ?>">Newer</a>
+        <?php endif; ?>
+        <?php if ($hasNextPage): ?>
+            <a class="btn btn--ghost" href="<?= e($pageQuery(['page' => $page + 1])) ?>">Older</a>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 
 <div class="notice notice--info notice--full">
     Append-only: entries can never be edited or deleted. Corrections are new reversing entries. The nightly invariant check reconciles this ledger against every pool and wallet.

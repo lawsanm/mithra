@@ -93,15 +93,6 @@ final class Item extends BaseModel
         return (int) $this->selectValue($sql, $params);
     }
 
-    public function countAvailableIn(int $divisionId): int
-    {
-        return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM items
-              WHERE gn_division_id = :d AND listing_type = 'rental' AND status IN ('active','borrowed')",
-            ['d' => $divisionId]
-        );
-    }
-
     /**
      * Item Detail, including its owner's standing.
      *

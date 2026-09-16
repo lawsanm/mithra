@@ -2,11 +2,16 @@
 
 declare(strict_types=1);
 
-/** Native disclosure keeps account navigation usable without JavaScript. */
-$accountRole = $accountRole ?? 'member';
-$accountInitials = $accountInitials ?? '';
+/**
+ * The avatar's account menu. A native <details> keeps it usable without
+ * JavaScript. Included by partials/nav.php.
+ *
+ * @var string     $chrome member, moderator, admin, sponsor-liaison or sponsor
+ * @var array|null $viewer initials of the signed-in account
+ */
+
 $memberId = (int) ($_SESSION['user_id'] ?? 0);
-$accountLinks = match ($accountRole) {
+$accountLinks = match ($chrome) {
     'admin' => [
         ['Profile', '/admin/settings/profile'], ['Security', '/admin/settings/security'],
         ['Reset codes', '/admin/reset-codes'],
@@ -30,8 +35,8 @@ $accountLinks = match ($accountRole) {
         ['Approvals', '/moderator/listing-approvals'], ['Cases', '/moderator/cases'],
         ['Aid Vouching', '/moderator/aid-vouching'], ['Disasters', '/moderator/disasters'],
         ['Address changes', '/moderator/address-changes'], ['Reset codes', '/moderator/reset-codes'],
-        ['Member Profile', '/profile?context=moderator'], ['Settings', '/settings'],
-        ['Help', '/help?context=moderator'],
+        ['Member Profile', '/profile'], ['Settings', '/settings'],
+        ['Help', '/help'],
     ],
     default => [
         ['Profile', '/profile'], ['Public Profile', '/members/' . $memberId],
@@ -44,7 +49,7 @@ $accountLinks = match ($accountRole) {
 };
 ?>
 <details class="account-menu">
-    <summary class="avatar account-menu__trigger" aria-label="Open <?= e($accountRole) ?> account navigation"><?= e($accountInitials) ?></summary>
+    <summary class="avatar account-menu__trigger" aria-label="Open account navigation"><?= e($viewer['initials'] ?? '') ?></summary>
     <div class="account-menu__panel">
         <ul>
             <?php foreach ($accountLinks as [$label, $path]): ?>

@@ -38,7 +38,8 @@ $aidPoints      = number_format((int) round($amountValue * $draft['aid_pct'] / 1
 $pageTitle = 'Record a contribution';
 $navActive = 'purchases';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -52,8 +53,6 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 <div class="form-card" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="field">
         <label class="field__label" for="sponsor-id">Sponsor</label>
         <select class="input" id="sponsor-id" name="sponsor_id" required disabled>

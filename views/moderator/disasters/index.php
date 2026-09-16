@@ -41,7 +41,8 @@ $requests ??= [
 $pageTitle = 'Disaster relief';
 $navActive = 'disasters';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -81,8 +82,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                 </div>
                 <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
                 <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                    
+                    <p class="demo-note">Preview only. Saving is not available yet.</p>
                     <button class="btn btn--primary" type="submit" disabled>Vouch</button>
                 </div>
             </li>

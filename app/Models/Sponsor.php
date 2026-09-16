@@ -16,6 +16,14 @@ final class Sponsor extends BaseModel
     protected string $table = 'sponsors';
     protected string $columns = 'id, company_name, total_contributed, active';
 
+    /** The company a sponsor login account represents, or null when none is linked. */
+    public function companyForUser(int $userId): ?string
+    {
+        $name = $this->selectValue('SELECT company_name FROM sponsors WHERE user_id = :id', ['id' => $userId]);
+
+        return $name === false ? null : (string) $name;
+    }
+
     /**
      * @return list<array<string, mixed>>
      */

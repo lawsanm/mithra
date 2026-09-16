@@ -20,7 +20,8 @@ $verifications = $verifications ?? [];
 $pageTitle = 'Verifications';
 $navActive = 'verifications';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

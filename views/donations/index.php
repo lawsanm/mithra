@@ -64,7 +64,6 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="toggle-field" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
     <input
         class="toggle"
         type="checkbox"
@@ -89,8 +88,7 @@ include __DIR__ . '/../../partials/header.php';
             </div>
             <a class="btn btn--ghost" href="<?= e($request['profile_href']) ?>">View profile</a>
             <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-
+                <p class="demo-note">Preview only. Saving is not available yet.</p>
                 <button class="btn btn--primary" type="submit" disabled>Choose recipient</button>
             </div>
         </li>

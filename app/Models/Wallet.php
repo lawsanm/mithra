@@ -42,29 +42,6 @@ final class Wallet extends BaseModel
     }
 
     /**
-     * Points currently held in escrow against this member's live bookings.
-     */
-    public function escrowHeld(int $memberId): int
-    {
-        return (int) $this->selectValue(
-            "SELECT COALESCE(SUM(rental_charge), 0) FROM bookings
-              WHERE borrower_id = :id
-                AND status IN ('awaiting_handover','in_progress','awaiting_return')",
-            ['id' => $memberId]
-        );
-    }
-
-    public function countEscrowBookings(int $memberId): int
-    {
-        return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM bookings
-              WHERE borrower_id = :id
-                AND status IN ('awaiting_handover','in_progress','awaiting_return')",
-            ['id' => $memberId]
-        );
-    }
-
-    /**
      * Points earned this month, for the dashboard's "Earned N this month".
      */
     public function earnedThisMonth(int $memberId): int

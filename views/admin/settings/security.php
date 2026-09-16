@@ -19,7 +19,8 @@ $pageTitle = 'Settings — Security';
 $navActive = 'settings';
 $settingsTab = 'security';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

@@ -12,28 +12,11 @@ declare(strict_types=1);
  * @var int   $proposed_pts pre-filled award amount from moderator proposal
  */
 
-$dispute ??= [
-    'title'        => 'Grinding Drill',
-    'case_number'  => '#CD-0142',
-    'status'       => 'error',
-    'status_label' => 'Escalated - timer expired',
-];
-
-$history ??= [
-    ['text' => 'Damage claimed by lender T.H.K. Madushan - Moderate, 60 pts', 'date' => '14 Jul'],
-    ['text' => 'Mediation by Mod. J. Kavipriya - proposed 40 pts to lender',   'date' => '16 Jul'],
-    ['text' => 'Moderator & lender signed off · borrower M. Lawsan refused',   'date' => '17 Jul'],
-    ['text' => '7-day timer expired - escalated to Admin',                      'date' => '18 Jul'],
-];
-
-$evidence ??= [];
-
-$proposed_pts ??= 40;
-
 $pageTitle = $dispute['title'] . ' — final ruling';
 $navActive = 'disputes';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -74,8 +57,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
     <div>
         <div class="form-card" style="width:100%;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-            
+            <p class="demo-note">Preview only. Saving is not available yet.</p>
             <h2 class="form-card__legend" style="font-size:var(--text-lede);">Final decision</h2>
 
             <div class="field">

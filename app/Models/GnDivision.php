@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+/**
+ * gn_divisions — the Grama Niladhari divisions members belong to, with their
+ * moderator and membership counts.
+ */
 final class GnDivision extends BaseModel
 {
     protected string $table = 'gn_divisions';
@@ -88,14 +92,6 @@ final class GnDivision extends BaseModel
                 ['id' => $id]
             ),
         ];
-    }
-
-    /** @return list<array{id: int, name: string}> */
-    public function allNames(): array
-    {
-        return $this->select(
-            'SELECT id, name FROM gn_divisions ORDER BY name'
-        );
     }
 
     /**
@@ -190,40 +186,39 @@ final class GnDivision extends BaseModel
         );
     }
 
+    /**
+     * Is this name already used in the district? Names are unique per district
+     * (uk_gnd_name_district), compared case-insensitively by the collation.
+     */
+    public function nameTaken(string $name, string $district, int $exceptId = 0): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM gn_divisions WHERE name = :name AND district = :district AND id <> :id',
+            ['name' => $name, 'district' => $district, 'id' => $exceptId]
+        ) > 0;
+    }
+
     public function create(string $name, string $district): int
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO gn_divisions (name, district, status) VALUES (:name, :district, :status)'
+        $statement = $this->pdo->prepare(
+            "INSERT INTO gn_divisions (name, district, status) VALUES (:name, :district, 'active')"
         );
-        $stmt->execute([
-            'name'     => $name,
-            'district' => $district,
-            'status'   => 'active',
-        ]);
+        $statement->execute(['name' => $name, 'district' => $district]);
 
         return (int) $this->pdo->lastInsertId();
     }
 
-        public function updateDetails(int $id, string $name, string $district): bool
+    public function updateDetails(int $id, string $name, string $district): void
     {
-        $stmt = $this->pdo->prepare(
+        $statement = $this->pdo->prepare(
             'UPDATE gn_divisions SET name = :name, district = :district WHERE id = :id'
         );
-        return $stmt->execute([
-            'id'       => $id,
-            'name'     => $name,
-            'district' => $district,
-        ]);
+        $statement->execute(['id' => $id, 'name' => $name, 'district' => $district]);
     }
 
-    public function archive(int $id): bool
+    public function archive(int $id): void
     {
-        $stmt = $this->pdo->prepare(
-            "UPDATE gn_divisions SET status = 'archived' WHERE id = :id"
-        );
-        return $stmt->execute(['id' => $id]);
+        $statement = $this->pdo->prepare("UPDATE gn_divisions SET status = 'archived' WHERE id = :id");
+        $statement->execute(['id' => $id]);
     }
-
-
-
 }

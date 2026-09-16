@@ -45,23 +45,4 @@ final class AidGrant extends BaseModel
             ['member' => $memberId]
         );
     }
-
-    /**
-     * When the member last closed a grant, for the cooling-period notice.
-     */
-    public function lastClosedAt(int $memberId): ?string
-    {
-        $value = $this->selectValue(
-            "SELECT MAX(created_at) FROM aid_grants
-              WHERE member_id = :member AND status IN ('closed','expired')",
-            ['member' => $memberId]
-        );
-
-        return $value === false || $value === null ? null : (string) $value;
-    }
-
-    public static function stageFor(string $status): int
-    {
-        return self::STAGE_OF_STATUS[$status] ?? 1;
-    }
 }

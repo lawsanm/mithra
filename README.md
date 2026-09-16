@@ -30,18 +30,20 @@ Read [the interim presentation guide](docs/INTERIM_GUIDE.md) for a short explana
 Browser URL
   -> public/index.php       starts the session and dispatches the request
   -> app/routes.php         maps each URL to its action or demo view
-  -> app/Core/Router.php    matches the URL, checks the form token and the session
-  -> Controller            reads input and prepares the response
-  -> Service               checks business rules for item changes
+  -> app/Core/Router.php    matches the URL, then runs Auth -> RBAC -> CSRF -> session checks
+  -> Controller            reads input and prepares the response (all extend app/Core/Controller.php)
+  -> Service               checks business rules before data changes
   -> Model                 runs prepared SQL queries through PDO
   -> View + partials       display the HTML page
 ```
 
-Items supports database-backed listing, browsing, creation, editing, pausing, resuming and archiving. The member dashboard, gifts list, booking lists/details and many admin screens read database data. Other screens still use sample data. Actions without a backend are visibly disabled or marked as previews.
+Working modules:
 
-Identity works end to end: `/register` creates a pending member and a pending home membership, the division moderator approves or rejects it under **Verifications**, and `/login` then admits that account by email or mobile number. Every route except `/login`, `/register` and `/logout` requires a session. Password reset and role-based access enforcement are still pending — any signed-in account can reach another role's screens by typing the URL. This is an interim demonstration, not a finished deployment.
+- **Identity** — registration, moderator verification, sign-in, password reset and change, profile, address changes and account closure.
+- **Items** — listing, browsing, a four-step create wizard, editing, pausing, resuming and archiving, with the moderator's declared-value review.
+- **Divisions (Admin)** — create, edit and archive GN divisions.
 
-See [the UI fix report](docs/UI_FIXES.md) for the changes across all five roles, verification results and remaining visual checks.
+The member dashboard, gifts list, bookings and the admin screens read live data. Screens for modules that are not built yet are design previews with their own sample content, and their actions are visibly disabled. Every route outside the sign-in pages needs a session, and each path is limited to the roles declared in `app/routes.php`. This is an interim demonstration, not a finished deployment.
 
 ## Useful files
 
@@ -51,15 +53,17 @@ See [the UI fix report](docs/UI_FIXES.md) for the changes across all five roles,
 | `app/Controllers/AuthController.php` | Sign-up, sign-in and sign-out |
 | `app/Services/RegistrationService.php` | What a valid application is, and the pending account it creates |
 | `app/Services/VerificationService.php` | The moderator's approve/reject of a new member |
-| `app/Middleware/AuthMiddleware.php` | Which routes a signed-out visitor may reach |
+| `app/Middleware/AuthMiddleware.php`, `RbacMiddleware.php` | Who may reach which routes |
+| `app/Core/Controller.php` | What every controller shares: render, flash, redirect, refusal pages |
 | `app/Controllers/ItemController.php` | Working Items requests |
+| `app/Controllers/AdminController.php` | Admin screens and the division CRUD |
+| `app/Services/DivisionService.php` | Division rules: unique names per district, archiving |
 | `app/Controllers/BookingController.php` | Read-only member bookings and record-specific details |
-| `app/Controllers/SponsorLiaisonController.php` | Filtering and navigation for liaison sample records |
+| `app/Controllers/SponsorLiaisonController.php` | Design preview of the liaison screens over sample records |
+| `app/Controllers/DemoController.php` | Member dashboard and gifts data, and the design-preview pages |
 | `app/Services/ItemService.php` | Item validation, ownership and state changes |
 | `app/Models/` | Database queries |
-| `app/Controllers/DemoController.php` | Member dashboard/gifts data and other demo pages |
-| `app/Controllers/AdminController.php` | Read-only admin page data |
-| `views/`, `partials/` | Pages and shared header/navigation/modals |
+| `views/`, `partials/` | Pages, the one shared header/navigation, and modals |
 | `public/css/main.css`, `public/js/` | Styling and small browser interactions |
 | `config/config.php` | Local database credentials; excluded from Git |
 | `migrations/` | Database schema and sample data |
@@ -78,10 +82,9 @@ With the local application and database running at `http://localhost/mithra/`, r
 
 ```cmd
 python tests/ui-navigation.py
-python scripts/audit-ui.py
 ```
 
-These check routes, links, assets, selected records, filters and HTML interaction wiring. Both sign in first — as the demo member, and as the moderator for the verification screens — because every screen is now behind the sign-in check. They do not render pages or simulate browser interactions. The audit writes `docs/UI_AUDIT_RECHECK.json`.
+This checks routes, links, assets, selected records, filters and HTML interaction wiring. It signs in first — as the demo member, and as the moderator for the verification screens — because every screen is behind the sign-in check. It does not render pages or simulate browser interactions.
 
 ## Troubleshooting
 

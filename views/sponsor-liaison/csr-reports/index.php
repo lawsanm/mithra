@@ -27,7 +27,8 @@ $sponsors ??= [
 $pageTitle = 'CSR impact';
 $navActive = 'csr-reports';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

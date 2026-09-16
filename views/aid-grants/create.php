@@ -43,8 +43,6 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="panel panel--wide" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="field">
         <label class="field__label" for="grant-purpose">Purpose</label>
         <select class="input" id="grant-purpose" name="purpose" required disabled>

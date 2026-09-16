@@ -61,9 +61,7 @@ $quote = ($quote ?? []) + [
     </div>
 
     <div class="stack" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="field-row">
             <div class="field">
                 <label class="visually-hidden" for="modal-from">From date</label>

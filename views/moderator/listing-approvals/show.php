@@ -22,7 +22,7 @@ declare(strict_types=1);
  * @var array|null $flash
  */
 
-$chrome    = ($chrome ?? 'moderator') === 'admin' ? 'admin' : 'moderator';
+$chrome    = $chrome ?? 'moderator';
 $errors    = $errors ?? [];
 $old       = $old ?? ['decision' => '', 'declared_value' => '', 'reason' => ''];
 $photos    = $photos ?? [];
@@ -32,7 +32,7 @@ $proofGaps = $proofGaps ?? [];
 $pageTitle = $listing['title'];
 $navActive = 'listing-approvals';
 
-include __DIR__ . '/../../../partials/header-' . $chrome . '.php';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

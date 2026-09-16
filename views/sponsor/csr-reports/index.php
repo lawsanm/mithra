@@ -30,7 +30,8 @@ $reconcileNote ??= 'Figures reconcile with the public Transparency Dashboard and
 $pageTitle = 'CSR report';
 $navActive = 'csr-reports';
 
-include __DIR__ . '/../../../partials/header-sponsor.php';
+$chrome = 'sponsor';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

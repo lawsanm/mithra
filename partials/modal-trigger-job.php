@@ -13,8 +13,7 @@ $triggerJob ??= ['name' => '', 'description' => '', 'last_run' => ''];
 ?>
 <dialog aria-labelledby="modal-trigger-job-title" class="modal modal--sm" id="modal-trigger-job">
     <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="modal__head">
             <h2 class="modal__title" id="modal-trigger-job-title">Trigger job manually</h2>
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>

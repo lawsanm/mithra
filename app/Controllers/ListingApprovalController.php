@@ -12,14 +12,13 @@ declare(strict_types=1);
  * decision writes, live in ListingReviewService. RbacMiddleware has already
  * limited each path to its role.
  */
-final class ListingApprovalController
+final class ListingApprovalController extends Controller
 {
-    private PDO $pdo;
     private ListingReviewService $reviews;
 
     public function __construct(PDO $pdo)
     {
-        $this->pdo = $pdo;
+        parent::__construct($pdo);
 
         $this->reviews = new ListingReviewService(
             $pdo,
@@ -39,12 +38,12 @@ final class ListingApprovalController
         $filter = in_array($filter, ListingReviewService::FILTERS, true) ? $filter : '';
 
         try {
-            $rows    = $this->reviews->queue($this->reviewerId(), $this->role(), $filter);
+            $rows    = $this->reviews->queue($this->userId(), $this->role(), $filter);
             $pending = $filter === 'pending'
                 ? $rows
-                : $this->reviews->queue($this->reviewerId(), $this->role(), 'pending');
+                : $this->reviews->queue($this->userId(), $this->role(), 'pending');
         } catch (AccessDeniedException $exception) {
-            $this->renderNotice(403, 'No queue here', 'This account does not moderate a division.');
+            $this->notice(403, 'No queue here', 'This account does not moderate a division.');
 
             return;
         }
@@ -86,7 +85,7 @@ final class ListingApprovalController
         try {
             $title = $this->reviews->decide(
                 $id,
-                $this->reviewerId(),
+                $this->userId(),
                 $this->role(),
                 $validator->value('decision'),
                 $adjusted === '' ? null : (int) $adjusted,
@@ -119,7 +118,7 @@ final class ListingApprovalController
     private function renderReview(int $id, array $errors): void
     {
         try {
-            $record = $this->reviews->review($id, $this->reviewerId(), $this->role());
+            $record = $this->reviews->review($id, $this->userId(), $this->role());
         } catch (RuntimeException $exception) {
             $this->renderException($exception);
 
@@ -206,21 +205,16 @@ final class ListingApprovalController
         $links = [];
 
         if (is_string($proofPath) && $proofPath !== '') {
-            $links[] = ['label' => 'Proof of value', 'url' => $this->photoUrl($proofPath)];
+            $links[] = ['label' => 'Proof of value', 'url' => photo_url($proofPath)];
         }
 
         foreach ($photos as $index => $path) {
             if (is_string($path)) {
-                $links[] = ['label' => 'Photo ' . ((int) $index + 1), 'url' => $this->photoUrl($path)];
+                $links[] = ['label' => 'Photo ' . ((int) $index + 1), 'url' => photo_url($path)];
             }
         }
 
         return $links;
-    }
-
-    private function photoUrl(string $path): string
-    {
-        return base_url() . '/photo.php?p=' . rawurlencode($path);
     }
 
     /**
@@ -321,84 +315,31 @@ final class ListingApprovalController
     }
 
     /**
+     * Moderator and Admin share these screens, each in its own navigation.
+     *
      * @param array<string, mixed> $data
      */
-    private function render(string $view, array $data): void
+    protected function render(string $view, array $data = []): void
     {
         $data['chrome']   = $this->role() === 'admin' ? 'admin' : 'moderator';
         $data['basePath'] = base_url() . $this->basePath();
-        $data['flash']    = $this->takeFlash();
 
-        if ($data['chrome'] === 'admin') {
-            $admin = (new User($this->pdo))->find($this->reviewerId()) ?? ['full_name' => ''];
-            $data['currentAdmin'] = ['initials' => User::initials((string) $admin['full_name'])];
-        } else {
-            $appointment = (new Moderator($this->pdo))->findByUserId($this->reviewerId()) ?? [];
-            $data['currentModerator'] = [
-                'initials' => User::initials((string) ($appointment['full_name'] ?? '')),
-                'bond'     => 'Bond: ' . number_format((int) ($appointment['bond_points'] ?? 0)) . ' pts',
-            ];
-        }
-
-        extract($data, EXTR_SKIP);
-
-        include dirname(__DIR__, 2) . '/views/' . $view . '.php';
+        parent::render($view, $data);
     }
 
     private function renderException(RuntimeException $exception): void
     {
         if ($exception instanceof AccessDeniedException) {
-            $this->renderNotice(403, 'Not yours to review', 'This listing is reviewed by its own division moderator, or by the Admin when the lister is a moderator.');
+            $this->notice(403, 'Not yours to review', 'This listing is reviewed by its own division moderator, or by the Admin when the lister is a moderator.');
 
             return;
         }
 
-        $this->renderNotice(404, 'Record not found', 'This review is no longer available. Return to the queue to choose a record.');
-    }
-
-    private function renderNotice(int $status, string $title, string $body): void
-    {
-        http_response_code($status);
-
-        $noticeTitle = $title;
-        $noticeBody  = $body;
-
-        include dirname(__DIR__, 2) . '/views/errors/notice.php';
+        $this->notice(404, 'Record not found', 'This review is no longer available. Return to the queue to choose a record.');
     }
 
     private function basePath(): string
     {
         return $this->role() === 'admin' ? '/admin/listing-approvals' : '/moderator/listing-approvals';
-    }
-
-    private function reviewerId(): int
-    {
-        return (int) ($_SESSION['user_id'] ?? 0);
-    }
-
-    private function role(): string
-    {
-        return (string) ($_SESSION['role'] ?? '');
-    }
-
-    private function flash(string $message, string $type = 'success'): void
-    {
-        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
-    }
-
-    /**
-     * @return array{type: string, message: string}|null
-     */
-    private function takeFlash(): ?array
-    {
-        $flash = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
-
-        return is_array($flash) ? ['type' => (string) $flash['type'], 'message' => (string) $flash['message']] : null;
-    }
-
-    private function redirect(string $path): void
-    {
-        header('Location: ' . base_url() . $path, true, 303);
     }
 }
