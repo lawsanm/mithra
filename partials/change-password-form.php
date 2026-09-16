@@ -14,7 +14,7 @@ $errors   = $errors ?? [];
 $returnTo = $returnTo ?? '/account/password';
 
 ?>
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/account/password">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/account/password" novalidate>
     <?= csrf_field() ?>
     <input type="hidden" name="return_to" value="<?= e($returnTo) ?>">
 
@@ -28,12 +28,9 @@ $returnTo = $returnTo ?? '/account/password';
             id="current-password"
             name="current_password"
             autocomplete="current-password"
-            required
             <?= isset($errors['current_password']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['current_password'])): ?>
-            <span class="field__error"><?= e($errors['current_password']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'current_password') ?>
     </div>
 
     <?php $passwordPrefix = 'change'; include __DIR__ . '/password-fields.php'; ?>

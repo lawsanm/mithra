@@ -54,11 +54,8 @@ include __DIR__ . '/../../../partials/header.php';
             name="company_name"
             value="<?= e($draft['company_name']) ?>"
             placeholder="Northwind Co"
-            required
          disabled>
-        <?php if (isset($errors['company_name'])): ?>
-            <span class="field__error"><?= e($errors['company_name']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'company_name') ?>
     </div>
 
     <div class="field">
@@ -70,11 +67,8 @@ include __DIR__ . '/../../../partials/header.php';
             name="contact_person"
             value="<?= e($draft['contact_person']) ?>"
             placeholder="T.H.K. Madushan"
-            required
          disabled>
-        <?php if (isset($errors['contact_person'])): ?>
-            <span class="field__error"><?= e($errors['contact_person']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'contact_person') ?>
     </div>
 
     <div class="field">
@@ -86,16 +80,13 @@ include __DIR__ . '/../../../partials/header.php';
             name="contact_email"
             value="<?= e($draft['contact_email']) ?>"
             placeholder="contact@northwind.lk"
-            required
          disabled>
-        <?php if (isset($errors['contact_email'])): ?>
-            <span class="field__error"><?= e($errors['contact_email']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'contact_email') ?>
     </div>
 
     <div class="field">
         <label class="field__label" for="agreement-status">Agreement status</label>
-        <select class="input" id="agreement-status" name="agreement_status" required disabled>
+        <select class="input" id="agreement-status" name="agreement_status" disabled>
             <option value="">Select status</option>
             <?php foreach ($agreementStatuses as $value => $label): ?>
                 <option value="<?= e($value) ?>"<?= $draft['agreement_status'] === $value ? ' selected' : '' ?>>
@@ -103,9 +94,7 @@ include __DIR__ . '/../../../partials/header.php';
                 </option>
             <?php endforeach; ?>
         </select>
-        <?php if (isset($errors['agreement_status'])): ?>
-            <span class="field__error"><?= e($errors['agreement_status']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'agreement_status') ?>
     </div>
 
     <div class="field">
@@ -118,9 +107,7 @@ include __DIR__ . '/../../../partials/header.php';
             value="<?= e($draft['agreement_details']) ?>"
             placeholder="CSR agreement ref, contribution schedule"
          disabled>
-        <?php if (isset($errors['agreement_details'])): ?>
-            <span class="field__error"><?= e($errors['agreement_details']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'agreement_details') ?>
     </div>
 
     <div class="field">
@@ -133,9 +120,7 @@ include __DIR__ . '/../../../partials/header.php';
             value="<?= e($draft['internal_notes']) ?>"
             placeholder="Notes about this sponsor (visible to liaisons only)"
          disabled>
-        <?php if (isset($errors['internal_notes'])): ?>
-            <span class="field__error"><?= e($errors['internal_notes']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'internal_notes') ?>
     </div>
 
     <div class="actions">

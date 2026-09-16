@@ -187,11 +187,7 @@ final class ItemController extends Controller
         try {
             switch ($step) {
                 case 1:
-                    $validator
-                        ->required('name', 'Item name')
-                        ->maxLength('name', 'Item name', 150)
-                        ->required('category', 'Category')
-                        ->maxLength('description', 'Description', 2000);
+                    $this->detailRules($validator);
 
                     if (!$validator->passes()) {
                         $this->renderWizard($step, $draft, $validator->errors(), $validator->values());
@@ -221,10 +217,7 @@ final class ItemController extends Controller
                     break;
 
                 case 2:
-                    $validator
-                        ->required('declared_value', 'Declared value')
-                        ->integer('declared_value', 'Declared value', 1, 1000000)
-                        ->inList('value_proof_type', 'Kind of proof', array_merge([''], array_keys(ItemService::PROOF_TYPES)));
+                    $this->valueRules($validator);
 
                     if (!$validator->passes()) {
                         $this->renderWizard($step, $draft, $validator->errors(), $validator->values());
@@ -264,7 +257,7 @@ final class ItemController extends Controller
                     break;
 
                 case 3:
-                    $validator->inList('listing_type', 'Listing type', ['rental', 'donation']);
+                    $this->typeRules($validator);
 
                     if (!$validator->passes()) {
                         $this->renderWizard($step, $draft, $validator->errors(), $validator->values());
@@ -277,9 +270,7 @@ final class ItemController extends Controller
                     break;
 
                 default:
-                    $validator
-                        ->integer('daily_rate', 'Daily rate', 1, 1000000)
-                        ->integer('monthly_rate', 'Monthly rate', 1, 1000000);
+                    $this->rateRules($validator);
 
                     if (!$validator->passes()) {
                         $this->renderWizard($step, $draft, $validator->errors(), $validator->values());
@@ -345,17 +336,10 @@ final class ItemController extends Controller
         }
 
         $validator = new Validator($_POST);
-        $validator
-            ->required('name', 'Item name')
-            ->maxLength('name', 'Item name', 150)
-            ->required('category', 'Category')
-            ->maxLength('description', 'Description', 2000)
-            ->required('declared_value', 'Declared value')
-            ->integer('declared_value', 'Declared value', 1, 1000000)
-            ->inList('listing_type', 'Listing type', ['rental', 'donation'])
-            ->inList('value_proof_type', 'Kind of proof', array_merge([''], array_keys(ItemService::PROOF_TYPES)))
-            ->integer('daily_rate', 'Daily rate', 1, 1000000)
-            ->integer('monthly_rate', 'Monthly rate', 1, 1000000);
+        $this->detailRules($validator);
+        $this->valueRules($validator);
+        $this->typeRules($validator);
+        $this->rateRules($validator);
 
         if (!$validator->passes()) {
             $this->renderEdit($row, $validator->errors(), $validator->values());
@@ -696,6 +680,37 @@ final class ItemController extends Controller
         }
 
         $this->notice(404, 'Listing not found', 'This listing does not exist, or it has been removed.');
+    }
+
+    // ── Field rules, shared by the wizard steps and the edit form ───────────
+
+    private function detailRules(Validator $validator): void
+    {
+        $validator
+            ->required('name', 'Item name')
+            ->maxLength('name', 'Item name', ItemService::NAME_MAX)
+            ->required('category', 'Category')
+            ->maxLength('description', 'Description', ItemService::DESCRIPTION_MAX);
+    }
+
+    private function valueRules(Validator $validator): void
+    {
+        $validator
+            ->required('declared_value', 'Declared value')
+            ->integer('declared_value', 'Declared value', 1, ItemService::MAX_DECLARED_VALUE)
+            ->inList('value_proof_type', 'Kind of proof', array_merge([''], array_keys(ItemService::PROOF_TYPES)));
+    }
+
+    private function typeRules(Validator $validator): void
+    {
+        $validator->inList('listing_type', 'Listing type', ItemService::LISTING_TYPES);
+    }
+
+    private function rateRules(Validator $validator): void
+    {
+        $validator
+            ->integer('daily_rate', 'Daily rate', 1, ItemService::MAX_RATE)
+            ->integer('monthly_rate', 'Monthly rate', 1, ItemService::MAX_RATE);
     }
 
     // ── Plumbing ────────────────────────────────────────────────────────────

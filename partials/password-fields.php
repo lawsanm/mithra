@@ -21,9 +21,7 @@ $passwordPrefix = $passwordPrefix ?? 'new';
         type="password"
         id="<?= e($passwordPrefix) ?>-password"
         name="password"
-        minlength="<?= e((string) PasswordPolicy::MIN_LENGTH) ?>"
         autocomplete="new-password"
-        required
         <?= isset($errors['password']) ? 'aria-invalid="true"' : '' ?>
     >
     <?php if (isset($errors['password'])): ?>
@@ -44,10 +42,7 @@ $passwordPrefix = $passwordPrefix ?? 'new';
         id="<?= e($passwordPrefix) ?>-password-confirmation"
         name="password_confirmation"
         autocomplete="new-password"
-        required
         <?= isset($errors['password_confirmation']) ? 'aria-invalid="true"' : '' ?>
     >
-    <?php if (isset($errors['password_confirmation'])): ?>
-        <span class="field__error"><?= e($errors['password_confirmation']) ?></span>
-    <?php endif; ?>
+    <?= field_error($errors, 'password_confirmation') ?>
 </div>

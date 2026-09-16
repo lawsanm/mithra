@@ -16,12 +16,12 @@ declare(strict_types=1);
         </div>
 
         <p style="font-size: var(--text-ui-label); margin-bottom: var(--space-4);">
-            Are you sure? The objection raised by <strong id="dismiss-member-name"></strong> will be marked as invalid and the appointment continues.
+            Are you sure? The objection raised by <strong id="dismiss-member-name" data-modal-field="member"></strong> will be marked as invalid and the appointment continues.
         </p>
 
-        <div class="field" style="margin-bottom: var(--space-4);">
+        <div class="field u-mb-4">
             <label class="field__label" for="dismiss-reason">Reason for dismissal</label>
-            <textarea class="input" id="dismiss-reason" name="reason" rows="3" required placeholder="Explain why this objection is invalid…" disabled></textarea>
+            <textarea class="input" id="dismiss-reason" name="reason" rows="3" placeholder="Explain why this objection is invalid…" disabled></textarea>
         </div>
 
         <div class="modal__footer">

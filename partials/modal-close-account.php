@@ -63,7 +63,7 @@ $closureOptions = [
             <button class="btn btn--ghost" type="button" data-modal-close>Keep my account</button>
         </div>
     <?php else: ?>
-        <form class="stack" method="post" action="<?= base_url() ?>/settings/close-account">
+        <form class="stack" method="post" action="<?= base_url() ?>/settings/close-account" novalidate>
             <?= csrf_field() ?>
 
             <?php if (isset($errors['form'])): ?>
@@ -78,7 +78,6 @@ $closureOptions = [
                         name="closure_type"
                         value="<?= e($option['value']) ?>"
                         <?= $index === 0 ? 'checked' : '' ?>
-                        required
                     >
                     <span class="choice__body">
                         <span class="choice__title"><?= e($option['title']) ?></span>
@@ -86,9 +85,7 @@ $closureOptions = [
                     </span>
                 </label>
             <?php endforeach; ?>
-            <?php if (isset($errors['closure_type'])): ?>
-                <span class="field__error"><?= e($errors['closure_type']) ?></span>
-            <?php endif; ?>
+            <?= field_error($errors, 'closure_type') ?>
 
             <div class="field">
                 <label class="field__label" for="close-password">Your password, to confirm</label>
@@ -98,12 +95,9 @@ $closureOptions = [
                     id="close-password"
                     name="password"
                     autocomplete="current-password"
-                    required
                     <?= isset($errors['close_password']) ? 'aria-invalid="true"' : '' ?>
                 >
-                <?php if (isset($errors['close_password'])): ?>
-                    <span class="field__error"><?= e($errors['close_password']) ?></span>
-                <?php endif; ?>
+                <?= field_error($errors, 'close_password') ?>
             </div>
 
             <p class="notice notice--warning">

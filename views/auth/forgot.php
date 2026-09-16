@@ -28,7 +28,7 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/forgot-password">
+<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/forgot-password" novalidate>
     <?= csrf_field() ?>
 
     <h1 class="form-card__title">Forgot your password?</h1>
@@ -56,14 +56,10 @@ include __DIR__ . '/../../partials/header.php';
             id="forgot-email"
             name="email"
             value="<?= e($email) ?>"
-            maxlength="150"
             autocomplete="email"
-            required
             <?= isset($errors['email']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['email'])): ?>
-            <span class="field__error"><?= e($errors['email']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'email') ?>
     </div>
 
     <button class="btn btn--primary btn--block" type="submit">Email me a reset link</button>

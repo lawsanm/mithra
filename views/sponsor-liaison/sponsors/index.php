@@ -52,7 +52,7 @@ include __DIR__ . '/../../../partials/header.php';
     </a>
 </header>
 
-<form class="field-row" method="get" action="<?= base_url() ?>/sponsor-liaison/sponsors">
+<form class="field-row" method="get" action="<?= base_url() ?>/sponsor-liaison/sponsors" novalidate>
     <div class="field">
         <input class="input input--search" aria-label="Search sponsors" type="search" name="q" placeholder="Search sponsors" value="<?= e($search) ?>">
     </div>

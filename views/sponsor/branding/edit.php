@@ -51,10 +51,8 @@ include __DIR__ . '/../../../partials/header.php';
 
         <div class="field">
             <label class="field__label" for="display_name">Display name</label>
-            <input class="input" type="text" id="display_name" name="display_name" value="<?= e($draft['display_name']) ?>" required disabled>
-            <?php if (isset($errors['display_name'])): ?>
-                <span class="field__error"><?= e($errors['display_name']) ?></span>
-            <?php endif; ?>
+            <input class="input" type="text" id="display_name" name="display_name" value="<?= e($draft['display_name']) ?>" disabled>
+            <?= field_error($errors, 'display_name') ?>
         </div>
 
         <div class="field">

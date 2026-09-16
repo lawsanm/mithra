@@ -22,7 +22,7 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/reset-password/code">
+<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/reset-password/code" novalidate>
     <?= csrf_field() ?>
 
     <h1 class="form-card__title">Reset with a code</h1>
@@ -44,16 +44,12 @@ include __DIR__ . '/../../partials/header.php';
             id="code-identifier"
             name="identifier"
             value="<?= e($identifier) ?>"
-            maxlength="150"
             autocomplete="username"
             autocapitalize="none"
             spellcheck="false"
-            required
             <?= isset($errors['identifier']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['identifier'])): ?>
-            <span class="field__error"><?= e($errors['identifier']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'identifier') ?>
     </div>
 
     <div class="field">
@@ -63,17 +59,13 @@ include __DIR__ . '/../../partials/header.php';
             type="text"
             id="code-value"
             name="code"
-            maxlength="20"
             placeholder="ABCDE-FGHJK"
             autocomplete="one-time-code"
             autocapitalize="characters"
             spellcheck="false"
-            required
             <?= isset($errors['code']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['code'])): ?>
-            <span class="field__error"><?= e($errors['code']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'code') ?>
     </div>
 
     <?php $passwordPrefix = 'code'; include __DIR__ . '/../../partials/password-fields.php'; ?>

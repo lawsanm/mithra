@@ -107,11 +107,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid">
     <?php foreach ($stats as $stat): ?>
-        <a class="stat-card" href="<?= e($stat['href']) ?>">
-            <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value<?= !empty($stat['primary']) ? ' stat-card__value--primary' : '' ?>"><?= e($stat['value']) ?></strong>
-            <span class="stat-card__note"><?= e($stat['note']) ?></span>
-        </a>
+        <?php $statTone = !empty($stat['primary']) ? 'primary' : ''; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 

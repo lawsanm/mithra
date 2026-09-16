@@ -63,7 +63,7 @@ include __DIR__ . '/../../../partials/header.php';
     <h1 class="page-header__title">Objection management</h1>
 </header>
 
-<div class="form-card" style="width: 100%; max-width: 100%;">
+<div class="form-card form-card--wide">
     <div class="two-col" style="gap: var(--space-5);">
         <div>
             <h3 class="form-card__legend">Appointment: <?= e($appointment['name']) ?> → <?= e($appointment['division']) ?> moderator</h3>
@@ -93,7 +93,7 @@ include __DIR__ . '/../../../partials/header.php';
 <section class="section">
     <h2 class="section__title">Raised objections</h2>
 
-    <div style="overflow-x: auto;">
+    <div class="scroll-x">
         <table class="data-table">
             <thead>
                 <tr>
@@ -116,8 +116,8 @@ include __DIR__ . '/../../../partials/header.php';
                         <td>
                             <?php if ($obj['status'] === 'warning'): ?>
                                 <div style="display: flex; gap: var(--space-2);">
-                                    <button class="btn btn--ghost js-dismiss-objection" type="button" data-member="<?= e($obj['member']) ?>">Dismiss</button>
-                                    <button class="btn btn--danger js-uphold-objection" type="button" data-appointee="<?= e($obj['against']) ?>">Uphold</button>
+                                    <button class="btn btn--ghost" type="button" data-modal-open="dismiss-modal" data-member="<?= e($obj['member']) ?>">Dismiss</button>
+                                    <button class="btn btn--danger" type="button" data-modal-open="uphold-modal" data-appointee="<?= e($obj['against']) ?>">Uphold</button>
                                 </div>
                             <?php else: ?>
                                 <span class="badge badge--neutral">—</span>
@@ -131,12 +131,12 @@ include __DIR__ . '/../../../partials/header.php';
 </section>
 
 <?php if ($windowExpired && $allDismissed): ?>
-    <div style="margin-top: var(--space-6);" data-demo-form>
+    <div class="u-mt-6" data-demo-form>
         <p class="demo-note">Preview only. Saving is not available yet.</p>
         <button class="btn btn--primary" type="submit" disabled>Finalise appointment</button>
     </div>
 <?php else: ?>
-    <div class="notice notice--info notice--full" style="margin-top: var(--space-6);">
+    <div class="notice notice--info notice--full u-mt-6">
         Window still open — <?= e($appointment['closes']) ?>. Objections can be raised until the window closes.
     </div>
 <?php endif; ?>
@@ -144,23 +144,6 @@ include __DIR__ . '/../../../partials/header.php';
 <?php include __DIR__ . '/../../../partials/modal-dismiss-objection.php'; ?>
 <?php include __DIR__ . '/../../../partials/modal-uphold-objection.php'; ?>
 
-<script>
-(function () {
-    document.querySelectorAll('.js-dismiss-objection').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            document.getElementById('dismiss-member-name').textContent = this.dataset.member;
-            document.getElementById('dismiss-modal').showModal();
-        });
-    });
-
-    document.querySelectorAll('.js-uphold-objection').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            document.getElementById('uphold-appointee-name').textContent = this.dataset.appointee;
-            document.getElementById('uphold-modal').showModal();
-        });
-    });
-})();
-</script>
 
 <?php $pageScripts = ['modal.js']; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

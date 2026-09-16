@@ -50,7 +50,7 @@ directly for scheduled work.
 | `/app/Models/` | `Xxx.php`, one per table | Thin PDO wrappers extending `BaseModel`. SQL lives here and nowhere else. |
 | `/app/Services/` | `XxxService.php` etc. | All business logic. Plain PHP classes, no `$_SESSION`, no `$_POST`, no HTML. |
 | `/app/Middleware/` | `XxxMiddleware.php` | Each has a single `handle()` method. |
-| `/views/` | Page templates | One file per controller action, named `feature/action.php`. |
+| `/views/` | Page templates | One file per controller action, named `feature/action.php`. Root-level view folders are the member area (members and moderators, `'/'` in `routes.php`); role folders (`admin/`, `moderator/`, `sponsor/`, `sponsor-liaison/`) hold pages only that role can reach. |
 | `/partials/` | Reusable HTML chunks | `header.php`, `nav.php`, `listing-card.php`, etc. |
 | `/scripts/` | Cron CLI scripts | Each logs a row to `cron_runs`. Never accessed via HTTP. |
 | `/migrations/` | Numbered SQL files | `NNN_verb_noun.sql`, append-only, never edit an applied migration. |
@@ -141,6 +141,12 @@ If unsure where code goes, ask: "could this line change for a business reason?" 
   `Validator` before calling a service: required, type, length, range, enum. On failure,
   re-render the form with per-field errors and the user's previous input — never a blank
   page, never a raw exception.
+- **Field rules live on the server only.** Markup carries no `required`, `maxlength`,
+  `minlength`, `min`, `max`, `step` or `pattern`, and every `<form>` carries
+  `novalidate`, so each rule has one home (the `Validator` call or the service) and
+  the server's error messages are what the member sees. `type="email"`, `type="tel"`
+  and `type="number"` stay for the right mobile keyboard. CI enforces this
+  (`server-side-rules`).
 - **Trust nothing from the client**, including hidden fields, IDs in URLs (always check
   ownership: does this booking belong to the logged-in member?), and select options.
 - **Transactions:** every operation that writes more than one row (and EVERY point
@@ -196,8 +202,8 @@ report and viva).
 ## 11. Frontend rules
 
 - Semantic HTML5 (`<main>`, `<nav>`, `<form>`, `<label for>` on every input, `alt` on
-  every image). Forms work without JavaScript; JS only enhances (client-side validation
-  duplicates, never replaces, server-side validation).
+  every image). Forms work without JavaScript; JS only enhances. There is no client-side
+  validation — see §8, "Field rules live on the server only".
 - All colours, spacing, and font sizes come from the custom properties in `main.css`
   (`var(--color-primary)`, `var(--space-2)` …). Hard-coded hex values or px paddings in
   page markup are a review-rejection.

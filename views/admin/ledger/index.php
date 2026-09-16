@@ -45,7 +45,7 @@ include __DIR__ . '/../../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
-<form class="field-row" method="get" action="<?= base_url() ?>/admin/ledger" role="search">
+<form class="field-row" method="get" action="<?= base_url() ?>/admin/ledger" role="search" novalidate>
     <input type="hidden" name="filter" value="<?= e($filter) ?>">
     <div class="field">
         <input class="input" type="search" name="q" placeholder="Search by member name" aria-label="Search by member name" value="<?= e($search) ?>">
@@ -77,7 +77,7 @@ include __DIR__ . '/../../../partials/header.php';
                 </td>
                 <td style="text-align: right"<?= $entry['amount_class'] !== '' ? ' class="color-' . e($entry['amount_class']) . '"' : '' ?>>
                     <?php if ($entry['amount_class'] === 'error'): ?>
-                        <span style="color: var(--color-error)"><?= e($entry['amount']) ?></span>
+                        <span class="u-text-error"><?= e($entry['amount']) ?></span>
                     <?php elseif ($entry['amount_class'] === 'success'): ?>
                         <span style="color: var(--color-success)"><?= e($entry['amount']) ?></span>
                     <?php else: ?>

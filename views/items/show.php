@@ -116,11 +116,11 @@ include __DIR__ . '/../../partials/header.php';
                     <div class="field-row">
                         <div class="field">
                             <label class="visually-hidden" for="borrow-from">From date</label>
-                            <input class="input input--date" type="date" disabled id="borrow-from" name="from_date" value="<?= e($quote['from']) ?>" required>
+                            <input class="input input--date" type="date" disabled id="borrow-from" name="from_date" value="<?= e($quote['from']) ?>">
                         </div>
                         <div class="field">
                             <label class="visually-hidden" for="borrow-to">To date</label>
-                            <input class="input input--date" type="date" disabled id="borrow-to" name="to_date" value="<?= e($quote['to']) ?>" required>
+                            <input class="input input--date" type="date" disabled id="borrow-to" name="to_date" value="<?= e($quote['to']) ?>">
                         </div>
                     </div>
 
