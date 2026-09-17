@@ -52,23 +52,21 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php include __DIR__ . '/../../partials/flash.php'; ?>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile" novalidate>
     <?= csrf_field() ?>
 
     <h2 class="panel__heading">Edit details</h2>
 
     <div class="field">
         <label class="field__label" for="full-name">Name</label>
-        <input class="input" type="text" id="full-name" name="full_name" value="<?= e($draft['full_name']) ?>" maxlength="150" autocomplete="name" required
+        <input class="input" type="text" id="full-name" name="full_name" value="<?= e($draft['full_name']) ?>" autocomplete="name"
             <?= isset($errors['full_name']) ? 'aria-invalid="true"' : '' ?>>
-        <?php if (isset($errors['full_name'])): ?>
-            <span class="field__error"><?= e($errors['full_name']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'full_name') ?>
     </div>
 
     <div class="field">
         <label class="field__label" for="mobile">Mobile number</label>
-        <input class="input" type="tel" id="mobile" name="phone" value="<?= e($draft['phone']) ?>" maxlength="20" autocomplete="tel" required
+        <input class="input" type="tel" id="mobile" name="phone" value="<?= e($draft['phone']) ?>" autocomplete="tel"
             <?= isset($errors['phone']) ? 'aria-invalid="true"' : '' ?>>
         <?php if (isset($errors['phone'])): ?>
             <span class="field__error"><?= e($errors['phone']) ?></span>
@@ -79,7 +77,7 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="field">
         <label class="field__label" for="email">Email — optional</label>
-        <input class="input" type="email" id="email" name="email" value="<?= e($draft['email']) ?>" maxlength="150" autocomplete="email"
+        <input class="input" type="email" id="email" name="email" value="<?= e($draft['email']) ?>" autocomplete="email"
             <?= isset($errors['email']) ? 'aria-invalid="true"' : '' ?>>
         <?php if (isset($errors['email'])): ?>
             <span class="field__error"><?= e($errors['email']) ?></span>
@@ -94,7 +92,7 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 </form>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile/address" enctype="multipart/form-data">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile/address" enctype="multipart/form-data" novalidate>
     <?= csrf_field() ?>
 
     <h2 class="panel__heading">Home address</h2>
@@ -116,16 +114,14 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="field">
         <label class="field__label" for="address">New address</label>
-        <input class="input" type="text" id="address" name="address" value="<?= e($draft['address']) ?>" maxlength="255" autocomplete="street-address" required
+        <input class="input" type="text" id="address" name="address" value="<?= e($draft['address']) ?>" autocomplete="street-address"
             <?= isset($errors['address']) ? 'aria-invalid="true"' : '' ?>>
-        <?php if (isset($errors['address'])): ?>
-            <span class="field__error"><?= e($errors['address']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'address') ?>
     </div>
 
     <div class="field">
         <label class="field__label" for="address-proof">Proof of the new address</label>
-        <input class="input" type="file" id="address-proof" name="address_proof" accept="image/jpeg,image/png,image/webp" required
+        <input class="input" type="file" id="address-proof" name="address_proof" accept="image/jpeg,image/png,image/webp"
             <?= isset($errors['address_proof']) ? 'aria-invalid="true"' : '' ?>>
         <?php if (isset($errors['address_proof'])): ?>
             <span class="field__error"><?= e($errors['address_proof']) ?></span>

@@ -33,8 +33,8 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="two-col">
     <div class="stack" style="display:flex;flex-direction:column;gap:var(--space-6);">
-        <div class="form-card" style="width:100%;">
-            <h2 class="form-card__legend" style="font-size:var(--text-lede);">Case history</h2>
+        <div class="form-card form-card--wide">
+            <h2 class="form-card__legend form-card__legend--lg">Case history</h2>
             <div class="timeline">
                 <?php foreach ($history as $event): ?>
                     <div class="timeline__item">
@@ -45,7 +45,7 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
         </div>
 
-        <div class="form-card" style="width:100%;">
+        <div class="form-card form-card--wide">
             <h2 class="form-card__legend" style="font-size:var(--text-lede);color:var(--color-primary);">Evidence - handover vs return</h2>
             <div class="thumb-grid">
                 <?php for ($i = 0; $i < 4; $i++): ?>
@@ -56,13 +56,13 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 
     <div>
-        <div class="form-card" style="width:100%;" data-demo-form>
+        <div class="form-card form-card--wide" data-demo-form>
             <p class="demo-note">Preview only. Saving is not available yet.</p>
-            <h2 class="form-card__legend" style="font-size:var(--text-lede);">Final decision</h2>
+            <h2 class="form-card__legend form-card__legend--lg">Final decision</h2>
 
             <div class="field">
                 <label class="field__label" for="award_pts">Award to lender (pts)</label>
-                <input class="input" id="award_pts" name="award_pts" type="number" min="0" value="<?= e((string) $proposed_pts) ?>" disabled>
+                <input class="input" id="award_pts" name="award_pts" type="number" value="<?= e((string) $proposed_pts) ?>" disabled>
             </div>
 
             <div class="field">

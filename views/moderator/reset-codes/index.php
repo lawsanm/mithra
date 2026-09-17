@@ -44,7 +44,7 @@ include __DIR__ . '/../../../partials/header.php';
     </section>
 <?php endif; ?>
 
-<form class="panel panel--wide" method="post" action="<?= e($basePath) ?>">
+<form class="panel panel--wide" method="post" action="<?= e($basePath) ?>" novalidate>
     <?= csrf_field() ?>
 
     <h2 class="panel__heading">Issue a new code</h2>
@@ -62,14 +62,10 @@ include __DIR__ . '/../../../partials/header.php';
             id="reset-lookup"
             name="lookup"
             value="<?= e($lookup ?? '') ?>"
-            maxlength="20"
             autocomplete="off"
-            required
             <?= isset($errors['lookup']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['lookup'])): ?>
-            <span class="field__error"><?= e($errors['lookup']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'lookup') ?>
     </div>
 
     <button class="btn btn--primary" type="submit">Issue reset code</button>

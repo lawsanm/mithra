@@ -71,100 +71,19 @@ include __DIR__ . '/../../partials/header.php';
         sends the listing back to your moderator for approval. Changing only the rate does not.
     </p>
 
-    <form class="form-card" method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>" enctype="multipart/form-data">
+    <form class="form-card" method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>" enctype="multipart/form-data" novalidate>
         <?= csrf_field() ?>
 
-        <div class="field">
-            <label class="field__label" for="item-name">Item name</label>
-            <input
-                class="input"
-                type="text"
-                id="item-name"
-                name="name"
-                value="<?= e((string) $draft['name']) ?>"
-                maxlength="150"
-                required
-            >
-            <?php if (isset($errors['name'])): ?>
-                <span class="field__error"><?= e($errors['name']) ?></span>
-            <?php endif; ?>
-        </div>
+        <?php include __DIR__ . '/../../partials/item-details.php'; ?>
 
-        <div class="field">
-            <label class="field__label" for="item-category">Category</label>
-            <select class="input" id="item-category" name="category" required>
-                <?php foreach ($categories as $category): ?>
-                    <option
-                        value="<?= e((string) $category['id']) ?>"
-                        <?= (string) $draft['category'] === (string) $category['id'] ? 'selected' : '' ?>
-                    ><?= e((string) $category['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <?php if (isset($errors['category'])): ?>
-                <span class="field__error"><?= e($errors['category']) ?></span>
-            <?php endif; ?>
-        </div>
-
-        <div class="field">
-            <label class="field__label" for="item-description">Description — optional</label>
-            <textarea
-                class="input"
-                id="item-description"
-                name="description"
-                rows="4"
-                maxlength="2000"
-            ><?= e((string) $draft['description']) ?></textarea>
-            <?php if (isset($errors['description'])): ?>
-                <span class="field__error"><?= e($errors['description']) ?></span>
-            <?php endif; ?>
-        </div>
-
-        <div class="field">
-            <label class="field__label" for="declared-value">Declared value (pts)</label>
-            <input
-                class="input input--narrow"
-                type="number"
-                id="declared-value"
-                name="declared_value"
-                value="<?= e((string) $draft['declared_value']) ?>"
-                min="1"
-                step="1"
-                required
-            >
-            <?php if (isset($errors['declared_value'])): ?>
-                <span class="field__error"><?= e($errors['declared_value']) ?></span>
-            <?php endif; ?>
-        </div>
-
-        <div class="field">
-            <label class="field__label" for="value-proof-type">Proof of value</label>
-            <select class="input" id="value-proof-type" name="value_proof_type">
-                <option value="">None — declared value is 2,000 points or less</option>
-                <?php foreach ($proofTypes as $proofValue => $proofLabel): ?>
-                    <option
-                        value="<?= e($proofValue) ?>"
-                        <?= (string) ($draft['value_proof_type'] ?? '') === $proofValue ? 'selected' : '' ?>
-                    ><?= e($proofLabel) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <span class="field__hint">
-                Up to 2,000 pts: photos are enough. 2,001 to 10,000 pts: a receipt, warranty card or
-                retail price reference. Above 10,000 pts: a receipt or warranty card, or an in-person
-                inspection by your moderator.
-            </span>
-            <?php if (isset($errors['value_proof_type'])): ?>
-                <span class="field__error"><?= e($errors['value_proof_type']) ?></span>
-            <?php endif; ?>
-        </div>
+        <?php include __DIR__ . '/../../partials/item-value.php'; ?>
 
         <div class="field">
             <label class="field__label" for="value-proof">
                 <?= $proofOnFile ? 'Replace the proof on file — optional' : 'Proof document' ?>
             </label>
             <input class="input" type="file" id="value-proof" name="value_proof" accept="image/jpeg,image/png,image/webp">
-            <?php if (isset($errors['value_proof'])): ?>
-                <span class="field__error"><?= e($errors['value_proof']) ?></span>
-            <?php endif; ?>
+            <?= field_error($errors, 'value_proof') ?>
         </div>
 
         <p class="form-card__legend">Photos</p>
@@ -189,9 +108,7 @@ include __DIR__ . '/../../partials/header.php';
         <p class="field__hint">
             Clear a "Keep" box to drop that photo when you save. A listing needs at least one.
         </p>
-        <?php if (isset($errors['photos'])): ?>
-            <span class="field__error"><?= e($errors['photos']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'photos') ?>
 
         <p class="form-card__legend">Listing type</p>
 
@@ -211,48 +128,13 @@ include __DIR__ . '/../../partials/header.php';
             </span>
         </label>
 
-        <?php if (isset($errors['listing_type'])): ?>
-            <span class="field__error"><?= e($errors['listing_type']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'listing_type') ?>
 
-        <div class="field-row">
-            <div class="field">
-                <label class="field__label" for="daily-rate">Daily rate (pts)</label>
-                <input
-                    class="input input--narrow"
-                    type="number"
-                    id="daily-rate"
-                    name="daily_rate"
-                    value="<?= e((string) $draft['daily_rate']) ?>"
-                    min="1"
-                    step="1"
-                >
-                <?php if (isset($errors['daily_rate'])): ?>
-                    <span class="field__error"><?= e($errors['daily_rate']) ?></span>
-                <?php endif; ?>
-            </div>
-            <div class="field">
-                <label class="field__label" for="monthly-rate">Monthly rate (pts)</label>
-                <input
-                    class="input input--narrow"
-                    type="number"
-                    id="monthly-rate"
-                    name="monthly_rate"
-                    value="<?= e((string) $draft['monthly_rate']) ?>"
-                    min="1"
-                    step="1"
-                >
-                <?php if (isset($errors['monthly_rate'])): ?>
-                    <span class="field__error"><?= e($errors['monthly_rate']) ?></span>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php include __DIR__ . '/../../partials/item-rates.php'; ?>
 
         <span class="field__hint">Rates are ignored on a donation.</span>
 
-        <?php if (isset($errors['status'])): ?>
-            <span class="field__error"><?= e($errors['status']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'status') ?>
 
         <div class="actions">
             <a class="btn btn--ghost" href="<?= base_url() ?>/items">Cancel</a>
@@ -263,20 +145,20 @@ include __DIR__ . '/../../partials/header.php';
     <?php // Shelf actions post on their own — a form cannot nest inside another. ?>
     <div class="actions">
         <?php if ($item['can_pause']): ?>
-            <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/pause">
+            <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/pause" novalidate>
                 <?= csrf_field() ?>
                 <button class="btn btn--ghost" type="submit">Pause listing</button>
             </form>
         <?php endif; ?>
 
         <?php if ($item['can_resume']): ?>
-            <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/resume">
+            <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/resume" novalidate>
                 <?= csrf_field() ?>
                 <button class="btn btn--ghost" type="submit">Put back on the shelf</button>
             </form>
         <?php endif; ?>
 
-        <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/archive">
+        <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/archive" novalidate>
             <?= csrf_field() ?>
             <button class="btn btn--ghost" type="submit">Remove listing</button>
         </form>

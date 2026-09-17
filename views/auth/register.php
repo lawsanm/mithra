@@ -36,7 +36,7 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/register" enctype="multipart/form-data">
+<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/register" enctype="multipart/form-data" novalidate>
     <?= csrf_field() ?>
 
     <h1 class="form-card__title">Join your community</h1>
@@ -65,14 +65,10 @@ include __DIR__ . '/../../partials/header.php';
             name="full_name"
             value="<?= e($old('full_name')) ?>"
             placeholder="As written on your NIC"
-            maxlength="150"
             autocomplete="name"
-            required
             <?= isset($errors['full_name']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['full_name'])): ?>
-            <span class="field__error"><?= e($errors['full_name']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'full_name') ?>
     </div>
 
     <div class="field">
@@ -84,10 +80,8 @@ include __DIR__ . '/../../partials/header.php';
             name="nic"
             value="<?= e($old('nic')) ?>"
             placeholder="199012345V or 199012345671"
-            maxlength="20"
             autocapitalize="characters"
             spellcheck="false"
-            required
             <?= isset($errors['nic']) ? 'aria-invalid="true"' : '' ?>
         >
         <?php if (isset($errors['nic'])): ?>
@@ -106,15 +100,11 @@ include __DIR__ . '/../../partials/header.php';
             name="phone"
             value="<?= e($old('phone')) ?>"
             placeholder="077 123 4567"
-            maxlength="20"
             autocomplete="tel"
             spellcheck="false"
-            required
             <?= isset($errors['phone']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['phone'])): ?>
-            <span class="field__error"><?= e($errors['phone']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'phone') ?>
     </div>
 
     <div class="field">
@@ -126,7 +116,6 @@ include __DIR__ . '/../../partials/header.php';
             name="email"
             value="<?= e($old('email')) ?>"
             placeholder="you@email.com"
-            maxlength="150"
             autocomplete="email"
             autocapitalize="none"
             spellcheck="false"
@@ -145,7 +134,6 @@ include __DIR__ . '/../../partials/header.php';
             class="input"
             id="register-division"
             name="gn_division_id"
-            required
             <?= isset($errors['gn_division_id']) ? 'aria-invalid="true"' : '' ?>
         >
             <option value="">Select your division</option>
@@ -156,9 +144,7 @@ include __DIR__ . '/../../partials/header.php';
                 ><?= e((string) $division['name']) ?> · <?= e((string) $division['district']) ?></option>
             <?php endforeach; ?>
         </select>
-        <?php if (isset($errors['gn_division_id'])): ?>
-            <span class="field__error"><?= e($errors['gn_division_id']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'gn_division_id') ?>
     </div>
 
     <div class="field">
@@ -168,15 +154,11 @@ include __DIR__ . '/../../partials/header.php';
             id="register-address"
             name="address"
             rows="2"
-            maxlength="255"
             placeholder="24/3 Galle Road, Colombo 03"
             autocomplete="street-address"
-            required
             <?= isset($errors['address']) ? 'aria-invalid="true"' : '' ?>
         ><?= e($old('address')) ?></textarea>
-        <?php if (isset($errors['address'])): ?>
-            <span class="field__error"><?= e($errors['address']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'address') ?>
     </div>
 
     <div class="field">
@@ -187,7 +169,6 @@ include __DIR__ . '/../../partials/header.php';
             id="register-nic-photo"
             name="nic_photo"
             accept="image/jpeg,image/png,image/webp"
-            required
             <?= isset($errors['nic_photo']) ? 'aria-invalid="true"' : '' ?>
         >
         <?php if (isset($errors['nic_photo'])): ?>
@@ -205,7 +186,6 @@ include __DIR__ . '/../../partials/header.php';
             id="register-address-proof"
             name="address_proof"
             accept="image/jpeg,image/png,image/webp"
-            required
             <?= isset($errors['address_proof']) ? 'aria-invalid="true"' : '' ?>
         >
         <?php if (isset($errors['address_proof'])): ?>
@@ -225,9 +205,7 @@ include __DIR__ . '/../../partials/header.php';
             type="password"
             id="register-password"
             name="password"
-            minlength="<?= e((string) RegistrationService::MIN_PASSWORD) ?>"
             autocomplete="new-password"
-            required
             <?= isset($errors['password']) ? 'aria-invalid="true"' : '' ?>
         >
         <?php if (isset($errors['password'])): ?>
@@ -248,12 +226,9 @@ include __DIR__ . '/../../partials/header.php';
             id="register-password-confirmation"
             name="password_confirmation"
             autocomplete="new-password"
-            required
             <?= isset($errors['password_confirmation']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['password_confirmation'])): ?>
-            <span class="field__error"><?= e($errors['password_confirmation']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'password_confirmation') ?>
     </div>
 
     <button class="btn btn--primary btn--block" type="submit">Apply to join</button>

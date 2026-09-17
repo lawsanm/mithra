@@ -56,15 +56,15 @@ include __DIR__ . '/../../../partials/header.php';
                 </div>
 
                 <div class="actions">
-                    <form method="post" action="<?= base_url() ?>/moderator/address-changes/<?= e((string) $change['id']) ?>/approve">
+                    <form method="post" action="<?= base_url() ?>/moderator/address-changes/<?= e((string) $change['id']) ?>/approve" novalidate>
                         <?= csrf_field() ?>
                         <button class="btn btn--primary" type="submit">Approve new address</button>
                     </form>
 
-                    <form class="stack" method="post" action="<?= base_url() ?>/moderator/address-changes/<?= e((string) $change['id']) ?>/reject">
+                    <form class="stack" method="post" action="<?= base_url() ?>/moderator/address-changes/<?= e((string) $change['id']) ?>/reject" novalidate>
                         <?= csrf_field() ?>
                         <label class="field__label" for="reason-<?= e((string) $change['id']) ?>">Reason, if rejecting</label>
-                        <input class="input" type="text" id="reason-<?= e((string) $change['id']) ?>" name="reason" maxlength="255"
+                        <input class="input" type="text" id="reason-<?= e((string) $change['id']) ?>" name="reason"
                             <?= $mine && isset($errors['reason']) ? 'aria-invalid="true"' : '' ?>>
                         <?php if ($mine && isset($errors['reason'])): ?>
                             <span class="field__error"><?= e($errors['reason']) ?></span>

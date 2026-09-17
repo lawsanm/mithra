@@ -82,14 +82,7 @@ include __DIR__ . '/../../../partials/header.php';
                 <?php foreach ($proofGaps as $gap): ?>
                     <p class="notice notice--error"><?= e($gap) ?></p>
                 <?php endforeach; ?>
-                <div class="photo-grid">
-                    <?php foreach ($photos as $photo): ?>
-                        <a class="link" href="<?= e($photo['url']) ?>">
-                            <img class="thumb thumb--photo thumb__img" src="<?= e($photo['url']) ?>" alt="<?= e($photo['label']) ?>">
-                            <?= e($photo['label']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
+                <?php $gridPhotos = $photos; include __DIR__ . '/../../../partials/photo-grid.php'; ?>
             </section>
 
             <section class="panel">
@@ -119,7 +112,7 @@ include __DIR__ . '/../../../partials/header.php';
                     This listing has been decided. An edit by the lender sends it back to this queue.
                 </p>
             <?php else: ?>
-                <form class="panel stack" method="post" action="<?= e($basePath) ?>/<?= e((string) $listing['id']) ?>">
+                <form class="panel stack" method="post" action="<?= e($basePath) ?>/<?= e((string) $listing['id']) ?>" novalidate>
                     <?= csrf_field() ?>
                     <h2 class="panel__title">Your decision</h2>
 
@@ -132,15 +125,12 @@ include __DIR__ . '/../../../partials/header.php';
                                     id="decision-<?= e($value) ?>"
                                     name="decision"
                                     value="<?= e($value) ?>"
-                                    required
                                     <?= $old['decision'] === $value ? 'checked' : '' ?>
                                 >
                                 <span><?= e($label) ?></span>
                             </label>
                         <?php endforeach; ?>
-                        <?php if (isset($errors['decision'])): ?>
-                            <span class="field__error"><?= e($errors['decision']) ?></span>
-                        <?php endif; ?>
+                        <?= field_error($errors, 'decision') ?>
                     </fieldset>
 
                     <div class="field">
@@ -150,15 +140,11 @@ include __DIR__ . '/../../../partials/header.php';
                             type="number"
                             id="adjusted-value"
                             name="declared_value"
-                            min="1"
-                            step="1"
                             value="<?= e($old['declared_value']) ?>"
                             placeholder="<?= e((string) $listing['declared_value']) ?>"
                             <?= isset($errors['declared_value']) ? 'aria-invalid="true"' : '' ?>
                         >
-                        <?php if (isset($errors['declared_value'])): ?>
-                            <span class="field__error"><?= e($errors['declared_value']) ?></span>
-                        <?php endif; ?>
+                        <?= field_error($errors, 'declared_value') ?>
                     </div>
 
                     <div class="field">
@@ -167,13 +153,10 @@ include __DIR__ . '/../../../partials/header.php';
                             class="textarea"
                             id="decision-reason"
                             name="reason"
-                            maxlength="255"
                             rows="3"
                             <?= isset($errors['reason']) ? 'aria-invalid="true"' : '' ?>
                         ><?= e($old['reason']) ?></textarea>
-                        <?php if (isset($errors['reason'])): ?>
-                            <span class="field__error"><?= e($errors['reason']) ?></span>
-                        <?php endif; ?>
+                        <?= field_error($errors, 'reason') ?>
                     </div>
 
                     <div class="actions">

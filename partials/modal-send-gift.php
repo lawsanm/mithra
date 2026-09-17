@@ -61,7 +61,7 @@ $giftReasonCount = sprintf(
         <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="field">
             <label class="field__label" for="gift-recipient">Recipient</label>
-            <select class="input" id="gift-recipient" name="recipient" required disabled>
+            <select class="input" id="gift-recipient" name="recipient" disabled>
                 <?php if ($giftDraft['recipient'] === ''): ?>
                     <option value="">Choose a member…</option>
                 <?php endif; ?>
@@ -82,9 +82,6 @@ $giftReasonCount = sprintf(
                 id="gift-amount"
                 name="amount"
                 value="<?= e($giftDraft['amount']) ?>"
-                min="1"
-                step="1"
-                required
                 <?php if (isset($giftErrors['amount'])): ?>
                     aria-invalid="true" aria-describedby="gift-amount-error"
                 <?php endif; ?>
@@ -102,8 +99,6 @@ $giftReasonCount = sprintf(
                 id="gift-reason"
                 name="reason"
                 value="<?= e($giftDraft['reason']) ?>"
-                maxlength="100"
-                required
              disabled>
             <span class="field__hint"><?= e($giftReasonCount) ?></span>
         </div>

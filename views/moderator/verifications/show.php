@@ -82,14 +82,7 @@ include __DIR__ . '/../../../partials/header.php';
                         and a proof of address before approving.
                     </p>
                 <?php else: ?>
-                    <div class="photo-grid">
-                        <?php foreach ($documents as $document): ?>
-                            <a class="link" href="<?= e($document['url']) ?>">
-                                <img class="thumb thumb--photo thumb__img" src="<?= e($document['url']) ?>" alt="<?= e($document['label']) ?>">
-                                <?= e($document['label']) ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
+                    <?php $gridPhotos = $documents; include __DIR__ . '/../../../partials/photo-grid.php'; ?>
                 <?php endif; ?>
             </section>
 
@@ -120,7 +113,7 @@ include __DIR__ . '/../../../partials/header.php';
         </p>
     <?php else: ?>
         <div class="actions">
-            <form method="post" action="<?= base_url() ?>/moderator/verifications/<?= e((string) $recordId) ?>/reject">
+            <form method="post" action="<?= base_url() ?>/moderator/verifications/<?= e((string) $recordId) ?>/reject" novalidate>
                 <?= csrf_field() ?>
                 <button class="btn btn--ghost" type="submit">Reject</button>
             </form>
@@ -130,7 +123,7 @@ include __DIR__ . '/../../../partials/header.php';
                 <span class="demo-note">Not available yet</span>
             </span>
 
-            <form method="post" action="<?= base_url() ?>/moderator/verifications/<?= e((string) $recordId) ?>/approve">
+            <form method="post" action="<?= base_url() ?>/moderator/verifications/<?= e((string) $recordId) ?>/approve" novalidate>
                 <?= csrf_field() ?>
                 <button class="btn btn--primary" type="submit">Approve membership</button>
             </form>

@@ -57,7 +57,7 @@ $accountLinks = match ($chrome) {
             <?php endforeach; ?>
         </ul>
         <div class="account-menu__footer">
-            <form method="post" action="<?= base_url() ?>/logout">
+            <form method="post" action="<?= base_url() ?>/logout" novalidate>
                 <?= csrf_field() ?>
                 <button class="account-menu__link account-menu__logout" type="submit">Log out</button>
             </form>

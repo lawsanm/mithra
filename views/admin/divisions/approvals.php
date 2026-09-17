@@ -28,10 +28,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid stat-grid--3">
     <?php foreach ($approvalStats as $stat): ?>
-        <div class="stat-card">
-            <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value"><?= e($stat['value']) ?></strong>
-        </div>
+        <?php $statTone = ''; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 
@@ -56,11 +53,11 @@ include __DIR__ . '/../../../partials/header.php';
                         NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?>
                     </span>
                 </div>
-                <div style="display:inline;" data-demo-form>
+                <div class="inline-form" data-demo-form>
                     <p class="demo-note">Preview only. Saving is not available yet.</p>
                     <button class="btn btn--ghost" type="submit" disabled>Reject</button>
                 </div>
-                <div style="display:inline;" data-demo-form>
+                <div class="inline-form" data-demo-form>
                     <p class="demo-note">Preview only. Saving is not available yet.</p>
                     <button class="btn btn--primary" type="submit" disabled>Approve</button>
                 </div>

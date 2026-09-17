@@ -44,10 +44,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid stat-grid--3">
     <?php foreach ($divisionStats as $stat): ?>
-        <div class="stat-card">
-            <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value"><?= e($stat['value']) ?></strong>
-        </div>
+        <?php $statTone = ''; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 
@@ -81,11 +78,11 @@ include __DIR__ . '/../../../partials/header.php';
                         <span class="list-row__title"><?= e($member['name']) ?></span>
                         <span class="list-row__meta">NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?></span>
                     </div>
-                    <div style="display:inline;" data-demo-form>
+                    <div class="inline-form" data-demo-form>
                         <p class="demo-note">Preview only. Saving is not available yet.</p>
                         <button class="btn btn--ghost" type="submit" disabled>Reject</button>
                     </div>
-                    <div style="display:inline;" data-demo-form>
+                    <div class="inline-form" data-demo-form>
                         <p class="demo-note">Preview only. Saving is not available yet.</p>
                         <button class="btn btn--primary" type="submit" disabled>Approve</button>
                     </div>
@@ -94,7 +91,7 @@ include __DIR__ . '/../../../partials/header.php';
         </ul>
     <?php endif; ?>
 
-    <div style="margin-top: var(--space-6);">
+    <div class="u-mt-6">
         <button class="btn btn--primary" disabled title="Available when approximately 10 members are registered">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
             Appoint first moderator
@@ -113,7 +110,7 @@ include __DIR__ . '/../../../partials/header.php';
         <h2 class="section__title">Verified members</h2>
     </div>
 
-    <div style="overflow-x: auto;">
+    <div class="scroll-x">
         <table class="data-table">
             <thead>
                 <tr>
@@ -128,7 +125,7 @@ include __DIR__ . '/../../../partials/header.php';
                 <?php foreach ($verifiedMembers as $member): ?>
                     <tr>
                         <td>
-                            <div style="display:flex; align-items:center; gap:var(--space-3);">
+                            <div class="cluster">
                                 <span class="avatar"><?= e($member['initials']) ?></span>
                                 <strong><?= e($member['name']) ?></strong>
                             </div>
@@ -171,7 +168,7 @@ include __DIR__ . '/../../../partials/header.php';
         <span class="badge badge--info"><?= e((string) count($eligibilityPool)) ?> eligible</span>
     </div>
 
-    <div style="overflow-x: auto;">
+    <div class="scroll-x">
         <table class="data-table">
             <thead>
                 <tr>
@@ -188,12 +185,12 @@ include __DIR__ . '/../../../partials/header.php';
                 <?php foreach ($eligibilityPool as $member): ?>
                     <tr<?= $member['recommended'] ? ' class="list-row--highlighted"' : '' ?>>
                         <td>
-                            <div style="display:flex; align-items:center; gap:var(--space-3);">
+                            <div class="cluster">
                                 <span class="avatar"><?= e($member['initials']) ?></span>
                                 <div>
                                     <strong><?= e($member['name']) ?></strong>
                                     <?php if ($member['recommended']): ?>
-                                        <span class="badge badge--warning" style="margin-left: var(--space-2);">Recommended</span>
+                                        <span class="badge badge--warning u-ml-2">Recommended</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -229,7 +226,7 @@ include __DIR__ . '/../../../partials/header.php';
             <p class="empty-state__body">Moderators will appear here once they are appointed and confirmed.</p>
         </div>
     <?php else: ?>
-        <div style="overflow-x: auto;">
+        <div class="scroll-x">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -246,7 +243,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <?php foreach ($activeMods as $mod): ?>
                         <tr>
                             <td>
-                                <div style="display:flex; align-items:center; gap:var(--space-3);">
+                                <div class="cluster">
                                     <span class="avatar"><?= e($mod['initials']) ?></span>
                                     <strong><?= e($mod['name']) ?></strong>
                                 </div>

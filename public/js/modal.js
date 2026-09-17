@@ -5,6 +5,9 @@
  *   <button data-modal-open="request-borrow">…</button>
  *   <dialog class="modal" id="request-borrow"> … [data-modal-close] … </dialog>
  *
+ * A dialog element marked data-modal-field="member" is filled from the
+ * trigger's data-member attribute, so one dialog serves every row.
+ *
  * The dialog element handles Escape, focus trapping and the backdrop itself, so
  * this only wires the triggers. Forms still submit normally without JavaScript;
  * a page that must work JS-free should link to a full page instead of a modal.
@@ -25,10 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     field.textContent = value;
                 }
             });
-            if (id === 'modal-edit-category') {
-                dialog.querySelector('#category-modal-title').textContent = trigger.dataset.mode === 'create' ? 'Add category' : 'Edit category';
-                dialog.querySelector('#category_name').value = trigger.dataset.categoryName ?? '';
-            }
             dialog.showModal();
         }
     };

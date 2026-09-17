@@ -58,7 +58,7 @@ include __DIR__ . '/../../../partials/header.php';
 <div class="content-stretch" style="display: flex; gap: var(--space-3); align-items: center;">
     <span class="avatar avatar--lg"><?= e($grant['initials']) ?></span>
     <div>
-        <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <div class="cluster">
             <h1 class="detail__title"><?= e($grant['name']) ?></h1>
             <span class="badge badge--<?= e($grant['status']) ?>"><?= e($grant['status_label']) ?></span>
         </div>
@@ -68,31 +68,31 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="two-col">
     <div class="stack" style="display: flex; flex-direction: column; gap: var(--space-5);">
-        <div class="form-card" style="width: 100%;">
-            <h2 class="form-card__legend" style="font-size: var(--text-lede);">Request</h2>
+        <div class="form-card form-card--wide">
+            <h2 class="form-card__legend form-card__legend--lg">Request</h2>
             <div style="display: flex; gap: var(--space-10); flex-wrap: wrap;">
                 <div>
-                    <p class="stat-card__note" style="margin-bottom: 3px;">Purpose</p>
+                    <p class="stat-card__note u-mb-1">Purpose</p>
                     <p class="list-row__title"><?= e($request['purpose']) ?></p>
                 </div>
                 <div>
-                    <p class="stat-card__note" style="margin-bottom: 3px;">Amount requested</p>
+                    <p class="stat-card__note u-mb-1">Amount requested</p>
                     <p class="list-row__title"><?= e($request['amount_requested']) ?></p>
                 </div>
                 <div>
-                    <p class="stat-card__note" style="margin-bottom: 3px;">Aid Pool balance</p>
+                    <p class="stat-card__note u-mb-1">Aid Pool balance</p>
                     <p class="list-row__title"><?= e($request['pool_balance']) ?></p>
                 </div>
                 <div>
-                    <p class="stat-card__note" style="margin-bottom: 3px;">Prior grants</p>
+                    <p class="stat-card__note u-mb-1">Prior grants</p>
                     <p class="list-row__title"><?= e($request['prior_grants']) ?></p>
                 </div>
             </div>
             <p class="page-intro__meta">“<?= e($request['note']) ?>”</p>
         </div>
 
-        <div class="form-card" style="width: 100%;">
-            <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <div class="form-card form-card--wide">
+            <div class="cluster">
                 <span class="avatar avatar--md"><?= e($vouch['initials']) ?></span>
                 <div>
                     <p class="list-row__title"><?= e($vouch['name']) ?></p>
@@ -104,13 +104,13 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 
     <div>
-        <div class="form-card" style="width: 100%;" data-demo-form>
+        <div class="form-card form-card--wide" data-demo-form>
             <p class="demo-note">Preview only. Saving is not available yet.</p>
-            <h2 class="form-card__legend" style="font-size: var(--text-lede);">Your decision</h2>
+            <h2 class="form-card__legend form-card__legend--lg">Your decision</h2>
 
             <div class="field">
                 <label class="field__label" for="approved-amount">Approved amount (adjustable)</label>
-                <input class="input" type="number" id="approved-amount" name="approved_amount" value="<?= e($draft['approved_amount']) ?>" min="0" step="1" disabled>
+                <input class="input" type="number" id="approved-amount" name="approved_amount" value="<?= e($draft['approved_amount']) ?>" disabled>
                 <span class="field__hint">You may approve a different amount than requested.</span>
             </div>
 

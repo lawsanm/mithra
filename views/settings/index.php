@@ -54,7 +54,7 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php include __DIR__ . '/../../partials/change-password-form.php'; ?>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/settings/preferences">
+<form class="panel panel--wide" method="post" action="<?= base_url() ?>/settings/preferences" novalidate>
     <?= csrf_field() ?>
 
     <h2 class="panel__heading">Preferences</h2>

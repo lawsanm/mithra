@@ -25,7 +25,7 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/login">
+<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/login" novalidate>
     <?= csrf_field() ?>
 
     <h1 class="form-card__title">Welcome back</h1>
@@ -48,16 +48,12 @@ include __DIR__ . '/../../partials/header.php';
             name="identifier"
             value="<?= e($identifier) ?>"
             placeholder="lawsan@email.com"
-            maxlength="150"
             autocomplete="username"
             autocapitalize="none"
             spellcheck="false"
-            required
             <?= isset($errors['identifier']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['identifier'])): ?>
-            <span class="field__error"><?= e($errors['identifier']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'identifier') ?>
     </div>
 
     <div class="field">
@@ -68,12 +64,9 @@ include __DIR__ . '/../../partials/header.php';
             id="login-password"
             name="password"
             autocomplete="current-password"
-            required
             <?= isset($errors['password']) ? 'aria-invalid="true"' : '' ?>
         >
-        <?php if (isset($errors['password'])): ?>
-            <span class="field__error"><?= e($errors['password']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'password') ?>
     </div>
 
     <button class="btn btn--primary btn--block" type="submit">Log in</button>

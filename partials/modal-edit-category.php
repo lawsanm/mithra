@@ -10,13 +10,13 @@ declare(strict_types=1);
     <div id="form-edit-category" data-demo-form>
         <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="modal__head">
-            <h2 class="modal__title" id="category-modal-title">Add category</h2>
+            <h2 class="modal__title" id="category-modal-title" data-modal-field="modalTitle">Add category</h2>
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>
         </div>
 
         <div class="field">
             <label class="field__label" for="category_name">Category name</label>
-            <input class="input" id="category_name" name="name" type="text" placeholder="e.g. Sports & Outdoor" required disabled>
+            <input class="input" id="category_name" name="name" type="text" data-modal-field="categoryName" placeholder="e.g. Sports & Outdoor" disabled>
         </div>
 
         <div class="field">

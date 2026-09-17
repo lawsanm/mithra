@@ -149,7 +149,7 @@ final class AccountSupportController extends Controller
      */
     protected function render(string $view, array $data = []): void
     {
-        $data['chrome']   = $this->role() === 'admin' ? 'admin' : 'moderator';
+        $data['chrome']   = chrome_for($this->role());
         $data['basePath'] = base_url() . ($this->role() === 'admin' ? '/admin/reset-codes' : '/moderator/reset-codes');
 
         parent::render($view, $data);

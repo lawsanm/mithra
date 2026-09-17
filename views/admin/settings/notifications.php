@@ -42,8 +42,8 @@ include __DIR__ . '/../../../partials/header.php';
         <thead>
             <tr>
                 <th>Category</th>
-                <th style="text-align: center">Email</th>
-                <th style="text-align: center">Push</th>
+                <th class="u-text-center">Email</th>
+                <th class="u-text-center">Push</th>
             </tr>
         </thead>
         <tbody>
@@ -53,10 +53,10 @@ include __DIR__ . '/../../../partials/header.php';
                         <strong><?= e($pref['label']) ?></strong>
                         <span class="text-muted"><?= e($pref['description']) ?></span>
                     </td>
-                    <td style="text-align: center">
+                    <td class="u-text-center">
                         <input type="checkbox" name="prefs[<?= e((string) $i) ?>][email]" value="1"<?= $pref['email'] ? ' checked' : '' ?> disabled>
                     </td>
-                    <td style="text-align: center">
+                    <td class="u-text-center">
                         <input type="checkbox" name="prefs[<?= e((string) $i) ?>][push]" value="1"<?= $pref['push'] ? ' checked' : '' ?> disabled>
                     </td>
                 </tr>

@@ -70,60 +70,13 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </ol>
 
-<form class="form-card" method="post" action="<?= base_url() ?>/items" enctype="multipart/form-data">
+<form class="form-card" method="post" action="<?= base_url() ?>/items" enctype="multipart/form-data" novalidate>
     <?= csrf_field() ?>
     <input type="hidden" name="step" value="<?= e((string) $step) ?>">
 
     <?php if ($step === 1): ?>
 
-        <div class="field">
-            <label class="field__label" for="item-name">Item name</label>
-            <input
-                class="input"
-                type="text"
-                id="item-name"
-                name="name"
-                value="<?= e((string) $draft['name']) ?>"
-                maxlength="150"
-                placeholder="e.g. Bosch Cordless Drill GSB 120"
-                required
-            >
-            <?php if (isset($errors['name'])): ?>
-                <span class="field__error"><?= e($errors['name']) ?></span>
-            <?php endif; ?>
-        </div>
-
-        <div class="field">
-            <label class="field__label" for="item-category">Category</label>
-            <select class="input" id="item-category" name="category" required>
-                <option value="">Select category</option>
-                <?php foreach ($categories as $category): ?>
-                    <option
-                        value="<?= e((string) $category['id']) ?>"
-                        <?= (string) $draft['category'] === (string) $category['id'] ? 'selected' : '' ?>
-                    ><?= e((string) $category['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <?php if (isset($errors['category'])): ?>
-                <span class="field__error"><?= e($errors['category']) ?></span>
-            <?php endif; ?>
-        </div>
-
-        <div class="field">
-            <label class="field__label" for="item-description">Description — optional</label>
-            <textarea
-                class="input"
-                id="item-description"
-                name="description"
-                rows="4"
-                maxlength="2000"
-                placeholder="Condition, what is included, anything a borrower should know."
-            ><?= e((string) $draft['description']) ?></textarea>
-            <span class="field__hint">Borrowers search this text, so name the brand and the accessories.</span>
-            <?php if (isset($errors['description'])): ?>
-                <span class="field__error"><?= e($errors['description']) ?></span>
-            <?php endif; ?>
-        </div>
+        <?php include __DIR__ . '/../../partials/item-details.php'; ?>
 
         <p class="form-card__legend">Photos</p>
 
@@ -142,9 +95,7 @@ include __DIR__ . '/../../partials/header.php';
             Add up to 5 photos, 5 MB each. Clear, well-lit photos build borrower trust.
             Photos upload when you press Continue.
         </p>
-        <?php if (isset($errors['photos'])): ?>
-            <span class="field__error"><?= e($errors['photos']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'photos') ?>
 
         <div class="actions">
             <a class="btn btn--ghost" href="<?= base_url() ?>/items">Cancel</a>
@@ -153,44 +104,7 @@ include __DIR__ . '/../../partials/header.php';
 
     <?php elseif ($step === 2): ?>
 
-        <div class="field">
-            <label class="field__label" for="declared-value">Declared value (pts)</label>
-            <input
-                class="input"
-                type="number"
-                id="declared-value"
-                name="declared_value"
-                value="<?= e((string) $draft['declared_value']) ?>"
-                min="1"
-                step="1"
-                required
-            >
-            <span class="field__hint">Used to size the security hold and cap any damage claim.</span>
-            <?php if (isset($errors['declared_value'])): ?>
-                <span class="field__error"><?= e($errors['declared_value']) ?></span>
-            <?php endif; ?>
-        </div>
-
-        <div class="field">
-            <label class="field__label" for="value-proof-type">Proof of value</label>
-            <select class="input" id="value-proof-type" name="value_proof_type">
-                <option value="">None — declared value is 2,000 points or less</option>
-                <?php foreach ($proofTypes as $proofValue => $proofLabel): ?>
-                    <option
-                        value="<?= e($proofValue) ?>"
-                        <?= (string) ($draft['value_proof_type'] ?? '') === $proofValue ? 'selected' : '' ?>
-                    ><?= e($proofLabel) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <span class="field__hint">
-                Up to 2,000 pts: photos are enough. 2,001 to 10,000 pts: a receipt, warranty card or
-                retail price reference. Above 10,000 pts: a receipt or warranty card, or an in-person
-                inspection by your moderator.
-            </span>
-            <?php if (isset($errors['value_proof_type'])): ?>
-                <span class="field__error"><?= e($errors['value_proof_type']) ?></span>
-            <?php endif; ?>
-        </div>
+        <?php include __DIR__ . '/../../partials/item-value.php'; ?>
 
         <label class="upload-drop">
             <span class="upload-drop__glyph" aria-hidden="true">＋</span>
@@ -199,9 +113,7 @@ include __DIR__ . '/../../partials/header.php';
             </span>
             <input class="visually-hidden" type="file" name="value_proof" accept="image/jpeg,image/png,image/webp">
         </label>
-        <?php if (isset($errors['value_proof'])): ?>
-            <span class="field__error"><?= e($errors['value_proof']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'value_proof') ?>
 
         <p class="notice notice--info">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
@@ -250,9 +162,7 @@ include __DIR__ . '/../../partials/header.php';
             </span>
         </label>
 
-        <?php if (isset($errors['listing_type'])): ?>
-            <span class="field__error"><?= e($errors['listing_type']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'listing_type') ?>
 
         <div class="actions">
             <a class="btn btn--ghost" href="<?= base_url() ?>/items/create?step=2">Back</a>
@@ -271,38 +181,7 @@ include __DIR__ . '/../../partials/header.php';
 
         <?php else: ?>
 
-            <div class="field-row">
-                <div class="field">
-                    <label class="field__label" for="daily-rate">Daily rate (pts)</label>
-                    <input
-                        class="input input--narrow"
-                        type="number"
-                        id="daily-rate"
-                        name="daily_rate"
-                        value="<?= e((string) $draft['daily_rate']) ?>"
-                        min="1"
-                        step="1"
-                    >
-                    <?php if (isset($errors['daily_rate'])): ?>
-                        <span class="field__error"><?= e($errors['daily_rate']) ?></span>
-                    <?php endif; ?>
-                </div>
-                <div class="field">
-                    <label class="field__label" for="monthly-rate">Monthly rate (pts) — optional</label>
-                    <input
-                        class="input input--narrow"
-                        type="number"
-                        id="monthly-rate"
-                        name="monthly_rate"
-                        value="<?= e((string) $draft['monthly_rate']) ?>"
-                        min="1"
-                        step="1"
-                    >
-                    <?php if (isset($errors['monthly_rate'])): ?>
-                        <span class="field__error"><?= e($errors['monthly_rate']) ?></span>
-                    <?php endif; ?>
-                </div>
-            </div>
+            <?php include __DIR__ . '/../../partials/item-rates.php'; ?>
 
             <p class="notice notice--amber">
                 Set a daily rate, a monthly rate, or both — a rental needs at least one.

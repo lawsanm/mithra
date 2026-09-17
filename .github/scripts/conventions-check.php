@@ -287,6 +287,36 @@ foreach ($phpFiles as $file) {
 }
 
 // ---------------------------------------------------------------------------
+// 5b. Field rules live on the server only (§8, §11)
+// ---------------------------------------------------------------------------
+
+foreach ($phpFiles as $file) {
+    if (!isUnder($file, 'views') && !isUnder($file, 'partials')) {
+        continue;
+    }
+
+    $contents = implode("\n", $lines[$file]);
+
+    // A tag runs to the first '>' that is not the end of an embedded PHP echo.
+    $tagBody = '(?:\?>|[^>])*?';
+
+    // Browser-side constraints duplicate the Validator's rules and drift from them.
+    preg_match_all('/<(?:input|select|textarea)\b' . $tagBody . '\s(required|(?:maxlength|minlength|min|max|step|pattern)\s*=)/i', $contents, $found, PREG_OFFSET_CAPTURE);
+    foreach ($found[1] as [$attribute, $offset]) {
+        $number = substr_count(substr($contents, 0, $offset), "\n") + 1;
+        fail('server-side-rules', $file, $number, 'Field rule "' . rtrim($attribute, '= ') . '" in markup — enforce it in the Validator only (§8).');
+    }
+
+    preg_match_all('/<form\b' . $tagBody . '(?<!\?)>/i', $contents, $forms, PREG_OFFSET_CAPTURE);
+    foreach ($forms[0] as [$tag, $offset]) {
+        if (stripos($tag, 'novalidate') === false) {
+            $number = substr_count(substr($contents, 0, $offset), "\n") + 1;
+            fail('server-side-rules', $file, $number, 'Form without novalidate — the browser must not block what the server validates (§8).');
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // 6. Nothing secret or generated is committed (§12)
 // ---------------------------------------------------------------------------
 
