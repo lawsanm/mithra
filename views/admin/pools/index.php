@@ -44,10 +44,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <div class="page-header__action actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/sponsor-ledger">Sponsor Fund Ledger</a>
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/ledger">Open ledger</a>
-        <form method="post" action="<?= base_url() ?>/admin/pools/run-invariant" style="display:inline">
-            <?= csrf_field() ?>
-            <button class="btn btn--primary" type="submit">Run invariant check now</button>
-        </form>
+        <div style="display:inline" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+            
+            <button class="btn btn--primary" type="submit" disabled>Run invariant check now</button>
+        </div>
     </div>
 </header>
 
@@ -79,11 +80,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
                     <span class="list-row__meta"><?= e($job['schedule']) ?></span>
                 </div>
                 <span class="badge badge--<?= e($job['status']) ?>"><?= e($job['status_label']) ?></span>
-                <form method="post" action="<?= base_url() ?>/admin/pools/trigger-job" style="display:inline">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="job" value="<?= e($job['name']) ?>">
-                    <button class="btn btn--ghost" type="submit">Trigger</button>
-                </form>
+                <div style="display:inline" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+
+                    <button class="btn btn--ghost" type="submit" disabled>Trigger</button>
+                </div>
             </li>
         <?php endforeach; ?>
     </ul>

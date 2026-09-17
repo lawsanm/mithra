@@ -54,7 +54,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/sponsor-liaison/disasters">Disasters</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/disasters">Disasters</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page">Wellawatte flooding · connection</span>
 </nav>
@@ -103,26 +103,27 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
     </div>
 
     <div>
-        <form class="form-card" style="width: 100%;" method="post" action="/sponsor-liaison/disasters/connection/verify">
-            <?= csrf_field() ?>
+        <div class="form-card" style="width: 100%;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+            
             <h2 class="form-card__legend" style="font-size: var(--text-lede);">Verify &amp; record relief contribution</h2>
 
             <div class="field">
                 <label class="field__label" for="cash-amount">Cash portion (LKR)</label>
-                <input class="input" type="number" id="cash-amount" name="cash_amount" value="<?= e($draft['cash_amount']) ?>" placeholder="25,000" min="0" step="1">
+                <input class="input" type="number" id="cash-amount" name="cash_amount" value="<?= e($draft['cash_amount']) ?>" placeholder="25,000" min="0" step="1" disabled>
             </div>
 
             <div class="field">
                 <label class="field__label" for="receipt-number">Receipt number</label>
-                <input class="input" type="text" id="receipt-number" name="receipt_number" value="<?= e($draft['receipt_number']) ?>" placeholder="INV-0319">
+                <input class="input" type="text" id="receipt-number" name="receipt_number" value="<?= e($draft['receipt_number']) ?>" placeholder="INV-0319" disabled>
             </div>
 
             <p class="page-intro__meta">Allocation: 100% Aid Pool (Disaster Mode default)</p>
 
             <div class="actions">
-                <button class="btn btn--primary" type="submit">Verify &amp; record</button>
+                <button class="btn btn--primary" type="submit" disabled>Verify &amp; record</button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 

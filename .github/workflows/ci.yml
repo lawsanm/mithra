@@ -51,6 +51,9 @@ jobs:
           done < <(git ls-files '*.php')
           exit $status
 
+      - name: Router regression checks
+        run: php tests/router.php
+
       - name: Every migration applies to a clean MySQL 8
         run: |
           shopt -s nullglob

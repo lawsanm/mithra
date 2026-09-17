@@ -80,10 +80,11 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                     <span class="list-row__meta"><?= e($request['meta']) ?></span>
                 </div>
                 <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
-                <form method="post" action="<?= base_url() ?>/moderator/aid-vouching/<?= rawurlencode($request['id']) ?>/vouch">
-                    <?= csrf_field() ?>
-                    <button class="btn btn--primary" type="submit">Vouch</button>
-                </form>
+                <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                    
+                    <button class="btn btn--primary" type="submit" disabled>Vouch</button>
+                </div>
             </li>
         <?php endforeach; ?>
     </ul>
@@ -98,8 +99,8 @@ include __DIR__ . '/../../../partials/header-moderator.php';
             </p>
         </div>
         <div class="actions panel__actions">
-            <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters/report">Report disaster</a>
-            <a class="btn btn--primary" href="<?= base_url() ?>/moderator/disasters/relief">Record relief given</a>
+            <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Report disaster</button><span class="demo-note">Not available in this demo</span></span>
+            <span class="preview-action"><button type="button" disabled class="btn btn--primary">Record relief given</button><span class="demo-note">Not available in this demo</span></span>
         </div>
     </div>
 </section>

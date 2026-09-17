@@ -44,8 +44,9 @@ $closureOptions = $closureOptions ?? [
         You have <?= e($remainingPoints) ?> remaining. Choose what happens to them:
     </p>
 
-    <form class="stack" method="post" action="<?= base_url() ?>/settings/close-account">
-        <?= csrf_field() ?>
+    <div class="stack" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
 
         <?php foreach ($closureOptions as $option): ?>
             <label class="choice">
@@ -56,7 +57,7 @@ $closureOptions = $closureOptions ?? [
                     value="<?= e($option['value']) ?>"
                     <?= $option['selected'] ? 'checked' : '' ?>
                     required
-                >
+                 disabled>
                 <span class="choice__body">
                     <span class="choice__title"><?= e($option['title']) ?></span>
                     <span class="choice__note"><?= e($option['note']) ?></span>
@@ -72,7 +73,7 @@ $closureOptions = $closureOptions ?? [
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Keep my account</button>
-            <button class="btn btn--primary" type="submit">Continue to confirm</button>
+            <button class="btn btn--primary" type="submit" disabled>Continue to confirm</button>
         </div>
-    </form>
+    </div>
 </dialog>

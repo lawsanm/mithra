@@ -54,7 +54,7 @@ $verifications ??= [
         'meta'         => 'A. Akalvily  ·  applied 15 Jul  ·  Wellawatte',
         'status'       => 'info',
         'status_label' => 'New member',
-        'href'         => base_url() . '/moderator/verifications/akalvily-a',
+        'href'         => base_url() . '/moderator/verifications/1',
     ],
     [
         'initials'     => 'ML',
@@ -62,7 +62,7 @@ $verifications ??= [
         'meta'         => 'M. Lawsan  ·  submitted 16 Jul  ·  from Kollupitiya',
         'status'       => 'warning',
         'status_label' => 'Proof to review',
-        'href'         => base_url() . '/moderator/verifications/lawsan-m',
+        'href'         => base_url() . '/moderator/verifications/2',
     ],
 ];
 
@@ -72,7 +72,7 @@ $approvals ??= [
         'meta'         => 'Listed by T.H.K. Madushan  ·  value proof attached  ·  submitted 15 Jul',
         'status'       => 'warning',
         'status_label' => 'Pending approval',
-        'href'         => base_url() . '/moderator/listing-approvals/pressure-washer',
+        'href'         => base_url() . '/moderator/listing-approvals/1',
     ],
 ];
 
@@ -82,14 +82,14 @@ $cases ??= [
         'meta'         => 'Reported by T.H.K. Madushan  ·  14 Jul  ·  Case #CD-0142',
         'status'       => 'warning',
         'status_label' => 'Mediating',
-        'href'         => base_url() . '/moderator/cases/grinding-drill',
+        'href'         => base_url() . '/moderator/cases/1',
     ],
     [
         'title'        => 'Camping Tent (4-person)',
         'meta'         => 'M. Lawsan & J. Kavipriya  ·  repair confirmed',
         'status'       => 'info',
         'status_label' => 'Awaiting sign-off',
-        'href'         => base_url() . '/moderator/cases/camping-tent-4p',
+        'href'         => base_url() . '/moderator/cases/2',
     ],
 ];
 
@@ -102,7 +102,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 
 ?>
 
-<header class="page-intro">
+<header class="page-intro page-intro--dashboard">
     <h1 class="page-intro__title"><?= e($moderator['greeting']) ?></h1>
     <p class="page-intro__meta"><?= e($moderator['membership']) ?></p>
 </header>
@@ -112,13 +112,13 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         <?php if (isset($stat['href'])): ?>
             <a class="stat-card" href="<?= e($stat['href']) ?>">
                 <span class="stat-card__label"><?= e($stat['label']) ?></span>
-                <strong class="stat-card__value<?= !empty($stat['primary']) ? ' stat-card__value--primary' : '' ?>"><?= e($stat['value']) ?></strong>
+                <strong class="stat-card__value stat-card__value--primary"><?= e($stat['value']) ?></strong>
                 <span class="stat-card__note"><?= e($stat['note']) ?></span>
             </a>
         <?php else: ?>
             <div class="stat-card">
                 <span class="stat-card__label"><?= e($stat['label']) ?></span>
-                <strong class="stat-card__value"><?= e($stat['value']) ?></strong>
+                <strong class="stat-card__value stat-card__value--primary"><?= e($stat['value']) ?></strong>
                 <span class="stat-card__note"><?= e($stat['note']) ?></span>
             </div>
         <?php endif; ?>
@@ -152,6 +152,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                     </div>
                     <span class="badge badge--<?= e($verification['status']) ?>"><?= e($verification['status_label']) ?></span>
                     <a class="btn btn--ghost" href="<?= e($verification['href']) ?>">Review</a>
+                    <a class="btn btn--primary" href="<?= e($verification['href']) ?>#decision">Approve</a>
                 </li>
             <?php endforeach; ?>
         </ul>
@@ -174,6 +175,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                 </div>
                 <span class="badge badge--<?= e($approval['status']) ?>"><?= e($approval['status_label']) ?></span>
                 <a class="btn btn--ghost" href="<?= e($approval['href']) ?>">Review</a>
+                <a class="btn btn--primary" href="<?= e($approval['href']) ?>#decision">Approve</a>
             </li>
         <?php endforeach; ?>
     </ul>
@@ -204,8 +206,8 @@ include __DIR__ . '/../../../partials/header-moderator.php';
     <div class="panel__head">
         <h2 class="panel__title">Disaster relief &amp; aid</h2>
         <div class="actions panel__actions">
-            <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters/report">Report disaster</a>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters/relief">Record relief given</a>
+            <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Report disaster</button><span class="demo-note">Not available in this demo</span></span>
+            <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Record relief given</button><span class="demo-note">Not available in this demo</span></span>
             <a class="btn btn--primary" href="<?= base_url() ?>/moderator/aid-vouching">Vouch aid requests</a>
         </div>
     </div>

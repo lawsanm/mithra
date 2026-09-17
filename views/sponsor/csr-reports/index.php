@@ -36,7 +36,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Your CSR report</h1>
-    <button class="btn btn--primary page-header__action" type="button">Download PDF</button>
+    <button class="btn btn--primary page-header__action" type="button" data-print>Print / Save as PDF</button>
 </header>
 
 <div class="stat-grid">
@@ -69,4 +69,4 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
 <p class="page-intro__meta"><?= e($reconcileNote) ?></p>
 
-<?php include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php $pageScripts = ['reports.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

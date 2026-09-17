@@ -45,14 +45,15 @@ include __DIR__ . '/../../partials/header.php';
 
 <h1 class="page-header__title">Settings</h1>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/settings/account">
-    <?= csrf_field() ?>
+<div class="panel panel--wide" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <h2 class="panel__heading">Account details</h2>
 
     <div class="field">
         <label class="field__label" for="settings-email">Email</label>
-        <input class="input" type="email" id="settings-email" name="email" value="<?= e($account['email']) ?>" required>
+        <input class="input" type="email" id="settings-email" name="email" value="<?= e($account['email']) ?>" required disabled>
         <?php if (isset($errors['email'])): ?>
             <span class="field__error"><?= e($errors['email']) ?></span>
         <?php endif; ?>
@@ -60,7 +61,7 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="field">
         <label class="field__label" for="settings-mobile">Mobile number</label>
-        <input class="input" type="tel" id="settings-mobile" name="mobile" value="<?= e($account['mobile']) ?>" required>
+        <input class="input" type="tel" id="settings-mobile" name="mobile" value="<?= e($account['mobile']) ?>" required disabled>
         <?php if (isset($errors['mobile'])): ?>
             <span class="field__error"><?= e($errors['mobile']) ?></span>
         <?php endif; ?>
@@ -68,18 +69,19 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="field">
         <label class="field__label" for="settings-password">Password</label>
-        <input class="input" type="password" id="settings-password" name="password" autocomplete="new-password" placeholder="••••••••••">
+        <input class="input" type="password" id="settings-password" name="password" autocomplete="new-password" placeholder="••••••••••" disabled>
         <span class="field__hint"><?= e($account['password_age']) ?></span>
         <?php if (isset($errors['password'])): ?>
             <span class="field__error"><?= e($errors['password']) ?></span>
         <?php endif; ?>
     </div>
 
-    <button class="btn btn--primary" type="submit">Save changes</button>
-</form>
+    <button class="btn btn--primary" type="submit" disabled>Save changes</button>
+</div>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/settings/preferences">
-    <?= csrf_field() ?>
+<div class="panel panel--wide" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <h2 class="panel__heading">Preferences</h2>
 
@@ -98,10 +100,10 @@ include __DIR__ . '/../../partials/header.php';
                 name="preferences[<?= e($preference['key']) ?>]"
                 value="1"
                 <?= $preference['enabled'] ? 'checked' : '' ?>
-            >
+             disabled>
         </div>
     <?php endforeach; ?>
-</form>
+</div>
 
 <section class="panel panel--wide">
     <h2 class="panel__heading">About Mithra</h2>
@@ -118,7 +120,7 @@ include __DIR__ . '/../../partials/header.php';
                 Ends your Mithra membership. You’ll choose what happens to your remaining points.
             </span>
         </span>
-        <a class="btn btn--danger" href="<?= base_url() ?>/settings/close-account" data-modal-open="close-account">Close account…</a>
+        <button type="button" class="btn btn--danger" data-modal-open="close-account">Close account…</button>
     </div>
 </section>
 

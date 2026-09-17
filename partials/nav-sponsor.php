@@ -20,24 +20,25 @@ $currentSponsor = $currentSponsor ?? [
 ];
 
 $navItems = [
-    'dashboard'       => ['label' => 'Dashboard',        'href' => '/sponsor/dashboard'],
-    'purchase-points' => ['label' => 'Purchase Points',  'href' => '/sponsor/purchase-points'],
-    'csr-reports'     => ['label' => 'CSR Reports',      'href' => '/sponsor/csr-reports'],
-    'branding'        => ['label' => 'Branding',         'href' => '/sponsor/branding'],
-    'notifications'   => ['label' => 'Notifications',    'href' => '/sponsor/notifications'],
+    'dashboard'       => ['label' => 'Dashboard',        'href' => base_url() . '/sponsor/dashboard'],
+    'purchase-points' => ['label' => 'Purchase Points',  'href' => base_url() . '/sponsor/purchase-points'],
+    'csr-reports'     => ['label' => 'CSR Reports',      'href' => base_url() . '/sponsor/csr-reports'],
+    'branding'        => ['label' => 'Branding',         'href' => base_url() . '/sponsor/branding'],
+    'notifications'   => ['label' => 'Notifications',    'href' => base_url() . '/sponsor/notifications'],
 ];
 
 ?>
 <nav class="nav" aria-label="Sponsor">
-    <a class="nav__brand" href="/sponsor/dashboard">
-        <img class="nav__logo" src="/img/logo-deep-slate.svg" alt="">
+    <a class="nav__brand" href="<?= base_url() ?>/sponsor/dashboard">
+        <img width="21" height="28" class="nav__logo" src="<?= base_url() ?>/img/logo-mark.svg" alt="">
         <span class="nav__wordmark">Mithra</span>
         <span class="nav__tagline">Lend · Share · Care</span>
     </a>
 
     <span class="nav__role-badge">Sponsor</span>
 
-    <ul class="nav__items">
+    <button class="nav__toggle btn btn--ghost" type="button" data-nav-toggle aria-controls="primary-links" aria-expanded="false" hidden>Menu</button>
+    <ul class="nav__items" id="primary-links">
         <?php foreach ($navItems as $key => $navItem): ?>
             <li>
                 <a
@@ -52,7 +53,7 @@ $navItems = [
     <div class="nav__spacer"></div>
 
     <div class="nav__actions">
-        <span class="avatar"><?= e($currentSponsor['initials']) ?></span>
+        <?php $accountRole = 'sponsor'; $accountInitials = $currentSponsor['initials']; include __DIR__ . '/account-menu.php'; ?>
         <span class="nav__company"><?= e($currentSponsor['company_name']) ?></span>
     </div>
 </nav>

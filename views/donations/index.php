@@ -62,8 +62,9 @@ include __DIR__ . '/../../partials/header.php';
     </span>
 </header>
 
-<form class="toggle-field" method="post" action="<?= base_url() ?>/donations/1/first-come">
-    <?= csrf_field() ?>
+<div class="toggle-field" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
     <input
         class="toggle"
         type="checkbox"
@@ -71,11 +72,11 @@ include __DIR__ . '/../../partials/header.php';
         name="first_come"
         value="1"
         <?= $donation['first_come'] ? 'checked' : '' ?>
-    >
+     disabled>
     <label class="toggle-field__label" for="first-come">
         First-come-first-served — <?= $donation['first_come'] ? 'on' : 'off. You choose the recipient.' ?>
     </label>
-</form>
+</div>
 
 <ul class="row-list">
     <?php foreach ($requests as $request): ?>
@@ -87,11 +88,11 @@ include __DIR__ . '/../../partials/header.php';
                 <p class="record-card__quote"><?= e($request['message']) ?></p>
             </div>
             <a class="btn btn--ghost" href="<?= e($request['profile_href']) ?>">View profile</a>
-            <form method="post" action="<?= base_url() ?>/donations/1/recipient">
-                <?= csrf_field() ?>
-                <input type="hidden" name="member" value="<?= e($request['name']) ?>">
-                <button class="btn btn--primary" type="submit">Choose recipient</button>
-            </form>
+            <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+
+                <button class="btn btn--primary" type="submit" disabled>Choose recipient</button>
+            </div>
         </li>
     <?php endforeach; ?>
 </ul>

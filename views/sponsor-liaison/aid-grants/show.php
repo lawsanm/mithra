@@ -49,7 +49,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/sponsor-liaison/aid-grants">Aid Grants</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/aid-grants">Aid Grants</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($grant['name']) ?> · <?= e($grant['grant_number']) ?></span>
 </nav>
@@ -103,29 +103,30 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
     </div>
 
     <div>
-        <form class="form-card" style="width: 100%;" method="post" action="/sponsor-liaison/aid-grants/<?= e((string) $grant['id']) ?>/decision">
-            <?= csrf_field() ?>
+        <div class="form-card" style="width: 100%;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+            
             <h2 class="form-card__legend" style="font-size: var(--text-lede);">Your decision</h2>
 
             <div class="field">
                 <label class="field__label" for="approved-amount">Approved amount (adjustable)</label>
-                <input class="input" type="number" id="approved-amount" name="approved_amount" value="<?= e($draft['approved_amount']) ?>" min="0" step="1">
+                <input class="input" type="number" id="approved-amount" name="approved_amount" value="<?= e($draft['approved_amount']) ?>" min="0" step="1" disabled>
                 <span class="field__hint">You may approve a different amount than requested.</span>
             </div>
 
             <div class="field">
                 <label class="field__label" for="reason">Reason (required if rejecting)</label>
-                <textarea class="input" id="reason" name="reason" rows="2" placeholder="Notes for the member and moderator…"><?= e($draft['reason']) ?></textarea>
+                <textarea class="input" id="reason" name="reason" rows="2" placeholder="Notes for the member and moderator…" disabled><?= e($draft['reason']) ?></textarea>
             </div>
 
             <div class="actions">
-                <button class="btn btn--primary" type="submit" name="decision" value="approve">Approve grant</button>
+                <button class="btn btn--primary" type="submit" name="decision" value="approve" disabled>Approve grant</button>
             </div>
             <div class="actions">
-                <button class="btn btn--ghost" type="submit" name="decision" value="reject">Reject with reason</button>
-                <button class="btn btn--ghost" type="submit" name="decision" value="more_info">Request more info</button>
+                <button class="btn btn--ghost" type="submit" name="decision" value="reject" disabled>Reject with reason</button>
+                <button class="btn btn--ghost" type="submit" name="decision" value="more_info" disabled>Request more info</button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 

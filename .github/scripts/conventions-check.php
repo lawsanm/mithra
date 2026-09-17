@@ -47,7 +47,7 @@ function trackedFiles(): array
         exit(2);
     }
 
-    return array_values(array_filter(array_map('trim', $output), static fn (string $f): bool => $f !== ''));
+    return array_values(array_filter(array_map('trim', $output), static fn (string $f): bool => $f !== '' && is_file($f)));
 }
 
 /**

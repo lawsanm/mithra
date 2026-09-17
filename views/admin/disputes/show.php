@@ -73,27 +73,28 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 
     <div>
-        <form class="form-card" style="width:100%;" method="post" action="<?= base_url() ?>/admin/disputes/<?= e(ltrim($dispute['case_number'], '#CD-')) ?>/ruling">
-            <?= csrf_field() ?>
+        <div class="form-card" style="width:100%;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+            
             <h2 class="form-card__legend" style="font-size:var(--text-lede);">Final decision</h2>
 
             <div class="field">
                 <label class="field__label" for="award_pts">Award to lender (pts)</label>
-                <input class="input" id="award_pts" name="award_pts" type="number" min="0" value="<?= e((string) $proposed_pts) ?>">
+                <input class="input" id="award_pts" name="award_pts" type="number" min="0" value="<?= e((string) $proposed_pts) ?>" disabled>
             </div>
 
             <div class="field">
                 <label class="field__label" for="rationale">Ruling rationale</label>
-                <textarea class="input" id="rationale" name="rationale" rows="3" placeholder="Photos support moderate damage; moderator's proposal upheld..."></textarea>
+                <textarea class="input" id="rationale" name="rationale" rows="3" placeholder="Photos support moderate damage; moderator's proposal upheld..." disabled></textarea>
             </div>
 
             <div class="actions">
-                <button class="btn btn--primary" type="submit">Record final ruling</button>
+                <button class="btn btn--primary" type="submit" disabled>Record final ruling</button>
             </div>
             <div class="actions">
                 <a class="btn btn--ghost" href="<?= base_url() ?>/admin/disputes">Return to disputes</a>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 

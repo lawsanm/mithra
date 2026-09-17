@@ -40,7 +40,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Disaster Mode</h1>
-    <button class="btn btn--ghost page-header__action" type="button">Export incident report</button>
+    <button class="btn btn--ghost page-header__action" type="button" data-print>Print incident report</button>
 </header>
 
 <section class="panel">
@@ -48,8 +48,8 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
         <span class="badge badge--<?= e($disaster['status']) ?>"><?= e($disaster['status_label']) ?></span>
         <p class="panel__note"><?= e($disaster['note']) ?></p>
         <div class="actions panel__actions">
-            <button class="btn btn--ghost" type="button">Notify sponsors</button>
-            <button class="btn btn--primary" type="button">Activate Disaster Mode</button>
+            <button class="btn btn--ghost" type="button" disabled title="Not available in this demo">Notify sponsors</button>
+            <button class="btn btn--primary" type="button" disabled title="Not available in this demo">Activate Disaster Mode</button>
         </div>
     </div>
 </section>
@@ -72,7 +72,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
     <ul class="row-list">
         <?php foreach ($history as $index => $entry): ?>
             <?php if ($index === 0): ?>
-                <a class="list-row" href="/sponsor-liaison/disasters/connection">
+                <a class="list-row" href="<?= base_url() ?>/sponsor-liaison/disasters/connection">
                     <div class="list-row__body">
                         <span class="list-row__title"><?= e($entry['period']) ?></span>
                         <span class="list-row__meta"><?= e($entry['meta']) ?></span>
@@ -92,4 +92,4 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
     </ul>
 </section>
 
-<?php include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php $pageScripts = ['reports.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

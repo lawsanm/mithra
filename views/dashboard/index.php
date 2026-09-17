@@ -20,7 +20,7 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<header class="page-intro">
+<header class="page-intro page-intro--dashboard">
     <h1 class="page-intro__title"><?= e($member['greeting']) ?></h1>
     <p class="page-intro__meta"><?= e($member['membership']) ?></p>
 </header>

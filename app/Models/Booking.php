@@ -128,6 +128,7 @@ final class Booking extends BaseModel
                     DATEDIFF(b.end_date, b.start_date) + 1 AS days,
                     GREATEST(DATEDIFF(CURDATE(), b.end_date), 0) AS days_overdue,
                     i.title AS item_title, i.declared_value,
+                    b.borrower_id, borrower.full_name AS borrower_name,
                     l.id AS lender_id, l.full_name AS lender_name, l.trust_score AS lender_trust,
                     l.status AS lender_status,
                     (SELECT COUNT(*) FROM bookings x WHERE x.lender_id = l.id AND x.status = 'completed')
@@ -138,6 +139,7 @@ final class Booking extends BaseModel
                FROM bookings b
                JOIN items i ON i.id = b.item_id
                JOIN users l ON l.id = b.lender_id
+               JOIN users borrower ON borrower.id = b.borrower_id
           LEFT JOIN handover_records h ON h.booking_id = b.id
               WHERE b.id = :id",
             ['id' => $id]

@@ -42,7 +42,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/sponsor-liaison/csr-reports">CSR Reports</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/csr-reports">CSR Reports</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($report['quarter']) ?> quarterly report</span>
 </nav>
@@ -54,7 +54,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
             <p class="list-row__meta"><?= e($report['quarter']) ?>  ·  Prepared by <?= e($report['prepared_by']) ?>  ·  <?= e($report['prepared_at']) ?></p>
         </div>
         <div style="flex: 1 0 0;"></div>
-        <img src="/img/logo-deep-slate.svg" alt="" style="height: 26px;">
+        <img src="<?= base_url() ?>/img/logo-mark.svg" alt="" style="height: 26px;">
         <span class="nav__wordmark" style="margin-left: var(--space-2);">Mithra</span>
     </div>
 
@@ -83,7 +83,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 </div>
 
 <div class="actions">
-    <a class="btn btn--ghost" href="/sponsor-liaison/csr-reports">Back to CSR impact</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/csr-reports">Back to CSR impact</a>
     <button class="btn btn--primary" type="button" id="print-report">Print / Save as PDF</button>
 </div>
 

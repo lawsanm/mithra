@@ -16,7 +16,7 @@ $notifications ??= [
         'detail' => 'Disaster response is now active. Your support can provide urgent relief and connect with the moderator on the ground.',
         'time'   => '2 hrs ago',
         'unread' => true,
-        'href'   => '/sponsor/disasters/1',
+        'href'   => base_url() . '/sponsor/disasters/1',
     ],
     [
         'icon'   => 'heart',
@@ -24,7 +24,7 @@ $notifications ??= [
         'detail' => 'Your sponsorship can be a lifeline: dry rations and shelter materials are needed for 60 affected households.',
         'time'   => '1 day ago',
         'unread' => true,
-        'href'   => '/sponsor/disasters/1',
+        'href'   => base_url() . '/sponsor/disasters/1',
     ],
     [
         'icon'   => 'check-circle',
@@ -32,7 +32,7 @@ $notifications ??= [
         'detail' => 'Your quarterly impact report is ready. 5,180 items shared and 22 aid grants enabled across the community.',
         'time'   => '5 days ago',
         'unread' => false,
-        'href'   => '/sponsor/csr-reports',
+        'href'   => base_url() . '/sponsor/csr-reports',
     ],
     [
         'icon'   => 'check-circle',
@@ -40,7 +40,7 @@ $notifications ??= [
         'detail' => 'The June response has closed. Thank you — your contribution reached 41 households.',
         'time'   => '12 days ago',
         'unread' => false,
-        'href'   => '/sponsor/csr-reports',
+        'href'   => base_url() . '/sponsor/csr-reports',
     ],
 ];
 
@@ -53,10 +53,11 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
-    <form class="page-header__action" method="post" action="/sponsor/notifications/read-all">
-        <?= csrf_field() ?>
-        <button class="btn btn--ghost" type="submit">Mark all as read</button>
-    </form>
+    <div class="page-header__action" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
+        <button class="btn btn--ghost" type="submit" disabled>Mark all as read</button>
+    </div>
 </header>
 
 <ul class="row-list">

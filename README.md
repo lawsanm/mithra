@@ -1,72 +1,93 @@
 # Mithra
 
-Community Lending, Sharing & Caring Platform — vanilla PHP + CSS + JS, no
-frameworks or libraries (see `Rules/CONVENTIONS.md`).
+A community lending and sharing project built with plain PHP, MySQL, HTML, CSS and JavaScript. No framework or package installation is needed.
 
-## Requirements
+## Run on Windows
 
-- [XAMPP](https://www.apachefriends.org/) (PHP 8.x + MySQL 8.x), or any local
-  PHP and MySQL install.
+1. Install XAMPP with PHP 8.1 or newer. The default location is `C:\xampp`.
+2. Double-click **run.cmd** in this folder.
+3. Open **http://localhost/mithra/**.
 
-## Quick start (Windows)
+The launcher creates your local config if missing, configures Apache, starts Apache and MySQL, and imports the schema and demo data only when the database is empty. Existing data is kept. `setup.cmd` is a shortcut to the same launcher.
 
-1. Clone the repo.
-2. Open the XAMPP Control Panel and start **MySQL**.
-3. Double-click **`setup.cmd`** — copies the config template and loads the
-   database schema + demo data. Run it once per machine.
-4. Double-click **`run.cmd`** — starts the dev server and opens
-   <http://localhost:8123/> in your browser.
+After startup, you can close the command window and just type `localhost/mithra` in your browser. Apache and MySQL must remain running. After restarting Windows, double-click `run.cmd` again, or start both services in XAMPP. Stop them using the XAMPP Control Panel.
 
-## Serving it from Apache at <http://localhost/mithra>
+The launcher links `C:\xampp\htdocs\mithra` to this project's `public/` folder. The normal XAMPP page stays at `localhost`; Mithra lives at `localhost/mithra`. Application source, configuration and uploads remain outside the web root. If you used the earlier root-site launcher, its Apache override is removed after making a backup.
 
-Prefer XAMPP's Apache to the built-in dev server? Do steps 1–3 above, then:
+For a different XAMPP location:
 
-1. Double-click **`xampp-link.cmd`** — links `C:\xampp\htdocs\mithra` to this
-   repo's `public/` folder. Once per machine; Apache then serves the working
-   copy directly, so edits show on refresh.
-2. Start **Apache** and **MySQL** in the XAMPP Control Panel.
-3. Open <http://localhost/mithra/>.
-
-Both ways run the same front controller. Views never hard-code the prefix —
-every link is written `href="<?= base_url() ?>/items"`, which renders as
-`/items` on the dev server and `/mithra/items` behind Apache.
-
-## Manual setup
-
-If the scripts don't fit your machine (custom MySQL password, PHP outside
-XAMPP), do the same steps by hand:
-
-```cmd
-copy config\config.example.php config\config.php
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local.ps1 -XamppRoot D:\xampp
 ```
 
-Edit `config\config.php` if your MySQL credentials differ, then load the
-database (no mysql CLI needed — this uses PHP's PDO driver and the config
-file's credentials):
+## Understand the code
 
-```cmd
-C:\xampp\php\php.exe scripts\migrate.php
+Read [the interim presentation guide](docs/INTERIM_GUIDE.md) for a short explanation, a walkthrough and the current feature limits.
+
+```text
+Browser URL
+  -> public/index.php       starts the session and dispatches the request
+  -> app/routes.php         maps each URL to its action or demo view
+  -> app/Core/Router.php    matches the URL and checks form tokens
+  -> Controller            reads input and prepares the response
+  -> Service               checks business rules for item changes
+  -> Model                 runs prepared SQL queries through PDO
+  -> View + partials       display the HTML page
 ```
 
-Start the app from the project root:
+Items supports database-backed listing, browsing, creation, editing, pausing, resuming and archiving. The member dashboard, gifts list, booking lists/details and many admin screens read database data. Other screens still use sample data. Actions without a backend are visibly disabled or marked as previews. Login and role enforcement are not implemented; the member identity comes from `demo_member_id` in the local config. This is an interim demonstration, not a finished deployment.
+
+See [the UI fix report](docs/UI_FIXES.md) for the changes across all five roles, verification results and remaining visual checks.
+
+## Useful files
+
+| File or folder | Purpose |
+| --- | --- |
+| `app/routes.php` | All GET/POST route registrations |
+| `app/Controllers/ItemController.php` | Working Items requests |
+| `app/Controllers/BookingController.php` | Read-only member bookings and record-specific details |
+| `app/Controllers/SponsorLiaisonController.php` | Filtering and navigation for liaison sample records |
+| `app/Services/ItemService.php` | Item validation, ownership and state changes |
+| `app/Models/` | Database queries |
+| `app/Controllers/DemoController.php` | Member dashboard/gifts data and other demo pages |
+| `app/Controllers/AdminController.php` | Read-only admin page data |
+| `views/`, `partials/` | Pages and shared header/navigation/modals |
+| `public/css/main.css`, `public/js/` | Styling and small browser interactions |
+| `config/config.php` | Local database credentials; excluded from Git |
+| `migrations/` | Database schema and sample data |
+
+## Checks
+
+```cmd
+C:\xampp\php\php.exe tests\router.php
+C:\xampp\php\php.exe .github\scripts\conventions-check.php
+```
+
+The router checks run without MySQL. They check every route's target, numeric IDs, exact-route priority, unsupported methods and invalid form tokens.
+
+With the local application and database running at `http://localhost/mithra/`, run these read-only HTTP checks (Python required):
+
+```cmd
+python tests/ui-navigation.py
+python scripts/audit-ui.py
+```
+
+These check routes, links, assets, selected records, filters and HTML interaction wiring. They do not render pages or simulate browser interactions. The audit writes `docs/UI_AUDIT_RECHECK.json`.
+
+## Troubleshooting
+
+- **MySQL unavailable:** check XAMPP and the credentials in `config/config.php`. The supplied migrations create the database named `mithra`.
+- **Apache already running after a configuration change:** stop and start Apache in XAMPP, then run `run.cmd` again.
+- **Port 80 in use:** stop the conflicting web server before starting Apache.
+- **Access denied writing Apache config:** run `run.cmd` as administrator if your XAMPP directory requires it.
+- **Page fails:** inspect `C:\xampp\apache\logs\error.log`.
+- **htdocs/mithra already exists elsewhere:** the launcher will not overwrite another project. Resolve that folder conflict before running again.
+- **The old root-site setup was installed:** the launcher removes only its own marked Apache block and keeps a timestamped backup beside `httpd-vhosts.conf`. Restart Apache if prompted.
+
+Optional development server (start MySQL first):
 
 ```cmd
 C:\xampp\php\php.exe -S localhost:8123 -t public public/router.php
 ```
 
-## Notes
-
-- `config/config.php` is **git-ignored** (`Rules/CONVENTIONS.md` §12) — every
-  machine keeps its own copy and credentials are never committed. Until you
-  create one, the app falls back to `config/config.example.php`, which holds
-  stock XAMPP defaults only.
-- The seed data is dev/demo only; every seeded account shares the password
-  `password`.
-- `public/router.php` is a temporary dev router for PHP's built-in server; it
-  only serves static files and hands everything else to `public/index.php`,
-  which does the same job Apache's `public/.htaccess` does.
-- `public/index.php` is a stand-in front controller: it maps routes onto view
-  files and reads through `public/preview-data.php`. It gets replaced by the
-  real Router + controllers, at which point the preview files are deleted.
-- Screens that don't exist yet (write actions such as `/bookings/1/cancel`)
-  answer with a styled "no screen for this route" page, not a blank 404.
+This alternative uses http://localhost:8123/ and does not require changing Apache.

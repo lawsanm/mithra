@@ -56,7 +56,7 @@ $notifications ??= [
         'detail' => 'Your listing is now visible to Kollupitiya members.',
         'time'   => '10 Jul',
         'unread' => false,
-        'href'   => base_url() . '/items/3/edit',
+        'href'   => base_url() . '/items/3',
     ],
 ];
 
@@ -69,10 +69,11 @@ include __DIR__ . '/../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
-    <form class="page-header__action" method="post" action="<?= base_url() ?>/notifications/read-all">
-        <?= csrf_field() ?>
-        <button class="btn btn--ghost" type="submit">Mark all as read</button>
-    </form>
+    <div class="page-header__action" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
+        <button class="btn btn--ghost" type="submit" disabled>Mark all as read</button>
+    </div>
 </header>
 
 <ul class="filter-pills">

@@ -1,0 +1,22 @@
+{
+  "scope": "GET requests and static form inspection only; no browser rendering or form submissions",
+  "route_count": 88,
+  "route_statuses": {
+    "200": 87,
+    "403": 1
+  },
+  "route_failures": [
+    {
+      "url": "http://localhost/mithra/items/1/edit",
+      "status": 403
+    }
+  ],
+  "target_count": 215,
+  "target_statuses": {
+    "200": 215
+  },
+  "broken_targets": [],
+  "unsupported_form_occurrences": 0,
+  "unsupported_form_destinations": 0,
+  "unsupported_forms": []
+}

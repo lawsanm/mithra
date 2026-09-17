@@ -130,10 +130,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </section>
 
 <?php if ($windowExpired && $allDismissed): ?>
-    <form method="post" action="<?= base_url() ?>/admin/moderators/<?= e(rawurlencode($appointment['name'])) ?>/finalise" style="margin-top: var(--space-6);">
-        <?= csrf_field() ?>
-        <button class="btn btn--primary" type="submit">Finalise appointment</button>
-    </form>
+    <div style="margin-top: var(--space-6);" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
+        <button class="btn btn--primary" type="submit" disabled>Finalise appointment</button>
+    </div>
 <?php else: ?>
     <div class="notice notice--info notice--full" style="margin-top: var(--space-6);">
         Window still open — <?= e($appointment['closes']) ?>. Objections can be raised until the window closes.
@@ -161,5 +162,5 @@ include __DIR__ . '/../../../partials/header-admin.php';
 })();
 </script>
 
-<?php $pageScripts = []; ?>
+<?php $pageScripts = ['modal.js']; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

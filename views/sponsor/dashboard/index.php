@@ -20,8 +20,8 @@ $sponsor ??= [
 $stats ??= [
     ['label' => 'Total contributed', 'value' => 'LKR 16,000', 'note' => '2 purchases this year', 'tone' => 'primary'],
     ['label' => 'Points generated',  'value' => '16,000',     'note' => '1 rupee = 1 point, no deductions', 'tone' => 'primary'],
-    ['label' => 'Aid grants funded', 'value' => '9',          'note' => 'From your Aid Pool share', 'tone' => 'primary', 'href' => '/sponsor/csr-reports'],
-    ['label' => 'Unread alerts',     'value' => '1',          'note' => 'Disaster Mode active', 'tone' => 'accent', 'href' => '/sponsor/notifications'],
+    ['label' => 'Aid grants funded', 'value' => '9',          'note' => 'From your Aid Pool share', 'tone' => 'primary', 'href' => base_url() . '/sponsor/csr-reports'],
+    ['label' => 'Unread alerts',     'value' => '1',          'note' => 'Disaster Mode active', 'tone' => 'accent', 'href' => base_url() . '/sponsor/notifications'],
 ];
 
 $callouts ??= [
@@ -32,7 +32,7 @@ $callouts ??= [
         'status'        => 'error',
         'status_label'  => 'Urgent',
         'action_label'  => 'View',
-        'action_href'   => '/sponsor/disasters/1',
+        'action_href'   => base_url() . '/sponsor/disasters/1',
     ],
     [
         'icon'          => 'heart',
@@ -41,7 +41,7 @@ $callouts ??= [
         'status'        => 'warning',
         'status_label'  => 'Action needed',
         'action_label'  => 'View',
-        'action_href'   => '/sponsor/disasters/1',
+        'action_href'   => base_url() . '/sponsor/disasters/1',
     ],
 ];
 
@@ -58,7 +58,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
 ?>
 
-<header class="page-intro">
+<header class="page-intro page-intro--dashboard">
     <h1 class="page-intro__title"><?= e($sponsor['greeting']) ?></h1>
     <p class="page-intro__meta"><?= e($sponsor['standing']) ?></p>
 </header>
@@ -85,7 +85,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Recent notifications</h2>
-        <a class="link section__action" href="/sponsor/notifications">View all</a>
+        <a class="link section__action" href="<?= base_url() ?>/sponsor/notifications">View all</a>
     </div>
 
     <ul class="row-list">

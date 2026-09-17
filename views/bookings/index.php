@@ -61,6 +61,13 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </nav>
 
+<?php if ($bookings === []): ?>
+    <div class="empty-state">
+        <p class="empty-state__title">No active bookings in this role</p>
+        <p class="empty-state__body">Your bookings will appear here when a request is made.</p>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/items/browse">Browse items</a>
+    </div>
+<?php endif; ?>
 <ul class="row-list">
     <?php foreach ($bookings as $booking): ?>
         <li class="list-row">

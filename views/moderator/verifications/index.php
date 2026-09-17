@@ -32,7 +32,7 @@ $sampleRows = [
         'meta'         => 'NIC + proof of address  ·  Kollupitiya  ·  submitted 2 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/verifications/perera-s',
+        'href'         => base_url() . '/moderator/verifications/3',
     ],
     [
         'state'        => 'pending',
@@ -40,7 +40,7 @@ $sampleRows = [
         'meta'         => 'NIC + utility bill  ·  Kollupitiya  ·  submitted 3 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/verifications/gunawardena-m',
+        'href'         => base_url() . '/moderator/verifications/4',
     ],
     [
         'state'        => 'pending',
@@ -48,7 +48,7 @@ $sampleRows = [
         'meta'         => 'NIC + GN letter  ·  Kollupitiya  ·  submitted 4 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/verifications/nizam-a',
+        'href'         => base_url() . '/moderator/verifications/5',
     ],
     [
         'state'        => 'pending',
@@ -56,7 +56,7 @@ $sampleRows = [
         'meta'         => 'NIC only — address proof missing  ·  submitted 5 days ago',
         'status'       => 'info',
         'status_label' => 'Needs more info',
-        'href'         => base_url() . '/moderator/verifications/wickrama-t',
+        'href'         => base_url() . '/moderator/verifications/6',
     ],
     [
         'state'        => 'approved',
@@ -64,7 +64,7 @@ $sampleRows = [
         'meta'         => 'NIC + proof of address  ·  Wellawatte  ·  approved 14 Jul',
         'status'       => 'success',
         'status_label' => 'Approved',
-        'href'         => base_url() . '/moderator/verifications/akalvily-a',
+        'href'         => base_url() . '/moderator/verifications/1',
     ],
     [
         'state'        => 'rejected',
@@ -72,7 +72,7 @@ $sampleRows = [
         'meta'         => 'Address outside this GN division  ·  rejected 11 Jul',
         'status'       => 'error',
         'status_label' => 'Rejected',
-        'href'         => base_url() . '/moderator/verifications/rajapaksa-d',
+        'href'         => base_url() . '/moderator/verifications/7',
     ],
 ];
 

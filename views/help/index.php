@@ -90,7 +90,7 @@ include __DIR__ . '/../../partials/header.php';
     <h2 class="panel__title">Still stuck?</h2>
     <div class="help-cta">
         <p class="help-cta__text"><?= e($moderator['line']) ?></p>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/messages/new?to=moderator">Contact moderator</a>
+        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Contact moderator</button><span class="demo-note">Not available in this demo</span></span>
     </div>
 </section>
 

@@ -43,19 +43,20 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/sponsor-liaison/purchases">Purchases</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/purchases">Purchases</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page">Record contribution</span>
 </nav>
 
 <h1 class="detail__title">Record a sponsor contribution</h1>
 
-<form class="form-card" method="post" action="/sponsor-liaison/purchases">
-    <?= csrf_field() ?>
+<div class="form-card" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="field">
         <label class="field__label" for="sponsor-id">Sponsor</label>
-        <select class="input" id="sponsor-id" name="sponsor_id" required>
+        <select class="input" id="sponsor-id" name="sponsor_id" required disabled>
             <option value="">Select sponsor</option>
             <?php foreach ($sponsors as $sponsor): ?>
                 <option value="<?= e((string) $sponsor['id']) ?>"<?= (string) $draft['sponsor_id'] === (string) $sponsor['id'] ? ' selected' : '' ?>>
@@ -81,7 +82,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
                 min="1"
                 step="1"
                 required
-            >
+             disabled>
             <?php if (isset($errors['amount'])): ?>
                 <span class="field__error"><?= e($errors['amount']) ?></span>
             <?php endif; ?>
@@ -96,7 +97,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
                 value="<?= e($draft['receipt_number']) ?>"
                 placeholder="INV-0318"
                 required
-            >
+             disabled>
             <?php if (isset($errors['receipt_number'])): ?>
                 <span class="field__error"><?= e($errors['receipt_number']) ?></span>
             <?php endif; ?>
@@ -124,7 +125,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
     <div class="filter-pills">
         <?php foreach ($splitPresets as $preset): ?>
             <label class="pill">
-                <input class="visually-hidden" type="radio" name="split" value="<?= e($preset) ?>"<?= $preset === $currentSplit ? ' checked' : '' ?>>
+                <input class="visually-hidden" type="radio" name="split" value="<?= e($preset) ?>"<?= $preset === $currentSplit ? ' checked' : '' ?> disabled>
                 <?= e(str_replace('/', ' / ', $preset)) ?>
             </label>
         <?php endforeach; ?>
@@ -139,9 +140,9 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
     </p>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="/sponsor-liaison/purchases">Cancel</a>
-        <button class="btn btn--primary" type="submit">Record contribution</button>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/purchases">Cancel</a>
+        <button class="btn btn--primary" type="submit" disabled>Record contribution</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

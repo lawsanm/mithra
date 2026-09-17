@@ -16,6 +16,7 @@ $pageScripts = $pageScripts ?? [];
 
 ?>
 </main>
+<script src="<?= base_url() ?>/js/navigation.js"></script>
 <?php foreach ($pageScripts as $script): ?>
 <script src="<?= base_url() ?>/js/<?= e($script) ?>"></script>
 <?php endforeach; ?>

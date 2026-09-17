@@ -48,8 +48,9 @@ $claimDraft = ($claimDraft ?? []) + [
         </span>
     </div>
 
-    <form class="stack" method="post" action="<?= base_url() ?>/bookings/1/damage-claim" enctype="multipart/form-data">
-        <?= csrf_field() ?>
+    <div class="stack" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
 
         <fieldset>
             <legend class="field__label">Severity</legend>
@@ -62,7 +63,7 @@ $claimDraft = ($claimDraft ?? []) + [
                             name="severity"
                             value="<?= e($severity['value']) ?>"
                             <?= !empty($severity['selected']) ? 'checked' : '' ?>
-                        >
+                         disabled>
                         <?= e($severity['label']) ?>
                     </label>
                 <?php endforeach; ?>
@@ -76,7 +77,7 @@ $claimDraft = ($claimDraft ?? []) + [
 
         <div class="field">
             <label class="field__label" for="claim-amount">Claim amount (pts)</label>
-            <input class="input" type="number" id="claim-amount" name="amount" value="<?= e($claimDraft['amount']) ?>" min="1" step="1" required>
+            <input class="input" type="number" id="claim-amount" name="amount" value="<?= e($claimDraft['amount']) ?>" min="1" step="1" required disabled>
             <span class="field__hint"><?= e($claimDraft['cap']) ?></span>
         </div>
 
@@ -90,7 +91,7 @@ $claimDraft = ($claimDraft ?? []) + [
                 value="<?= e($claimDraft['description']) ?>"
                 placeholder="Chuck no longer grips bits — worked at handover…"
                 required
-            >
+             disabled>
         </div>
 
         <p class="field__label">Evidence photos</p>
@@ -98,7 +99,7 @@ $claimDraft = ($claimDraft ?? []) + [
         <label class="upload-drop">
             <span class="upload-drop__glyph" aria-hidden="true">＋</span>
             <span>Upload photos of the damage</span>
-            <input class="visually-hidden" type="file" name="evidence[]" accept="image/*" multiple required>
+            <input class="visually-hidden" type="file" name="evidence[]" accept="image/*" multiple required disabled>
         </label>
 
         <p class="notice notice--warning">
@@ -109,7 +110,7 @@ $claimDraft = ($claimDraft ?? []) + [
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--primary" type="submit">Submit claim</button>
+            <button class="btn btn--primary" type="submit" disabled>Submit claim</button>
         </div>
-    </form>
+    </div>
 </dialog>

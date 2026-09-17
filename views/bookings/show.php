@@ -142,14 +142,15 @@ include __DIR__ . '/../../partials/header.php';
                     <span class="thumb thumb--photo-tall"></span>
                 <?php endfor; ?>
             </div>
-            <form method="post" action="<?= base_url() ?>/bookings/1/handover-photos" enctype="multipart/form-data">
-                <?= csrf_field() ?>
+            <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                
                 <label class="upload-drop upload-drop--sm">
                     <span class="upload-drop__glyph" aria-hidden="true">＋</span>
                     <span>Add another photo</span>
-                    <input class="visually-hidden" type="file" name="photos[]" accept="image/*" multiple>
+                    <input class="visually-hidden" type="file" name="photos[]" accept="image/*" multiple disabled>
                 </label>
-            </form>
+            </div>
         </section>
 
         <section class="panel panel--half">
@@ -206,14 +207,15 @@ include __DIR__ . '/../../partials/header.php';
                     <span class="thumb thumb--photo"></span>
                 <?php endfor; ?>
             </div>
-            <form method="post" action="<?= base_url() ?>/bookings/1/return-photos" enctype="multipart/form-data">
-                <?= csrf_field() ?>
+            <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                
                 <label class="upload-drop upload-drop--sm">
                     <span aria-hidden="true">＋</span>
                     <span>Add return photo</span>
-                    <input class="visually-hidden" type="file" name="photos[]" accept="image/*" multiple>
+                    <input class="visually-hidden" type="file" name="photos[]" accept="image/*" multiple disabled>
                 </label>
-            </form>
+            </div>
         </section>
     </div>
 
@@ -273,20 +275,20 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="actions">
     <?php if ($state === 'awaiting'): ?>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/cancel">Cancel request</a>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/messages/new">Message lender</a>
+        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Cancel request</button><span class="demo-note">Not available in this demo</span></span>
+        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Message lender</button><span class="demo-note">Not available in this demo</span></span>
     <?php elseif ($state === 'handover'): ?>
-        <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1/accept-handover">Accept handover</a>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/cancel">Cancel booking</a>
+        <span class="preview-action"><button type="button" disabled class="btn btn--primary">Accept handover</button><span class="demo-note">Not available in this demo</span></span>
+        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Cancel booking</button><span class="demo-note">Not available in this demo</span></span>
     <?php elseif ($state === 'in-progress'): ?>
         <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1?state=return">Start return</a>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/report">Report a problem</a>
+        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Report a problem</button><span class="demo-note">Not available in this demo</span></span>
     <?php elseif ($state === 'return'): ?>
-        <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1/confirm-return">Confirm return — release escrow</a>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/1/damage-claim" data-modal-open="damage-claim">Raise damage claim</a>
+        <span class="preview-action"><button type="button" disabled class="btn btn--primary">Confirm return — release escrow</button><span class="demo-note">Not available in this demo</span></span>
+        <button type="button" class="btn btn--ghost" data-modal-open="damage-claim">Raise damage claim</button>
     <?php elseif ($state === 'overdue'): ?>
         <a class="btn btn--primary" href="<?= base_url() ?>/bookings/1?state=return">Start return now</a>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/messages/new">Message lender</a>
+        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Message lender</button><span class="demo-note">Not available in this demo</span></span>
     <?php elseif ($state === 'auto-cancelled'): ?>
         <a class="btn btn--primary" href="<?= base_url() ?>/items/browse">Browse similar items</a>
         <a class="btn btn--ghost" href="<?= base_url() ?>/items/1">Request again</a>

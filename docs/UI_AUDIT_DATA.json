@@ -1,0 +1,1100 @@
+{
+  "route_count": 84,
+  "route_statuses": {
+    "200": 83,
+    "403": 1
+  },
+  "route_failures": [
+    {
+      "url": "http://localhost/mithra/items/1/edit",
+      "status": 403
+    }
+  ],
+  "target_count": 215,
+  "broken_targets": [
+    {
+      "url": "http://localhost/mithra/bookings/1/cancel",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/bookings/1"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/messages/new",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/bookings/1"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/items/3/edit",
+      "status": 403,
+      "sources": [
+        "http://localhost/mithra/notifications"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/messages/new?to=moderator",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/help"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=2&member=SK",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=2&member=AP",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=2&member=DN",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=1&member=PR",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=1&member=AB",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=1&member=CW",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=1&member=NP",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/admin/moderators/appoint?division=1&member=SW",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/admin/moderators"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/verifications/akalvily-a",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/dashboard",
+        "http://localhost/mithra/moderator/verifications",
+        "http://localhost/mithra/moderator"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/verifications/lawsan-m",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/dashboard",
+        "http://localhost/mithra/moderator"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/listing-approvals/pressure-washer",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/dashboard",
+        "http://localhost/mithra/moderator",
+        "http://localhost/mithra/moderator/listing-approvals"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/cases/grinding-drill",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/dashboard",
+        "http://localhost/mithra/moderator/cases",
+        "http://localhost/mithra/moderator"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/cases/camping-tent-4p",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/dashboard",
+        "http://localhost/mithra/moderator/cases",
+        "http://localhost/mithra/moderator"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/disasters/report",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/dashboard",
+        "http://localhost/mithra/moderator",
+        "http://localhost/mithra/moderator/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/disasters/relief",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/dashboard",
+        "http://localhost/mithra/moderator",
+        "http://localhost/mithra/moderator/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/verifications/perera-s",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/verifications"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/verifications/gunawardena-m",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/verifications"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/verifications/nizam-a",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/verifications"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/verifications/wickrama-t",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/verifications"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/verifications/rajapaksa-d",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/verifications"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/listing-approvals/cordless-drill",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/listing-approvals"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/listing-approvals/folding-table",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/listing-approvals"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/listing-approvals/pressure-washer-kb",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/listing-approvals"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/listing-approvals/sewing-machine",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/listing-approvals"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/listing-approvals/petrol-generator",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/listing-approvals"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/cases/cordless-drill-case",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/cases"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/cases/camping-tent-case",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/cases"
+      ]
+    },
+    {
+      "url": "http://localhost/mithra/moderator/cases/pressure-washer-case",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/moderator/cases"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/dashboard",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/sponsors",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/purchases",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/points-pool",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/disasters",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/aid-grants",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/csr-reports",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/sponsors/1",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/sponsors/2",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/sponsors/3",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/sponsors/onboarding",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/sponsors",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/purchases/create",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/aid-grants/1",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/css/main.css",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor/disasters/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters",
+        "http://localhost/mithra/sponsor/csr-reports",
+        "http://localhost/mithra/sponsor/purchase-points",
+        "http://localhost/mithra/sponsor/dashboard",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/branding",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors"
+      ]
+    },
+    {
+      "url": "http://localhost/img/logo-deep-slate.svg",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+        "http://localhost/mithra/sponsor/disasters/1",
+        "http://localhost/mithra/sponsor-liaison",
+        "http://localhost/mithra/sponsor-liaison/disasters/connection",
+        "http://localhost/mithra/sponsor-liaison/aid-grants",
+        "http://localhost/mithra/sponsor-liaison/dashboard",
+        "http://localhost/mithra/sponsor-liaison/disasters",
+        "http://localhost/mithra/sponsor/csr-reports",
+        "http://localhost/mithra/sponsor/purchase-points",
+        "http://localhost/mithra/sponsor/dashboard",
+        "http://localhost/mithra/sponsor-liaison/purchases",
+        "http://localhost/mithra/sponsor-liaison/purchases/create",
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/branding",
+        "http://localhost/mithra/sponsor-liaison/points-pool",
+        "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+        "http://localhost/mithra/sponsor-liaison/csr-reports",
+        "http://localhost/mithra/sponsor",
+        "http://localhost/mithra/sponsor-liaison/csr-reports/quarterly",
+        "http://localhost/mithra/sponsor-liaison/sponsors"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/sponsors/4",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/sponsors"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/purchases/1",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/purchases"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/purchases/2",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/purchases"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/purchases/3",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/purchases"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/purchases/4",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/purchases"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/purchases/5",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/purchases"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/points-pool/ledger",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/points-pool"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/disasters/connection",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/disasters"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/aid-grants?status=",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/aid-grants?status=awaiting_vouch",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/aid-grants?status=awaiting_approval",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/aid-grants?status=approved",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/aid-grants?status=declined",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/aid-grants"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor-liaison/csr-reports/quarterly",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor-liaison/csr-reports"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor/dashboard",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/branding",
+        "http://localhost/mithra/sponsor",
+        "http://localhost/mithra/sponsor/disasters/1",
+        "http://localhost/mithra/sponsor/csr-reports",
+        "http://localhost/mithra/sponsor/purchase-points",
+        "http://localhost/mithra/sponsor/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor/purchase-points",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/branding",
+        "http://localhost/mithra/sponsor",
+        "http://localhost/mithra/sponsor/disasters/1",
+        "http://localhost/mithra/sponsor/csr-reports",
+        "http://localhost/mithra/sponsor/purchase-points",
+        "http://localhost/mithra/sponsor/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor/csr-reports",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/branding",
+        "http://localhost/mithra/sponsor",
+        "http://localhost/mithra/sponsor/disasters/1",
+        "http://localhost/mithra/sponsor/csr-reports",
+        "http://localhost/mithra/sponsor/purchase-points",
+        "http://localhost/mithra/sponsor/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor/branding",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/branding",
+        "http://localhost/mithra/sponsor",
+        "http://localhost/mithra/sponsor/disasters/1",
+        "http://localhost/mithra/sponsor/csr-reports",
+        "http://localhost/mithra/sponsor/purchase-points",
+        "http://localhost/mithra/sponsor/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor/notifications",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/branding",
+        "http://localhost/mithra/sponsor",
+        "http://localhost/mithra/sponsor/disasters/1",
+        "http://localhost/mithra/sponsor/csr-reports",
+        "http://localhost/mithra/sponsor/purchase-points",
+        "http://localhost/mithra/sponsor/dashboard"
+      ]
+    },
+    {
+      "url": "http://localhost/sponsor/disasters/1",
+      "status": 404,
+      "sources": [
+        "http://localhost/mithra/sponsor/notifications",
+        "http://localhost/mithra/sponsor/dashboard",
+        "http://localhost/mithra/sponsor"
+      ]
+    }
+  ],
+  "forms_without_routes": [
+    {
+      "source": "http://localhost/mithra/items/1",
+      "method": "POST",
+      "action": "/mithra/bookings",
+      "target": "http://localhost/mithra/bookings"
+    },
+    {
+      "source": "http://localhost/mithra/items/1",
+      "method": "POST",
+      "action": "/mithra/bookings",
+      "target": "http://localhost/mithra/bookings"
+    },
+    {
+      "source": "http://localhost/mithra/bookings/1",
+      "method": "POST",
+      "action": "/mithra/bookings/1/damage-claim",
+      "target": "http://localhost/mithra/bookings/1/damage-claim"
+    },
+    {
+      "source": "http://localhost/mithra/wallet",
+      "method": "POST",
+      "action": "/mithra/gifts",
+      "target": "http://localhost/mithra/gifts"
+    },
+    {
+      "source": "http://localhost/mithra/gifts",
+      "method": "POST",
+      "action": "/mithra/gifts",
+      "target": "http://localhost/mithra/gifts"
+    },
+    {
+      "source": "http://localhost/mithra/gifts/new",
+      "method": "POST",
+      "action": "/mithra/gifts",
+      "target": "http://localhost/mithra/gifts"
+    },
+    {
+      "source": "http://localhost/mithra/notifications",
+      "method": "POST",
+      "action": "/mithra/notifications/read-all",
+      "target": "http://localhost/mithra/notifications/read-all"
+    },
+    {
+      "source": "http://localhost/mithra/settings",
+      "method": "POST",
+      "action": "/mithra/settings/account",
+      "target": "http://localhost/mithra/settings/account"
+    },
+    {
+      "source": "http://localhost/mithra/settings",
+      "method": "POST",
+      "action": "/mithra/settings/preferences",
+      "target": "http://localhost/mithra/settings/preferences"
+    },
+    {
+      "source": "http://localhost/mithra/settings",
+      "method": "POST",
+      "action": "/mithra/settings/close-account",
+      "target": "http://localhost/mithra/settings/close-account"
+    },
+    {
+      "source": "http://localhost/mithra/settings/close-account",
+      "method": "POST",
+      "action": "/mithra/settings/account",
+      "target": "http://localhost/mithra/settings/account"
+    },
+    {
+      "source": "http://localhost/mithra/settings/close-account",
+      "method": "POST",
+      "action": "/mithra/settings/preferences",
+      "target": "http://localhost/mithra/settings/preferences"
+    },
+    {
+      "source": "http://localhost/mithra/settings/close-account",
+      "method": "POST",
+      "action": "/mithra/settings/close-account",
+      "target": "http://localhost/mithra/settings/close-account"
+    },
+    {
+      "source": "http://localhost/mithra/ratings",
+      "method": "POST",
+      "action": "/mithra/ratings",
+      "target": "http://localhost/mithra/ratings"
+    },
+    {
+      "source": "http://localhost/mithra/profile",
+      "method": "POST",
+      "action": "/mithra/profile",
+      "target": "http://localhost/mithra/profile"
+    },
+    {
+      "source": "http://localhost/mithra/aid-grants/create",
+      "method": "POST",
+      "action": "/mithra/aid-grants",
+      "target": "http://localhost/mithra/aid-grants"
+    },
+    {
+      "source": "http://localhost/mithra/donations/1",
+      "method": "POST",
+      "action": "/mithra/donations/1/first-come",
+      "target": "http://localhost/mithra/donations/1/first-come"
+    },
+    {
+      "source": "http://localhost/mithra/donations/1",
+      "method": "POST",
+      "action": "/mithra/donations/1/recipient",
+      "target": "http://localhost/mithra/donations/1/recipient"
+    },
+    {
+      "source": "http://localhost/mithra/donations/1",
+      "method": "POST",
+      "action": "/mithra/donations/1/recipient",
+      "target": "http://localhost/mithra/donations/1/recipient"
+    },
+    {
+      "source": "http://localhost/mithra/donations/1",
+      "method": "POST",
+      "action": "/mithra/donations/1/recipient",
+      "target": "http://localhost/mithra/donations/1/recipient"
+    },
+    {
+      "source": "http://localhost/mithra/donations/1/handover",
+      "method": "POST",
+      "action": "/mithra/donations/1/handover",
+      "target": "http://localhost/mithra/donations/1/handover"
+    },
+    {
+      "source": "http://localhost/mithra/community/temporary",
+      "method": "POST",
+      "action": "/mithra/community/temporary",
+      "target": "http://localhost/mithra/community/temporary"
+    },
+    {
+      "source": "http://localhost/mithra/community/temporary",
+      "method": "POST",
+      "action": "/mithra/community/promote",
+      "target": "http://localhost/mithra/community/promote"
+    },
+    {
+      "source": "http://localhost/mithra/admin/divisions",
+      "method": "POST",
+      "action": "/mithra/admin/divisions",
+      "target": "http://localhost/mithra/admin/divisions"
+    },
+    {
+      "source": "http://localhost/mithra/admin/divisions/1/approvals",
+      "method": "POST",
+      "action": "/mithra/admin/divisions/1/approvals/reject",
+      "target": "http://localhost/mithra/admin/divisions/1/approvals/reject"
+    },
+    {
+      "source": "http://localhost/mithra/admin/divisions/1/approvals",
+      "method": "POST",
+      "action": "/mithra/admin/divisions/1/approvals/approve",
+      "target": "http://localhost/mithra/admin/divisions/1/approvals/approve"
+    },
+    {
+      "source": "http://localhost/mithra/admin/divisions/1/approvals",
+      "method": "POST",
+      "action": "/mithra/admin/divisions/1/approvals/reject",
+      "target": "http://localhost/mithra/admin/divisions/1/approvals/reject"
+    },
+    {
+      "source": "http://localhost/mithra/admin/divisions/1/approvals",
+      "method": "POST",
+      "action": "/mithra/admin/divisions/1/approvals/approve",
+      "target": "http://localhost/mithra/admin/divisions/1/approvals/approve"
+    },
+    {
+      "source": "http://localhost/mithra/admin/divisions/1/approvals",
+      "method": "POST",
+      "action": "/mithra/admin/divisions/1/approvals/reject",
+      "target": "http://localhost/mithra/admin/divisions/1/approvals/reject"
+    },
+    {
+      "source": "http://localhost/mithra/admin/divisions/1/approvals",
+      "method": "POST",
+      "action": "/mithra/admin/divisions/1/approvals/approve",
+      "target": "http://localhost/mithra/admin/divisions/1/approvals/approve"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/registrations/reject",
+      "target": "http://localhost/mithra/admin/moderators/registrations/reject"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/registrations/approve",
+      "target": "http://localhost/mithra/admin/moderators/registrations/approve"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/registrations/reject",
+      "target": "http://localhost/mithra/admin/moderators/registrations/reject"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/registrations/approve",
+      "target": "http://localhost/mithra/admin/moderators/registrations/approve"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/performance",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/appoint",
+      "target": "http://localhost/mithra/admin/moderators/appoint"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/performance",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/appoint",
+      "target": "http://localhost/mithra/admin/moderators/appoint"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/appoint/1",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/appoint",
+      "target": "http://localhost/mithra/admin/moderators/appoint"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/appoint/1",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/objections/dismiss",
+      "target": "http://localhost/mithra/admin/moderators/objections/dismiss"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/appoint/1",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/objections/uphold",
+      "target": "http://localhost/mithra/admin/moderators/objections/uphold"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/objections/1",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/objections/dismiss",
+      "target": "http://localhost/mithra/admin/moderators/objections/dismiss"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/objections/1",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/objections/uphold",
+      "target": "http://localhost/mithra/admin/moderators/objections/uphold"
+    },
+    {
+      "source": "http://localhost/mithra/admin/moderators/1",
+      "method": "POST",
+      "action": "/mithra/admin/moderators/A.%20Akalvily/remove",
+      "target": "http://localhost/mithra/admin/moderators/A.%20Akalvily/remove"
+    },
+    {
+      "source": "http://localhost/mithra/admin/disputes/1",
+      "method": "POST",
+      "action": "/mithra/admin/disputes/0142/ruling",
+      "target": "http://localhost/mithra/admin/disputes/0142/ruling"
+    },
+    {
+      "source": "http://localhost/mithra/admin/disaster",
+      "method": "POST",
+      "action": "/mithra/admin/disaster/activate",
+      "target": "http://localhost/mithra/admin/disaster/activate"
+    },
+    {
+      "source": "http://localhost/mithra/admin/disaster",
+      "method": "POST",
+      "action": "/mithra/admin/disaster/deactivate",
+      "target": "http://localhost/mithra/admin/disaster/deactivate"
+    },
+    {
+      "source": "http://localhost/mithra/admin/categories",
+      "method": "POST",
+      "action": "/mithra/admin/categories",
+      "target": "http://localhost/mithra/admin/categories"
+    },
+    {
+      "source": "http://localhost/mithra/admin/pools",
+      "method": "POST",
+      "action": "/mithra/admin/pools/run-invariant",
+      "target": "http://localhost/mithra/admin/pools/run-invariant"
+    },
+    {
+      "source": "http://localhost/mithra/admin/pools",
+      "method": "POST",
+      "action": "/mithra/admin/pools/trigger-job",
+      "target": "http://localhost/mithra/admin/pools/trigger-job"
+    },
+    {
+      "source": "http://localhost/mithra/admin/pools/writeoffs",
+      "method": "POST",
+      "action": "/mithra/admin/pools/writeoffs/approve",
+      "target": "http://localhost/mithra/admin/pools/writeoffs/approve"
+    },
+    {
+      "source": "http://localhost/mithra/admin/cron",
+      "method": "POST",
+      "action": "/mithra/admin/cron/trigger",
+      "target": "http://localhost/mithra/admin/cron/trigger"
+    },
+    {
+      "source": "http://localhost/mithra/admin/notifications",
+      "method": "POST",
+      "action": "/mithra/admin/notifications/mark-all-read",
+      "target": "http://localhost/mithra/admin/notifications/mark-all-read"
+    },
+    {
+      "source": "http://localhost/mithra/admin/settings",
+      "method": "POST",
+      "action": "/mithra/admin/settings/profile",
+      "target": "http://localhost/mithra/admin/settings/profile"
+    },
+    {
+      "source": "http://localhost/mithra/admin/settings/profile",
+      "method": "POST",
+      "action": "/mithra/admin/settings/profile",
+      "target": "http://localhost/mithra/admin/settings/profile"
+    },
+    {
+      "source": "http://localhost/mithra/admin/settings/security",
+      "method": "POST",
+      "action": "/mithra/admin/settings/security/password",
+      "target": "http://localhost/mithra/admin/settings/security/password"
+    },
+    {
+      "source": "http://localhost/mithra/admin/settings/security",
+      "method": "POST",
+      "action": "/mithra/admin/settings/security/2fa",
+      "target": "http://localhost/mithra/admin/settings/security/2fa"
+    },
+    {
+      "source": "http://localhost/mithra/admin/settings/security",
+      "method": "POST",
+      "action": "/mithra/admin/settings/security/revoke-session",
+      "target": "http://localhost/mithra/admin/settings/security/revoke-session"
+    },
+    {
+      "source": "http://localhost/mithra/admin/settings/notifications",
+      "method": "POST",
+      "action": "/mithra/admin/settings/notifications",
+      "target": "http://localhost/mithra/admin/settings/notifications"
+    },
+    {
+      "source": "http://localhost/mithra/moderator/verifications/1",
+      "method": "POST",
+      "action": "/mithra/moderator/verifications/1/decision",
+      "target": "http://localhost/mithra/moderator/verifications/1/decision"
+    },
+    {
+      "source": "http://localhost/mithra/moderator/listing-approvals/1",
+      "method": "POST",
+      "action": "/mithra/moderator/listing-approvals/1/decision",
+      "target": "http://localhost/mithra/moderator/listing-approvals/1/decision"
+    },
+    {
+      "source": "http://localhost/mithra/moderator/cases/1",
+      "method": "POST",
+      "action": "/mithra/moderator/cases/1/resolution",
+      "target": "http://localhost/mithra/moderator/cases/1/resolution"
+    },
+    {
+      "source": "http://localhost/mithra/moderator/disasters",
+      "method": "POST",
+      "action": "/mithra/moderator/aid-vouching/1/vouch",
+      "target": "http://localhost/mithra/moderator/aid-vouching/1/vouch"
+    },
+    {
+      "source": "http://localhost/mithra/moderator/disasters",
+      "method": "POST",
+      "action": "/mithra/moderator/aid-vouching/2/vouch",
+      "target": "http://localhost/mithra/moderator/aid-vouching/2/vouch"
+    },
+    {
+      "source": "http://localhost/mithra/moderator/aid-vouching",
+      "method": "POST",
+      "action": "/mithra/moderator/aid-vouching/1/vouch",
+      "target": "http://localhost/mithra/moderator/aid-vouching/1/vouch"
+    },
+    {
+      "source": "http://localhost/mithra/moderator/aid-vouching",
+      "method": "POST",
+      "action": "/mithra/moderator/aid-vouching/2/vouch",
+      "target": "http://localhost/mithra/moderator/aid-vouching/2/vouch"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor-liaison/sponsors/onboarding",
+      "method": "POST",
+      "action": "/sponsor-liaison/sponsors",
+      "target": "http://localhost/sponsor-liaison/sponsors"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor-liaison/purchases/create",
+      "method": "POST",
+      "action": "/sponsor-liaison/purchases",
+      "target": "http://localhost/sponsor-liaison/purchases"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor-liaison/disasters/connection",
+      "method": "POST",
+      "action": "/sponsor-liaison/disasters/connection/verify",
+      "target": "http://localhost/sponsor-liaison/disasters/connection/verify"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor-liaison/aid-grants/1",
+      "method": "POST",
+      "action": "/sponsor-liaison/aid-grants/1/decision",
+      "target": "http://localhost/sponsor-liaison/aid-grants/1/decision"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor/purchase-points",
+      "method": "POST",
+      "action": "/sponsor/purchase-points",
+      "target": "http://localhost/sponsor/purchase-points"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor/branding",
+      "method": "POST",
+      "action": "/sponsor/branding",
+      "target": "http://localhost/sponsor/branding"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor/notifications",
+      "method": "POST",
+      "action": "/sponsor/notifications/read-all",
+      "target": "http://localhost/sponsor/notifications/read-all"
+    },
+    {
+      "source": "http://localhost/mithra/sponsor/disasters/1",
+      "method": "POST",
+      "action": "/sponsor/disasters/1/offer",
+      "target": "http://localhost/sponsor/disasters/1/offer"
+    }
+  ],
+  "missing_modal_targets": [],
+  "root_link_count": 254
+}

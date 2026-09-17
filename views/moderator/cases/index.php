@@ -31,7 +31,7 @@ $sampleRows = [
         'meta'         => 'R. Fernando ↔ S. Perera  ·  moderate damage  ·  meet by 28 Jul',
         'status'       => 'warning',
         'status_label' => 'Awaiting meeting',
-        'href'         => base_url() . '/moderator/cases/cordless-drill-case',
+        'href'         => base_url() . '/moderator/cases/3',
     ],
     [
         'state'        => 'open',
@@ -39,7 +39,7 @@ $sampleRows = [
         'meta'         => 'A. Nizam ↔ M. Gunawardena  ·  minor damage  ·  2 of 3 signed off',
         'status'       => 'info',
         'status_label' => 'Awaiting sign-off',
-        'href'         => base_url() . '/moderator/cases/camping-tent-case',
+        'href'         => base_url() . '/moderator/cases/4',
     ],
     [
         'state'        => 'open',
@@ -47,7 +47,7 @@ $sampleRows = [
         'meta'         => 'T.H.K. Madushan ↔ J. Kavipriya  ·  you are a party to this case',
         'status'       => 'warning',
         'status_label' => 'Mediating',
-        'href'         => base_url() . '/moderator/cases/grinding-drill',
+        'href'         => base_url() . '/moderator/cases/1',
     ],
     [
         'state'        => 'resolved',
@@ -55,7 +55,7 @@ $sampleRows = [
         'meta'         => 'M. Lawsan ↔ J. Kavipriya  ·  repair confirmed  ·  closed 12 Jul',
         'status'       => 'success',
         'status_label' => 'Resolved',
-        'href'         => base_url() . '/moderator/cases/camping-tent-4p',
+        'href'         => base_url() . '/moderator/cases/2',
     ],
     [
         'state'        => 'escalated',
@@ -63,7 +63,7 @@ $sampleRows = [
         'meta'         => 'K. Bandara ↔ T. Wickrama  ·  party refused to sign off',
         'status'       => 'error',
         'status_label' => 'Escalated to Admin',
-        'href'         => base_url() . '/moderator/cases/pressure-washer-case',
+        'href'         => base_url() . '/moderator/cases/5',
     ],
 ];
 

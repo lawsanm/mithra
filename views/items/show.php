@@ -108,18 +108,19 @@ include __DIR__ . '/../../partials/header.php';
             </div>
 
             <?php if ($item['can_borrow']): ?>
-                <form class="stack" method="post" action="<?= base_url() ?>/bookings">
+                <div class="stack" data-demo-form>
+                    <p class="demo-note">Borrowing requests are not available in this demo.</p>
                     <?= csrf_field() ?>
                     <input type="hidden" name="item_id" value="<?= e((string) $item['id']) ?>">
 
                     <div class="field-row">
                         <div class="field">
                             <label class="visually-hidden" for="borrow-from">From date</label>
-                            <input class="input input--date" type="date" id="borrow-from" name="from_date" value="<?= e($quote['from']) ?>" required>
+                            <input class="input input--date" type="date" disabled id="borrow-from" name="from_date" value="<?= e($quote['from']) ?>" required>
                         </div>
                         <div class="field">
                             <label class="visually-hidden" for="borrow-to">To date</label>
-                            <input class="input input--date" type="date" id="borrow-to" name="to_date" value="<?= e($quote['to']) ?>" required>
+                            <input class="input input--date" type="date" disabled id="borrow-to" name="to_date" value="<?= e($quote['to']) ?>" required>
                         </div>
                     </div>
 
@@ -129,17 +130,18 @@ include __DIR__ . '/../../partials/header.php';
                     </p>
 
                     <div class="actions">
-                        <?php // Without JS this submits straight through; with it, the modal collects the details. ?>
-                        <button class="btn btn--primary" type="submit" data-modal-open="request-borrow">Request to Borrow</button>
+                        <noscript><p class="demo-note">Enable JavaScript to open the borrowing preview.</p></noscript>
+                        <button class="btn btn--primary" type="button" data-modal-open="request-borrow">Request to Borrow</button>
                     </div>
-                </form>
+                </div>
             <?php elseif ($item['listing_type'] === 'donation'): ?>
-                <form class="stack" method="post" action="<?= base_url() ?>/donations/<?= e((string) $item['id']) ?>/request">
+                <div class="stack" data-demo-form>
+                    <p class="demo-note">Donation requests are not available in this demo.</p>
                     <?= csrf_field() ?>
                     <div class="actions">
-                        <button class="btn btn--primary" type="submit">Request this donation</button>
+                        <button class="btn btn--primary" type="button" disabled>Request this donation</button>
                     </div>
-                </form>
+                </div>
             <?php else: ?>
                 <p class="notice notice--warning">This item is not available to borrow right now.</p>
             <?php endif; ?>

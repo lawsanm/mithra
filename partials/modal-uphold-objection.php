@@ -7,11 +7,12 @@ declare(strict_types=1);
  */
 
 ?>
-<dialog class="modal" id="uphold-modal">
-    <form method="post" action="<?= base_url() ?>/admin/moderators/objections/uphold" class="modal__content">
-        <?= csrf_field() ?>
+<dialog aria-labelledby="modal-uphold-objection-title" class="modal" id="uphold-modal">
+    <div class="modal__content" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
         <div class="modal__head">
-            <h2 class="modal__title">Uphold objection — cancel appointment</h2>
+            <h2 class="modal__title" id="modal-uphold-objection-title">Uphold objection — cancel appointment</h2>
             <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
         </div>
 
@@ -25,7 +26,7 @@ declare(strict_types=1);
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--danger" type="submit">Uphold and cancel appointment</button>
+            <button class="btn btn--danger" type="submit" disabled>Uphold and cancel appointment</button>
         </div>
-    </form>
+    </div>
 </dialog>

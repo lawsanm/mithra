@@ -35,8 +35,9 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <li><a class="pill pill--active" href="<?= base_url() ?>/admin/settings/notifications" aria-current="true">Notifications</a></li>
 </ul>
 
-<form class="form-card" method="post" action="<?= base_url() ?>/admin/settings/notifications">
-    <?= csrf_field() ?>
+<div class="form-card" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <table class="data-table">
         <thead>
@@ -54,10 +55,10 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <span class="text-muted"><?= e($pref['description']) ?></span>
                     </td>
                     <td style="text-align: center">
-                        <input type="checkbox" name="prefs[<?= e((string) $i) ?>][email]" value="1"<?= $pref['email'] ? ' checked' : '' ?>>
+                        <input type="checkbox" name="prefs[<?= e((string) $i) ?>][email]" value="1"<?= $pref['email'] ? ' checked' : '' ?> disabled>
                     </td>
                     <td style="text-align: center">
-                        <input type="checkbox" name="prefs[<?= e((string) $i) ?>][push]" value="1"<?= $pref['push'] ? ' checked' : '' ?>>
+                        <input type="checkbox" name="prefs[<?= e((string) $i) ?>][push]" value="1"<?= $pref['push'] ? ' checked' : '' ?> disabled>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -65,8 +66,8 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </table>
 
     <div class="form-card__actions">
-        <button class="btn btn--primary" type="submit">Save preferences</button>
+        <button class="btn btn--primary" type="submit" disabled>Save preferences</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

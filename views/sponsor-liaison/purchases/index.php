@@ -33,18 +33,18 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Purchases &amp; contributions</h1>
-    <a class="btn btn--primary page-header__action" href="/sponsor-liaison/purchases/create">
+    <a class="btn btn--primary page-header__action" href="<?= base_url() ?>/sponsor-liaison/purchases/create">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
         Record contribution
     </a>
 </header>
 
-<form class="field-row" method="get" action="/sponsor-liaison/purchases">
+<form class="field-row" method="get" action="<?= base_url() ?>/sponsor-liaison/purchases">
     <div class="field">
-        <input class="input input--search" type="search" name="q" placeholder="Search by receipt no." value="<?= e($search) ?>">
+        <input class="input input--search" aria-label="Search purchases" type="search" name="q" placeholder="Search by receipt no." value="<?= e($search) ?>">
     </div>
     <div class="field">
-        <select class="input" name="sponsor" data-auto-submit>
+        <select class="input" aria-label="Sponsor" name="sponsor" data-auto-submit>
             <option value="">All sponsors</option>
             <?php foreach (['Northwind Co', 'ACM Corp', 'MNM', 'Global Ltd', 'Texa'] as $option): ?>
                 <option value="<?= e($option) ?>"<?= $sponsor === $option ? ' selected' : '' ?>><?= e($option) ?></option>
@@ -52,8 +52,9 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
         </select>
     </div>
     <div class="field">
-        <input class="input input--date" type="text" name="date_range" placeholder="Date range" value="<?= e($dateRange) ?>">
+        <input class="input input--date" type="text" name="date_range" aria-label="Date or month" placeholder="Date or month (e.g. Jul)" value="<?= e($dateRange) ?>">
     </div>
+    <button class="btn btn--ghost" type="submit">Apply filters</button>
 </form>
 
 <?php if ($purchases === []): ?>
@@ -71,7 +72,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
                     <span class="list-row__meta">Receipt <?= e($purchase['receipt']) ?>  ·  <?= e($purchase['allocation']) ?></span>
                 </div>
                 <strong class="list-row__title" style="color: var(--color-success-text);"><?= e($purchase['amount']) ?></strong>
-                <a class="btn btn--ghost" href="/sponsor-liaison/purchases/<?= e((string) $purchase['id']) ?>">View</a>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/purchases/<?= e((string) $purchase['id']) ?>">View</a>
             </li>
         <?php endforeach; ?>
     </ul>

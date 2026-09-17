@@ -16,14 +16,24 @@ $noticeBody  = $noticeBody ?? 'That page is not available.';
 $pageTitle = $noticeTitle;
 $navActive = '';
 
-include __DIR__ . '/../../partials/header.php';
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$rolePrefix = '/' . trim(substr($requestPath, strlen(base_url())), '/');
+$errorRole = 'member';
+foreach (['sponsor-liaison', 'sponsor', 'moderator', 'admin'] as $role) {
+    if ($rolePrefix === '/' . $role || str_starts_with($rolePrefix, '/' . $role . '/')) {
+        $errorRole = $role;
+        break;
+    }
+}
+$backPath = $errorRole === 'member' ? '/dashboard' : '/' . $errorRole . '/dashboard';
+include __DIR__ . '/../../partials/header' . ($errorRole === 'member' ? '' : '-' . $errorRole) . '.php';
 
 ?>
 
 <div class="empty-state">
     <p class="empty-state__title"><?= e($noticeTitle) ?></p>
     <p class="empty-state__body"><?= e($noticeBody) ?></p>
-    <a class="btn btn--primary" href="<?= base_url() ?>/items">Back to My Items</a>
+    <a class="btn btn--primary" href="<?= e(base_url() . $backPath) ?>">Back to dashboard</a>
 </div>
 
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

@@ -125,10 +125,11 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                 <span class="badge badge--<?= e($request['status']) ?>"><?= e($request['status_label']) ?></span>
                 <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/<?= rawurlencode($request['id']) ?>">View request</a>
                 <?php if ($request['vouchable']): ?>
-                    <form method="post" action="<?= base_url() ?>/moderator/aid-vouching/<?= rawurlencode($request['id']) ?>/vouch">
-                        <?= csrf_field() ?>
-                        <button class="btn btn--primary" type="submit">Vouch</button>
-                    </form>
+                    <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                        
+                        <button class="btn btn--primary" type="submit" disabled>Vouch</button>
+                    </div>
                 <?php endif; ?>
             </li>
         <?php endforeach; ?>

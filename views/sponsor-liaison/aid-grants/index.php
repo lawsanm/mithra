@@ -38,7 +38,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Aid grant approvals</h1>
-    <button class="btn btn--ghost page-header__action" type="button">Export approved grants</button>
+    <a class="btn btn--ghost page-header__action" href="<?= base_url() ?>/sponsor-liaison/aid-grants/export">Export approved grants</a>
 </header>
 
 <ul class="filter-pills">
@@ -46,7 +46,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
         <li>
             <a
                 class="pill<?= $status === $filter['slug'] ? ' pill--active' : '' ?>"
-                href="/sponsor-liaison/aid-grants?status=<?= e(rawurlencode($filter['slug'])) ?>"
+                href="<?= base_url() ?>/sponsor-liaison/aid-grants?status=<?= e(rawurlencode($filter['slug'])) ?>"
                 <?= $status === $filter['slug'] ? 'aria-current="true"' : '' ?>
             ><?= e($filter['label']) ?></a>
         </li>
@@ -72,11 +72,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
                 $label   = $grant['action'] === 'review' ? 'Review' : 'View';
                 $variant = $grant['action'] === 'review' ? 'btn--primary' : 'btn--ghost';
                 ?>
-                <?php if ($grant['id'] === 1): ?>
-                    <a class="btn <?= e($variant) ?>" href="/sponsor-liaison/aid-grants/1"><?= e($label) ?></a>
-                <?php else: ?>
-                    <button class="btn <?= e($variant) ?>" type="button"><?= e($label) ?></button>
-                <?php endif; ?>
+                <a class="btn <?= e($variant) ?>" href="<?= base_url() ?>/sponsor-liaison/aid-grants/<?= e((string) $grant['id']) ?>"><?= e($label) ?></a>
             </li>
         <?php endforeach; ?>
     </ul>

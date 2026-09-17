@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 // Sample view data — replaced by the controller once ModerationController lands.
 $applicants = [
-    'akalvily-a' => [
+    '1' => [
         'applicant' => [
             'initials'     => 'AA',
             'name'         => 'A. Akalvily',
@@ -39,7 +39,7 @@ $applicants = [
             ['id' => 'referrer',      'label' => 'Referrer contacted for confirmation',  'checked' => false],
         ],
     ],
-    'lawsan-m' => [
+    '2' => [
         'applicant' => [
             'initials'     => 'ML',
             'name'         => 'M. Lawsan',
@@ -64,7 +64,7 @@ $applicants = [
             ['id' => 'referrer',      'label' => 'Referrer contacted for confirmation',  'checked' => false],
         ],
     ],
-    'perera-s' => [
+    '3' => [
         'applicant' => [
             'initials'     => 'SP',
             'name'         => 'S. Perera',
@@ -89,7 +89,7 @@ $applicants = [
             ['id' => 'referrer',      'label' => 'Referrer contacted for confirmation',  'checked' => false],
         ],
     ],
-    'gunawardena-m' => [
+    '4' => [
         'applicant' => [
             'initials'     => 'MG',
             'name'         => 'M. Gunawardena',
@@ -114,7 +114,7 @@ $applicants = [
             ['id' => 'referrer',      'label' => 'Referrer contacted for confirmation',  'checked' => false],
         ],
     ],
-    'nizam-a' => [
+    '5' => [
         'applicant' => [
             'initials'     => 'AN',
             'name'         => 'A. Nizam',
@@ -139,7 +139,7 @@ $applicants = [
             ['id' => 'referrer',      'label' => 'Referrer contacted for confirmation',  'checked' => false],
         ],
     ],
-    'wickrama-t' => [
+    '6' => [
         'applicant' => [
             'initials'     => 'TW',
             'name'         => 'T. Wickrama',
@@ -163,7 +163,7 @@ $applicants = [
             ['id' => 'referrer',      'label' => 'Referrer contacted for confirmation',  'checked' => false],
         ],
     ],
-    'rajapaksa-d' => [
+    '7' => [
         'applicant' => [
             'initials'     => 'DR',
             'name'         => 'D. Rajapaksa',
@@ -191,7 +191,14 @@ $applicants = [
 ];
 
 $verificationId = (string) ($_GET['id'] ?? '');
-$sample         = $applicants[$verificationId] ?? reset($applicants);
+$sample         = $applicants[$verificationId] ?? null;
+if ($sample === null) {
+    http_response_code(404);
+    $noticeTitle = 'Record not found';
+    $noticeBody = 'This review is no longer available. Return to the queue to choose a record.';
+    include __DIR__ . '/../../errors/notice.php';
+    return;
+}
 
 $applicant ??= $sample['applicant'];
 $facts     ??= $sample['facts'];
@@ -219,8 +226,9 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 
 <p class="record-meta"><?= e($applicant['submitted']) ?></p>
 
-<form class="stack stack--loose" method="post" action="<?= base_url() ?>/moderator/verifications/<?= rawurlencode($verificationId) ?>/decision">
-    <?= csrf_field() ?>
+<div class="stack stack--loose" id="decision" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="two-col two-col--wide-main">
         <div class="stack">
@@ -267,7 +275,7 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                                     name="checks[]"
                                     value="<?= e($check['id']) ?>"
                                     <?= $check['checked'] ? 'checked' : '' ?>
-                                >
+                                 disabled>
                                 <span class="checklist__label"><?= e($check['label']) ?></span>
                             </label>
                         </li>
@@ -282,17 +290,17 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                     id="verification-notes"
                     name="notes"
                     placeholder="Add any notes for the record"
-                ></textarea>
+                 disabled></textarea>
             </div>
 
         </div>
     </div>
 
     <div class="actions">
-        <button class="btn btn--ghost" type="submit" name="decision" value="reject">Reject</button>
-        <button class="btn btn--ghost" type="submit" name="decision" value="request-info">Request more info</button>
-        <button class="btn btn--primary" type="submit" name="decision" value="approve">Approve membership</button>
+        <button class="btn btn--ghost" type="submit" name="decision" value="reject" disabled>Reject</button>
+        <button class="btn btn--ghost" type="submit" name="decision" value="request-info" disabled>Request more info</button>
+        <button class="btn btn--primary" type="submit" name="decision" value="approve" disabled>Approve membership</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>
