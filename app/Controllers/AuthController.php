@@ -9,15 +9,24 @@ declare(strict_types=1);
  * the values to a service, and on success write the member id and role to the
  * session — the two keys the rest of the app reads.
  *
- * These are the only screens a signed-out visitor can reach — sign-in,
+ * These are the sign-in screens a signed-out visitor can reach — sign-in,
  * sign-up and the two ways back into an account (an emailed link, or a code
- * issued in person by the moderator); AuthMiddleware sends every other request
- * here. Public sign-up creates members and nothing
- * else — moderator, liaison, sponsor and admin accounts are appointed, not
- * self-served (Plan §16).
+ * issued in person by the moderator). Public sign-up creates members and
+ * nothing else — moderator, liaison, sponsor and admin accounts are appointed,
+ * not self-served (Plan §16).
+ *
+ * Figma: Common → "Login" (93:282), "Forgot Password — Modal" (93:315),
+ * "Reset Password — New Password" (646:764), "Register — Step 1" (93:127),
+ * "Register — Step 2" (93:187) and "Register — Pending Review" (93:240).
  */
 final class AuthController extends Controller
 {
+    /** The first sign-up step's answers, kept until the documents arrive. */
+    private const REGISTER_DRAFT = 'register_draft';
+
+    /** Who just applied, for the pending-review page. */
+    private const REGISTERED = 'registered';
+
     private AuthService $auth;
 
     public function __construct(PDO $pdo)
@@ -33,12 +42,12 @@ final class AuthController extends Controller
     public function loginForm(): void
     {
         if ($this->signedIn()) {
-            $this->redirect($this->homeFor((string) ($_SESSION['role'] ?? 'member')));
+            $this->redirect($this->homeFor($this->role()));
 
             return;
         }
 
-        $this->renderLogin([], '');
+        $this->renderLogin();
     }
 
     /**
@@ -55,7 +64,7 @@ final class AuthController extends Controller
         $identifier = $validator->value('identifier');
 
         if (!$validator->passes()) {
-            $this->renderLogin($validator->errors(), $identifier);
+            $this->renderLogin(['errors' => $validator->errors(), 'identifier' => $identifier]);
 
             return;
         }
@@ -65,7 +74,7 @@ final class AuthController extends Controller
             // typed, trailing spaces included.
             $account = $this->auth->authenticate($identifier, $this->postedPassword('password'), $this->clientIp());
         } catch (ValidationException $exception) {
-            $this->renderLogin($exception->errors(), $identifier);
+            $this->renderLogin(['errors' => $exception->errors(), 'identifier' => $identifier]);
 
             return;
         }
@@ -74,27 +83,76 @@ final class AuthController extends Controller
         $this->redirect($this->homeFor((string) $account['role_code']));
     }
 
+    // ── Sign-up ─────────────────────────────────────────────────────────────
+
     /**
-     * GET /register.
+     * GET /register — step 1 (personal and division details), or step 2
+     * (documents and password) once step 1 has been accepted.
      */
     public function registerForm(): void
     {
         if ($this->signedIn()) {
-            $this->redirect($this->homeFor((string) ($_SESSION['role'] ?? 'member')));
+            $this->redirect($this->homeFor($this->role()));
 
             return;
         }
 
-        $this->renderRegister([], []);
+        $draft = $this->registerDraft();
+
+        if (($_GET['step'] ?? '') === '2' && $draft !== null) {
+            $this->renderRegister(2, [], $draft);
+
+            return;
+        }
+
+        $this->renderRegister(1, [], $draft ?? []);
     }
 
     /**
      * POST /register.
-     *
-     * A successful application cannot sign in yet, so it ends on the sign-in
-     * screen with the reason rather than in a session (Plan §18.1).
      */
     public function register(): void
+    {
+        if (($_POST['step'] ?? '') === '2') {
+            $this->registerDocuments();
+
+            return;
+        }
+
+        $this->registerDetails();
+    }
+
+    /**
+     * GET /register/pending.
+     *
+     * A successful application cannot sign in yet (Plan §18.1), so sign-up
+     * ends here rather than in a session.
+     */
+    public function registerPending(): void
+    {
+        $applied = $_SESSION[self::REGISTERED] ?? null;
+
+        if ($this->signedIn() || !is_array($applied)) {
+            $this->redirect($this->signedIn() ? $this->homeFor($this->role()) : '/register');
+
+            return;
+        }
+
+        $division = (new GnDivision($this->pdo))->findWithStaff((int) $applied['division_id']);
+
+        $this->render('auth/register-pending', [
+            'firstName'     => strtok((string) $applied['name'], ' ') ?: (string) $applied['name'],
+            'divisionName'  => (string) ($division['name'] ?? ''),
+            'moderatorName' => $division['moderator_name'] ?? null,
+        ]);
+    }
+
+    /**
+     * Step 1: the details are checked in full — formats, the division, and
+     * whether the NIC, mobile or email is already registered — before the
+     * applicant is asked for documents.
+     */
+    private function registerDetails(): void
     {
         $validator = new Validator($_POST);
         $validator
@@ -110,24 +168,40 @@ final class AuthController extends Controller
             ->required('gn_division_id', 'GN division')
             ->integer('gn_division_id', 'GN division', 1);
 
-        if (!$validator->passes()) {
-            $this->renderRegister($validator->errors(), $validator->values());
+        $input = $this->detailInput($validator->values());
+
+        // Both sets at once, so every problem shows on the first attempt; a
+        // field the Validator refused keeps the Validator's message.
+        $errors = $validator->errors() + $this->registrations()->detailErrors($input);
+
+        if ($errors !== []) {
+            $this->renderRegister(1, $errors, $input);
 
             return;
         }
 
-        $input = $validator->values() + ['email' => '', 'gn_division_id' => ''];
+        $_SESSION[self::REGISTER_DRAFT] = $input;
+        $this->redirect('/register?step=2');
+    }
+
+    /**
+     * Step 2: the documents and the password complete the application. The
+     * service checks the step-1 details again, since an NIC or mobile number
+     * can be registered by someone else in between.
+     */
+    private function registerDocuments(): void
+    {
+        $draft = $this->registerDraft();
+
+        if ($draft === null) {
+            $this->redirect('/register');
+
+            return;
+        }
 
         try {
             $this->registrations()->register(
-                [
-                    'full_name'      => $input['full_name'],
-                    'nic'            => $input['nic'],
-                    'phone'          => $input['phone'],
-                    'email'          => $input['email'],
-                    'address'        => $input['address'],
-                    'gn_division_id' => $input['gn_division_id'],
-                ],
+                $draft,
                 $this->postedPassword('password'),
                 $this->postedPassword('password_confirmation'),
                 [
@@ -136,26 +210,30 @@ final class AuthController extends Controller
                 ]
             );
         } catch (ValidationException $exception) {
-            $this->renderRegister($exception->errors(), $validator->values());
+            $errors      = $exception->errors();
+            $backToStep1 = isset($errors['form'])
+                || array_intersect_key($errors, array_flip(RegistrationService::DETAIL_FIELDS)) !== [];
+
+            $this->renderRegister($backToStep1 ? 1 : 2, $errors, $draft);
 
             return;
         }
 
-        $this->flash(
-            'Application received. Your division moderator reviews it within five days, '
-            . 'and you can sign in as soon as it is approved.'
-        );
-        $this->redirect('/login');
+        unset($_SESSION[self::REGISTER_DRAFT]);
+        $_SESSION[self::REGISTERED] = ['name' => $draft['full_name'], 'division_id' => (int) $draft['gn_division_id']];
+
+        $this->redirect('/register/pending');
     }
 
     // ── Forgotten password ──────────────────────────────────────────────────
 
     /**
-     * GET /forgot-password.
+     * GET /forgot-password — the sign-in page with the reset-link dialog open,
+     * so the address also works as a direct link and without JavaScript.
      */
     public function forgotForm(): void
     {
-        $this->renderAuthPage('forgot', [], ['email' => '']);
+        $this->renderLogin(['dialog' => 'forgot']);
     }
 
     /**
@@ -168,7 +246,11 @@ final class AuthController extends Controller
         $validator->required('email', 'Email address')->maxLength('email', 'Email address', 150);
 
         if (!$validator->passes()) {
-            $this->renderAuthPage('forgot', $validator->errors(), ['email' => $validator->value('email')]);
+            $this->renderLogin([
+                'dialog'       => 'forgot',
+                'forgotErrors' => $validator->errors(),
+                'forgotEmail'  => $validator->value('email'),
+            ]);
 
             return;
         }
@@ -198,19 +280,21 @@ final class AuthController extends Controller
             }
         }
 
-        $this->renderAuthPage('forgot', [], ['email' => '', 'sent' => true, 'devLink' => $devLink]);
+        $this->renderLogin(['dialog' => 'forgot', 'forgotSent' => true, 'devLink' => $devLink]);
     }
 
     /**
-     * GET /reset-password?token=…
+     * GET /reset-password?token=… — the sign-in page with the new-password
+     * dialog open.
      */
     public function resetForm(): void
     {
         $token = (string) ($_GET['token'] ?? '');
 
-        $this->renderAuthPage('reset', [], [
-            'token' => $token,
-            'valid' => $this->passwordResets()->linkIsValid($token),
+        $this->renderLogin([
+            'dialog'     => 'reset',
+            'resetToken' => $token,
+            'resetValid' => $this->passwordResets()->linkIsValid($token),
         ]);
     }
 
@@ -228,9 +312,11 @@ final class AuthController extends Controller
                 $this->postedPassword('password_confirmation')
             );
         } catch (ValidationException $exception) {
-            $this->renderAuthPage('reset', $exception->errors(), [
-                'token' => $token,
-                'valid' => $this->passwordResets()->linkIsValid($token),
+            $this->renderLogin([
+                'dialog'      => 'reset',
+                'resetErrors' => $exception->errors(),
+                'resetToken'  => $token,
+                'resetValid'  => $this->passwordResets()->linkIsValid($token),
             ]);
 
             return;
@@ -342,7 +428,7 @@ final class AuthController extends Controller
 
     /**
      * @param array<string, string> $errors
-     * @param array<string, string> $values
+     * @param array<string, mixed>  $values
      */
     private function renderAuthPage(string $view, array $errors, array $values = []): void
     {
@@ -353,9 +439,69 @@ final class AuthController extends Controller
         $this->render('auth/' . $view, ['errors' => $errors] + $values);
     }
 
-    private function signedIn(): bool
+    /**
+     * The sign-in page, optionally with the forgot-password or new-password
+     * dialog open.
+     *
+     * @param array<string, mixed> $data errors, identifier, dialog and the dialogs' own values
+     */
+    private function renderLogin(array $data = []): void
     {
-        return (int) ($_SESSION['user_id'] ?? 0) > 0;
+        foreach (['errors', 'forgotErrors', 'resetErrors'] as $key) {
+            if (($data[$key] ?? []) !== []) {
+                http_response_code(422);
+            }
+        }
+
+        $this->render('auth/login', $data);
+    }
+
+    /**
+     * @param array<string, string> $errors
+     * @param array<string, string> $input values to show back
+     */
+    private function renderRegister(int $step, array $errors, array $input): void
+    {
+        $division = null;
+
+        if ($step === 2) {
+            $division = (new GnDivision($this->pdo))->find((int) ($input['gn_division_id'] ?? 0));
+        }
+
+        $this->renderAuthPage('register', $errors, [
+            'step'         => $step,
+            'input'        => $input,
+            'divisions'    => (new GnDivision($this->pdo))->activeNames(),
+            'divisionName' => (string) ($division['name'] ?? ''),
+        ]);
+    }
+
+    /**
+     * The step-1 fields from a request, with every key present.
+     *
+     * @param array<string, string> $values
+     *
+     * @return array{full_name:string, nic:string, phone:string, email:string, address:string, gn_division_id:string}
+     */
+    private function detailInput(array $values): array
+    {
+        $input = [];
+
+        foreach (RegistrationService::DETAIL_FIELDS as $field) {
+            $input[$field] = (string) ($values[$field] ?? '');
+        }
+
+        return $input;
+    }
+
+    /**
+     * @return array{full_name:string, nic:string, phone:string, email:string, address:string, gn_division_id:string}|null
+     */
+    private function registerDraft(): ?array
+    {
+        $draft = $_SESSION[self::REGISTER_DRAFT] ?? null;
+
+        return is_array($draft) ? $this->detailInput($draft) : null;
     }
 
     private function registrations(): RegistrationService
@@ -367,39 +513,5 @@ final class AuthController extends Controller
             new GnDivision($this->pdo),
             $this->uploads()
         );
-    }
-
-    /**
-     * Where each role lands after signing in.
-     */
-    private function homeFor(string $role): string
-    {
-        return match ($role) {
-            'admin'           => '/admin',
-            'moderator'       => '/moderator',
-            'sponsor_liaison' => '/sponsor-liaison',
-            'sponsor'         => '/sponsor',
-            default           => '/dashboard',
-        };
-    }
-
-    /**
-     * @param array<string, string> $errors
-     */
-    private function renderLogin(array $errors, string $identifier): void
-    {
-        $this->renderAuthPage('login', $errors, ['identifier' => $identifier]);
-    }
-
-    /**
-     * @param array<string, string> $errors
-     * @param array<string, string> $input values to show back after a failure
-     */
-    private function renderRegister(array $errors, array $input): void
-    {
-        $this->renderAuthPage('register', $errors, [
-            'input'     => $input,
-            'divisions' => (new GnDivision($this->pdo))->activeNames(),
-        ]);
     }
 }

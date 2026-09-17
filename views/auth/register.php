@@ -3,43 +3,56 @@
 declare(strict_types=1);
 
 /**
- * Register. The sign-up half of Figma: Common → "Login" (93:282), built from
- * the same auth card.
+ * Register, in two steps. Figma: Common → "Register — Step 1" (93:127) and
+ * "Register — Step 2" (93:187); step 3 is auth/register-pending.
  *
- * The form works without JavaScript and re-renders with everything the
- * applicant typed except the two passwords, which are never sent back to the
- * browser.
- *
- * The fields are the ones Plan §18.1 asks for — name, address, NIC, a
- * photograph of the NIC, proof of address, GN division, mobile — plus the email
- * address and password that sign-in needs. The two documents are seen only by
+ * Step 1 takes the personal and division details and step 2 the documents and
+ * password — the fields Plan §18.1 asks for, plus the email address and
+ * password that sign-in needs. Step 1's answers wait in the session, so
+ * nothing is created until step 2 succeeds. The two documents are seen only by
  * the division's moderator and the Admin (Plan §25.3).
  *
- * @var array  $errors    per-field messages, plus 'form' for a refusal that
- *                        belongs to the attempt rather than to one field
- * @var array  $input     previously submitted values, keyed by field name
- * @var array  $divisions id, name and district of every joinable division
+ * Each step works without JavaScript and re-renders with what was typed, except
+ * passwords and files, which are never sent back to the browser.
+ *
+ * @var int    $step         1 or 2
+ * @var array  $errors       per-field messages, plus 'form' for a refusal that
+ *                           belongs to the attempt rather than to one field
+ * @var array  $input        step 1's values, keyed by field name
+ * @var array  $divisions    id, name and district of every joinable division
+ * @var string $divisionName the chosen division, on step 2
  * @var array|null $flash
  */
 
-$errors    = $errors ?? [];
-$input     = $input ?? [];
-$divisions = $divisions ?? [];
+$step         = $step ?? 1;
+$errors       = $errors ?? [];
+$input        = $input ?? [];
+$divisions    = $divisions ?? [];
+$divisionName = $divisionName ?? '';
 
 $old = static fn (string $field): string => (string) ($input[$field] ?? '');
 
 $pageTitle = 'Register';
 $navActive = 'register';
+$pageClass = 'page--auth';
 
 $chrome = 'public';
 include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/register" enctype="multipart/form-data" novalidate>
-    <?= csrf_field() ?>
+<h1 class="auth-title"><?= $step === 1 ? 'Create your account' : 'Verify your identity' ?></h1>
 
-    <h1 class="form-card__title">Join your community</h1>
+<?php
+$wizardSteps = [1 => 'Personal & division info', 2 => 'Document upload', 3 => 'Moderator review'];
+$wizardStep  = $step;
+$wizardClass = 'wizard--center';
+include __DIR__ . '/../../partials/wizard-steps.php';
+?>
+
+<form class="form-card form-card--auth form-card--register" method="post" action="<?= base_url() ?>/register"<?= $step === 2 ? ' enctype="multipart/form-data"' : '' ?> novalidate>
+    <?= csrf_field() ?>
+    <input type="hidden" name="step" value="<?= e((string) $step) ?>">
 
     <?php include __DIR__ . '/../../partials/flash.php'; ?>
 
@@ -50,192 +63,167 @@ include __DIR__ . '/../../partials/header.php';
         </p>
     <?php endif; ?>
 
-    <p class="notice notice--info">
-        <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
-        Your division moderator checks these details against the GN register before your
-        account opens. That review takes up to five days.
-    </p>
+    <?php if ($step === 1): ?>
 
-    <div class="field">
-        <label class="field__label" for="register-name">Full name</label>
-        <input
-            class="input"
-            type="text"
-            id="register-name"
-            name="full_name"
-            value="<?= e($old('full_name')) ?>"
-            placeholder="As written on your NIC"
-            autocomplete="name"
-            <?= isset($errors['full_name']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?= field_error($errors, 'full_name') ?>
-    </div>
+        <div class="field">
+            <label class="field__label" for="register-name">Full name (as on NIC)</label>
+            <input
+                class="input"
+                type="text"
+                id="register-name"
+                name="full_name"
+                value="<?= e($old('full_name')) ?>"
+                placeholder="M. Lawsan"
+                autocomplete="name"
+                <?= isset($errors['full_name']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?= field_error($errors, 'full_name') ?>
+        </div>
 
-    <div class="field">
-        <label class="field__label" for="register-nic">NIC number</label>
-        <input
-            class="input"
-            type="text"
-            id="register-nic"
-            name="nic"
-            value="<?= e($old('nic')) ?>"
-            placeholder="199012345V or 199012345671"
-            autocapitalize="characters"
-            spellcheck="false"
-            <?= isset($errors['nic']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?php if (isset($errors['nic'])): ?>
-            <span class="field__error"><?= e($errors['nic']) ?></span>
-        <?php else: ?>
-            <span class="field__hint">Your moderator checks this against the division register.</span>
+        <div class="field">
+            <label class="field__label" for="register-nic">NIC number</label>
+            <input
+                class="input"
+                type="text"
+                id="register-nic"
+                name="nic"
+                value="<?= e($old('nic')) ?>"
+                placeholder="199012345V or 199012345671"
+                autocapitalize="characters"
+                spellcheck="false"
+                <?= isset($errors['nic']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?= field_error($errors, 'nic') ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="register-address">Home address</label>
+            <input
+                class="input"
+                type="text"
+                id="register-address"
+                name="address"
+                value="<?= e($old('address')) ?>"
+                placeholder="24/3 Galle Road, Colombo 03"
+                autocomplete="street-address"
+                <?= isset($errors['address']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?= field_error($errors, 'address') ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="register-division">GN division</label>
+            <select
+                class="input"
+                id="register-division"
+                name="gn_division_id"
+                <?= isset($errors['gn_division_id']) ? 'aria-invalid="true"' : '' ?>
+            >
+                <option value="">Select your division</option>
+                <?php foreach ($divisions as $division): ?>
+                    <option
+                        value="<?= e((string) $division['id']) ?>"
+                        <?= $old('gn_division_id') === (string) $division['id'] ? 'selected' : '' ?>
+                    ><?= e((string) $division['name']) ?> · <?= e((string) $division['district']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <?php if (isset($errors['gn_division_id'])): ?>
+                <?= field_error($errors, 'gn_division_id') ?>
+            <?php else: ?>
+                <span class="field__hint">Your community — you'll lend and borrow within this division.</span>
+            <?php endif; ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="register-phone">Mobile number</label>
+            <input
+                class="input"
+                type="tel"
+                id="register-phone"
+                name="phone"
+                value="<?= e($old('phone')) ?>"
+                placeholder="+94 77 123 4567"
+                autocomplete="tel"
+                spellcheck="false"
+                <?= isset($errors['phone']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?= field_error($errors, 'phone') ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="register-email">Email address — optional</label>
+            <input
+                class="input"
+                type="email"
+                id="register-email"
+                name="email"
+                value="<?= e($old('email')) ?>"
+                placeholder="you@email.com"
+                autocomplete="email"
+                autocapitalize="none"
+                spellcheck="false"
+                <?= isset($errors['email']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?php if (isset($errors['email'])): ?>
+                <?= field_error($errors, 'email') ?>
+            <?php else: ?>
+                <span class="field__hint">Leave this empty to sign in with your mobile number.</span>
+            <?php endif; ?>
+        </div>
+
+        <div class="actions">
+            <a class="btn btn--ghost" href="<?= base_url() ?>/login">Back to login</a>
+            <button class="btn btn--primary" type="submit">Continue</button>
+        </div>
+
+    <?php else: ?>
+
+        <?php if ($errors !== []): ?>
+            <p class="notice notice--warning">
+                Files are not kept after a problem — choose both documents again.
+            </p>
         <?php endif; ?>
-    </div>
 
-    <div class="field">
-        <label class="field__label" for="register-phone">Mobile number</label>
-        <input
-            class="input"
-            type="tel"
-            id="register-phone"
-            name="phone"
-            value="<?= e($old('phone')) ?>"
-            placeholder="077 123 4567"
-            autocomplete="tel"
-            spellcheck="false"
-            <?= isset($errors['phone']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?= field_error($errors, 'phone') ?>
-    </div>
+        <?php
+        $documents = [
+            'nic_photo'     => ['NIC — front', 'Upload a clear photo of the front of your NIC'],
+            'address_proof' => ['Proof of address', 'Utility bill or Grama Niladhari letter showing your division address'],
+        ];
+        ?>
+        <?php foreach ($documents as $field => [$label, $prompt]): ?>
+            <div class="field">
+                <span class="field__label" id="<?= e($field) ?>-label"><?= e($label) ?></span>
+                <label class="upload-drop<?= isset($errors[$field]) ? ' upload-drop--invalid' : '' ?>">
+                    <span class="upload-drop__glyph" aria-hidden="true">＋</span>
+                    <span data-upload-name><?= e($prompt) ?></span>
+                    <input
+                        class="visually-hidden"
+                        type="file"
+                        name="<?= e($field) ?>"
+                        accept="image/jpeg,image/png,image/webp"
+                        aria-labelledby="<?= e($field) ?>-label"
+                        <?= isset($errors[$field]) ? 'aria-invalid="true"' : '' ?>
+                    >
+                </label>
+                <?= field_error($errors, $field) ?>
+            </div>
+        <?php endforeach; ?>
 
-    <div class="field">
-        <label class="field__label" for="register-email">Email address — optional</label>
-        <input
-            class="input"
-            type="email"
-            id="register-email"
-            name="email"
-            value="<?= e($old('email')) ?>"
-            placeholder="you@email.com"
-            autocomplete="email"
-            autocapitalize="none"
-            spellcheck="false"
-            <?= isset($errors['email']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?php if (isset($errors['email'])): ?>
-            <span class="field__error"><?= e($errors['email']) ?></span>
-        <?php else: ?>
-            <span class="field__hint">Leave this empty to sign in with your mobile number.</span>
-        <?php endif; ?>
-    </div>
+        <?php $passwordPrefix = 'register'; include __DIR__ . '/../../partials/password-fields.php'; ?>
 
-    <div class="field">
-        <label class="field__label" for="register-division">GN division</label>
-        <select
-            class="input"
-            id="register-division"
-            name="gn_division_id"
-            <?= isset($errors['gn_division_id']) ? 'aria-invalid="true"' : '' ?>
-        >
-            <option value="">Select your division</option>
-            <?php foreach ($divisions as $division): ?>
-                <option
-                    value="<?= e((string) $division['id']) ?>"
-                    <?= $old('gn_division_id') === (string) $division['id'] ? 'selected' : '' ?>
-                ><?= e((string) $division['name']) ?> · <?= e((string) $division['district']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?= field_error($errors, 'gn_division_id') ?>
-    </div>
+        <p class="notice notice--info">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
+            Your <?= e($divisionName) ?> moderator reviews these documents and may arrange a brief
+            in-person verification. Only your division moderator and the Admin can see them.
+        </p>
 
-    <div class="field">
-        <label class="field__label" for="register-address">Home address</label>
-        <textarea
-            class="input"
-            id="register-address"
-            name="address"
-            rows="2"
-            placeholder="24/3 Galle Road, Colombo 03"
-            autocomplete="street-address"
-            <?= isset($errors['address']) ? 'aria-invalid="true"' : '' ?>
-        ><?= e($old('address')) ?></textarea>
-        <?= field_error($errors, 'address') ?>
-    </div>
+        <div class="actions">
+            <a class="btn btn--ghost" href="<?= base_url() ?>/register">Back</a>
+            <button class="btn btn--primary" type="submit">Submit for review</button>
+        </div>
 
-    <div class="field">
-        <label class="field__label" for="register-nic-photo">Photograph of your NIC</label>
-        <input
-            class="input"
-            type="file"
-            id="register-nic-photo"
-            name="nic_photo"
-            accept="image/jpeg,image/png,image/webp"
-            <?= isset($errors['nic_photo']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?php if (isset($errors['nic_photo'])): ?>
-            <span class="field__error"><?= e($errors['nic_photo']) ?></span>
-        <?php else: ?>
-            <span class="field__hint">The front of the card, with the number readable. JPG, PNG or WebP, up to 5 MB.</span>
-        <?php endif; ?>
-    </div>
-
-    <div class="field">
-        <label class="field__label" for="register-address-proof">Proof of address</label>
-        <input
-            class="input"
-            type="file"
-            id="register-address-proof"
-            name="address_proof"
-            accept="image/jpeg,image/png,image/webp"
-            <?= isset($errors['address_proof']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?php if (isset($errors['address_proof'])): ?>
-            <span class="field__error"><?= e($errors['address_proof']) ?></span>
-        <?php else: ?>
-            <span class="field__hint">
-                A photo of a recent utility bill or a Grama Niladhari letter. Only your division
-                moderator and the Admin can see these documents.
-            </span>
-        <?php endif; ?>
-    </div>
-
-    <div class="field">
-        <label class="field__label" for="register-password">Password</label>
-        <input
-            class="input"
-            type="password"
-            id="register-password"
-            name="password"
-            autocomplete="new-password"
-            <?= isset($errors['password']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?php if (isset($errors['password'])): ?>
-            <span class="field__error"><?= e($errors['password']) ?></span>
-        <?php else: ?>
-            <span class="field__hint">
-                At least <?= e((string) RegistrationService::MIN_PASSWORD) ?> characters. A short
-                phrase you will remember beats a short word you will not.
-            </span>
-        <?php endif; ?>
-    </div>
-
-    <div class="field">
-        <label class="field__label" for="register-password-confirmation">Confirm password</label>
-        <input
-            class="input"
-            type="password"
-            id="register-password-confirmation"
-            name="password_confirmation"
-            autocomplete="new-password"
-            <?= isset($errors['password_confirmation']) ? 'aria-invalid="true"' : '' ?>
-        >
-        <?= field_error($errors, 'password_confirmation') ?>
-    </div>
-
-    <button class="btn btn--primary btn--block" type="submit">Apply to join</button>
-
-    <div class="auth-links">
-        <a class="link" href="<?= base_url() ?>/login">Already a member? Log in</a>
-    </div>
+    <?php endif; ?>
 </form>
 
+<?php $pageScripts = ['upload-name.js']; ?>
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

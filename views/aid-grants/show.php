@@ -78,27 +78,12 @@ include __DIR__ . '/../../partials/header.php';
         </span>
     </header>
 
-    <ol class="wizard wizard--compact">
-        <?php foreach ($stages as $index => $label): ?>
-            <?php
-            $number    = $index + 1;
-            $isDone    = $number < $grant['stage'];
-            $isCurrent = $number === $grant['stage'];
-            ?>
-            <?php if ($number > 1): ?>
-                <li aria-hidden="true">
-                    <hr class="wizard__connector<?= $number <= $grant['stage'] ? ' wizard__connector--done' : '' ?>">
-                </li>
-            <?php endif; ?>
-            <li class="wizard__step">
-                <span class="wizard__marker<?= $isCurrent ? ' wizard__marker--current' : ($isDone ? ' wizard__marker--done' : '') ?>">
-                    <?= $isDone ? '✓' : $number ?>
-                </span>
-                <span class="wizard__label<?= $isCurrent ? ' wizard__label--current' : '' ?>"
-                    <?= $isCurrent ? 'aria-current="step"' : '' ?>><?= e($label) ?></span>
-            </li>
-        <?php endforeach; ?>
-    </ol>
+    <?php
+    $wizardSteps = array_combine(range(1, count($stages)), array_values($stages));
+    $wizardStep  = (int) $grant['stage'];
+    $wizardClass = 'wizard--compact';
+    include __DIR__ . '/../../partials/wizard-steps.php';
+    ?>
 
     <section class="panel">
         <h2 class="visually-hidden">Grant summary</h2>

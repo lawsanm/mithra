@@ -10,11 +10,13 @@ declare(strict_types=1);
  * @var string $pageTitle
  * @var string $navActive key of the current page's navigation link
  * @var string $chrome    member (default), moderator, admin, sponsor-liaison, sponsor or public
+ * @var string $pageClass layout modifier for <main>, e.g. page--auth for the centred sign-in card
  */
 
 $pageTitle = $pageTitle ?? 'Mithra';
 $navActive = $navActive ?? '';
 $chrome    = $chrome ?? 'member';
+$pageClass = $pageClass ?? '';
 
 ?><!DOCTYPE html>
 <html lang="en">
@@ -28,4 +30,4 @@ $chrome    = $chrome ?? 'member';
 <a class="skip-link" href="#main">Skip to main content</a>
 <?php include __DIR__ . '/icon-sprite.php'; ?>
 <?php include __DIR__ . '/nav.php'; ?>
-<main class="page<?= $chrome === 'public' ? ' page--auth' : '' ?>" id="main">
+<main class="page<?= $pageClass !== '' ? ' ' . e($pageClass) : '' ?>" id="main">

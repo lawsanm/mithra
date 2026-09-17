@@ -130,7 +130,8 @@ lands, the point ledger that our risk register rates as critical."
 - **HTML:** shared chrome and repeated widgets live in `/partials/` and are included,
   never copy-pasted: `header.php`, `nav.php`, `footer.php`, `flash.php`,
   `stat-card.php` (every dashboard tile), `photo-grid.php`, `notification-list.php`,
-  `password-fields.php`, the item fields shared by the create wizard and the edit page
+  `password-fields.php`, `wizard-steps.php` (every step indicator), the item fields
+  shared by the create wizard and the edit page
   (`item-details.php`, `item-value.php`, `item-rates.php`), and one `modal-*.php` per
   dialog. Field errors render through one helper, `field_error()`.
 - **JS:** one file per behaviour in `/public/js/` (`modal.js`, `print.js`,

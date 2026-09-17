@@ -22,6 +22,9 @@ final class RegistrationService
 
     public const MAX_PASSWORD_BYTES = PasswordPolicy::MAX_BYTES;
 
+    /** The fields the first sign-up step collects; an error on one sends the applicant back there. */
+    public const DETAIL_FIELDS = ['full_name', 'nic', 'phone', 'email', 'address', 'gn_division_id'];
+
     /** Public sign-up only ever creates members (§7.4). */
     private const MEMBER_ROLE = 'member';
 
@@ -75,38 +78,18 @@ final class RegistrationService
      */
     public function register(array $input, string $password, string $confirmation, array $uploads): int
     {
-        $errors = [];
-
-        $nic = self::normaliseNic($input['nic']);
-        if ($nic === null) {
-            $errors['nic'] = 'Enter an NIC as 9 digits and a letter (199012345V) or 12 digits.';
-        }
-
-        $phone = self::normalisePhone($input['phone']);
-        if ($phone === null) {
-            $errors['phone'] = 'Enter a Sri Lankan mobile number, for example 077 123 4567.';
-        }
-
-        $email = trim($input['email']);
-        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            $errors['email'] = 'Enter an email address, or leave this empty to sign in with your mobile number.';
-        }
-
-        $divisionId = (int) $input['gn_division_id'];
-        if ($divisionId < 1 || !$this->divisions->isActive($divisionId)) {
-            $errors['gn_division_id'] = 'Choose the GN division you live in.';
-        }
-
+        $errors  = $this->detailErrors($input);
         $errors += PasswordPolicy::errors($password, $confirmation);
         $errors += $this->documentErrors($uploads);
-
-        // Only ask the database about values that are well-formed: a malformed
-        // NIC has no business generating a "taken" message as well.
-        $errors += $this->availabilityErrors($nic, $phone, $email);
 
         if ($errors !== []) {
             throw new ValidationException($errors);
         }
+
+        $nic        = self::normaliseNic($input['nic']);
+        $phone      = self::normalisePhone($input['phone']);
+        $email      = trim($input['email']);
+        $divisionId = (int) $input['gn_division_id'];
 
         $roleId = $this->users->roleIdFor(self::MEMBER_ROLE);
 
@@ -186,6 +169,44 @@ final class RegistrationService
     }
 
     // ── Rules ───────────────────────────────────────────────────────────────
+
+    /**
+     * What is wrong with the personal and division details, the first step of
+     * sign-up: NIC and mobile formats, the email address, the division, and
+     * whether any of them is already registered.
+     *
+     * @param array{nic:string, phone:string, email:string, gn_division_id:string} $input
+     *
+     * @return array<string, string> field => message; empty when the details are usable
+     */
+    public function detailErrors(array $input): array
+    {
+        $errors = [];
+
+        $nic = self::normaliseNic($input['nic']);
+        if ($nic === null) {
+            $errors['nic'] = 'Enter an NIC as 9 digits and a letter (199012345V) or 12 digits.';
+        }
+
+        $phone = self::normalisePhone($input['phone']);
+        if ($phone === null) {
+            $errors['phone'] = 'Enter a Sri Lankan mobile number, for example 077 123 4567.';
+        }
+
+        $email = trim($input['email']);
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $errors['email'] = 'Enter an email address, or leave this empty to sign in with your mobile number.';
+        }
+
+        $divisionId = (int) $input['gn_division_id'];
+        if ($divisionId < 1 || !$this->divisions->isActive($divisionId)) {
+            $errors['gn_division_id'] = 'Choose the GN division you live in.';
+        }
+
+        // Only ask the database about values that are well-formed: a malformed
+        // NIC has no business generating a "taken" message as well.
+        return $errors + $this->availabilityErrors($nic, $phone, $email);
+    }
 
     /**
      * Both documents are required, one file each.

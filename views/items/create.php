@@ -51,24 +51,7 @@ include __DIR__ . '/../../partials/header.php';
 
 <h1 class="detail__title">List an item</h1>
 
-<ol class="wizard">
-    <?php foreach ($steps as $number => $label): ?>
-        <?php if ($number > 1): ?>
-            <li aria-hidden="true"><hr class="wizard__connector"></li>
-        <?php endif; ?>
-        <?php
-        $isDone    = $number < $step;
-        $isCurrent = $number === $step;
-        ?>
-        <li class="wizard__step">
-            <span class="wizard__marker<?= $isCurrent ? ' wizard__marker--current' : ($isDone ? ' wizard__marker--done' : '') ?>">
-                <?= $isDone ? '✓' : $number ?>
-            </span>
-            <span class="wizard__label<?= $isCurrent ? ' wizard__label--current' : '' ?>"
-                <?= $isCurrent ? 'aria-current="step"' : '' ?>><?= e($label) ?></span>
-        </li>
-    <?php endforeach; ?>
-</ol>
+<?php $wizardSteps = $steps; $wizardStep = $step; include __DIR__ . '/../../partials/wizard-steps.php'; ?>
 
 <form class="form-card" method="post" action="<?= base_url() ?>/items" enctype="multipart/form-data" novalidate>
     <?= csrf_field() ?>
