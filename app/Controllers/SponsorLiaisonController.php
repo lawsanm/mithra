@@ -3,19 +3,17 @@
 declare(strict_types=1);
 
 /**
- * Design preview of the liaison's screens over fixed sample records, so the
- * lists, filters and detail pages can be clicked through. Nothing is read from
- * or written to the database until the Sponsor module is built.
+ * The Sponsor Liaison's screens.
+ *
+ * Sponsors are the working CRUD (Plan §20.4 module 4.2): list, view, onboard,
+ * edit, deactivate and reactivate, read from and written to the database.
+ *
+ * Contributions and aid grants are still a design preview over fixed sample
+ * records, so their lists, filters and detail pages can be clicked through.
+ * Nothing there is read or written until modules 4.3 and 4.4 are built.
  */
 final class SponsorLiaisonController extends Controller
 {
-    private const SPONSORS = [
-    ['id' => 1, 'name' => 'Northwind Co', 'email' => 'contact@northwind.lk', 'points' => '16,000 pts'],
-    ['id' => 2, 'name' => 'ACM Corp',     'email' => 'hello@acm.lk',         'points' => '6,500 pts'],
-    ['id' => 3, 'name' => 'Texa',         'email' => 'team@texa.lk',         'points' => '7,500 pts'],
-    ['id' => 4, 'name' => 'MNM',          'email' => 'contact@mnm.lk',       'points' => '7,000 pts'],
-];
-
     private const PURCHASES = [
     ['id' => 1, 'date' => '15 Jul', 'sponsor' => 'Northwind Co', 'receipt' => 'INV-0312', 'allocation' => 'allocation 70% Sponsor · 30% Aid', 'amount' => 'LKR 10,000'],
     ['id' => 2, 'date' => '05 Jul', 'sponsor' => 'ACM Corp',     'receipt' => 'INV-0306', 'allocation' => 'allocation 50% Sponsor · 50% Aid', 'amount' => 'LKR 7,500'],
@@ -32,29 +30,296 @@ final class SponsorLiaisonController extends Controller
     ['id' => 5, 'initials' => 'AA', 'name' => 'J. Kavipriya',    'meta' => '400 pts · declined 28 Jun · insufficient evidence, may re-apply',   'status' => 'error',   'status_label' => 'Declined',          'action' => 'view'],
 ];
 
+    private const SORTS = ['name', 'recently_added'];
+
+    // ── Sponsors: read ──────────────────────────────────────────────────────
+
+    /**
+     * GET /sponsor-liaison/sponsors — the sponsor list.
+     */
     public function sponsors(): void
     {
         $search = $this->queryValue('q');
-        $sort = $this->queryValue('sort');
-        $status = $this->queryValue('status');
-        $sponsors = array_values(array_filter(self::SPONSORS, static fn (array $row): bool =>
-            str_contains(strtolower($row['name'] . ' ' . $row['email']), strtolower($search))
-            && ($status === '' || $status === 'signed')));
-        if ($sort === 'name') {
-            usort($sponsors, static fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
-        } elseif ($sort === 'recently_added') {
-            $sponsors = array_reverse($sponsors);
-        } else {
-            usort($sponsors, static fn (array $a, array $b): int =>
-                (int) str_replace(',', '', $b['points']) <=> (int) str_replace(',', '', $a['points']));
-        }
-        $this->render('sponsor-liaison/sponsors/index', compact('sponsors', 'search', 'sort', 'status'));
+        $sort   = in_array($this->queryValue('sort'), self::SORTS, true) ? $this->queryValue('sort') : '';
+        $status = array_key_exists($this->queryValue('status'), SponsorService::AGREEMENT_STATUSES)
+            ? $this->queryValue('status')
+            : '';
+        $page   = max(1, (int) $this->queryValue('page'));
+
+        $sponsors = $this->sponsorModel();
+        $rows     = array_map(fn (array $row): array => $this->sponsorRow($row), $sponsors->search($search, $status, $sort, $page));
+        $total    = $sponsors->countSearch($search, $status);
+
+        $this->render('sponsor-liaison/sponsors/index', [
+            'sponsors'          => $rows,
+            'search'            => $search,
+            'sort'              => $sort,
+            'status'            => $status,
+            'agreementStatuses' => SponsorService::AGREEMENT_STATUSES,
+            'page'              => $page,
+            'hasNextPage'       => $page * Sponsor::PER_PAGE < $total,
+        ]);
     }
 
+    /**
+     * GET /sponsor-liaison/sponsors/{id} — one sponsor's profile.
+     */
     public function sponsor(int $id): void
     {
-        $this->record('sponsors/show', self::SPONSORS, $id);
+        $row = $this->sponsorModel()->findProfile($id);
+
+        if ($row === null) {
+            $this->sponsorNotFound();
+
+            return;
+        }
+
+        $this->render('sponsor-liaison/sponsors/show', ['record' => $this->sponsorRow($row) + [
+            'contact_name'       => (string) ($row['contact_name'] ?? ''),
+            'contact_phone'      => (string) ($row['contact_phone'] ?? ''),
+            'agreement_details'  => (string) ($row['agreement_details'] ?? ''),
+            'internal_notes'     => (string) ($row['internal_notes'] ?? ''),
+            'contributions'      => (int) $row['contribution_count'] === 0
+                ? 'None recorded yet'
+                : $row['contribution_count'] . ' · last on ' . date('j M Y', strtotime((string) $row['last_contribution_at'])),
+            'onboarded'          => date('j M Y', strtotime((string) $row['created_at'])),
+        ]]);
     }
+
+    // ── Sponsors: create ────────────────────────────────────────────────────
+
+    /**
+     * GET /sponsor-liaison/sponsors/onboarding.
+     */
+    public function createForm(): void
+    {
+        $this->renderSponsorForm('sponsor-liaison/sponsors/onboarding', [], []);
+    }
+
+    /**
+     * POST /sponsor-liaison/sponsors.
+     */
+    public function store(): void
+    {
+        $validator = $this->sponsorInput();
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $id = $this->sponsorService()->create($validator->values());
+        } catch (ValidationException $exception) {
+            $this->renderSponsorForm('sponsor-liaison/sponsors/onboarding', $exception->errors(), $validator->values());
+
+            return;
+        }
+
+        $this->flash($validator->value('company_name') . ' onboarded as a sponsor.');
+        $this->redirect('/sponsor-liaison/sponsors/' . $id);
+    }
+
+    // ── Sponsors: update ────────────────────────────────────────────────────
+
+    /**
+     * GET /sponsor-liaison/sponsors/{id}/edit.
+     */
+    public function editForm(int $id): void
+    {
+        $row = $this->sponsorModel()->find($id);
+
+        if ($row === null) {
+            $this->sponsorNotFound();
+
+            return;
+        }
+
+        $this->renderSponsorForm('sponsor-liaison/sponsors/edit', [], $this->sponsorAsInput($row), $row);
+    }
+
+    /**
+     * POST /sponsor-liaison/sponsors/{id}.
+     */
+    public function update(int $id): void
+    {
+        $row = $this->sponsorModel()->find($id);
+
+        if ($row === null) {
+            $this->sponsorNotFound();
+
+            return;
+        }
+
+        $validator = $this->sponsorInput();
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $this->sponsorService()->update($id, $validator->values());
+        } catch (ValidationException $exception) {
+            $this->renderSponsorForm('sponsor-liaison/sponsors/edit', $exception->errors(), $validator->values(), $row);
+
+            return;
+        } catch (RecordNotFoundException $exception) {
+            $this->sponsorNotFound();
+
+            return;
+        }
+
+        $this->flash('Sponsor details saved.');
+        $this->redirect('/sponsor-liaison/sponsors/' . $id);
+    }
+
+    // ── Sponsors: deactivate (the soft delete) and reactivate ───────────────
+
+    /**
+     * POST /sponsor-liaison/sponsors/{id}/deactivate.
+     */
+    public function deactivate(int $id): void
+    {
+        $this->changeActive(
+            $id,
+            fn (): string => $this->sponsorService()->deactivate($id),
+            '%s deactivated. Its contribution history stays on record.'
+        );
+    }
+
+    /**
+     * POST /sponsor-liaison/sponsors/{id}/reactivate.
+     */
+    public function reactivate(int $id): void
+    {
+        $this->changeActive(
+            $id,
+            fn (): string => $this->sponsorService()->reactivate($id),
+            '%s is an active sponsor again.'
+        );
+    }
+
+    /**
+     * Deactivate and reactivate differ only in which service method runs; the
+     * outcome handling — flash, redirect, refusal page — is identical.
+     *
+     * @param callable(): string $change returns the sponsor's company name
+     */
+    private function changeActive(int $id, callable $change, string $message): void
+    {
+        try {
+            $this->flash(sprintf($message, $change()));
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        } catch (RecordNotFoundException $exception) {
+            $this->sponsorNotFound();
+
+            return;
+        }
+
+        $this->redirect('/sponsor-liaison/sponsors/' . $id);
+    }
+
+    // ── Sponsors: helpers ───────────────────────────────────────────────────
+
+    private function sponsorInput(): Validator
+    {
+        return (new Validator($_POST))
+            ->required('company_name', 'Company name')
+            ->maxLength('company_name', 'Company name', 150)
+            ->maxLength('contact_person', 'Contact person', 100)
+            ->maxLength('contact_phone', 'Contact phone', 20)
+            ->maxLength('contact_email', 'Contact email', 150)
+            ->required('agreement_status', 'Agreement status')
+            ->inList('agreement_status', 'Agreement status', array_keys(SponsorService::AGREEMENT_STATUSES))
+            ->maxLength('agreement_details', 'Agreement details', 255)
+            ->maxLength('internal_notes', 'Internal notes', 500);
+    }
+
+    /**
+     * @param array<string, string>     $errors
+     * @param array<string, string>     $input
+     * @param array<string, mixed>|null $row the sponsor being edited
+     */
+    private function renderSponsorForm(string $view, array $errors, array $input, ?array $row = null): void
+    {
+        $fields = ['company_name', 'contact_person', 'contact_phone', 'contact_email',
+            'agreement_status', 'agreement_details', 'internal_notes'];
+
+        $this->render($view, [
+            'draft'             => array_map(static fn (string $field): string => (string) ($input[$field] ?? ''), array_combine($fields, $fields)),
+            'errors'            => $errors,
+            'agreementStatuses' => SponsorService::AGREEMENT_STATUSES,
+            'sponsor'           => $row === null ? null : [
+                'id'     => (int) $row['id'],
+                'name'   => (string) $row['company_name'],
+                'active' => (int) $row['active'] === 1,
+            ],
+        ]);
+    }
+
+    /**
+     * A stored sponsor in the form's field names.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, string>
+     */
+    private function sponsorAsInput(array $row): array
+    {
+        return [
+            'company_name'      => (string) $row['company_name'],
+            'contact_person'    => (string) ($row['contact_name'] ?? ''),
+            'contact_phone'     => (string) ($row['contact_phone'] ?? ''),
+            'contact_email'     => (string) ($row['contact_email'] ?? ''),
+            'agreement_status'  => (string) $row['agreement_status'],
+            'agreement_details' => (string) ($row['agreement_details'] ?? ''),
+            'internal_notes'    => (string) ($row['internal_notes'] ?? ''),
+        ];
+    }
+
+    /**
+     * What the list and the profile page both show about a sponsor.
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, mixed>
+     */
+    private function sponsorRow(array $row): array
+    {
+        $active = (int) $row['active'] === 1;
+        $email  = (string) ($row['contact_email'] ?? '');
+        $person = (string) ($row['contact_name'] ?? '');
+
+        return [
+            'id'              => (int) $row['id'],
+            'name'            => (string) $row['company_name'],
+            'email'           => $email,
+            'contact'         => $email !== '' ? $email : ($person !== '' ? $person : 'No contact on file'),
+            'points'        => number_format((int) $row['total_contributed']) . ' pts',
+            'agreement'       => (string) $row['agreement_status'],
+            'agreement_label' => SponsorService::AGREEMENT_STATUSES[(string) $row['agreement_status']] ?? '',
+            'active'          => $active,
+            'badge'           => $active ? 'success' : 'neutral',
+            'badge_label'     => $active ? 'Active' : 'Inactive',
+        ];
+    }
+
+    private function sponsorNotFound(): void
+    {
+        $this->notice(404, 'Sponsor not found', 'Return to the sponsor list to choose another.');
+    }
+
+    private function sponsorModel(): Sponsor
+    {
+        return new Sponsor($this->pdo);
+    }
+
+    private function sponsorService(): SponsorService
+    {
+        return new SponsorService($this->sponsorModel());
+    }
+
+    // ── Contributions and aid grants (design preview) ───────────────────────
 
     public function purchases(): void
     {
