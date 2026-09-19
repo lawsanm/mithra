@@ -3459,6 +3459,62 @@ legend {
     background-color: var(--color-accent);
 }
 
+/* --------------------------------------------------------------------------
+   Signed-out screens — the login card and its link row (Figma "Login" 93:282)
+   -------------------------------------------------------------------------- */
+
+.page--auth {
+    align-items: center;
+    padding-top: 56px;
+    padding-bottom: 80px;
+}
+
+.form-card--auth {
+    width: 460px;
+    gap: 14px;
+}
+
+/* Scoped to the auth card on purpose: the admin settings cards use the same
+   element name with the heading size they already have. */
+.form-card--auth .form-card__title {
+    color: var(--color-text);
+    font-size: var(--text-h2);
+    font-weight: var(--weight-bold);
+}
+
+.btn--block {
+    width: 100%;
+}
+
+.auth-links {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.preview-action--end {
+    align-items: flex-end;
+    text-align: right;
+}
+
+/* A link rendered as a button: same look, but it carries button semantics so a
+   destination that does not exist yet can be disabled rather than dangled. */
+button.link {
+    padding: var(--space-1);
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: var(--text-lede);
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+button.link:disabled {
+    color: var(--color-text-disabled);
+}
+
 @media (max-width: 900px) {
     .two-col--wide-main {
         grid-template-columns: 1fr;
