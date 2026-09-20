@@ -2,3 +2,14 @@
 # Add teammates here as they take ownership of modules, e.g.
 #   /app/Modules/Bookings/  @member3
 *       @lawsanm
+
+# Sponsor and Sponsor Liaison (Plan §20.4 modules 4.2–4.3)
+/app/Controllers/SponsorLiaisonController.php   @AkalvilyA
+/app/Models/Sponsor.php                         @AkalvilyA
+/app/Services/SponsorService.php                @AkalvilyA
+/views/sponsor/                                 @AkalvilyA
+/views/sponsor-liaison/                         @AkalvilyA
+/partials/sponsor-profile-fields.php            @AkalvilyA
+/partials/modal-sponsor-disaster-alert.php      @AkalvilyA
+/tests/sponsors.php                             @AkalvilyA
+/migrations/006_add_sponsor_profiles.sql        @AkalvilyA
