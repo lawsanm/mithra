@@ -83,6 +83,8 @@ for path in paths:
         continue  # The seeded item is owned by another member.
     if path == '/admin/listing-approvals/1' and status == 403:
         continue  # Its division has a moderator, so the Admin may not decide it.
+    if path == '/admin/disputes/1' and status == 404:
+        continue  # The seed has no disputes; a database with one serves it.
     check(status == 200, f'{path}: HTTP {status}')
     if path.endswith('/export'):
         check('Approved' in body and 'Awaiting approval' not in body, 'Grant export must contain only approved records')
@@ -128,9 +130,15 @@ for group in ['verifications', 'listing-approvals', 'cases']:
 use(LIAISON)
 _, first = fetch('/sponsor-liaison/sponsors/1')
 _, second = fetch('/sponsor-liaison/sponsors/2')
-check('Northwind Co' in first and 'ACM Corp' in second and first != second, 'Sponsor record selection failed')
-_, search = fetch('/sponsor-liaison/sponsors?q=Texa')
-check('team@texa.lk' in search and 'contact@northwind.lk' not in search, 'Sponsor search does not filter')
+check('Lanka Hardware' in first and 'Ceylon Fresh Mart' in second and first != second, 'Sponsor record selection failed')
+check(fetch('/sponsor-liaison/sponsors/999999')[0] == 404, 'Unknown sponsor must not display a record')
+check(fetch('/sponsor-liaison/sponsors/999999/edit')[0] == 404, 'Unknown sponsor must not open the edit form')
+_, search = fetch('/sponsor-liaison/sponsors?q=Sunrise')
+check('Sunrise Pharmacy' in search and 'Lanka Hardware' not in search, 'Sponsor search does not filter')
+_, by_name = fetch('/sponsor-liaison/sponsors?sort=name')
+check(by_name.index('Ceylon Fresh Mart') < by_name.index('Lanka Hardware') < by_name.index('Sunrise Pharmacy'), 'Sponsor name sort failed')
+_, edit = fetch('/sponsor-liaison/sponsors/1/edit')
+check('value="Lanka Hardware (Pvt) Ltd"' in edit and 'name="csrf_token"' in edit, 'Sponsor edit form not prefilled')
 _, purchase = fetch('/sponsor-liaison/purchases?q=INV-0306')
 check('INV-0306' in purchase and 'INV-0312' not in purchase, 'Receipt search does not filter')
 _, approved = fetch('/sponsor-liaison/aid-grants?status=approved')
