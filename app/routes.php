@@ -5,6 +5,7 @@ declare(strict_types=1);
 // Arrays call a controller action. Strings display a read-only demo screen.
 return [
     'GET' => [
+        '/login'           => ['AuthController', 'loginForm'],
         '/items'           => ['ItemController', 'index'],
         '/items/browse'    => ['ItemController', 'browse'],
         '/items/create'    => ['ItemController', 'createForm'],
@@ -103,6 +104,8 @@ return [
         '/sponsor/disasters/{id}'  => 'sponsor/disasters/show',
     ],
     'POST' => [
+        '/login'              => ['AuthController', 'login'],
+        '/logout'             => ['AuthController', 'logout'],
         '/items'              => ['ItemController', 'store'],
         '/items/{id}'         => ['ItemController', 'update'],
         '/items/{id}/archive' => ['ItemController', 'archive'],
