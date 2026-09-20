@@ -9,9 +9,44 @@ declare(strict_types=1);
  * @var array $draft             current field values
  * @var array $errors            per-field messages
  * @var array $agreementStatuses value => label
+ * @var array $accounts          sponsor login accounts that may be linked: id, full_name, email
+ * @var array|null $sponsor      the company being edited (id, name, active, linked), null when onboarding
  */
 
+$accounts = $accounts ?? [];
+$sponsor  = $sponsor ?? null;
+
 ?>
+<div class="field">
+    <label class="field__label" for="sponsor-account">Sponsor login account</label>
+    <select
+        class="input"
+        id="sponsor-account"
+        name="user_id"
+        <?= isset($errors['user_id']) ? 'aria-invalid="true"' : '' ?>
+    >
+        <?php if ($sponsor === null): ?>
+            <option value="">Select a sponsor account</option>
+        <?php elseif (!$sponsor['linked']): ?>
+            <option value="">Not linked yet</option>
+        <?php endif; ?>
+        <?php foreach ($accounts as $account): ?>
+            <option value="<?= e((string) $account['id']) ?>"<?= $draft['user_id'] === (string) $account['id'] ? ' selected' : '' ?>>
+                <?= e((string) $account['full_name']) ?><?= $account['email'] !== null ? ' · ' . e((string) $account['email']) : '' ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+    <?php if ($accounts === []): ?>
+        <span class="field__hint">
+            No sponsor account is free. Each company is linked to its own sponsor login, so one must
+            exist before the company can be onboarded.
+        </span>
+    <?php else: ?>
+        <span class="field__hint">Only active sponsor accounts not linked to another company are listed.</span>
+    <?php endif; ?>
+    <?= field_error($errors, 'user_id') ?>
+</div>
+
 <div class="field">
     <label class="field__label" for="company-name">Company name</label>
     <input

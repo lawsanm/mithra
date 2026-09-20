@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 /**
  * The Sponsor Liaison's sponsor CRUD (Plan §20.4 module 4.2): onboard a
- * sponsor company, keep its contact and agreement details current, and
- * deactivate it when the relationship ends.
+ * sponsor company by linking it to an existing sponsor login account, keep
+ * its contact and agreement details current, and deactivate it when the
+ * relationship ends.
  *
  * Deactivating is the delete. Contributions and the point ledger keep pointing
  * at the row — every point must stay traceable to the sponsor that funded it
@@ -34,8 +35,7 @@ final class SponsorService
      */
     public function create(array $input): int
     {
-        $profile = self::profile($input);
-        $this->assertNameFree($profile['company_name']);
+        $profile = $this->validProfile($input, null, 0);
 
         return $this->sponsors->create($profile);
     }
@@ -47,12 +47,63 @@ final class SponsorService
      */
     public function update(int $id, array $input): void
     {
-        $this->existing($id);
+        $sponsor = $this->existing($id);
+        $current = $sponsor['user_id'] === null ? null : (int) $sponsor['user_id'];
 
-        $profile = self::profile($input);
-        $this->assertNameFree($profile['company_name'], $id);
+        $profile = $this->validProfile($input, $current, $id);
 
         $this->sponsors->updateProfile($id, $profile);
+    }
+
+    /**
+     * The profile to store, with the sponsor login account it is linked to.
+     * Every refused field is reported together, one message per field.
+     *
+     * Every new company is linked to an existing sponsor account that no other
+     * company uses. Once linked, a company can move to another available
+     * account but is never left without one. Leaving the choice empty keeps
+     * the current link; only a company onboarded before linking existed may
+     * stay unlinked.
+     *
+     * @param array<string, string> $input
+     *
+     * @return array{user_id: ?int, company_name: string, contact_name: ?string, contact_phone: ?string,
+     *               contact_email: ?string, agreement_status: string,
+     *               agreement_details: ?string, internal_notes: ?string}
+     *
+     * @throws ValidationException
+     */
+    private function validProfile(array $input, ?int $currentUserId, int $sponsorId): array
+    {
+        $errors  = [];
+        $profile = [];
+
+        try {
+            $profile = self::profile($input);
+        } catch (ValidationException $exception) {
+            $errors = $exception->errors();
+        }
+
+        $chosen = (int) ($input['user_id'] ?? 0);
+        $userId = $chosen > 0 ? $chosen : $currentUserId;
+
+        if ($userId === null && $sponsorId === 0) {
+            $errors['user_id'] = 'Choose the sponsor login account for this company.';
+        } elseif ($chosen > 0 && $chosen !== $currentUserId && !$this->sponsors->accountAvailable($chosen, $sponsorId)) {
+            $errors['user_id'] = 'Choose an active sponsor account that is not linked to another company.';
+        }
+
+        $name = trim((string) ($input['company_name'] ?? ''));
+
+        if (!isset($errors['company_name']) && $name !== '' && $this->sponsors->nameTaken($name, $sponsorId)) {
+            $errors['company_name'] = $name . ' is already on file as a sponsor.';
+        }
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+
+        return ['user_id' => $userId] + $profile;
     }
 
     /**
@@ -154,15 +205,5 @@ final class SponsorService
     private function existing(int $id): array
     {
         return $this->sponsors->find($id) ?? throw new RecordNotFoundException('No such sponsor.');
-    }
-
-    /**
-     * @throws ValidationException
-     */
-    private function assertNameFree(string $companyName, int $exceptId = 0): void
-    {
-        if ($this->sponsors->nameTaken($companyName, $exceptId)) {
-            throw ValidationException::field('company_name', $companyName . ' is already on file as a sponsor.');
-        }
     }
 }

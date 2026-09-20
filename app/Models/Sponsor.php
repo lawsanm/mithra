@@ -80,15 +80,53 @@ final class Sponsor extends BaseModel
         return $this->selectOne(
             'SELECT s.id, s.company_name, s.contact_name, s.contact_phone, s.contact_email,
                     s.agreement_status, s.agreement_details, s.internal_notes,
-                    s.total_contributed, s.active, s.created_at,
+                    s.total_contributed, s.active, s.created_at, s.user_id,
+                    u.full_name AS account_name, u.email AS account_email,
                     COUNT(c.id) AS contribution_count,
                     MAX(c.recorded_at) AS last_contribution_at
                FROM sponsors s
+               LEFT JOIN users u ON u.id = s.user_id
                LEFT JOIN sponsor_contributions c ON c.sponsor_id = s.id
               WHERE s.id = :id
               GROUP BY s.id',
             ['id' => $id]
         );
+    }
+
+    /**
+     * Sponsor login accounts a company may be linked to: active accounts with
+     * the sponsor role that no company uses yet, plus the one already linked
+     * to the company being edited.
+     *
+     * @return list<array<string, mixed>> rows: id, full_name, email
+     */
+    public function availableAccounts(int $keepUserId = 0): array
+    {
+        return $this->select(
+            "SELECT u.id, u.full_name, u.email
+               FROM users u
+               JOIN roles r ON r.id = u.role_id AND r.code = 'sponsor'
+               LEFT JOIN sponsors s ON s.user_id = u.id
+              WHERE u.status = 'active' AND (s.id IS NULL OR u.id = :keep)
+              ORDER BY u.full_name, u.id",
+            ['keep' => $keepUserId]
+        );
+    }
+
+    /**
+     * May this account be linked to the given company? It must be an active
+     * sponsor-role account that no other company is linked to.
+     */
+    public function accountAvailable(int $userId, int $exceptSponsorId = 0): bool
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*)
+               FROM users u
+               JOIN roles r ON r.id = u.role_id AND r.code = 'sponsor'
+              WHERE u.id = :user AND u.status = 'active'
+                AND NOT EXISTS (SELECT 1 FROM sponsors s WHERE s.user_id = u.id AND s.id <> :sponsor)",
+            ['user' => $userId, 'sponsor' => $exceptSponsorId]
+        ) === 1;
     }
 
     /**
@@ -104,7 +142,7 @@ final class Sponsor extends BaseModel
     }
 
     /**
-     * @param array{company_name: string, contact_name: ?string, contact_phone: ?string,
+     * @param array{user_id: ?int, company_name: string, contact_name: ?string, contact_phone: ?string,
      *              contact_email: ?string, agreement_status: string,
      *              agreement_details: ?string, internal_notes: ?string} $profile
      */
@@ -112,9 +150,9 @@ final class Sponsor extends BaseModel
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO sponsors
-                    (company_name, contact_name, contact_phone, contact_email,
+                    (user_id, company_name, contact_name, contact_phone, contact_email,
                      agreement_status, agreement_details, internal_notes, active)
-             VALUES (:company_name, :contact_name, :contact_phone, :contact_email,
+             VALUES (:user_id, :company_name, :contact_name, :contact_phone, :contact_email,
                      :agreement_status, :agreement_details, :internal_notes, 1)'
         );
         $statement->execute($profile);
@@ -123,7 +161,7 @@ final class Sponsor extends BaseModel
     }
 
     /**
-     * @param array{company_name: string, contact_name: ?string, contact_phone: ?string,
+     * @param array{user_id: ?int, company_name: string, contact_name: ?string, contact_phone: ?string,
      *              contact_email: ?string, agreement_status: string,
      *              agreement_details: ?string, internal_notes: ?string} $profile
      */
@@ -131,7 +169,7 @@ final class Sponsor extends BaseModel
     {
         $statement = $this->pdo->prepare(
             'UPDATE sponsors
-                SET company_name = :company_name, contact_name = :contact_name,
+                SET user_id = :user_id, company_name = :company_name, contact_name = :contact_name,
                     contact_phone = :contact_phone, contact_email = :contact_email,
                     agreement_status = :agreement_status, agreement_details = :agreement_details,
                     internal_notes = :internal_notes

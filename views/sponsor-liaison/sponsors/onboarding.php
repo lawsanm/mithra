@@ -8,6 +8,7 @@ declare(strict_types=1);
  * @var array $draft             values entered so far
  * @var array $errors            per-field messages from the Validator
  * @var array $agreementStatuses value => label
+ * @var array $accounts          sponsor login accounts that may be linked
  */
 
 $draft             = $draft ?? [];
