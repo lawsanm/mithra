@@ -6,6 +6,7 @@ declare(strict_types=1);
 return [
     'GET' => [
         '/login'           => ['AuthController', 'loginForm'],
+        '/register'        => ['AuthController', 'registerForm'],
         '/items'           => ['ItemController', 'index'],
         '/items/browse'    => ['ItemController', 'browse'],
         '/items/create'    => ['ItemController', 'createForm'],
@@ -67,8 +68,8 @@ return [
         // ── Moderator ──
         '/moderator'                         => 'moderator/dashboard/index',
         '/moderator/dashboard'               => 'moderator/dashboard/index',
-        '/moderator/verifications'           => 'moderator/verifications/index',
-        '/moderator/verifications/{id}'      => 'moderator/verifications/show',
+        '/moderator/verifications'           => ['ModerationController', 'index'],
+        '/moderator/verifications/{id}'      => ['ModerationController', 'show'],
         '/moderator/listing-approvals'       => 'moderator/listing-approvals/index',
         '/moderator/listing-approvals/{id}'  => 'moderator/listing-approvals/show',
         '/moderator/cases'                   => 'moderator/cases/index',
@@ -105,7 +106,10 @@ return [
     ],
     'POST' => [
         '/login'              => ['AuthController', 'login'],
+        '/register'           => ['AuthController', 'register'],
         '/logout'             => ['AuthController', 'logout'],
+        '/moderator/verifications/{id}/approve' => ['ModerationController', 'approve'],
+        '/moderator/verifications/{id}/reject'  => ['ModerationController', 'reject'],
         '/items'              => ['ItemController', 'store'],
         '/items/{id}'         => ['ItemController', 'update'],
         '/items/{id}/archive' => ['ItemController', 'archive'],

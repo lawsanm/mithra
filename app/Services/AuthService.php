@@ -40,7 +40,8 @@ final class AuthService
      *                             because it belongs to the attempt, not to one
      *                             field.
      *
-     * @return array<string, mixed> id, full_name, status and role_code
+     * @return array<string, mixed> id, full_name, status, role_code and the
+     *                              home membership's status
      */
     public function authenticate(string $identifier, string $password): array
     {
@@ -59,7 +60,10 @@ final class AuthService
 
         // The password has now proved this is the account holder, so naming the
         // real obstacle tells them something they are entitled to know.
-        $refusal = $this->refusalFor((string) $account['status']);
+        $refusal = $this->refusalFor(
+            (string) $account['status'],
+            $account['membership_status'] === null ? null : (string) $account['membership_status']
+        );
 
         if ($refusal !== null) {
             throw ValidationException::field('form', $refusal);
@@ -94,9 +98,21 @@ final class AuthService
     /**
      * Why this account may not sign in, or null when it may. Fail closed: an
      * unrecognised status is refused rather than waved through (§8).
+     *
+     * The membership is consulted first because it is the more specific
+     * answer: a rejected applicant and an unreviewed one are both 'pending'
+     * accounts, and telling the first to keep waiting would be false.
+     *
+     * @param string|null $membership the home membership's status, or null for
+     *                                a staff account that holds no division
      */
-    private function refusalFor(string $status): ?string
+    private function refusalFor(string $status, ?string $membership): ?string
     {
+        if ($membership === 'rejected') {
+            return 'Your division moderator could not verify this application. '
+                 . 'Speak to them about what is needed, then register again.';
+        }
+
         return match ($status) {
             'active'    => null,
             'pending'   => 'Your division moderator has not verified this account yet. '

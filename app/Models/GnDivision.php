@@ -98,6 +98,43 @@ final class GnDivision extends BaseModel
         );
     }
 
+    /**
+     * Divisions a newcomer may apply to join — an archived one accepts nobody.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function activeNames(): array
+    {
+        return $this->select(
+            "SELECT id, name, district FROM gn_divisions
+              WHERE status = 'active'
+              ORDER BY district, name"
+        );
+    }
+
+    /** Is this id a division that is currently accepting members? */
+    public function isActive(int $id): bool
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM gn_divisions WHERE id = :id AND status = 'active'",
+            ['id' => $id]
+        ) === 1;
+    }
+
+    /**
+     * The division this moderator is responsible for, or null when they hold
+     * no current appointment.
+     */
+    public function moderatedBy(int $moderatorId): ?int
+    {
+        $id = $this->selectValue(
+            'SELECT id FROM gn_divisions WHERE moderator_id = :id LIMIT 1',
+            ['id' => $moderatorId]
+        );
+
+        return $id === false || $id === null ? null : (int) $id;
+    }
+
     public function countAll(): int
     {
         return (int) $this->selectValue('SELECT COUNT(*) FROM gn_divisions');
