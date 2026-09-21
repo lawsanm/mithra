@@ -9,6 +9,15 @@ if (!defined('APP_BASE')) {
     define('APP_BASE', rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/'));
 }
 
+// The session cookie carries the only proof of who is signing these requests
+// (Rules/CONVENTIONS.md §7.7), so it is kept away from JavaScript, away from
+// cross-site requests, and off plain HTTP wherever TLS is available.
+session_set_cookie_params([
+    'httponly' => true,
+    'samesite' => 'Lax',
+    'secure'   => ($_SERVER['HTTPS'] ?? '') !== '',
+]);
+
 session_start();
 date_default_timezone_set('Asia/Colombo');
 

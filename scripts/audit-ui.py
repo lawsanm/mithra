@@ -2,6 +2,7 @@
 import collections
 import concurrent.futures
 import html.parser
+import http.cookiejar
 import json
 from pathlib import Path
 import re
@@ -45,8 +46,48 @@ def registered(method, url):
     table = posts if method == 'POST' else patterns if method == 'GET' else []
     return any(re.fullmatch(re.escape(p).replace(r'\{id\}', r'[1-9][0-9]*'), path) for p in table)
 
+def sign_in(email, password):
+    """Every screen needs a session (AuthMiddleware), so hold one for the whole run.
+
+    The account is both a moderator and a member of its division, so one
+    session reaches the member screens and the verification queue alike.
+    """
+    urllib.request.install_opener(urllib.request.build_opener(
+        urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())))
+    with urllib.request.urlopen(BASE + '/login', timeout=15) as response:
+        token = re.search(r'name="csrf_token" value="([a-f0-9]+)"',
+                          response.read().decode('utf-8', errors='replace'))
+    if token is None:
+        raise SystemExit('No sign-in form at ' + BASE + '/login. Is the app running?')
+    form = urllib.parse.urlencode(
+        {'csrf_token': token.group(1), 'identifier': email, 'password': password}).encode()
+    with urllib.request.urlopen(BASE + '/login', form, timeout=15) as response:
+        if response.geturl().endswith('/login'):
+            raise SystemExit('Could not sign in as ' + email + '. Is the demo data loaded?')
+
+# Two accounts, because the screens belong to two actors: the demo member every
+# sample record was built around, and the moderator who owns the verification
+# queue. Whoever is signed in is swapped as the audit moves between them.
+MEMBER = ('lawsan@email.com', 'password')
+MODERATOR = ('akalvily@example.lk', 'password')
+signed_in_as = None
+
+def use(account):
+    global signed_in_as
+    if account != signed_in_as:
+        sign_in(*account)
+        signed_in_as = account
+
+def account_for(path):
+    return MODERATOR if path.startswith('/moderator') else MEMBER
+
+def local_path(url):
+    prefix = urllib.parse.urlsplit(BASE).path
+    return urllib.parse.urlsplit(url).path[len(prefix):] or '/'
+
 routes, targets, forms = [], collections.defaultdict(set), []
 for pattern in patterns:
+    use(account_for(pattern))
     url = BASE + pattern.replace('{id}', '1')
     status, body = fetch(url)
     routes.append({'url': url, 'status': status})
@@ -63,8 +104,16 @@ for pattern in patterns:
         if not registered(method, action):
             forms.append({'source': url, 'method': method, 'action': action})
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
-    statuses = list(pool.map(lambda url: (url, fetch(url)[0]), targets))
+# Linked pages are checked in two passes, one per account, because a link
+# into the verification queue is only reachable by the moderator who owns it.
+statuses = []
+for account in (MEMBER, MODERATOR):
+    group = [url for url in targets if account_for(local_path(url)) == account]
+    if not group:
+        continue
+    use(account)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        statuses.extend(pool.map(lambda url: (url, fetch(url)[0]), group))
 broken = [{'url': url, 'status': status, 'sources': sorted(targets[url])}
           for url, status in statuses if status != 200]
 result = {

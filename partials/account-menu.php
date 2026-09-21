@@ -5,7 +5,7 @@ declare(strict_types=1);
 /** Native disclosure keeps account navigation usable without JavaScript. */
 $accountRole = $accountRole ?? 'member';
 $accountInitials = $accountInitials ?? '';
-$memberId = (int) ($_SESSION['user_id'] ?? Config::get('demo_member_id', 4));
+$memberId = (int) ($_SESSION['user_id'] ?? 0);
 $accountLinks = match ($accountRole) {
     'admin' => [
         ['Profile', '/admin/settings/profile'], ['Security', '/admin/settings/security'],
@@ -48,15 +48,10 @@ $accountLinks = match ($accountRole) {
             <?php endforeach; ?>
         </ul>
         <div class="account-menu__footer">
-            <?php if (isset($_SESSION['user_id'])): ?>
-                <form method="post" action="<?= base_url() ?>/logout">
-                    <?= csrf_field() ?>
-                    <button class="account-menu__link account-menu__logout" type="submit">Log out</button>
-                </form>
-            <?php else: ?>
-                <a class="account-menu__link" href="<?= base_url() ?>/login">Log in</a>
-                <p class="account-menu__note">Demo session — these screens show the configured demo member.</p>
-            <?php endif; ?>
+            <form method="post" action="<?= base_url() ?>/logout">
+                <?= csrf_field() ?>
+                <button class="account-menu__link account-menu__logout" type="submit">Log out</button>
+            </form>
         </div>
     </div>
 </details>
