@@ -47,10 +47,12 @@ For an edit, the browser submits a POST. Router first checks the CSRF token. The
 | Admin | Many database-backed read screens; actions such as approvals and settings saves remain pending |
 | Other member, moderator, sponsor and liaison screens | Demonstration templates; many contain sample data |
 | Shared interface | Consistent navigation, account menus, local Inter font, responsive rules and Figma logo/bell assets; browser visual verification remains pending |
-| Identity | A configured demo member, not real login or role-based access enforcement |
+| Identity | A working login and logout against the `users` table; registration, password reset and role-based access enforcement remain pending |
 | Points transfers, booking lifecycle and scheduled jobs | Do not present these as completed end-to-end features |
 
-Seeded accounts have the development password `password`, but there is no login screen to authenticate them yet. Changing the demo member setting is not authentication.
+Seeded accounts have the development password `password`, and `/login` authenticates them by email or mobile number: signing in stores the member id and role in the session and lands each role on its own home screen. Only `active` accounts are admitted; pending, suspended and closed accounts are refused with the reason.
+
+What login does **not** yet do: the other screens are not behind it. With no session, they still render as the configured demo member, exactly as before. Do not present this as enforced access control — an `Auth` middleware in the chain is the next piece of that work.
 
 Unimplemented submissions are marked as previews and disabled. Sponsor liaison search, filters, detail links and approved-grants CSV operate on sample records. See [the UI fix report](UI_FIXES.md) for verification and remaining limits.
 
