@@ -58,7 +58,7 @@ try {
         Start-Process -FilePath $mysql -ArgumentList "--defaults-file=`"$mysqlConfig`"" -WorkingDirectory $XamppRoot -WindowStyle Hidden
     }
 
-    # Wait for MySQL, then initialize only an empty database.
+    # Wait for MySQL, then apply whatever migrations this database has not seen.
     $ready = $false
     for ($attempt = 0; $attempt -lt 15; $attempt++) {
         & $php (Join-Path $PSScriptRoot 'check-database.php') 2>$null
