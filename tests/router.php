@@ -123,7 +123,7 @@ foreach ([['POST', '/wallet', 405], ['GET', '/items/42/archive', 405], ['GET', '
 // A signed-out request is turned away before the router reaches a controller,
 // so no page is rendered and no database connection is opened.
 unset($_SESSION['user_id']);
-foreach (['/', '/dashboard', '/items', '/admin', '/moderator/verifications'] as $path) {
+foreach (['/dashboard', '/items', '/admin', '/moderator/verifications'] as $path) {
     ob_start();
     $router->dispatch('GET', $path);
     $body = (string) ob_get_clean();
@@ -131,13 +131,13 @@ foreach (['/', '/dashboard', '/items', '/admin', '/moderator/verifications'] as 
     $checks++;
 }
 
-// The sign-in screens are the exception, and every other path is not.
+// The home page and the sign-in screens are the exception, and every other path is not.
 $gate = new AuthMiddleware();
-foreach (['/login', '/register', '/logout', '/login/', '/register/'] as $path) {
+foreach (['/', '/login', '/register', '/logout', '/login/', '/register/'] as $path) {
     check($gate->handle($path, null) === null, 'Signed-out visitor must reach ' . $path);
     $checks++;
 }
-foreach (['/', '/dashboard', '/items/42', '/admin', '/wallet', '/loginx', '/register/step-2'] as $path) {
+foreach (['/dashboard', '/items/42', '/admin', '/wallet', '/loginx', '/register/step-2'] as $path) {
     check($gate->handle($path, null) === '/login', 'Path must require a session: ' . $path);
     $checks++;
 }
