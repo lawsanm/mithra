@@ -12,8 +12,8 @@ $verifiedMembers ??= [];
 
 ?>
 <dialog aria-labelledby="modal-create-division-title" class="modal modal--sm" id="modal-create-division">
-    <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    <form action="<?= base_url() ?>/admin/divisions" method="POST">
+        <?= csrf_field() ?>
         
         <div class="modal__head">
             <h2 class="modal__title" id="modal-create-division-title">Create new division</h2>
@@ -25,22 +25,22 @@ $verifiedMembers ??= [];
         <div class="field-row">
             <div class="field" style="flex:2;">
                 <label class="field__label" for="division_name">Division name</label>
-                <input class="input" id="division_name" name="name" type="text" placeholder="e.g. Wellawatte South" required disabled>
+                <input class="input" id="division_name" name="name" type="text" placeholder="e.g. Wellawatte South" required>
             </div>
             <div class="field" style="flex:1;">
                 <label class="field__label" for="gn_code">GN code</label>
-                <input class="input" id="gn_code" name="gn_code" type="text" placeholder="e.g. 545B" disabled>
+                <input class="input" id="gn_code" name="gn_code" type="text" placeholder="e.g. 545B">
             </div>
         </div>
 
         <div class="field">
             <label class="field__label" for="district">District</label>
-            <input class="input" id="district" name="district" type="text" placeholder="Colombo" disabled>
+            <input class="input" id="district" name="district" type="text" placeholder="Colombo" required>
         </div>
 
         <div class="field">
             <label class="field__label" for="seed_moderator">Seed moderator (optional)</label>
-            <select class="input" id="seed_moderator" name="seed_moderator_id" disabled>
+            <select class="input" id="seed_moderator" name="seed_moderator_id">
                 <option value="">Select a verified member...</option>
                 <?php foreach ($verifiedMembers as $m): ?>
                     <option value="<?= e((string) $m['id']) ?>"><?= e($m['full_name']) ?></option>
@@ -54,7 +54,7 @@ $verifiedMembers ??= [];
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--primary" type="submit" disabled>Create division</button>
+            <button class="btn btn--primary" type="submit">Create division</button>
         </div>
-    </div>
+    </form>
 </dialog>
