@@ -33,7 +33,7 @@ final class AuthController extends Controller
     public function loginForm(): void
     {
         if ($this->signedIn()) {
-            $this->redirect($this->homeFor((string) ($_SESSION['role'] ?? 'member')));
+            $this->redirect(home_for((string) ($_SESSION['role'] ?? 'member')));
 
             return;
         }
@@ -71,7 +71,7 @@ final class AuthController extends Controller
         }
 
         $this->startSession($account);
-        $this->redirect($this->homeFor((string) $account['role_code']));
+        $this->redirect(home_for((string) $account['role_code']));
     }
 
     /**
@@ -80,7 +80,7 @@ final class AuthController extends Controller
     public function registerForm(): void
     {
         if ($this->signedIn()) {
-            $this->redirect($this->homeFor((string) ($_SESSION['role'] ?? 'member')));
+            $this->redirect(home_for((string) ($_SESSION['role'] ?? 'member')));
 
             return;
         }
@@ -369,19 +369,6 @@ final class AuthController extends Controller
         );
     }
 
-    /**
-     * Where each role lands after signing in.
-     */
-    private function homeFor(string $role): string
-    {
-        return match ($role) {
-            'admin'           => '/admin',
-            'moderator'       => '/moderator',
-            'sponsor_liaison' => '/sponsor-liaison',
-            'sponsor'         => '/sponsor',
-            default           => '/dashboard',
-        };
-    }
 
     /**
      * @param array<string, string> $errors
