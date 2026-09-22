@@ -31,7 +31,7 @@ $sampleRows = [
         'meta'         => 'R. Fernando  ·  declared 12,000 LKR  ·  proof: receipt  ·  1 day ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/listing-approvals/cordless-drill',
+        'href'         => base_url() . '/moderator/listing-approvals/2',
     ],
     [
         'state'        => 'pending',
@@ -39,7 +39,7 @@ $sampleRows = [
         'meta'         => 'N. Silva  ·  declared 8,500 LKR  ·  proof: photo  ·  2 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/listing-approvals/folding-table',
+        'href'         => base_url() . '/moderator/listing-approvals/3',
     ],
     [
         'state'        => 'pending',
@@ -47,7 +47,7 @@ $sampleRows = [
         'meta'         => 'K. Bandara  ·  declared 22,000 LKR  ·  inspection requested  ·  2 days ago',
         'status'       => 'info',
         'status_label' => 'Inspection requested',
-        'href'         => base_url() . '/moderator/listing-approvals/pressure-washer-kb',
+        'href'         => base_url() . '/moderator/listing-approvals/4',
     ],
     [
         'state'        => 'pending',
@@ -55,7 +55,7 @@ $sampleRows = [
         'meta'         => 'P. Mendis  ·  declared 15,000 LKR  ·  proof: receipt  ·  3 days ago',
         'status'       => 'warning',
         'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/listing-approvals/sewing-machine',
+        'href'         => base_url() . '/moderator/listing-approvals/5',
     ],
     [
         'state'        => 'approved',
@@ -63,7 +63,7 @@ $sampleRows = [
         'meta'         => 'T.H.K. Madushan  ·  declared 32,000 LKR  ·  approved 15 Jul',
         'status'       => 'success',
         'status_label' => 'Approved',
-        'href'         => base_url() . '/moderator/listing-approvals/pressure-washer',
+        'href'         => base_url() . '/moderator/listing-approvals/1',
     ],
     [
         'state'        => 'rejected',
@@ -71,7 +71,7 @@ $sampleRows = [
         'meta'         => 'S. Perera  ·  fuel-powered items are not lendable  ·  rejected 12 Jul',
         'status'       => 'error',
         'status_label' => 'Rejected',
-        'href'         => base_url() . '/moderator/listing-approvals/petrol-generator',
+        'href'         => base_url() . '/moderator/listing-approvals/6',
     ],
 ];
 

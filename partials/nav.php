@@ -29,12 +29,13 @@ $navItems = [
 ?>
 <nav class="nav" aria-label="Main">
     <a class="nav__brand" href="<?= base_url() ?>/dashboard">
-        <img class="nav__logo" src="<?= base_url() ?>/img/logo-deep-slate.svg" alt="">
+        <img width="21" height="28" class="nav__logo" src="<?= base_url() ?>/img/logo-mark.svg" alt="">
         <span class="nav__wordmark">Mithra</span>
         <span class="nav__tagline">Lend · Share · Care</span>
     </a>
 
-    <ul class="nav__items">
+    <button class="nav__toggle btn btn--ghost" type="button" data-nav-toggle aria-controls="primary-links" aria-expanded="false" hidden>Menu</button>
+    <ul class="nav__items" id="primary-links">
         <?php foreach ($navItems as $key => $navItem): ?>
             <li>
                 <a
@@ -50,9 +51,9 @@ $navItems = [
 
     <div class="nav__actions">
         <a class="nav__bell" href="<?= base_url() ?>/notifications" aria-label="Notifications">
-            <svg class="icon" aria-hidden="true"><use href="#icon-bell"></use></svg>
+            <img class="nav__bell-icon" width="24" height="24" src="<?= base_url() ?>/img/nav-bell.svg" alt="">
         </a>
         <a class="meta-pill" href="<?= base_url() ?>/wallet"><?= e($currentMember['points_balance']) ?></a>
-        <a class="avatar" href="<?= base_url() ?>/profile"><?= e($currentMember['initials']) ?></a>
+        <?php $accountRole = 'member'; $accountInitials = $currentMember['initials']; include __DIR__ . '/account-menu.php'; ?>
     </div>
 </nav>

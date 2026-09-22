@@ -13,6 +13,26 @@ final class Wallet extends BaseModel
     protected string $table = 'member_wallets';
     protected string $columns = 'user_id, balance, bond_locked';
 
+    /**
+     * Open an empty wallet for a member who has just been verified. Doing
+     * nothing when the row already exists keeps approval idempotent — the
+     * balance of an existing wallet is never touched here (§8).
+     *
+     * The 200-point welcome bonus that belongs on this moment (Proposal §16.4)
+     * is deliberately not credited: points may only move as an append-only
+     * ledger entry, which is the Points module's work, not Identity's.
+     */
+    public function openFor(int $memberId): void
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO member_wallets (user_id, balance, bond_locked)
+             VALUES (:id, 0, 0)
+             ON DUPLICATE KEY UPDATE user_id = user_id'
+        );
+
+        $statement->execute(['id' => $memberId]);
+    }
+
     public function balance(int $memberId): int
     {
         return (int) $this->selectValue(

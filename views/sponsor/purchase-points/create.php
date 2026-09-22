@@ -55,8 +55,9 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
     </p>
 </header>
 
-<form class="stack" method="post" action="/sponsor/purchase-points">
-    <?= csrf_field() ?>
+<div class="stack" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="stat-grid">
         <?php foreach ($packages as $package): ?>
@@ -67,7 +68,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
                     name="package"
                     value="<?= e($package['value']) ?>"
                     <?= !empty($package['selected']) ? 'checked' : '' ?>
-                >
+                 disabled>
                 <span class="choice__body">
                     <span class="stat-card__label"><?= e($package['label']) ?></span>
                     <strong class="stat-card__value"><?= e($package['price']) ?></strong>
@@ -107,7 +108,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
                         name="allocation"
                         value="<?= e($allocation['value']) ?>"
                         <?= !empty($allocation['selected']) ? 'checked' : '' ?>
-                    >
+                     disabled>
                     <?= e($allocation['label']) ?>
                 </label>
             <?php endforeach; ?>
@@ -117,9 +118,9 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
     <div class="notice notice--info notice--full"><?= e($liaisonNote) ?></div>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="/sponsor/dashboard">Cancel</a>
-        <button class="btn btn--primary" type="submit">Send purchase request</button>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor/dashboard">Cancel</a>
+        <button class="btn btn--primary" type="submit" disabled>Send purchase request</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

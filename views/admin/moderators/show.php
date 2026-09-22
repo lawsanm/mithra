@@ -157,12 +157,13 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 
     <div id="removal-section" style="display: none;">
-        <form method="post" action="<?= base_url() ?>/admin/moderators/<?= e(rawurlencode($moderator['name'])) ?>/remove">
-            <?= csrf_field() ?>
+        <div data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+            
 
             <div class="field" style="margin-bottom: var(--space-4);">
                 <label class="field__label" for="removal-reason-type">Reason</label>
-                <select class="input" id="removal-reason-type" name="reason_type" required>
+                <select class="input" id="removal-reason-type" name="reason_type" required disabled>
                     <option value="">Select reason…</option>
                     <option value="good_standing">Good standing</option>
                     <option value="for_cause">Removed for cause</option>
@@ -172,11 +173,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
             <div class="field" style="margin-bottom: var(--space-4);">
                 <label class="field__label" for="removal-reason">Details</label>
-                <textarea class="input" id="removal-reason" name="reason" rows="3" required placeholder="Provide the reason for removal…"></textarea>
+                <textarea class="input" id="removal-reason" name="reason" rows="3" required placeholder="Provide the reason for removal…" disabled></textarea>
             </div>
 
-            <button class="btn btn--danger" type="submit">Remove moderator</button>
-        </form>
+            <button class="btn btn--danger" type="submit" disabled>Remove moderator</button>
+        </div>
     </div>
 
     <button class="btn btn--ghost" type="button" id="toggle-removal">Remove moderator…</button>

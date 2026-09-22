@@ -34,17 +34,18 @@ include __DIR__ . '/../../partials/header.php';
     and borrow locally.
 </p>
 
-<form class="panel panel--wide" method="post" action="<?= base_url() ?>/community/temporary" enctype="multipart/form-data">
-    <?= csrf_field() ?>
+<div class="panel panel--wide" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="field">
         <label class="field__label" for="home-community">Home community</label>
-        <input class="input" type="text" id="home-community" value="<?= e($homeCommunity) ?>" readonly>
+        <input class="input" type="text" id="home-community" value="<?= e($homeCommunity) ?>" readonly disabled>
     </div>
 
     <div class="field">
         <label class="field__label" for="temporary-community">Temporary community</label>
-        <select class="input" id="temporary-community" name="temporary_community" required>
+        <select class="input" id="temporary-community" name="temporary_community" required disabled>
             <?php foreach ($divisions as $division): ?>
                 <option value="<?= e($division) ?>"<?= $draft['temporary_community'] === $division ? ' selected' : '' ?>>
                     <?= e($division) ?>
@@ -61,7 +62,7 @@ include __DIR__ . '/../../partials/header.php';
     <label class="upload-drop">
         <span class="upload-drop__glyph" aria-hidden="true">＋</span>
         <span>Upload rental agreement, employer letter, or similar</span>
-        <input class="visually-hidden" type="file" name="proof" accept="image/*,application/pdf" required>
+        <input class="visually-hidden" type="file" name="proof" accept="image/*,application/pdf" required disabled>
     </label>
 
     <p class="notice notice--info">
@@ -72,9 +73,9 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/settings">Cancel</a>
-        <button class="btn btn--primary" type="submit">Submit for verification</button>
+        <button class="btn btn--primary" type="submit" disabled>Submit for verification</button>
     </div>
-</form>
+</div>
 
 <section class="panel panel--wide">
     <h2 class="panel__title">Already staying there permanently?</h2>

@@ -35,15 +35,16 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link" href="/sponsor-liaison/sponsors">Sponsors</a>
+    <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/sponsors">Sponsors</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page">New sponsor</span>
 </nav>
 
 <h1 class="detail__title">Onboard a sponsor</h1>
 
-<form class="form-card" method="post" action="/sponsor-liaison/sponsors">
-    <?= csrf_field() ?>
+<div class="form-card" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+    
 
     <div class="field">
         <label class="field__label" for="company-name">Company name</label>
@@ -55,7 +56,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
             value="<?= e($draft['company_name']) ?>"
             placeholder="Northwind Co"
             required
-        >
+         disabled>
         <?php if (isset($errors['company_name'])): ?>
             <span class="field__error"><?= e($errors['company_name']) ?></span>
         <?php endif; ?>
@@ -71,7 +72,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
             value="<?= e($draft['contact_person']) ?>"
             placeholder="T.H.K. Madushan"
             required
-        >
+         disabled>
         <?php if (isset($errors['contact_person'])): ?>
             <span class="field__error"><?= e($errors['contact_person']) ?></span>
         <?php endif; ?>
@@ -87,7 +88,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
             value="<?= e($draft['contact_email']) ?>"
             placeholder="contact@northwind.lk"
             required
-        >
+         disabled>
         <?php if (isset($errors['contact_email'])): ?>
             <span class="field__error"><?= e($errors['contact_email']) ?></span>
         <?php endif; ?>
@@ -95,7 +96,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
     <div class="field">
         <label class="field__label" for="agreement-status">Agreement status</label>
-        <select class="input" id="agreement-status" name="agreement_status" required>
+        <select class="input" id="agreement-status" name="agreement_status" required disabled>
             <option value="">Select status</option>
             <?php foreach ($agreementStatuses as $value => $label): ?>
                 <option value="<?= e($value) ?>"<?= $draft['agreement_status'] === $value ? ' selected' : '' ?>>
@@ -117,7 +118,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
             name="agreement_details"
             value="<?= e($draft['agreement_details']) ?>"
             placeholder="CSR agreement ref, contribution schedule"
-        >
+         disabled>
         <?php if (isset($errors['agreement_details'])): ?>
             <span class="field__error"><?= e($errors['agreement_details']) ?></span>
         <?php endif; ?>
@@ -132,16 +133,16 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
             name="internal_notes"
             value="<?= e($draft['internal_notes']) ?>"
             placeholder="Notes about this sponsor (visible to liaisons only)"
-        >
+         disabled>
         <?php if (isset($errors['internal_notes'])): ?>
             <span class="field__error"><?= e($errors['internal_notes']) ?></span>
         <?php endif; ?>
     </div>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="/sponsor-liaison/sponsors">Cancel</a>
-        <button class="btn btn--primary" type="submit">Connect sponsor</button>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/sponsors">Cancel</a>
+        <button class="btn btn--primary" type="submit" disabled>Connect sponsor</button>
     </div>
-</form>
+</div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

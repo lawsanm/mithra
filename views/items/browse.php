@@ -9,102 +9,35 @@ declare(strict_types=1);
  * @var string $query       current search term
  * @var string $resultCount subtitle line under the page title
  * @var array  $categories  filter pills: label, slug, active
- * @var array  $results     item cards: title, rate, owner_meta, status,
+ * @var array  $results     item cards: title, rate, photo, owner_meta, status,
  *                          status_glyph, status_label, href
+ * @var int    $page        1-based page number
+ * @var bool   $hasNextPage
+ * @var array|null $flash
  */
 
-// Sample view data — replaced by the controller once ItemController lands.
-$query ??= '';
+$query       = $query ?? '';
+$categories  = $categories ?? [];
+$results     = $results ?? [];
+$resultCount = $resultCount ?? '';
+$page        = $page ?? 1;
+$hasNextPage = $hasNextPage ?? false;
 
-$categories ??= [
-    ['label' => 'All',         'slug' => '',            'active' => true],
-    ['label' => 'Tools',       'slug' => 'tools'],
-    ['label' => 'Electronics', 'slug' => 'electronics'],
-    ['label' => 'Kitchen',     'slug' => 'kitchen'],
-    ['label' => 'Outdoor',     'slug' => 'outdoor'],
-    ['label' => 'Books',       'slug' => 'books'],
-    ['label' => 'Baby & Kids', 'slug' => 'baby-kids'],
-    ['label' => 'Events',      'slug' => 'events'],
-];
+$activeSlug = '';
 
-$results ??= [
-    [
-        'title'        => 'Bosch Cordless Drill',
-        'rate'         => '15 pts / day',
-        'owner_meta'   => 'T.H.K. Madushan  ·  Trust 96  ·  0.4 km',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'Available',
-        'href'         => base_url() . '/items/1',
-    ],
-    [
-        'title'        => 'Camping Tent (4-person)',
-        'rate'         => '18 pts / day',
-        'owner_meta'   => 'J. Kavipriya  ·  Trust 97  ·  1.1 km',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'Available',
-        'href'         => base_url() . '/items/2',
-    ],
-    [
-        'title'        => 'Stand Mixer',
-        'rate'         => '12 pts / day',
-        'owner_meta'   => 'A. Akalvily  ·  Trust 94  ·  0.8 km',
-        'status'       => 'warning',
-        'status_glyph' => '!',
-        'status_label' => 'Back on 19 Jul',
-        'href'         => base_url() . '/items/3',
-    ],
-    [
-        'title'        => 'Projector (Full HD)',
-        'rate'         => '25 pts / day',
-        'owner_meta'   => 'A. Akalvily  ·  Trust 95  ·  1.6 km',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'Available',
-        'href'         => base_url() . '/items/4',
-    ],
-    [
-        'title'        => 'Extension Ladder',
-        'rate'         => '8 pts / day',
-        'owner_meta'   => 'J. Kavipriya  ·  Trust 90  ·  0.3 km',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'Available',
-        'href'         => base_url() . '/items/5',
-    ],
-    [
-        'title'        => 'Baby Stroller',
-        'rate'         => '10 pts / day',
-        'owner_meta'   => 'J. Kavipriya  ·  Trust 98  ·  2.0 km',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'Available',
-        'href'         => base_url() . '/items/6',
-    ],
-    [
-        'title'        => 'Sewing Machine',
-        'rate'         => '9 pts / day',
-        'owner_meta'   => 'T.H.K. Madushan  ·  Trust 88  ·  1.2 km',
-        'status'       => 'warning',
-        'status_glyph' => '!',
-        'status_label' => 'Back on 21 Jul',
-        'href'         => base_url() . '/items/7',
-    ],
-    [
-        'title'        => 'Folding Tables ×2',
-        'rate'         => '6 pts / day',
-        'owner_meta'   => 'A. Akalvily  ·  Trust 96  ·  0.9 km',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'Available',
-        'href'         => base_url() . '/items/8',
-    ],
-];
+foreach ($categories as $category) {
+    if (!empty($category['active'])) {
+        $activeSlug = (string) $category['slug'];
+    }
+}
 
-$resultCount ??= $results === []
-    ? '0 results for “' . $query . '” in Kollupitiya'
-    : '46 items available in Kollupitiya and nearby GN divisions';
+$pageQuery = static function (int $target) use ($query, $activeSlug): string {
+    return base_url() . '/items/browse?' . http_build_query(array_filter([
+        'q'        => $query,
+        'category' => $activeSlug,
+        'page'     => $target > 1 ? $target : '',
+    ]));
+};
 
 $pageTitle = 'Browse items';
 $navActive = 'browse';
@@ -118,6 +51,8 @@ include __DIR__ . '/../../partials/header.php';
     <p class="page-intro__meta"><?= e($resultCount) ?></p>
 </header>
 
+<?php include __DIR__ . '/../../partials/flash.php'; ?>
+
 <?php // Search is a read-only GET: no CSRF token, so it never lands in the URL. ?>
 <form class="search-bar" method="get" action="<?= base_url() ?>/items/browse" role="search">
     <label class="visually-hidden" for="item-search">Search items</label>
@@ -129,6 +64,7 @@ include __DIR__ . '/../../partials/header.php';
         value="<?= e($query) ?>"
         placeholder="Search drills, tents, cookers…"
     >
+    <input type="hidden" name="category" value="<?= e($activeSlug) ?>">
     <button class="btn btn--primary" type="submit">Search</button>
 </form>
 
@@ -149,30 +85,54 @@ include __DIR__ . '/../../partials/header.php';
         <span class="empty-state__icon">
             <svg class="icon icon--lg" aria-hidden="true"><use href="#icon-search"></use></svg>
         </span>
-        <p class="empty-state__title">No items match “<?= e($query) ?>”</p>
-        <p class="empty-state__body">
-            Try a broader keyword, another category, or widen your search to nearby GN
-            divisions. You can also ask the community to list one.
-        </p>
-        <a class="btn btn--primary" href="<?= base_url() ?>/items/browse">Clear filters</a>
+        <?php if ($query === ''): ?>
+            <p class="empty-state__title">Nothing listed here yet</p>
+            <p class="empty-state__body">
+                No approved listings in your community right now. Be the first — list something
+                you rarely use and your neighbours can borrow it.
+            </p>
+            <a class="btn btn--primary" href="<?= base_url() ?>/items/create">List an item</a>
+        <?php else: ?>
+            <p class="empty-state__title">No items match “<?= e($query) ?>”</p>
+            <p class="empty-state__body">
+                Try a broader keyword or another category. You can also ask the community to
+                list one.
+            </p>
+            <a class="btn btn--primary" href="<?= base_url() ?>/items/browse">Clear filters</a>
+        <?php endif; ?>
     </div>
 <?php else: ?>
     <ul class="card-grid">
-        <?php foreach ($results as $item): ?>
+        <?php foreach ($results as $card): ?>
             <li class="item-card">
-                <span class="thumb thumb--card">Photo</span>
+                <?php if ($card['photo'] !== null): ?>
+                    <img class="thumb thumb--card thumb__img" src="<?= e($card['photo']) ?>" alt="">
+                <?php else: ?>
+                    <span class="thumb thumb--card">No photo</span>
+                <?php endif; ?>
                 <div class="item-card__body">
-                    <a class="item-card__title" href="<?= e($item['href']) ?>"><?= e($item['title']) ?></a>
-                    <span class="item-card__rate"><?= e($item['rate']) ?></span>
-                    <span class="item-card__meta"><?= e($item['owner_meta']) ?></span>
-                    <span class="badge badge--<?= e($item['status']) ?>">
-                        <span aria-hidden="true"><?= e($item['status_glyph']) ?></span>
-                        <?= e($item['status_label']) ?>
+                    <a class="item-card__title" href="<?= e($card['href']) ?>"><?= e($card['title']) ?></a>
+                    <span class="item-card__rate"><?= e($card['rate']) ?></span>
+                    <span class="item-card__meta"><?= e($card['owner_meta']) ?></span>
+                    <span class="badge badge--<?= e($card['status']) ?>">
+                        <span aria-hidden="true"><?= e($card['status_glyph']) ?></span>
+                        <?= e($card['status_label']) ?>
                     </span>
                 </div>
             </li>
         <?php endforeach; ?>
     </ul>
+
+    <?php if ($page > 1 || $hasNextPage): ?>
+        <div class="actions">
+            <?php if ($page > 1): ?>
+                <a class="btn btn--ghost" href="<?= e($pageQuery($page - 1)) ?>">Previous</a>
+            <?php endif; ?>
+            <?php if ($hasNextPage): ?>
+                <a class="btn btn--ghost" href="<?= e($pageQuery($page + 1)) ?>">Next</a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>
 
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

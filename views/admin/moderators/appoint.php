@@ -102,12 +102,12 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <!-- Step indicator -->
 <div class="step-indicator" aria-label="Appointment steps">
-    <div class="step-indicator__step step-indicator__step--active" data-step="1">
+    <div class="step-indicator__step<?= $currentStep === 1 ? ' step-indicator__step--active' : ' step-indicator__step--complete' ?>" data-step="1">
         <span class="step-indicator__number">1</span>
         <span class="step-indicator__label">Select member</span>
     </div>
     <div class="step-indicator__connector"></div>
-    <div class="step-indicator__step" data-step="2">
+    <div class="step-indicator__step<?= $currentStep === 2 ? ' step-indicator__step--active' : '' ?>" data-step="2">
         <span class="step-indicator__number">2</span>
         <span class="step-indicator__label">Review appointment</span>
     </div>
@@ -119,16 +119,17 @@ include __DIR__ . '/../../../partials/header-admin.php';
 </div>
 
 <!-- ── Step 1: Select member ── -->
-<div class="step-content" id="step-1">
+<div class="step-content" id="step-1" <?= $currentStep === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
         Select a member from the eligibility pool below. Members are sorted by trust score — the highest-scoring member is recommended.
     </div>
 
     <div class="field" style="margin-bottom: var(--space-5);">
         <label class="label" for="member-search">Search members</label>
-        <input class="input" type="search" id="member-search" placeholder="Search by name...">
+        <input class="input" type="search" id="member-search" data-filter-list="candidate-list" placeholder="Search by name...">
     </div>
 
+    <?php if ($candidates === []): ?><p class="notice notice--info">No eligible candidates in this division.</p><?php endif; ?>
     <ul class="row-list" id="candidate-list">
         <?php foreach ($candidates as $i => $candidate): ?>
             <li class="list-row<?= $candidate['recommended'] ? ' list-row--highlighted' : '' ?>" data-name="<?= e(strtolower($candidate['name'])) ?>">
@@ -149,32 +150,24 @@ include __DIR__ . '/../../../partials/header-admin.php';
                         <span class="pill" style="<?= $candidate['gn_endorsed'] ? 'background-color: var(--color-success-tint); color: var(--color-success-text); border-color: var(--color-success-tint);' : '' ?>">GN endorsed: <?= $candidate['gn_endorsed'] ? '✓' : '✕' ?></span>
                     </div>
                 </div>
-                <button class="btn btn--ghost js-select-member"
-                        type="button"
-                        data-initials="<?= e($candidate['initials']) ?>"
-                        data-name="<?= e($candidate['name']) ?>"
-                        data-trust="<?= e((string) $candidate['trust_score']) ?>"
-                        data-since="<?= e($candidate['member_since']) ?>"
-                        data-division="<?= e($division['name']) ?>"
-                        data-gn="<?= $candidate['gn_endorsed'] ? '1' : '0' ?>"
-                >Select this member</button>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>?member=<?= e((string) $candidate['id']) ?>">Select this member</a>
             </li>
         <?php endforeach; ?>
     </ul>
 </div>
 
 <!-- ── Step 2: Review appointment ── -->
-<div class="step-content" id="step-2" style="display: none;">
+<div class="step-content" id="step-2" <?= $currentStep === 2 ? '' : 'hidden' ?>>
     <div class="two-col">
         <div class="form-card" style="width: 100%;">
             <h2 class="form-card__legend">Selected member</h2>
 
             <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5);">
-                <span class="avatar avatar--lg" id="review-initials"></span>
+                <span class="avatar avatar--lg" id="review-initials"><?= e((string) ($selected['initials'] ?? '')) ?></span>
                 <div>
-                    <strong id="review-name" style="font-size: var(--text-lede);"></strong>
+                    <strong id="review-name" style="font-size: var(--text-lede);"><?= e((string) ($selected['name'] ?? '')) ?></strong>
                     <p class="list-row__meta" style="margin: 0;">
-                        <span id="review-division"></span> · Trust score <span id="review-trust"></span> · Member since <span id="review-since"></span>
+                        <span id="review-division"><?= e($division['name']) ?></span> · Trust score <span id="review-trust"><?= e((string) ($selected['trust_score'] ?? '')) ?></span> · Member since <span id="review-since"><?= e((string) ($selected['member_since'] ?? '')) ?></span>
                     </p>
                 </div>
             </div>
@@ -183,19 +176,19 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
             <div class="line-item">
                 <span class="line-item__label">✓ Verified resident</span>
-                <span class="badge badge--success">Passed</span>
+                <span class="badge badge--neutral">To verify</span>
             </div>
             <div class="line-item">
                 <span class="line-item__label">✓ Platform capable</span>
-                <span class="badge badge--success">Passed</span>
+                <span class="badge badge--neutral">To verify</span>
             </div>
             <div class="line-item">
                 <span class="line-item__label">✓ No conflict of interest</span>
-                <span class="badge badge--success">Passed</span>
+                <span class="badge badge--neutral">To verify</span>
             </div>
             <div class="line-item" id="review-gn-row">
                 <span class="line-item__label" id="review-gn-label">GN Officer endorsement</span>
-                <span class="badge" id="review-gn-badge"></span>
+                <span class="badge" id="review-gn-badge">To verify</span>
             </div>
         </div>
 
@@ -227,13 +220,12 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 
     <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
-        <button class="btn btn--ghost" type="button" id="btn-back-1">Back to selection</button>
-        <form method="post" action="<?= base_url() ?>/admin/moderators/appoint" style="display:inline;">
-            <?= csrf_field() ?>
-            <input type="hidden" name="division_id" value="<?= e((string) $division['id']) ?>">
-            <input type="hidden" name="member_initials" id="appoint-member-id" value="">
-            <button class="btn btn--primary" type="button" id="btn-confirm-appointment">Confirm and start objection window</button>
-        </form>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Back to selection</a>
+        <div style="display:inline;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+
+            <button class="btn btn--primary" type="button" id="btn-confirm-appointment" disabled>Confirm and start objection window</button>
+        </div>
     </div>
 </div>
 
@@ -278,14 +270,16 @@ include __DIR__ . '/../../../partials/header-admin.php';
                             <span class="list-row__meta"><?= e($obj['reason']) ?></span>
                             <span class="list-row__meta"><?= e($obj['date']) ?></span>
                         </div>
-                        <form method="post" action="<?= base_url() ?>/admin/moderators/objections/dismiss" style="display:inline;">
-                            <?= csrf_field() ?>
-                            <button class="btn btn--ghost" type="submit">Dismiss</button>
-                        </form>
-                        <form method="post" action="<?= base_url() ?>/admin/moderators/objections/uphold" style="display:inline;">
-                            <?= csrf_field() ?>
-                            <button class="btn btn--danger" type="submit">Uphold</button>
-                        </form>
+                        <div style="display:inline;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                            
+                            <button class="btn btn--ghost" type="submit" disabled>Dismiss</button>
+                        </div>
+                        <div style="display:inline;" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+                            
+                            <button class="btn btn--danger" type="submit" disabled>Uphold</button>
+                        </div>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -297,73 +291,6 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 </div>
 
-<script>
-(function () {
-    var steps = document.querySelectorAll('.step-content');
-    var indicators = document.querySelectorAll('.step-indicator__step');
 
-    function showStep(n) {
-        steps.forEach(function (el) { el.style.display = 'none'; });
-        var target = document.getElementById('step-' + n);
-        if (target) target.style.display = '';
 
-        indicators.forEach(function (el) {
-            var s = parseInt(el.getAttribute('data-step'), 10);
-            el.classList.remove('step-indicator__step--active', 'step-indicator__step--complete');
-            if (s === n) el.classList.add('step-indicator__step--active');
-            if (s < n) el.classList.add('step-indicator__step--complete');
-        });
-    }
-
-    // Select member buttons
-    document.querySelectorAll('.js-select-member').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var d = this.dataset;
-            document.getElementById('review-initials').textContent = d.initials;
-            document.getElementById('review-name').textContent = d.name;
-            document.getElementById('review-division').textContent = d.division;
-            document.getElementById('review-trust').textContent = d.trust;
-            document.getElementById('review-since').textContent = d.since;
-            document.getElementById('appoint-member-id').value = d.initials;
-
-            var gnBadge = document.getElementById('review-gn-badge');
-            if (d.gn === '1') {
-                gnBadge.textContent = '✓ Endorsed';
-                gnBadge.className = 'badge badge--success';
-                document.getElementById('review-gn-label').textContent = '✓ GN Officer endorsement';
-            } else {
-                gnBadge.textContent = '✕ Not endorsed';
-                gnBadge.className = 'badge badge--neutral';
-                document.getElementById('review-gn-label').textContent = '✕ GN Officer endorsement';
-            }
-
-            showStep(2);
-        });
-    });
-
-    // Back to step 1
-    var backBtn = document.getElementById('btn-back-1');
-    if (backBtn) {
-        backBtn.addEventListener('click', function () { showStep(1); });
-    }
-
-    // Confirm appointment -> step 3
-    var confirmBtn = document.getElementById('btn-confirm-appointment');
-    if (confirmBtn) {
-        confirmBtn.addEventListener('click', function () { showStep(3); });
-    }
-
-    // Search filter
-    var search = document.getElementById('member-search');
-    if (search) {
-        search.addEventListener('input', function () {
-            var q = this.value.toLowerCase();
-            document.querySelectorAll('#candidate-list .list-row').forEach(function (row) {
-                row.style.display = row.getAttribute('data-name').indexOf(q) > -1 ? '' : 'none';
-            });
-        });
-    }
-})();
-</script>
-
-<?php include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php $pageScripts = ['list-filter.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

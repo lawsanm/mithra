@@ -3,86 +3,19 @@
 declare(strict_types=1);
 
 /**
- * Verifications queue — every membership verification in this moderator's
+ * Verifications queue — every home-membership application in this moderator's
  * division, filtered by status. The filter pills are links, so filtering is a
  * plain GET and the page works without JavaScript (Rules/CONVENTIONS.md §11).
  *
- * @var array  $filters       pills: label, state, active
+ * @var array $filters       pills: label, state, active
  * @var string $filterSummary count line at the end of the filter bar
- * @var array  $verifications rows: name, meta, status, status_label, href
+ * @var array $verifications rows: name, meta, status, status_label, href
+ * @var array|null $flash
  */
 
-// Sample view data — replaced by the controller once ModerationController lands.
-$state = (string) ($_GET['status'] ?? '');
-
-$filters ??= array_map(
-    static fn (array $filter): array => $filter + ['active' => $filter['state'] === $state],
-    [
-        ['label' => 'All',      'state' => ''],
-        ['label' => 'Pending',  'state' => 'pending'],
-        ['label' => 'Approved', 'state' => 'approved'],
-        ['label' => 'Rejected', 'state' => 'rejected'],
-    ]
-);
-
-$sampleRows = [
-    [
-        'state'        => 'pending',
-        'name'         => 'S. Perera',
-        'meta'         => 'NIC + proof of address  ·  Kollupitiya  ·  submitted 2 days ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/verifications/perera-s',
-    ],
-    [
-        'state'        => 'pending',
-        'name'         => 'M. Gunawardena',
-        'meta'         => 'NIC + utility bill  ·  Kollupitiya  ·  submitted 3 days ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/verifications/gunawardena-m',
-    ],
-    [
-        'state'        => 'pending',
-        'name'         => 'A. Nizam',
-        'meta'         => 'NIC + GN letter  ·  Kollupitiya  ·  submitted 4 days ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/verifications/nizam-a',
-    ],
-    [
-        'state'        => 'pending',
-        'name'         => 'T. Wickrama',
-        'meta'         => 'NIC only — address proof missing  ·  submitted 5 days ago',
-        'status'       => 'info',
-        'status_label' => 'Needs more info',
-        'href'         => base_url() . '/moderator/verifications/wickrama-t',
-    ],
-    [
-        'state'        => 'approved',
-        'name'         => 'A. Akalvily',
-        'meta'         => 'NIC + proof of address  ·  Wellawatte  ·  approved 14 Jul',
-        'status'       => 'success',
-        'status_label' => 'Approved',
-        'href'         => base_url() . '/moderator/verifications/akalvily-a',
-    ],
-    [
-        'state'        => 'rejected',
-        'name'         => 'D. Rajapaksa',
-        'meta'         => 'Address outside this GN division  ·  rejected 11 Jul',
-        'status'       => 'error',
-        'status_label' => 'Rejected',
-        'href'         => base_url() . '/moderator/verifications/rajapaksa-d',
-    ],
-];
-
-$verifications ??= array_values(array_filter(
-    $sampleRows,
-    static fn (array $row): bool => $state === '' || $row['state'] === $state
-));
-
-$filterSummary ??= count(array_filter($sampleRows, static fn (array $row): bool => $row['state'] === 'pending'))
-    . ' pending';
+$filters       = $filters ?? [];
+$filterSummary = $filterSummary ?? '';
+$verifications = $verifications ?? [];
 
 $pageTitle = 'Verifications';
 $navActive = 'verifications';
@@ -94,6 +27,8 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 <header class="page-header">
     <h1 class="page-header__title">Verifications</h1>
 </header>
+
+<?php include __DIR__ . '/../../../partials/flash.php'; ?>
 
 <div class="filter-bar">
     <ul class="filter-pills">

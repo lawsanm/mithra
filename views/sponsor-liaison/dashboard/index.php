@@ -26,27 +26,27 @@ $stats ??= [
         'value'   => '3',
         'note'    => '3 written agreements',
         'primary' => true,
-        'href'    => '/sponsor-liaison/sponsors',
+        'href'    => base_url() . '/sponsor-liaison/sponsors',
     ],
     [
         'label'   => 'Points pool balance',
         'value'   => '42,300',
         'note'    => 'Across Sponsor & Aid pools',
         'primary' => true,
-        'href'    => '/sponsor-liaison/points-pool',
+        'href'    => base_url() . '/sponsor-liaison/points-pool',
     ],
     [
         'label'   => 'Pending aid grant approvals',
         'value'   => '2',
         'note'    => 'Vouched by moderator, awaiting your approval',
         'primary' => true,
-        'href'    => '/sponsor-liaison/aid-grants',
+        'href'    => base_url() . '/sponsor-liaison/aid-grants',
     ],
     [
         'label' => 'Disaster Mode',
         'value' => 'Inactive',
         'note'  => 'Payouts operating normally',
-        'href'  => '/sponsor-liaison/disasters',
+        'href'  => base_url() . '/sponsor-liaison/disasters',
     ],
 ];
 
@@ -54,17 +54,17 @@ $sponsors ??= [
     [
         'name' => 'Northwind Co',
         'meta' => 'contact@northwind.lk  ·  16,000 pts injected',
-        'href' => '/sponsor-liaison/sponsors/1',
+        'href' => base_url() . '/sponsor-liaison/sponsors/1',
     ],
     [
         'name' => 'ACM Corp',
         'meta' => 'hello@acm.lk  ·  6,500 pts injected',
-        'href' => '/sponsor-liaison/sponsors/2',
+        'href' => base_url() . '/sponsor-liaison/sponsors/2',
     ],
     [
         'name' => 'Texa',
         'meta' => 'team@texa.lk  ·  7,500 pts injected',
-        'href' => '/sponsor-liaison/sponsors/3',
+        'href' => base_url() . '/sponsor-liaison/sponsors/3',
     ],
 ];
 
@@ -99,7 +99,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 ?>
 
-<header class="page-intro">
+<header class="page-intro page-intro--dashboard">
     <h1 class="page-intro__title"><?= e($liaison['greeting']) ?></h1>
     <p class="page-intro__meta"><?= e($liaison['coverage']) ?></p>
 </header>
@@ -117,7 +117,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Sponsors</h2>
-        <a class="link section__action" href="/sponsor-liaison/sponsors">View all</a>
+        <a class="link section__action" href="<?= base_url() ?>/sponsor-liaison/sponsors">View all</a>
     </div>
 
     <?php if ($sponsors === []): ?>
@@ -141,17 +141,17 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 </section>
 
 <div class="actions">
-    <a class="btn btn--primary" href="/sponsor-liaison/sponsors/onboarding">
+    <a class="btn btn--primary" href="<?= base_url() ?>/sponsor-liaison/sponsors/onboarding">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
         Add sponsor
     </a>
-    <a class="btn btn--ghost" href="/sponsor-liaison/purchases/create">Record purchase</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/purchases/create">Record purchase</a>
 </div>
 
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Aid grants awaiting your approval</h2>
-        <a class="link section__action" href="/sponsor-liaison/aid-grants">View all</a>
+        <a class="link section__action" href="<?= base_url() ?>/sponsor-liaison/aid-grants">View all</a>
     </div>
 
     <?php if ($aidGrants === []): ?>
@@ -169,11 +169,7 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
                         <span class="list-row__meta"><?= e($grant['meta']) ?></span>
                     </div>
                     <span class="badge badge--<?= e($grant['status']) ?>"><?= e($grant['status_label']) ?></span>
-                    <?php if ($grant['id'] === 1): ?>
-                        <a class="btn btn--ghost" href="/sponsor-liaison/aid-grants/1">Review</a>
-                    <?php else: ?>
-                        <button class="btn btn--ghost" type="button">Review</button>
-                    <?php endif; ?>
+                    <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/aid-grants/<?= e((string) $grant['id']) ?>">Review</a>
                 </li>
             <?php endforeach; ?>
         </ul>

@@ -45,10 +45,10 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
     <?php endforeach; ?>
 </div>
 
-<section class="section">
+<section class="section" id="pool-ledger">
     <div class="section__head">
         <h2 class="section__title">Pool ledger</h2>
-        <a class="link section__action" href="/sponsor-liaison/points-pool/ledger">View all</a>
+        <a class="link section__action" href="#pool-ledger">Pool ledger</a>
     </div>
 
     <ul class="row-list">

@@ -7,11 +7,12 @@ declare(strict_types=1);
  */
 
 ?>
-<dialog class="modal" id="dismiss-modal">
-    <form method="post" action="<?= base_url() ?>/admin/moderators/objections/dismiss" class="modal__content">
-        <?= csrf_field() ?>
+<dialog aria-labelledby="modal-dismiss-objection-title" class="modal" id="dismiss-modal">
+    <div class="modal__content" data-demo-form>
+    <p class="demo-note">Preview only. Saving is not available yet.</p>
+        
         <div class="modal__head">
-            <h2 class="modal__title">Dismiss objection</h2>
+            <h2 class="modal__title" id="modal-dismiss-objection-title">Dismiss objection</h2>
             <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
         </div>
 
@@ -21,12 +22,12 @@ declare(strict_types=1);
 
         <div class="field" style="margin-bottom: var(--space-4);">
             <label class="field__label" for="dismiss-reason">Reason for dismissal</label>
-            <textarea class="input" id="dismiss-reason" name="reason" rows="3" required placeholder="Explain why this objection is invalid…"></textarea>
+            <textarea class="input" id="dismiss-reason" name="reason" rows="3" required placeholder="Explain why this objection is invalid…" disabled></textarea>
         </div>
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--primary" type="submit">Dismiss objection</button>
+            <button class="btn btn--primary" type="submit" disabled>Dismiss objection</button>
         </div>
-    </form>
+    </div>
 </dialog>
