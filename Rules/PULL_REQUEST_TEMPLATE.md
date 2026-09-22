@@ -5,7 +5,6 @@
 <!-- 1–3 sentences. Which module / feature? Link the task if tracked. -->
 
 **Module:** <!-- e.g. Bookings (Member 3) -->
-**AI tools used:** <!-- e.g. Claude, Copilot — with CONVENTIONS.md as context: yes/no -->
 
 ## How was it tested?
 
@@ -44,4 +43,4 @@
 
 ---
 
-**Reviewer:** <!-- @member -->  |  **Author confirms all AI-generated code was read and understood line-by-line:** yes / no
+**Reviewer:** <!-- @member -->  |  **Author confirms every line of this PR was read and understood:** yes / no
