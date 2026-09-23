@@ -20,7 +20,7 @@ $filters ??= [
 $notifications ??= [
     [
         'icon'   => 'handshake',
-        'title'  => 'Madushan accepted your request for Bosch Cordless Drill',
+        'title'  => 'Abishan accepted your request for Bosch Cordless Drill',
         'detail' => 'Handover step is now open — upload your photos.',
         'time'   => '10 min ago',
         'unread' => true,
@@ -36,7 +36,7 @@ $notifications ??= [
     ],
     [
         'icon'   => 'gift',
-        'title'  => 'Kavipriya sent you a gift of 10 pts',
+        'title'  => 'Arun sent you a gift of 10 pts',
         'detail' => '“Thanks for the jumper cables last week!”',
         'time'   => 'Yesterday',
         'unread' => false,
@@ -45,7 +45,7 @@ $notifications ??= [
     [
         'icon'   => 'heart',
         'title'  => 'Your aid grant moved to liaison approval',
-        'detail' => 'Moderator A. Akalvily vouched for request #A-1042.',
+        'detail' => 'Moderator ' . $viewer['moderator'] . ' vouched for request #A-1042.',
         'time'   => '12 Jul',
         'unread' => false,
         'href'   => base_url() . '/aid-grants/1042',

@@ -15,7 +15,7 @@ declare(strict_types=1);
 // Sample view data — replaced by the controller once SponsorLiaisonController lands.
 $report ??= [
     'quarter'     => 'Q2 2026 (Apr – Jun)',
-    'prepared_by' => 'Sponsor Liaison A. Akalvily',
+    'prepared_by' => 'Sponsor Liaison ' . $viewer['liaison'],
     'prepared_at' => '20 Jul 2026',
 ];
 

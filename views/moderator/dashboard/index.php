@@ -16,8 +16,8 @@ declare(strict_types=1);
 
 // Sample view data — replaced by the controller once ModerationController lands.
 $moderator ??= [
-    'greeting'   => 'Good morning, Kavipriya',
-    'membership' => 'Wellawatte GN Division moderator  ·  Conduct bond: 500 pts held',
+    'greeting'   => $viewer['greeting'],
+    'membership' => $viewer['division'] . ' GN Division moderator  ·  Conduct bond: 500 pts held',
 ];
 
 $stats ??= [
@@ -49,15 +49,15 @@ $stats ??= [
 
 $verifications ??= [
     [
-        'initials'     => 'AA',
+        'initials'     => User::initials('K. Bandara'),
         'title'        => 'New member application',
-        'meta'         => 'A. Akalvily  ·  applied 15 Jul  ·  Wellawatte',
+        'meta'         => 'K. Bandara  ·  applied 15 Jul  ·  ' . $viewer['division'],
         'status'       => 'info',
         'status_label' => 'New member',
         'href'         => base_url() . '/moderator/verifications/1',
     ],
     [
-        'initials'     => 'ML',
+        'initials'     => User::initials('M. Lawsan'),
         'title'        => 'Temporary membership proof',
         'meta'         => 'M. Lawsan  ·  submitted 16 Jul  ·  from Kollupitiya',
         'status'       => 'warning',
@@ -69,7 +69,7 @@ $verifications ??= [
 $approvals ??= [
     [
         'title'        => 'Pressure Washer',
-        'meta'         => 'Listed by T.H.K. Madushan  ·  value proof attached  ·  submitted 15 Jul',
+        'meta'         => 'Listed by N. Abishan  ·  value proof attached  ·  submitted 15 Jul',
         'status'       => 'warning',
         'status_label' => 'Pending approval',
         'href'         => base_url() . '/moderator/listing-approvals/1',
@@ -79,14 +79,14 @@ $approvals ??= [
 $cases ??= [
     [
         'title'        => 'Grinding Drill',
-        'meta'         => 'Reported by T.H.K. Madushan  ·  14 Jul  ·  Case #CD-0142',
+        'meta'         => 'Reported by N. Abishan  ·  14 Jul  ·  Case #CD-0142',
         'status'       => 'warning',
         'status_label' => 'Mediating',
         'href'         => base_url() . '/moderator/cases/1',
     ],
     [
         'title'        => 'Camping Tent (4-person)',
-        'meta'         => 'M. Lawsan & J. Kavipriya  ·  repair confirmed',
+        'meta'         => 'M. Lawsan & N. Arun  ·  repair confirmed',
         'status'       => 'info',
         'status_label' => 'Awaiting sign-off',
         'href'         => base_url() . '/moderator/cases/2',

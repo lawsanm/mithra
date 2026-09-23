@@ -47,7 +47,7 @@ $sampleRows = [
     [
         'state'        => 'vouched',
         'id'           => '3',
-        'title'        => 'A. Akalvily — 250 pts',
+        'title'        => 'N. Arun — 250 pts',
         'meta'         => 'Dry rations and drinking water  ·  vouched 15 Jul  ·  with Admin',
         'status'       => 'success',
         'status_label' => 'Vouched',

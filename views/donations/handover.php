@@ -17,8 +17,8 @@ $donation ??= [
 ];
 
 $recipient ??= [
-    'initials' => 'JK',
-    'name'     => 'Recipient: J. Kavipriya',
+    'initials' => User::initials('N. Arun'),
+    'name'     => 'Recipient: N. Arun',
     'meta'     => 'Trust 98  ·  8 transactions  ·  chosen 16 Jul',
 ];
 
