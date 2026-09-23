@@ -14,7 +14,7 @@ declare(strict_types=1);
 // Sample view data — replaced by the controller once SponsorLiaisonController lands.
 $grant ??= [
     'id'           => 1,
-    'initials'     => 'ML',
+    'initials'     => User::initials('M. Lawsan'),
     'name'         => 'M. Lawsan',
     'grant_number' => '#A-1042',
     'status'       => 'info',
@@ -31,8 +31,8 @@ $request ??= [
 ];
 
 $vouch ??= [
-    'initials' => 'JK',
-    'name'     => 'Vouched by Moderator J. Kavipriya  ·  12 Jul',
+    'initials' => User::initials($viewer['moderator']),
+    'name'     => 'Vouched by Moderator ' . $viewer['moderator'] . '  ·  12 Jul',
     'note'     => 'Known family, genuine need. No conflict of interest declared.',
 ];
 

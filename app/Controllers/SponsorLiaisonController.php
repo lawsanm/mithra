@@ -22,12 +22,13 @@ final class SponsorLiaisonController extends Controller
     ['id' => 5, 'date' => '10 Jun', 'sponsor' => 'Texa',         'receipt' => 'INV-0276', 'allocation' => 'allocation 60% Sponsor · 40% Aid', 'amount' => 'LKR 5,000'],
 ];
 
+    /** Sample aid grants; sampleGrants() adds each avatar's initials and names the real moderator. */
     private const GRANTS = [
-    ['id' => 1, 'initials' => 'ML', 'name' => 'M. Lawsan',       'meta' => '300 pts · school supplies · vouched by Mod. J. Kavipriya · 15 Jul', 'status' => 'info',    'status_label' => 'Awaiting approval', 'action' => 'review'],
-    ['id' => 2, 'initials' => 'TM', 'name' => 'T.H.K. Madushan', 'meta' => '200 pts · medical costs · vouched by Mod. J. Kavipriya · 14 Jul',    'status' => 'info',    'status_label' => 'Awaiting approval', 'action' => 'review'],
-    ['id' => 3, 'initials' => 'JK', 'name' => 'J. Kavipriya',    'meta' => '450 pts · roof repair · awaiting moderator vouch · 16 Jul',         'status' => 'warning', 'status_label' => 'Awaiting vouch',    'action' => 'view'],
-    ['id' => 4, 'initials' => 'TM', 'name' => 'T.H.K. Madushan', 'meta' => '500 pts · flood recovery · approved 01 Jul · funded by Northwind Co', 'status' => 'success', 'status_label' => 'Approved',          'action' => 'view'],
-    ['id' => 5, 'initials' => 'AA', 'name' => 'J. Kavipriya',    'meta' => '400 pts · declined 28 Jun · insufficient evidence, may re-apply',   'status' => 'error',   'status_label' => 'Declined',          'action' => 'view'],
+    ['id' => 1, 'name' => 'M. Lawsan',  'meta' => '300 pts · school supplies · vouched by Mod. {moderator} · 15 Jul',   'status' => 'info',    'status_label' => 'Awaiting approval', 'action' => 'review'],
+    ['id' => 2, 'name' => 'N. Abishan', 'meta' => '200 pts · medical costs · vouched by Mod. {moderator} · 14 Jul',     'status' => 'info',    'status_label' => 'Awaiting approval', 'action' => 'review'],
+    ['id' => 3, 'name' => 'N. Arun',    'meta' => '450 pts · roof repair · awaiting moderator vouch · 16 Jul',          'status' => 'warning', 'status_label' => 'Awaiting vouch',    'action' => 'view'],
+    ['id' => 4, 'name' => 'N. Abishan', 'meta' => '500 pts · flood recovery · approved 01 Jul · funded by Northwind Co', 'status' => 'success', 'status_label' => 'Approved',          'action' => 'view'],
+    ['id' => 5, 'name' => 'N. Arun',    'meta' => '400 pts · declined 28 Jun · insufficient evidence, may re-apply',    'status' => 'error',   'status_label' => 'Declined',          'action' => 'view'],
 ];
 
     private const SORTS = ['name', 'recently_added'];
@@ -343,14 +344,14 @@ final class SponsorLiaisonController extends Controller
         $status = $this->queryValue('status');
         $labels = ['awaiting_vouch' => 'Awaiting vouch', 'awaiting_approval' => 'Awaiting approval',
             'approved' => 'Approved', 'declined' => 'Declined'];
-        $grants = array_values(array_filter(self::GRANTS, static fn (array $row): bool =>
+        $grants = array_values(array_filter($this->sampleGrants(), static fn (array $row): bool =>
             $status === '' || $row['status_label'] === ($labels[$status] ?? '')));
         $this->render('sponsor-liaison/aid-grants/index', compact('grants', 'status'));
     }
 
     public function grant(int $id): void
     {
-        $row = $this->find(self::GRANTS, $id);
+        $row = $this->find($this->sampleGrants(), $id);
         if ($row === null) {
             $this->notice(404, 'Record not found', 'Return to the list to select a sponsor, contribution or aid grant.');
             return;
@@ -360,7 +361,7 @@ final class SponsorLiaisonController extends Controller
         $request = ['purpose' => ucfirst($parts[1] ?? 'Aid request'), 'amount_requested' => $parts[0],
             'pool_balance' => 'Sample balance', 'prior_grants' => 'Not shown in this preview',
             'note' => $row['meta']];
-        $vouch = ['initials' => 'JK', 'name' => 'Moderator review', 'note' => $parts[2] ?? 'See request status'];
+        $vouch = ['initials' => User::initials($this->moderatorName()), 'name' => 'Moderator review', 'note' => $parts[2] ?? 'See request status'];
         $draft = ['approved_amount' => (string) (int) $parts[0], 'reason' => ''];
         $this->render('sponsor-liaison/aid-grants/show', compact('grant', 'request', 'vouch', 'draft'));
     }
@@ -371,7 +372,7 @@ final class SponsorLiaisonController extends Controller
         header('Content-Disposition: attachment; filename="approved-grants-demo.csv"');
         $output = fopen('php://output', 'wb');
         fputcsv($output, ['Demo grant ID', 'Member', 'Details', 'Status'], ',', '"', '');
-        foreach (self::GRANTS as $grant) {
+        foreach ($this->sampleGrants() as $grant) {
             if ($grant['status_label'] === 'Approved') {
                 fputcsv($output, [$grant['id'], $grant['name'], $grant['meta'], $grant['status_label']], ',', '"', '');
             }
@@ -387,6 +388,25 @@ final class SponsorLiaisonController extends Controller
             return;
         }
         $this->render('sponsor-liaison/' . $view, compact('record'));
+    }
+
+    /**
+     * The sample grants with initials worked out from each name and the real
+     * moderator named in each vouch.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sampleGrants(): array
+    {
+        $moderator = $this->moderatorName();
+
+        return array_map(
+            static fn (array $row): array => [
+                'initials' => User::initials($row['name']),
+                'meta'     => str_replace('{moderator}', $moderator, $row['meta']),
+            ] + $row,
+            self::GRANTS
+        );
     }
 
     private function find(array $rows, int $id): ?array

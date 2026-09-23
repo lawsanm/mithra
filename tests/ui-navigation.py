@@ -52,11 +52,12 @@ def sign_in(email, password):
             raise SystemExit('Could not sign in as ' + email + '. Is the demo data loaded?')
 
 # One seeded account per role; whoever is signed in is swapped as the run moves
-# between areas. The seed has no sponsor login, so /sponsor screens are skipped.
+# between areas.
 MEMBER = ('lawsan@email.com', 'password')
-MODERATOR = ('akalvily@example.lk', 'password')
-ADMIN = ('admin@example.lk', 'password')
-LIAISON = ('liaison@example.lk', 'password')
+MODERATOR = ('kavipriya@email.com', 'password')
+ADMIN = ('madushan@email.com', 'password')
+LIAISON = ('akalvily@email.com', 'password')
+SPONSOR = ('thineka@email.com', 'password')
 signed_in_as = None
 
 def use(account):
@@ -66,7 +67,7 @@ def use(account):
         signed_in_as = account
 
 def account_for(path):
-    for prefix, account in [('/admin', ADMIN), ('/moderator', MODERATOR), ('/sponsor-liaison', LIAISON), ('/sponsor', None)]:
+    for prefix, account in [('/admin', ADMIN), ('/moderator', MODERATOR), ('/sponsor-liaison', LIAISON), ('/sponsor', SPONSOR)]:
         if path == prefix or path.startswith(prefix + '/'):
             return account
     return MEMBER

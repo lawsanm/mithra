@@ -29,7 +29,7 @@ $activity ??= [
     [
         'icon'   => 'arrow-down-left',
         'title'  => 'Rental income — Rice Cooker (5 days)',
-        'note'   => 'from A. Akalvily  ·  released from escrow',
+        'note'   => 'from N. Abishan  ·  released from escrow',
         'amount' => '+25 pts',
         'tone'   => 'in',
         'date'   => '16 Jul 2026',
@@ -44,7 +44,7 @@ $activity ??= [
     ],
     [
         'icon'   => 'arrow-up-right',
-        'title'  => 'Gift sent — J. Kavipriya',
+        'title'  => 'Gift sent — N. Arun',
         'note'   => '“Thank you for the school run help!”',
         'amount' => '−15 pts',
         'tone'   => 'out',
@@ -52,7 +52,7 @@ $activity ??= [
     ],
     [
         'icon'   => 'arrow-down-left',
-        'title'  => 'Gift received — J. Kavipriya',
+        'title'  => 'Gift received — N. Arun',
         'note'   => '“Great neighbour — welcome gift”',
         'amount' => '+10 pts',
         'tone'   => 'in',

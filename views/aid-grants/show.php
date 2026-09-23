@@ -28,8 +28,8 @@ $grant ??= [
 ];
 
 $vouch ??= [
-    'initials' => 'AA',
-    'line'     => 'Vouched by Moderator A. Akalvily  ·  12 Jul',
+    'initials' => User::initials($viewer['moderator']),
+    'line'     => 'Vouched by Moderator ' . $viewer['moderator'] . '  ·  12 Jul',
     'quote'    => '“Known family, genuine need for the new school term. No conflict of interest.”',
     'badge'    => 'Vouch complete — no conflict declared',
 ];

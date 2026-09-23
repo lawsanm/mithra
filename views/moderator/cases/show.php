@@ -35,8 +35,8 @@ $sampleCases = [
             'escalated'          => false,
         ],
         'parties' => [
-            ['initials' => 'TM', 'name' => 'T.H.K. Madushan', 'meta' => 'Lender · reported the damage · Trust 96'],
-            ['initials' => 'JK', 'name' => 'J. Kavipriya',    'meta' => 'Borrower · returned 13 Jul · Trust 96'],
+            ['initials' => User::initials('N. Abishan'), 'name' => 'N. Abishan', 'meta' => 'Lender · reported the damage · Trust 96'],
+            ['initials' => User::initials('N. Arun'), 'name' => 'N. Arun',    'meta' => 'Borrower · returned 13 Jul · Trust 96'],
         ],
         'report' => 'Owner states the chuck is cracked and the battery no longer holds charge. '
                   . 'Borrower’s counter-statement says the crack was present at handover — see baseline photos.',
@@ -45,14 +45,14 @@ $sampleCases = [
             ['label' => 'Return  ·  13 Jul',           'count' => 2],
         ],
         'timeline' => [
-            ['title' => 'Damage reported by T.H.K. Madushan',        'time' => '14 Jul, 9:20 AM'],
+            ['title' => 'Damage reported by N. Abishan',        'time' => '14 Jul, 9:20 AM'],
             ['title' => 'Borrower responded with counter-statement', 'time' => '14 Jul, 4:05 PM'],
             ['title' => 'Assigned to moderator for mediation',       'time' => '15 Jul, 10:00 AM'],
         ],
         'signoffs' => [
-            ['name' => 'Moderator — J. Kavipriya', 'status' => 'success', 'status_label' => 'Signed'],
-            ['name' => 'Lender — T.H.K. Madushan', 'status' => 'warning', 'status_label' => 'Pending'],
-            ['name' => 'Borrower — J. Kavipriya',  'status' => 'warning', 'status_label' => 'Pending'],
+            ['name' => 'Moderator — ' . $viewer['moderator'], 'status' => 'success', 'status_label' => 'Signed'],
+            ['name' => 'Lender — N. Abishan', 'status' => 'warning', 'status_label' => 'Pending'],
+            ['name' => 'Borrower — N. Arun',  'status' => 'warning', 'status_label' => 'Pending'],
         ],
     ],
     '2' => [
@@ -64,8 +64,8 @@ $sampleCases = [
             'escalated'          => false,
         ],
         'parties' => [
-            ['initials' => 'ML', 'name' => 'M. Lawsan',   'meta' => 'Lender · reported the damage · Trust 88'],
-            ['initials' => 'JK', 'name' => 'J. Kavipriya', 'meta' => 'Borrower · returned 9 Jul · Trust 96'],
+            ['initials' => User::initials('M. Lawsan'), 'name' => 'M. Lawsan',   'meta' => 'Lender · reported the damage · Trust 88'],
+            ['initials' => User::initials('N. Arun'), 'name' => 'N. Arun', 'meta' => 'Borrower · returned 9 Jul · Trust 96'],
         ],
         'report' => 'Lender reports a bent pole and a torn guy-line on return. Borrower had the pole '
                   . 'repaired and the tear patched before returning; repair photos attached alongside '
@@ -80,9 +80,9 @@ $sampleCases = [
             ['title' => 'Assigned to moderator for mediation', 'time' => '10 Jul, 1:00 PM'],
         ],
         'signoffs' => [
-            ['name' => 'Moderator — J. Kavipriya', 'status' => 'success', 'status_label' => 'Signed'],
+            ['name' => 'Moderator — ' . $viewer['moderator'], 'status' => 'success', 'status_label' => 'Signed'],
             ['name' => 'Lender — M. Lawsan',       'status' => 'success', 'status_label' => 'Signed'],
-            ['name' => 'Borrower — J. Kavipriya',  'status' => 'warning', 'status_label' => 'Pending'],
+            ['name' => 'Borrower — N. Arun',  'status' => 'warning', 'status_label' => 'Pending'],
         ],
     ],
     '3' => [
@@ -94,8 +94,8 @@ $sampleCases = [
             'escalated'          => false,
         ],
         'parties' => [
-            ['initials' => 'RF', 'name' => 'R. Fernando', 'meta' => 'Lender · reported the damage · Trust 91'],
-            ['initials' => 'SP', 'name' => 'S. Perera',   'meta' => 'Borrower · returned 24 Jul · Trust 84'],
+            ['initials' => User::initials('R. Fernando'), 'name' => 'R. Fernando', 'meta' => 'Lender · reported the damage · Trust 91'],
+            ['initials' => User::initials('S. Perera'), 'name' => 'S. Perera',   'meta' => 'Borrower · returned 24 Jul · Trust 84'],
         ],
         'report' => 'Lender reports the drill’s gearbox is grinding and one battery no longer charges. '
                   . 'In-person meeting requested to inspect the tool before assessing severity.',
@@ -109,7 +109,7 @@ $sampleCases = [
             ['title' => 'In-person meeting requested',         'time' => '25 Jul, 9:05 AM'],
         ],
         'signoffs' => [
-            ['name' => 'Moderator — J. Kavipriya', 'status' => 'warning', 'status_label' => 'Pending'],
+            ['name' => 'Moderator — ' . $viewer['moderator'], 'status' => 'warning', 'status_label' => 'Pending'],
             ['name' => 'Lender — R. Fernando',     'status' => 'warning', 'status_label' => 'Pending'],
             ['name' => 'Borrower — S. Perera',     'status' => 'warning', 'status_label' => 'Pending'],
         ],
@@ -123,8 +123,8 @@ $sampleCases = [
             'escalated'          => false,
         ],
         'parties' => [
-            ['initials' => 'AN', 'name' => 'A. Nizam',       'meta' => 'Lender · reported the damage · Trust 89'],
-            ['initials' => 'MG', 'name' => 'M. Gunawardena', 'meta' => 'Borrower · returned 21 Jul · Trust 92'],
+            ['initials' => User::initials('A. Nizam'), 'name' => 'A. Nizam',       'meta' => 'Lender · reported the damage · Trust 89'],
+            ['initials' => User::initials('M. Gunawardena'), 'name' => 'M. Gunawardena', 'meta' => 'Borrower · returned 21 Jul · Trust 92'],
         ],
         'report' => 'Lender reports a small tear in the tent flysheet. Borrower agrees with the '
                   . 'assessment and a repair cost has been agreed; awaiting the borrower’s final sign-off.',
@@ -138,7 +138,7 @@ $sampleCases = [
             ['title' => 'Assigned to moderator for sign-off', 'time' => '22 Jul, 10:25 AM'],
         ],
         'signoffs' => [
-            ['name' => 'Moderator — J. Kavipriya',  'status' => 'success', 'status_label' => 'Signed'],
+            ['name' => 'Moderator — ' . $viewer['moderator'],  'status' => 'success', 'status_label' => 'Signed'],
             ['name' => 'Lender — A. Nizam',         'status' => 'success', 'status_label' => 'Signed'],
             ['name' => 'Borrower — M. Gunawardena', 'status' => 'warning', 'status_label' => 'Pending'],
         ],
@@ -152,8 +152,8 @@ $sampleCases = [
             'escalated'          => true,
         ],
         'parties' => [
-            ['initials' => 'KB', 'name' => 'K. Bandara',  'meta' => 'Lender · reported the damage · Trust 90'],
-            ['initials' => 'TW', 'name' => 'T. Wickrama', 'meta' => 'Borrower · returned 16 Jul · Trust 71'],
+            ['initials' => User::initials('K. Bandara'), 'name' => 'K. Bandara',  'meta' => 'Lender · reported the damage · Trust 90'],
+            ['initials' => User::initials('T. Wickrama'), 'name' => 'T. Wickrama', 'meta' => 'Borrower · returned 16 Jul · Trust 71'],
         ],
         'report' => 'Lender reports the pump housing is cracked and no longer holds pressure. Borrower '
                   . 'disputes the severity and has refused to sign off on the agreed resolution, so the '
@@ -168,7 +168,7 @@ $sampleCases = [
             ['title' => 'Escalated to Admin',            'time' => '17 Jul, 2:45 PM'],
         ],
         'signoffs' => [
-            ['name' => 'Moderator — J. Kavipriya', 'status' => 'success', 'status_label' => 'Signed'],
+            ['name' => 'Moderator — ' . $viewer['moderator'], 'status' => 'success', 'status_label' => 'Signed'],
             ['name' => 'Lender — K. Bandara',      'status' => 'success', 'status_label' => 'Signed'],
             ['name' => 'Borrower — T. Wickrama',   'status' => 'error',   'status_label' => 'Refused'],
         ],

@@ -198,7 +198,7 @@ final class AdminController extends Controller
         $admin     = (string) ($users->find($this->userId())['full_name'] ?? '');
 
         return [
-            'admin'      => ['name' => $this->lastName($admin)],
+            'admin'      => ['name' => User::shortName($admin)],
             'globalMeta' => [
                 'division_count' => (new GnDivision($this->pdo))->countAll(),
                 'member_count'   => number_format($members),
@@ -1023,12 +1023,5 @@ final class AdminController extends Controller
             $seconds < 604800 => intdiv($seconds, 86400) . ' days ago',
             default           => intdiv($seconds, 604800) . (intdiv($seconds, 604800) === 1 ? ' week ago' : ' weeks ago'),
         };
-    }
-
-    private function lastName(string $fullName): string
-    {
-        $parts = explode(' ', trim($fullName));
-
-        return end($parts) ?: $fullName;
     }
 }

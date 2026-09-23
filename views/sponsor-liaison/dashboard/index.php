@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 // Sample view data — replaced by the controller once SponsorLiaisonController lands.
 $liaison ??= [
-    'greeting' => 'Good morning, Akalvily',
+    'greeting' => $viewer['greeting'],
     'coverage' => 'Sponsor Liaison  ·  Colombo District  ·  6 GN divisions covered',
 ];
 
@@ -71,17 +71,17 @@ $sponsors ??= [
 $aidGrants ??= [
     [
         'id'           => 1,
-        'initials'     => 'ML',
+        'initials'     => User::initials('M. Lawsan'),
         'title'        => 'M. Lawsan',
-        'meta'         => '300 pts  ·  school supplies  ·  vouched by Mod. J. Kavipriya',
+        'meta'         => '300 pts  ·  school supplies  ·  vouched by Mod. ' . $viewer['moderator'],
         'status'       => 'info',
         'status_label' => 'Awaiting approval',
     ],
     [
         'id'           => 2,
-        'initials'     => 'TM',
-        'title'        => 'T.H.K. Madushan',
-        'meta'         => '200 pts  ·  medical costs  ·  vouched by Mod. J. Kavipriya',
+        'initials'     => User::initials('N. Abishan'),
+        'title'        => 'N. Abishan',
+        'meta'         => '200 pts  ·  medical costs  ·  vouched by Mod. ' . $viewer['moderator'],
         'status'       => 'info',
         'status_label' => 'Awaiting approval',
     ],
