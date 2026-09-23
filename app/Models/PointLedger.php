@@ -10,7 +10,7 @@ final class PointLedger extends BaseModel
     private const PER_PAGE = 25;
 
     /** Filter pill => the ledger reasons it covers (Plan §7.3). */
-    private const GROUPS = [
+    public const GROUPS = [
         'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout'],
         'gifts'   => ['gift'],
         'aid'     => ['aid_grant', 'aid_return', 'parting_gift'],

@@ -17,7 +17,8 @@ $identifier = $identifier ?? '';
 $pageTitle = 'Reset password with a code';
 $navActive = 'login';
 
-include __DIR__ . '/../../partials/header-public.php';
+$chrome = 'public';
+include __DIR__ . '/../../partials/header.php';
 
 ?>
 

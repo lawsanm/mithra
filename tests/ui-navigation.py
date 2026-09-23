@@ -8,6 +8,7 @@ import urllib.parse
 import urllib.request
 
 BASE = 'http://localhost/mithra'
+ORIGIN = BASE[:BASE.index('/', len('http://'))]
 ROOT = Path(__file__).resolve().parents[1]
 checks = 0
 
@@ -35,11 +36,8 @@ class Page(HTMLParser):
         return [attrs for tag, attrs in self.tags if tag == name]
 
 def sign_in(email, password):
-    """Every screen needs a session (AuthMiddleware), so hold one for the whole run.
-
-    The account is both a moderator and a member of its division, so one
-    session reaches the member screens and the verification queue alike.
-    """
+    """Every screen needs a session (AuthMiddleware) and a role that may open it
+    (RbacMiddleware), so the run signs in as whichever account owns the path."""
     urllib.request.install_opener(urllib.request.build_opener(
         urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())))
     with urllib.request.urlopen(BASE + '/login', timeout=15) as response:
@@ -53,11 +51,12 @@ def sign_in(email, password):
         if response.geturl().endswith('/login'):
             raise SystemExit('Could not sign in as ' + email + '. Is the demo data loaded?')
 
-# Two accounts, because the screens belong to two actors: the demo member every
-# sample record was built around, and the moderator who owns the verification
-# queue. Whoever is signed in is swapped as the audit moves between them.
+# One seeded account per role; whoever is signed in is swapped as the run moves
+# between areas. The seed has no sponsor login, so /sponsor screens are skipped.
 MEMBER = ('lawsan@email.com', 'password')
 MODERATOR = ('akalvily@example.lk', 'password')
+ADMIN = ('admin@example.lk', 'password')
+LIAISON = ('liaison@example.lk', 'password')
 signed_in_as = None
 
 def use(account):
@@ -67,16 +66,23 @@ def use(account):
         signed_in_as = account
 
 def account_for(path):
-    return MODERATOR if path.startswith('/moderator') else MEMBER
+    for prefix, account in [('/admin', ADMIN), ('/moderator', MODERATOR), ('/sponsor-liaison', LIAISON), ('/sponsor', None)]:
+        if path == prefix or path.startswith(prefix + '/'):
+            return account
+    return MEMBER
 
-route_text = (ROOT / 'app/routes.php').read_text(encoding='utf-8').split("'POST' =>", 1)[0]
-paths = [p.replace('{id}', '1') for p in re.findall(r"^\s*'(/[^']*)'\s*=>", route_text, re.M)]
+route_text = (ROOT / 'app/routes.php').read_text(encoding='utf-8')
+get_routes = route_text.split("'GET' =>", 1)[1].split("'POST' =>", 1)[0]
+paths = [p.replace('{id}', '1') for p in re.findall(r"^\s*'(/[^']*)'\s*=>", get_routes, re.M)]
+paths = [p for p in paths if account_for(p) is not None]
 pages = {}
 for path in paths:
     use(account_for(path))
     status, body = fetch(path)
     if path == '/items/1/edit' and status == 403:
         continue  # The seeded item is owned by another member.
+    if path == '/admin/listing-approvals/1' and status == 403:
+        continue  # Its division has a moderator, so the Admin may not decide it.
     check(status == 200, f'{path}: HTTP {status}')
     if path.endswith('/export'):
         check('Approved' in body and 'Awaiting approval' not in body, 'Grant export must contain only approved records')
@@ -107,7 +113,7 @@ for role in ['borrower', 'lender']:
     check(any(a.get('href', '').endswith('?role=' + role) and a.get('aria-current') == 'page'
               for a in page.tagged('a')), f'{role}: wrong active tab')
     for href in {a['href'] for a in page.tagged('a') if re.fullmatch(r'/mithra/bookings/\d+', a.get('href', ''))}:
-        code, detail = fetch('http://localhost' + href)
+        code, detail = fetch(ORIGIN + href)
         check(code == 200 and ('Booking #' + href.rsplit('/', 1)[1]) in detail, 'Wrong booking record')
         check('As ' + role.capitalize() in detail, 'Wrong booking party role')
 check(fetch('/bookings/999999')[0] == 404, 'Unknown booking must not display a sample record')
@@ -119,7 +125,7 @@ for group in ['verifications', 'listing-approvals', 'cases']:
     check(code1 == code2 == 200 and one != two, 'Moderator detail must change with the selected ID')
     check(fetch('/moderator/' + group + '/999999')[0] == 404, 'Unknown moderator record must not fall back')
 
-use(MEMBER)
+use(LIAISON)
 _, first = fetch('/sponsor-liaison/sponsors/1')
 _, second = fetch('/sponsor-liaison/sponsors/2')
 check('Northwind Co' in first and 'ACM Corp' in second and first != second, 'Sponsor record selection failed')
@@ -133,10 +139,11 @@ _, grant1 = fetch('/sponsor-liaison/aid-grants/1')
 _, grant2 = fetch('/sponsor-liaison/aid-grants/2')
 check('School supplies' in grant1 and 'Medical costs' in grant2, 'Grant detail shows wrong request')
 
+use(ADMIN)
 _, appointment = fetch('/admin/moderators/appoint/1')
 choices = [a['href'] for a in Page(appointment).tagged('a') if re.search(r'/appoint/\d+\?member=\d+', a.get('href', ''))]
 for href in choices:
-    code, selected = fetch('http://localhost' + href)
+    code, selected = fetch(ORIGIN + href)
     check(code == 200 and re.search(r'id="review-name"[^>]*>[^<]+</strong>', selected), 'Appointment selection did not populate the review')
     check('id="btn-confirm-appointment" disabled' in selected, 'Demo appointment must not imply a saved decision')
 

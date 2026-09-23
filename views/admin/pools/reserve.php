@@ -23,7 +23,8 @@ $covers = $covers ?? [];
 $pageTitle = 'Reserve Pool';
 $navActive = 'pools';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

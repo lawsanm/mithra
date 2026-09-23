@@ -2,167 +2,161 @@
 
 declare(strict_types=1);
 
-/** Read-only interim screens. Items has its own controller for saved changes. */
-final class DemoController
+/**
+ * Member screens without a controller of their own (routes.php maps them by
+ * view name). Two read real data — the dashboard and the gifts list; the rest
+ * are design previews that render their own sample content until their module
+ * is built.
+ */
+final class DemoController extends Controller
 {
-    public function __construct(private PDO $pdo)
-    {
-    }
+    /** Pages every role can open; each role sees them in its own navigation. */
+    private const SHARED_VIEWS = ['help/index', 'notifications/index', 'transparency/index'];
 
+    /**
+     * @param array{id?: string} $params the {id} from the URL, when the route has one
+     */
     public function show(string $view, array $params = []): void
     {
-        $_GET = $params + $_GET;
-        extract($this->data($view), EXTR_SKIP);
-        require dirname(__DIR__, 2) . '/views/' . $view . '.php';
-    }
-
-    private function data(string $view): array
-    {
-        $pdo = $this->pdo;
-        // The signed-in member. AuthMiddleware guarantees there is one (§7.4).
-        $me  = (int) ($_SESSION['user_id'] ?? 0);
-
-        $users    = new User($pdo);
-        $items    = new Item($pdo);
-        $bookings = new Booking($pdo);
-        $wallets  = new Wallet($pdo);
-        $gifts    = new Gift($pdo);
-
-        $member   = $users->findWithDivision($me) ?? [];
-
-        // Nav chrome, shown on every page.
-        $shared = [
-            'currentMember' => [
-                'initials'       => User::initials((string) ($member['full_name'] ?? '')),
-                'points_balance' => number_format($wallets->balance($me)) . ' pts',
-            ],
-        ];
-
         $data = match ($view) {
-
-            'dashboard/index' => [
-                'member' => [
-                    'greeting'   => $this->greeting((string) ($member['full_name'] ?? '')),
-                    'membership' => sprintf(
-                        '%s GN Division  ·  Verified member since %s',
-                        (string) ($member['division_name'] ?? ''),
-                        date('Y', strtotime((string) ($member['joined_at'] ?? 'now')))
-                    ),
-                ],
-                'stats' => [
-                    [
-                        'label'   => 'Points balance',
-                        'value'   => number_format($wallets->balance($me)) . ' pts',
-                        'note'    => 'Earned ' . $wallets->earnedThisMonth($me) . ' this month',
-                        'primary' => true,
-                    ],
-                    [
-                        'label' => 'Trust score',
-                        'value' => (int) ($member['trust_score'] ?? 0) . ' / 100',
-                        'note'  => $users->profileStats($me)['completed'] . ' completed transactions',
-                        'href'  => base_url() . '/trust',
-                    ],
-                    [
-                        'label' => 'Active borrowings',
-                        'value' => (string) $bookings->countActiveBorrowings($me),
-                        'note'  => $this->dueNote($bookings->countDueTomorrow($me)),
-                    ],
-                    [
-                        'label' => 'Items listed',
-                        'value' => (string) $items->ownedCounts($me)['all'],
-                        'note'  => $items->countLentOut($me) . ' currently lent out',
-                    ],
-                ],
-                'activeBorrowings' => array_map(
-                    fn (array $b): array => [
-                        'title'        => (string) $b['item_title'],
-                        'meta'         => sprintf(
-                            'From %s  ·  borrowed %s  ·  due %s',
-                            $b['lender_name'],
-                            date('j M', strtotime((string) $b['start_date'])),
-                            date('j M', strtotime((string) $b['end_date']))
-                        ),
-                        'status'       => $this->dueStatus((string) $b['end_date'])[0],
-                        'status_glyph' => $this->dueStatus((string) $b['end_date'])[1],
-                        'status_label' => $this->dueStatus((string) $b['end_date'])[2],
-                        'href'         => base_url() . '/bookings/' . $b['id'],
-                    ],
-                    $bookings->activeBorrowings($me)
-                ),
-                'listings' => array_map(
-                    function (array $i): array {
-                        [$who, $due] = array_pad(explode('|', (string) ($i['lent_to'] ?? '')), 2, '');
-
-                        return [
-                            'title' => (string) $i['title'],
-                            'rate'  => $i['daily_rate'] . ' pts / day',
-                            'meta'  => $who === ''
-                                ? 'Available'
-                                : sprintf('Lent to %s  ·  due %s', $this->shortName($who), date('j M', strtotime($due))),
-                            'href'  => base_url() . '/items/' . $i['id'],
-                        ];
-                    },
-                    $items->recentListings($me)
-                ),
-            ],
-
-            'gifts/index' => (function () use ($gifts, $users, $me): array {
-                $box = ($_GET['box'] ?? 'sent') === 'received' ? 'received' : 'sent';
-
-                return [
-                    'tabs' => [
-                        [
-                            'label'  => 'Sent (' . $gifts->countForMember($me, 'sent') . ')',
-                            'box'    => 'sent',
-                            'active' => $box === 'sent',
-                        ],
-                        [
-                            'label'  => 'Received (' . $gifts->countForMember($me, 'received') . ')',
-                            'box'    => 'received',
-                            'active' => $box === 'received',
-                        ],
-                    ],
-                    'caps' => [
-                        [
-                            'label' => 'Sent today',
-                            'value' => $gifts->sentToday($me) . ' / ' . Gift::DAILY_CAP . ' pts daily cap',
-                        ],
-                        [
-                            'label' => 'Sent this year',
-                            'value' => $gifts->sentThisYear($me) . ' / ' . Gift::ANNUAL_CAP . ' pts annual cap',
-                        ],
-                    ],
-                    'gifts' => array_map(
-                        fn (array $g): array => [
-                            'initials'  => User::initials((string) $g['counterparty']),
-                            'name'      => (string) $g['counterparty'],
-                            'note'      => '“' . $g['reason'] . '”',
-                            'amount'    => ($box === 'sent' ? '−' : '+') . $g['amount'] . ' pts',
-                            'direction' => $box === 'sent' ? 'out' : 'in',
-                            'date'      => date('j M Y', strtotime((string) $g['sent_at'])),
-                        ],
-                        $gifts->forMember($me, $box)
-                    ),
-                    // Feeds the Send a gift modal that this page includes.
-                    'recipients'    => $users->giftableExcept($me),
-                    'giftSentToday' => $gifts->sentToday($me),
-                    'giftRemaining' => max(0, Gift::DAILY_CAP - $gifts->sentToday($me)),
-                ];
-            })(),
-
-            default => [],
+            'dashboard/index' => $this->dashboard(),
+            'gifts/index'     => $this->gifts(),
+            default           => [],
         };
 
-        return $shared + $data;
+        if (in_array($view, self::SHARED_VIEWS, true)) {
+            $data['chrome'] = chrome_for($this->role());
+        }
+
+        if (isset($params['id'])) {
+            $data['id'] = (int) $params['id'];
+        }
+
+        $this->render($view, $data);
+    }
+
+    /** @return array<string, mixed> */
+    private function dashboard(): array
+    {
+        $me       = $this->userId();
+        $users    = new User($this->pdo);
+        $items    = new Item($this->pdo);
+        $bookings = new Booking($this->pdo);
+        $wallets  = new Wallet($this->pdo);
+        $member   = $users->findWithDivision($me) ?? [];
+
+        return [
+            'member' => [
+                'greeting'   => $this->greeting((string) ($member['full_name'] ?? '')),
+                'membership' => sprintf(
+                    '%s GN Division  ·  Verified member since %s',
+                    (string) ($member['division_name'] ?? ''),
+                    date('Y', strtotime((string) ($member['joined_at'] ?? 'now')))
+                ),
+            ],
+            'stats' => [
+                [
+                    'label'   => 'Points balance',
+                    'value'   => number_format($wallets->balance($me)) . ' pts',
+                    'note'    => 'Earned ' . $wallets->earnedThisMonth($me) . ' this month',
+                    'primary' => true,
+                ],
+                [
+                    'label' => 'Trust score',
+                    'value' => (int) ($member['trust_score'] ?? 0) . ' / 100',
+                    'note'  => $users->profileStats($me)['completed'] . ' completed transactions',
+                    'href'  => base_url() . '/trust',
+                ],
+                [
+                    'label' => 'Active borrowings',
+                    'value' => (string) $bookings->countActiveBorrowings($me),
+                    'note'  => $this->dueNote($bookings->countDueTomorrow($me)),
+                ],
+                [
+                    'label' => 'Items listed',
+                    'value' => (string) $items->ownedCounts($me)['all'],
+                    'note'  => $items->countLentOut($me) . ' currently lent out',
+                ],
+            ],
+            'activeBorrowings' => array_map(
+                function (array $booking): array {
+                    [$status, $glyph, $label] = $this->dueStatus((string) $booking['end_date']);
+
+                    return [
+                        'title'        => (string) $booking['item_title'],
+                        'meta'         => sprintf(
+                            'From %s  ·  borrowed %s  ·  due %s',
+                            $booking['lender_name'],
+                            date('j M', strtotime((string) $booking['start_date'])),
+                            date('j M', strtotime((string) $booking['end_date']))
+                        ),
+                        'status'       => $status,
+                        'status_glyph' => $glyph,
+                        'status_label' => $label,
+                        'href'         => base_url() . '/bookings/' . $booking['id'],
+                    ];
+                },
+                $bookings->activeBorrowings($me)
+            ),
+            'listings' => array_map(
+                function (array $item): array {
+                    [$who, $due] = array_pad(explode('|', (string) ($item['lent_to'] ?? '')), 2, '');
+
+                    return [
+                        'title' => (string) $item['title'],
+                        'rate'  => $item['daily_rate'] . ' pts / day',
+                        'meta'  => $who === ''
+                            ? 'Available'
+                            : sprintf('Lent to %s  ·  due %s', $this->lastName($who), date('j M', strtotime($due))),
+                        'href'  => base_url() . '/items/' . $item['id'],
+                    ];
+                },
+                $items->recentListings($me)
+            ),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function gifts(): array
+    {
+        $me        = $this->userId();
+        $gifts     = new Gift($this->pdo);
+        $box       = ($_GET['box'] ?? 'sent') === 'received' ? 'received' : 'sent';
+        $sentToday = $gifts->sentToday($me);
+
+        return [
+            'tabs' => [
+                ['label' => 'Sent (' . $gifts->countForMember($me, 'sent') . ')',         'box' => 'sent',     'active' => $box === 'sent'],
+                ['label' => 'Received (' . $gifts->countForMember($me, 'received') . ')', 'box' => 'received', 'active' => $box === 'received'],
+            ],
+            'caps' => [
+                ['label' => 'Sent today',     'value' => $sentToday . ' / ' . Gift::DAILY_CAP . ' pts daily cap'],
+                ['label' => 'Sent this year', 'value' => $gifts->sentThisYear($me) . ' / ' . Gift::ANNUAL_CAP . ' pts annual cap'],
+            ],
+            'gifts' => array_map(
+                fn (array $gift): array => [
+                    'initials'  => User::initials((string) $gift['counterparty']),
+                    'name'      => (string) $gift['counterparty'],
+                    'note'      => '“' . $gift['reason'] . '”',
+                    'amount'    => ($box === 'sent' ? '−' : '+') . $gift['amount'] . ' pts',
+                    'direction' => $box === 'sent' ? 'out' : 'in',
+                    'date'      => date('j M Y', strtotime((string) $gift['sent_at'])),
+                ],
+                $gifts->forMember($me, $box)
+            ),
+            // Feeds the Send a gift modal that this page includes.
+            'recipients'    => (new User($this->pdo))->giftableExcept($me),
+            'giftSentToday' => $sentToday,
+            'giftRemaining' => max(0, Gift::DAILY_CAP - $sentToday),
+        ];
     }
 
     private function greeting(string $fullName): string
     {
         $hour = (int) date('G');
         $part = $hour < 12 ? 'morning' : ($hour < 18 ? 'afternoon' : 'evening');
-        $last = trim((string) strrchr($fullName, ' ')) ?: $fullName;
 
-        return sprintf('Good %s, %s', $part, $last);
+        return sprintf('Good %s, %s', $part, $this->lastName($fullName));
     }
 
     private function dueNote(int $dueTomorrow): string
@@ -171,7 +165,7 @@ final class DemoController
     }
 
     /**
-     * @return array{0:string,1:string,2:string} status, glyph, label
+     * @return array{0: string, 1: string, 2: string} badge class, glyph, label
      */
     private function dueStatus(string $endDate): array
     {
@@ -188,7 +182,7 @@ final class DemoController
         return ['success', '✓', 'On track'];
     }
 
-    private function shortName(string $fullName): string
+    private function lastName(string $fullName): string
     {
         $parts = explode(' ', trim($fullName));
 

@@ -48,7 +48,8 @@ $allDismissed  ??= false;
 $pageTitle = 'Objection management';
 $navActive = 'moderators';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -131,8 +132,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <?php if ($windowExpired && $allDismissed): ?>
     <div style="margin-top: var(--space-6);" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <button class="btn btn--primary" type="submit" disabled>Finalise appointment</button>
     </div>
 <?php else: ?>

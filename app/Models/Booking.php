@@ -147,27 +147,6 @@ final class Booking extends BaseModel
     }
 
     /**
-     * Claim summary for the pending-moderator state.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function damageClaim(int $bookingId): ?array
-    {
-        return $this->selectOne(
-            "SELECT dc.severity, dc.description, dc.created_at,
-                    u.full_name AS raised_by_name, i.declared_value
-               FROM damage_claims dc
-               JOIN bookings b ON b.id = dc.booking_id
-               JOIN items i    ON i.id = b.item_id
-               JOIN users u    ON u.id = dc.raised_by
-              WHERE dc.booking_id = :id
-              ORDER BY dc.created_at DESC
-              LIMIT 1",
-            ['id' => $bookingId]
-        );
-    }
-
-    /**
      * Bookings still running on either side — a member cannot close their
      * account while any exist (Plan §17).
      */

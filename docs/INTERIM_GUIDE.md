@@ -35,7 +35,7 @@ For an edit, the browser submits a POST. Router first checks the CSRF token. The
 3. Open an item and explain how its ID selects a database row.
 4. Open My Items, then edit an item owned by the demo member. Explain validation and ownership checks. Saving this changes the local database.
 5. Open the create-listing wizard to explain how details and photos are collected. Do not claim a new submission is immediately approved; it goes to moderator review.
-6. Show an admin screen as the intended administrative interface. Explain that its write actions are still pending.
+6. Sign in as the Admin and open **Divisions**: create, rename and archive a division. Try a duplicate name to show the validation. Other admin write actions are still pending.
 
 ## What works and what is still pending
 
@@ -44,7 +44,7 @@ For an edit, the browser submits a POST. Router first checks the CSRF token. The
 | Items | Database-backed reads and create/edit/archive/pause/resume actions; photo processing and ownership checks |
 | Member dashboard and gifts list | Read database data; sending gifts is not implemented |
 | Bookings | Database-backed borrower/lender lists and record-specific details; lifecycle actions remain pending |
-| Admin | Many database-backed read screens; actions such as approvals and settings saves remain pending |
+| Admin | Division CRUD works (create, edit, archive, with validation and a duplicate-name check). Every other admin screen reads live data or shows a clearly empty state; a missing record is a 404. Approvals, rulings and settings saves remain pending |
 | Other member, moderator, sponsor and liaison screens | Demonstration templates; many contain sample data |
 | Shared interface | Consistent navigation, account menus, local Inter font, responsive rules and Figma logo/bell assets; browser visual verification remains pending |
 | Identity | Complete: registration with NIC photo and proof of address, login with throttling, logout, moderator verification with the welcome bonus, password reset (emailed link or a moderator-issued code), password change, profile edits, re-verified address changes, the receive-gifts preference and Type A / Type B account closure; every screen is behind the sign-in, role and session checks |
@@ -68,7 +68,7 @@ Account security (Plan §20.1 module 1.1, §21.1) runs on migration `005_create_
 
 Listings go live only after a declared-value review (Plan §9). The create wizard asks for the proof the value's tier needs (none up to 2,000 points; a receipt, warranty card or price reference up to 10,000; a receipt, warranty card or in-person inspection above that). The moderator approves, adjusts the value with a reason, or rejects with a reason; every decision is written to the listing's append-only audit trail and notified to the lender.
 
-Unimplemented submissions are marked as previews and disabled. Sponsor liaison search, filters, detail links and approved-grants CSV operate on sample records. See [the UI fix report](UI_FIXES.md) for verification and remaining limits.
+Unimplemented submissions are marked as previews and disabled. Screens for modules that are not built yet (sponsor, liaison, aid, donations, cases, wallet) are design previews with their own sample content; screens backed by the database never mix in sample data. Sponsor liaison search, filters, detail links and approved-grants CSV operate on sample records.
 
 ## Common questions
 
@@ -94,5 +94,9 @@ Unimplemented submissions are marked as previews and disabled. Sponsor liaison s
 - Reused the existing error view instead of building duplicate HTML in routing code.
 - Replaced separate setup/start instructions with one launcher that preserves existing data.
 - Added routing regression checks without adding a test framework.
+- Gave every controller one base class (`app/Core/Controller.php`) for rendering, flash messages, redirects and refusals, instead of a copy in each controller.
+- Replaced six header and five navigation partials with one of each. The navigation shows the signed-in account and its role's links; it never falls back to a made-up person.
+- Removed the sample-data fallbacks from database-backed views. They had been hiding real bugs: pages showing an invented record for a missing ID, division staff and pending members that were wrong, and controller data the views never used.
+- Removed unused model methods, the unused Donation model, an unreachable booking view and the one-off UI audit reports.
 
 The existing screens, models, service rules and migrations were retained because they are still used or describe the project's planned modules.

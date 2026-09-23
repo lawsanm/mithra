@@ -16,14 +16,14 @@ declare(strict_types=1);
  * else — moderator, liaison, sponsor and admin accounts are appointed, not
  * self-served (Plan §16).
  */
-final class AuthController
+final class AuthController extends Controller
 {
-    private PDO $pdo;
     private AuthService $auth;
 
     public function __construct(PDO $pdo)
     {
-        $this->pdo  = $pdo;
+        parent::__construct($pdo);
+
         $this->auth = new AuthService(new User($pdo), new LoginThrottle(new LoginAttempt($pdo)));
     }
 
@@ -173,7 +173,7 @@ final class AuthController
             return;
         }
 
-        $request = $this->resets()->requestLink($validator->value('email'));
+        $request = $this->passwordResets()->requestLink($validator->value('email'));
         $devLink = null;
 
         if ($request !== null) {
@@ -210,7 +210,7 @@ final class AuthController
 
         $this->renderAuthPage('reset', [], [
             'token' => $token,
-            'valid' => $this->resets()->linkIsValid($token),
+            'valid' => $this->passwordResets()->linkIsValid($token),
         ]);
     }
 
@@ -222,7 +222,7 @@ final class AuthController
         $token = (string) ($_POST['token'] ?? '');
 
         try {
-            $this->resets()->resetWithLink(
+            $this->passwordResets()->resetWithLink(
                 $token,
                 $this->postedPassword('password'),
                 $this->postedPassword('password_confirmation')
@@ -230,7 +230,7 @@ final class AuthController
         } catch (ValidationException $exception) {
             $this->renderAuthPage('reset', $exception->errors(), [
                 'token' => $token,
-                'valid' => $this->resets()->linkIsValid($token),
+                'valid' => $this->passwordResets()->linkIsValid($token),
             ]);
 
             return;
@@ -269,7 +269,7 @@ final class AuthController
         }
 
         try {
-            $this->resets()->resetWithCode(
+            $this->passwordResets()->resetWithCode(
                 $identifier,
                 $validator->value('code'),
                 $this->postedPassword('password'),
@@ -295,7 +295,7 @@ final class AuthController
         session_regenerate_id(true);
 
         $this->flash('You have been signed out.');
-        $this->redirect('/');
+        $this->redirect('/login');
     }
 
     // ── Plumbing ────────────────────────────────────────────────────────────
@@ -323,18 +323,6 @@ final class AuthController
         return substr((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 0, 45);
     }
 
-    private function resets(): PasswordResetService
-    {
-        return new PasswordResetService(
-            $this->pdo,
-            new User($this->pdo),
-            new PasswordReset($this->pdo),
-            new GnDivision($this->pdo),
-            $this->auth,
-            new LoginThrottle(new LoginAttempt($this->pdo))
-        );
-    }
-
     /**
      * The absolute reset link. The host comes from config, never from the
      * request's Host header, so a forged header cannot point a real member's
@@ -358,11 +346,11 @@ final class AuthController
      */
     private function renderAuthPage(string $view, array $errors, array $values = []): void
     {
-        $flash = $this->beforeRender($errors);
+        if ($errors !== []) {
+            http_response_code(422);
+        }
 
-        extract($values, EXTR_SKIP);
-
-        include dirname(__DIR__, 2) . '/views/auth/' . $view . '.php';
+        $this->render('auth/' . $view, ['errors' => $errors] + $values);
     }
 
     private function signedIn(): bool
@@ -377,15 +365,8 @@ final class AuthController
             new User($this->pdo),
             new UserDivision($this->pdo),
             new GnDivision($this->pdo),
-            new PhotoStore(dirname(__DIR__, 2) . '/storage/uploads')
+            $this->uploads()
         );
-    }
-
-    private function postedPassword(string $field): string
-    {
-        $password = $_POST[$field] ?? '';
-
-        return is_string($password) ? $password : '';
     }
 
     /**
@@ -407,9 +388,7 @@ final class AuthController
      */
     private function renderLogin(array $errors, string $identifier): void
     {
-        $flash = $this->beforeRender($errors);
-
-        include dirname(__DIR__, 2) . '/views/auth/login.php';
+        $this->renderAuthPage('login', $errors, ['identifier' => $identifier]);
     }
 
     /**
@@ -418,44 +397,9 @@ final class AuthController
      */
     private function renderRegister(array $errors, array $input): void
     {
-        $flash     = $this->beforeRender($errors);
-        $divisions = (new GnDivision($this->pdo))->activeNames();
-
-        include dirname(__DIR__, 2) . '/views/auth/register.php';
-    }
-
-    /**
-     * @param array<string, string> $errors
-     *
-     * @return array{type: string, message: string}|null
-     */
-    private function beforeRender(array $errors): ?array
-    {
-        if ($errors !== []) {
-            http_response_code(422);
-        }
-
-        return $this->takeFlash();
-    }
-
-    private function flash(string $message, string $type = 'success'): void
-    {
-        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
-    }
-
-    /**
-     * @return array{type: string, message: string}|null
-     */
-    private function takeFlash(): ?array
-    {
-        $flash = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
-
-        return is_array($flash) ? ['type' => (string) $flash['type'], 'message' => (string) $flash['message']] : null;
-    }
-
-    private function redirect(string $path): void
-    {
-        header('Location: ' . base_url() . $path, true, 303);
+        $this->renderAuthPage('register', $errors, [
+            'input'     => $input,
+            'divisions' => (new GnDivision($this->pdo))->activeNames(),
+        ]);
     }
 }

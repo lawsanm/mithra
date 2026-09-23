@@ -9,8 +9,7 @@ declare(strict_types=1);
 ?>
 <dialog aria-labelledby="modal-uphold-objection-title" class="modal" id="uphold-modal">
     <div class="modal__content" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="modal__head">
             <h2 class="modal__title" id="modal-uphold-objection-title">Uphold objection — cancel appointment</h2>
             <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>

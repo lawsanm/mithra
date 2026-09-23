@@ -5,40 +5,18 @@ declare(strict_types=1);
 /**
  * User management — admin view of all platform members with search and filters.
  *
- * @var array  $stats   stat cards: total, active, frozen, new this month
- * @var array  $filters filter pills
+ * @var array  $stats   stat cards: total, active, suspended, new this month
+ * @var array  $filters status pills: label, slug, active(bool)
  * @var array  $users   user rows: initials, name, division, role, balance, status, status_label, href
+ * @var string $status  the active status filter ('' for all)
  * @var string $search  current search term
  */
-
-$stats ??= [
-    ['label' => 'Total users',     'value' => '2,412'],
-    ['label' => 'Active',          'value' => '2,318'],
-    ['label' => 'Frozen',          'value' => '14'],
-    ['label' => 'New this month',  'value' => '47'],
-];
-
-$filters ??= [
-    ['label' => 'All',          'slug' => '',        'active' => true],
-    ['label' => 'Active',       'slug' => 'active'],
-    ['label' => 'Frozen',       'slug' => 'frozen'],
-    ['label' => 'Negative bal', 'slug' => 'negative'],
-];
-
-$users ??= [
-    ['initials' => 'ML', 'name' => 'M. Lawsan',           'division' => 'Kollupitiya', 'role' => 'Member',    'balance' => '120 pts',  'status' => 'success', 'status_label' => 'Active',  'href' => base_url() . '/admin/users/1'],
-    ['initials' => 'AA', 'name' => 'A. Akalvily',         'division' => 'Dehiwala',    'role' => 'Member',    'balance' => '−45 pts',  'status' => 'error',   'status_label' => 'Frozen',  'href' => base_url() . '/admin/users/2'],
-    ['initials' => 'JK', 'name' => 'J. Kavipriya',        'division' => 'Wellawatte',  'role' => 'Moderator', 'balance' => '340 pts',  'status' => 'success', 'status_label' => 'Active',  'href' => base_url() . '/admin/users/3'],
-    ['initials' => 'TM', 'name' => 'T.H.K. Madushan',     'division' => 'Bambalapitiya','role' => 'Member',   'balance' => '85 pts',   'status' => 'success', 'status_label' => 'Active',  'href' => base_url() . '/admin/users/4'],
-    ['initials' => 'NK', 'name' => 'N. Kumari',           'division' => 'Kollupitiya', 'role' => 'Member',    'balance' => '−20 pts',  'status' => 'warning', 'status_label' => 'Negative', 'href' => base_url() . '/admin/users/5'],
-];
-
-$search ??= '';
 
 $pageTitle = 'Users';
 $navActive = 'users';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -56,23 +34,29 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <?php endforeach; ?>
 </div>
 
-<div class="field-row">
+<form class="field-row" method="get" action="<?= base_url() ?>/admin/users" role="search">
+    <input type="hidden" name="status" value="<?= e($status) ?>">
     <div class="field">
-        <input class="input" type="search" name="q" placeholder="Search name, division, role…" value="<?= e($search) ?>">
+        <input class="input" type="search" name="q" placeholder="Search name or division" aria-label="Search name or division" value="<?= e($search) ?>">
     </div>
-</div>
+    <button class="btn btn--ghost" type="submit">Search</button>
+</form>
 
 <ul class="filter-pills">
-    <?php foreach ($filters as $filter): ?>
+    <?php foreach ($filters as $pill): ?>
         <li>
             <a
-                class="pill<?= !empty($filter['active']) ? ' pill--active' : '' ?>"
-                href="<?= base_url() ?>/admin/users?status=<?= e(rawurlencode($filter['slug'])) ?>"
-                <?= !empty($filter['active']) ? 'aria-current="true"' : '' ?>
-            ><?= e($filter['label']) ?></a>
+                class="pill<?= $pill['active'] ? ' pill--active' : '' ?>"
+                href="<?= e(base_url() . '/admin/users?' . http_build_query(array_filter(['status' => $pill['slug'], 'q' => $search]))) ?>"
+                <?= $pill['active'] ? 'aria-current="true"' : '' ?>
+            ><?= e($pill['label']) ?></a>
         </li>
     <?php endforeach; ?>
 </ul>
+
+<?php if ($users === []): ?>
+    <p class="empty-state__body">No accounts match.</p>
+<?php endif; ?>
 
 <ul class="row-list">
     <?php foreach ($users as $user): ?>

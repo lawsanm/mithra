@@ -49,9 +49,7 @@ $claimDraft = ($claimDraft ?? []) + [
     </div>
 
     <div class="stack" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <fieldset>
             <legend class="field__label">Severity</legend>
             <div class="filter-pills">

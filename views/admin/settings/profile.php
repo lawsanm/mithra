@@ -8,20 +8,12 @@ declare(strict_types=1);
  * @var array $admin  admin user: name, email, phone, division, role, joined
  */
 
-$admin ??= [
-    'name'     => 'Hasith Kaveesha',
-    'email'    => 'admin@mithra.lk',
-    'phone'    => '+94 77 123 4567',
-    'division' => 'All divisions',
-    'role'     => 'Admin',
-    'joined'   => '15 Jan 2026',
-];
-
 $pageTitle = 'Settings — Profile';
 $navActive = 'settings';
 $settingsTab = 'profile';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -37,8 +29,6 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <div class="form-card" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="field">
         <label class="label" for="name">Full name</label>
         <input class="input" type="text" id="name" name="name" value="<?= e($admin['name']) ?>" disabled>

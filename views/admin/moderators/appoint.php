@@ -17,75 +17,11 @@ declare(strict_types=1);
  * @var string $countdown   remaining time text
  */
 
-$division ??= ['id' => 1, 'name' => 'Kaduwela West'];
-
-$candidates ??= [
-    [
-        'initials'     => 'PR',
-        'name'         => 'Priya Rathnayake',
-        'trust_score'  => 96,
-        'member_since' => 'May 2025',
-        'transactions' => 34,
-        'months'       => 14,
-        'record'       => 'Clean',
-        'gn_endorsed'  => true,
-        'recommended'  => true,
-    ],
-    [
-        'initials'     => 'AB',
-        'name'         => 'Amara Bandara',
-        'trust_score'  => 91,
-        'member_since' => 'Jul 2025',
-        'transactions' => 28,
-        'months'       => 12,
-        'record'       => 'Clean',
-        'gn_endorsed'  => true,
-        'recommended'  => false,
-    ],
-    [
-        'initials'     => 'CW',
-        'name'         => 'Chathura Wijesinghe',
-        'trust_score'  => 85,
-        'member_since' => 'Sep 2025',
-        'transactions' => 22,
-        'months'       => 10,
-        'record'       => 'Clean',
-        'gn_endorsed'  => false,
-        'recommended'  => false,
-    ],
-    [
-        'initials'     => 'NP',
-        'name'         => 'Nadeesha Peris',
-        'trust_score'  => 78,
-        'member_since' => 'Nov 2025',
-        'transactions' => 15,
-        'months'       => 8,
-        'record'       => 'Clean',
-        'gn_endorsed'  => false,
-        'recommended'  => false,
-    ],
-];
-
-$selected ??= null;
-
-$objections ??= [
-    [
-        'initials' => 'SW',
-        'name'     => 'Sandun Weerasinghe',
-        'reason'   => 'Candidate runs a private lending circle which may conflict with platform duties.',
-        'date'     => '24 Jul 2026',
-        'status'   => 'pending',
-    ],
-];
-
-$currentStep ??= 1;
-
-$countdown ??= '6 days, 14 hours remaining';
-
 $pageTitle = 'Appoint moderator';
 $navActive = 'moderators';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -222,8 +158,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Back to selection</a>
         <div style="display:inline;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-
+            <p class="demo-note">Preview only. Saving is not available yet.</p>
             <button class="btn btn--primary" type="button" id="btn-confirm-appointment" disabled>Confirm and start objection window</button>
         </div>
     </div>
@@ -271,13 +206,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
                             <span class="list-row__meta"><?= e($obj['date']) ?></span>
                         </div>
                         <div style="display:inline;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                            
+                            <p class="demo-note">Preview only. Saving is not available yet.</p>
                             <button class="btn btn--ghost" type="submit" disabled>Dismiss</button>
                         </div>
                         <div style="display:inline;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                            
+                            <p class="demo-note">Preview only. Saving is not available yet.</p>
                             <button class="btn btn--danger" type="submit" disabled>Uphold</button>
                         </div>
                     </li>
@@ -290,7 +223,5 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/objections/<?= e((string) $division['id']) ?>">View objection details</a>
     </div>
 </div>
-
-
 
 <?php $pageScripts = ['list-filter.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

@@ -14,14 +14,13 @@ declare(strict_types=1);
  * checklist and "request more info" share this screen in Figma but have no
  * backend yet, and stay visibly unavailable rather than pretending to save.
  */
-final class ModerationController
+final class ModerationController extends Controller
 {
-    private PDO $pdo;
     private VerificationService $verifications;
 
     public function __construct(PDO $pdo)
     {
-        $this->pdo = $pdo;
+        parent::__construct($pdo);
 
         $this->verifications = new VerificationService(
             $pdo,
@@ -41,10 +40,10 @@ final class ModerationController
         $filter = $this->filter((string) ($_GET['status'] ?? ''));
 
         try {
-            $rows    = $this->verifications->queue($this->moderatorId(), $filter);
-            $pending = $this->verifications->pendingCount($this->moderatorId());
+            $rows    = $this->verifications->queue($this->userId(), $filter);
+            $pending = $this->verifications->pendingCount($this->userId());
         } catch (AccessDeniedException $exception) {
-            $this->renderNotice(403, 'No queue here', 'This account does not moderate a division.');
+            $this->notice(403, 'No queue here', 'This account does not moderate a division.');
 
             return;
         }
@@ -62,7 +61,7 @@ final class ModerationController
     public function show(int $id): void
     {
         try {
-            $application = $this->verifications->review($id, $this->moderatorId());
+            $application = $this->verifications->review($id, $this->userId());
         } catch (RuntimeException $exception) {
             $this->renderException($exception);
 
@@ -120,7 +119,7 @@ final class ModerationController
     private function decide(int $id, callable $decision, string $message): void
     {
         try {
-            $this->flash(sprintf($message, $decision($this->moderatorId())));
+            $this->flash(sprintf($message, $decision($this->userId())));
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
         } catch (RuntimeException $exception) {
@@ -186,7 +185,7 @@ final class ModerationController
             if (($application[$column] ?? null) !== null) {
                 $documents[] = [
                     'label' => $label,
-                    'url'   => base_url() . '/photo.php?p=' . rawurlencode((string) $application[$column]),
+                    'url'   => photo_url((string) $application[$column]),
                 ];
             }
         }
@@ -250,68 +249,14 @@ final class ModerationController
         };
     }
 
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function render(string $view, array $data): void
-    {
-        $appointment = (new Moderator($this->pdo))->findByUserId($this->moderatorId()) ?? [];
-
-        $data['currentModerator'] = [
-            'initials' => User::initials((string) ($appointment['full_name'] ?? '')),
-            'bond'     => 'Bond: ' . number_format((int) ($appointment['bond_points'] ?? 0)) . ' pts',
-        ];
-        $data['flash'] = $this->takeFlash();
-
-        extract($data, EXTR_SKIP);
-
-        include dirname(__DIR__, 2) . '/views/' . $view . '.php';
-    }
-
     private function renderException(RuntimeException $exception): void
     {
         if ($exception instanceof AccessDeniedException) {
-            $this->renderNotice(403, 'Not your division', 'You can only review applications from the division you moderate.');
+            $this->notice(403, 'Not your division', 'You can only review applications from the division you moderate.');
 
             return;
         }
 
-        $this->renderNotice(404, 'Record not found', 'This review is no longer available. Return to the queue to choose a record.');
-    }
-
-    private function renderNotice(int $status, string $title, string $body): void
-    {
-        http_response_code($status);
-
-        $noticeTitle = $title;
-        $noticeBody  = $body;
-
-        include dirname(__DIR__, 2) . '/views/errors/notice.php';
-    }
-
-    private function moderatorId(): int
-    {
-        return (int) ($_SESSION['user_id'] ?? 0);
-    }
-
-    private function flash(string $message, string $type = 'success'): void
-    {
-        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
-    }
-
-    /**
-     * @return array{type: string, message: string}|null
-     */
-    private function takeFlash(): ?array
-    {
-        $flash = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
-
-        return is_array($flash) ? ['type' => (string) $flash['type'], 'message' => (string) $flash['message']] : null;
-    }
-
-    private function redirect(string $path): void
-    {
-        header('Location: ' . base_url() . $path, true, 303);
+        $this->notice(404, 'Record not found', 'This review is no longer available. Return to the queue to choose a record.');
     }
 }

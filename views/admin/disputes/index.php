@@ -8,35 +8,11 @@ declare(strict_types=1);
  * @var array $disputes  rows: title, case_number, division, parties, escalated_at, reason, status, status_label, href
  */
 
-$disputes ??= [
-    [
-        'title'        => 'Grinding Drill',
-        'case_number'  => '#CD-0142',
-        'division'     => 'Wellawatte',
-        'parties'      => 'T.H.K. Madushan vs M. Lawsan',
-        'escalated_at' => 'escalated 18 Jul',
-        'reason'       => 'borrower refused sign-off',
-        'status'       => 'warning',
-        'status_label' => 'Timer expired',
-        'href'         => base_url() . '/admin/disputes/142',
-    ],
-    [
-        'title'        => 'Stand Mixer',
-        'case_number'  => '#CD-0138',
-        'division'     => 'Kollupitiya',
-        'parties'      => 'J. Kavipriya vs A. Akalvily',
-        'escalated_at' => 'escalated 16 Jul',
-        'reason'       => 'day 5 of 7',
-        'status'       => 'info',
-        'status_label' => 'In window',
-        'href'         => base_url() . '/admin/disputes/138',
-    ],
-];
-
 $pageTitle = 'Escalated disputes';
 $navActive = 'disputes';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
