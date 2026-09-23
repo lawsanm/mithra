@@ -3,10 +3,36 @@
 declare(strict_types=1);
 
 // Arrays call a controller action. Strings display a read-only demo screen.
+//
+// ROLES is the role-action matrix (Plan §20.1 module 1.5, Rules/CONVENTIONS.md
+// §7.4): the roles allowed under each path prefix. The longest matching prefix
+// wins, '*' means any signed-in account, and a path no prefix covers is refused
+// (fail closed). RbacMiddleware enforces it before any controller runs.
 return [
+    'ROLES' => [
+        // Every member screen. A moderator is a verified member too (§16.3).
+        '/'                => ['member', 'moderator'],
+        '/transparency'    => ['*'],
+        '/help'            => ['*'],
+        '/notifications'   => ['*'],
+        '/login'           => ['*'],
+        '/register'        => ['*'],
+        '/logout'          => ['*'],
+        '/forgot-password' => ['*'],
+        '/reset-password'  => ['*'],
+        '/account'         => ['*'],
+        '/admin'           => ['admin'],
+        '/moderator'       => ['moderator'],
+        '/sponsor-liaison' => ['sponsor_liaison'],
+        '/sponsor'         => ['sponsor'],
+    ],
     'GET' => [
         '/login'           => ['AuthController', 'loginForm'],
         '/register'        => ['AuthController', 'registerForm'],
+        '/forgot-password'      => ['AuthController', 'forgotForm'],
+        '/reset-password'       => ['AuthController', 'resetForm'],
+        '/reset-password/code'  => ['AuthController', 'codeForm'],
+        '/account/password'     => ['AccountController', 'passwordForm'],
         '/items'           => ['ItemController', 'index'],
         '/items/browse'    => ['ItemController', 'browse'],
         '/items/create'    => ['ItemController', 'createForm'],
@@ -21,8 +47,8 @@ return [
         '/gifts/new'               => 'gifts/index',
         '/notifications'           => 'notifications/index',
         '/help'                    => 'help/index',
-        '/settings'                => 'settings/index',
-        '/settings/close-account'  => 'settings/index',
+        '/settings'                => ['AccountController', 'settings'],
+        '/settings/close-account'  => ['AccountController', 'settings'],
         '/transparency'            => 'transparency/index',
         '/ratings'                 => 'ratings/index',
         '/trust'                   => 'trust/index',
@@ -52,7 +78,9 @@ return [
         '/admin/disaster'                 => 'admin/disaster/index',
         '/admin/categories'               => 'admin/categories/index',
         '/admin/pools'                    => 'admin/pools/index',
-        '/admin/pools/writeoffs'          => 'admin/pools/writeoffs',
+        '/admin/pools/reserve'            => 'admin/pools/reserve',
+        '/admin/listing-approvals'        => ['ListingApprovalController', 'index'],
+        '/admin/listing-approvals/{id}'   => ['ListingApprovalController', 'show'],
         '/admin/pools/sponsor-ledger'     => 'admin/pools/sponsor-ledger',
         '/admin/pools/policies'           => 'admin/pools/policies',
         '/admin/ledger'                   => 'admin/ledger/index',
@@ -63,6 +91,7 @@ return [
         '/admin/settings'                 => 'admin/settings/profile',
         '/admin/settings/profile'         => 'admin/settings/profile',
         '/admin/settings/security'        => 'admin/settings/security',
+        '/admin/reset-codes'              => ['AccountSupportController', 'resetCodeForm'],
         '/admin/settings/notifications'   => 'admin/settings/notifications',
     
         // ── Moderator ──
@@ -70,12 +99,14 @@ return [
         '/moderator/dashboard'               => 'moderator/dashboard/index',
         '/moderator/verifications'           => ['ModerationController', 'index'],
         '/moderator/verifications/{id}'      => ['ModerationController', 'show'],
-        '/moderator/listing-approvals'       => 'moderator/listing-approvals/index',
-        '/moderator/listing-approvals/{id}'  => 'moderator/listing-approvals/show',
+        '/moderator/listing-approvals'       => ['ListingApprovalController', 'index'],
+        '/moderator/listing-approvals/{id}'  => ['ListingApprovalController', 'show'],
         '/moderator/cases'                   => 'moderator/cases/index',
         '/moderator/cases/{id}'              => 'moderator/cases/show',
         '/moderator/disasters'               => 'moderator/disasters/index',
         '/moderator/aid-vouching'            => 'moderator/aid-vouching/index',
+        '/moderator/address-changes'         => ['AccountSupportController', 'addressChanges'],
+        '/moderator/reset-codes'             => ['AccountSupportController', 'resetCodeForm'],
     
         // ── Sponsor Liaison ──
         '/sponsor-liaison'                       => 'sponsor-liaison/dashboard/index',
@@ -108,11 +139,25 @@ return [
         '/login'              => ['AuthController', 'login'],
         '/register'           => ['AuthController', 'register'],
         '/logout'             => ['AuthController', 'logout'],
+        '/forgot-password'     => ['AuthController', 'forgot'],
+        '/reset-password'      => ['AuthController', 'reset'],
+        '/reset-password/code' => ['AuthController', 'resetWithCode'],
+        '/account/password'    => ['AccountController', 'changePassword'],
+        '/settings/preferences'   => ['AccountController', 'savePreferences'],
+        '/settings/close-account' => ['AccountController', 'closeAccount'],
+        '/profile'             => ['ProfileController', 'update'],
+        '/profile/address'     => ['ProfileController', 'requestAddressChange'],
+        '/moderator/address-changes/{id}/approve' => ['AccountSupportController', 'approveAddress'],
+        '/moderator/address-changes/{id}/reject'  => ['AccountSupportController', 'rejectAddress'],
+        '/moderator/reset-codes' => ['AccountSupportController', 'issueResetCode'],
+        '/admin/reset-codes'     => ['AccountSupportController', 'issueResetCode'],
         '/admin/divisions'    => ['AdminController', 'createDivision'],
         '/admin/divisions/{id}'          => ['AdminController', 'updateDivision'],
         '/admin/divisions/{id}/archive'  => ['AdminController', 'archiveDivision'],
         '/moderator/verifications/{id}/approve' => ['ModerationController', 'approve'],
         '/moderator/verifications/{id}/reject'  => ['ModerationController', 'reject'],
+        '/moderator/listing-approvals/{id}'     => ['ListingApprovalController', 'decide'],
+        '/admin/listing-approvals/{id}'         => ['ListingApprovalController', 'decide'],
         '/items'              => ['ItemController', 'store'],
         '/items/{id}'         => ['ItemController', 'update'],
         '/items/{id}/archive' => ['ItemController', 'archive'],

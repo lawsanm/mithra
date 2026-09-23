@@ -3,158 +3,41 @@
 declare(strict_types=1);
 
 /**
- * Listing approval detail — one listing and its value proof, and the
- * moderator's decision on it. Checklist, notes and the three decisions are one
- * POST form (§7.3, §11).
+ * Listing approval detail — one listing, its proof of value, its audit trail,
+ * and the reviewer's decision (Plan §9.2): approve, adjust the declared value
+ * with a reason the lender sees, or reject with a reason. One POST form with a
+ * CSRF token, so it works without JavaScript (§7.3, §11).
  *
- * @var array $listing   title, status, status_label, meta, description
- * @var array $facts     label/value pairs describing the listing
- * @var array $photos    value proof and condition photos: label
- * @var array $checklist review items: id, label, checked
+ * @var string $chrome      'moderator' or 'admin' — which page chrome to use
+ * @var string $basePath    URL of the queue this listing belongs to
+ * @var array  $listing     id, title, status, status_label, meta, description,
+ *                          declared_value, decided
+ * @var array  $facts       label/value pairs describing the listing
+ * @var string $requirement the Plan §9.1 proof rule for this declared value
+ * @var array  $proofGaps   messages when the proof on file falls short of that rule
+ * @var array  $photos      label/url pairs: proof of value first, then listing photos
+ * @var array  $trail       audit rows: line, reason
+ * @var array  $errors      per-field messages from the last decision attempt
+ * @var array  $old         the last decision attempt's values
+ * @var array|null $flash
  */
 
-// Sample view data — replaced by the controller once ModerationController lands.
-$sampleChecklist = [
-    ['id' => 'value-matches', 'label' => 'Declared value matches receipt'],
-    ['id' => 'photos-match',  'label' => 'Photos show item in described condition'],
-    ['id' => 'rate-in-range', 'label' => 'Lend rate falls within category guidance'],
-];
-
-$sampleListings = [
-    '1' => [
-        'listing' => [
-            'title'        => 'Pressure Washer',
-            'status'       => 'warning',
-            'status_label' => 'Pending approval',
-            'meta'         => 'Listed by T.H.K. Madushan  ·  submitted 15 Jul 2026  ·  Wellawatte',
-            'description'  => 'Karcher K4 electric pressure washer, includes hose and two nozzle '
-                            . 'attachments. Stored indoors, serviced this year.',
-        ],
-        'facts' => [
-            ['label' => 'Category',            'value' => 'Tools & Equipment'],
-            ['label' => 'Declared value',      'value' => '320 pts (receipt Rs 32,000)'],
-            ['label' => 'Suggested lend rate', 'value' => '20 pts / day'],
-            ['label' => 'Condition',           'value' => 'Good · lightly used'],
-        ],
-        'photos'  => ['Receipt', 'Photo', 'Photo', 'Photo'],
-        'checked' => ['value-matches', 'photos-match'],
-    ],
-    '2' => [
-        'listing' => [
-            'title'        => 'Cordless Drill — Bosch 18V',
-            'status'       => 'warning',
-            'status_label' => 'Pending approval',
-            'meta'         => 'Listed by R. Fernando  ·  submitted 1 day ago',
-            'description'  => 'Bosch 18V cordless drill with two batteries, charger and carry case.',
-        ],
-        'facts' => [
-            ['label' => 'Category',            'value' => 'Tools & Equipment'],
-            ['label' => 'Declared value',      'value' => '120 pts (receipt Rs 12,000)'],
-            ['label' => 'Suggested lend rate', 'value' => '8 pts / day'],
-            ['label' => 'Condition',           'value' => 'Good · lightly used'],
-        ],
-        'photos'  => ['Receipt', 'Photo', 'Photo', 'Photo'],
-        'checked' => ['value-matches'],
-    ],
-    '3' => [
-        'listing' => [
-            'title'        => 'Folding Table (6ft)',
-            'status'       => 'warning',
-            'status_label' => 'Pending approval',
-            'meta'         => 'Listed by N. Silva  ·  submitted 2 days ago',
-            'description'  => '6ft folding table with foldable legs, seats up to six.',
-        ],
-        'facts' => [
-            ['label' => 'Category',            'value' => 'Furniture'],
-            ['label' => 'Declared value',      'value' => '85 pts (photo proof)'],
-            ['label' => 'Suggested lend rate', 'value' => '5 pts / day'],
-            ['label' => 'Condition',           'value' => 'Good'],
-        ],
-        'photos'  => ['Photo', 'Photo', 'Photo', 'Photo'],
-        'checked' => ['photos-match'],
-    ],
-    '4' => [
-        'listing' => [
-            'title'        => 'Pressure Washer',
-            'status'       => 'info',
-            'status_label' => 'Inspection requested',
-            'meta'         => 'Listed by K. Bandara  ·  submitted 2 days ago  ·  inspection requested',
-            'description'  => 'Petrol pressure washer. Condition to be confirmed via in-person '
-                            . 'inspection before approval.',
-        ],
-        'facts' => [
-            ['label' => 'Category',            'value' => 'Tools & Equipment'],
-            ['label' => 'Declared value',      'value' => '220 pts (inspection requested)'],
-            ['label' => 'Suggested lend rate', 'value' => '18 pts / day'],
-            ['label' => 'Condition',           'value' => 'Pending inspection'],
-        ],
-        'photos'  => ['Photo', 'Photo', 'Photo', 'Photo'],
-        'checked' => [],
-    ],
-    '5' => [
-        'listing' => [
-            'title'        => 'Sewing Machine — Singer',
-            'status'       => 'warning',
-            'status_label' => 'Pending approval',
-            'meta'         => 'Listed by P. Mendis  ·  submitted 3 days ago',
-            'description'  => 'Singer sewing machine, works well, includes accessories case.',
-        ],
-        'facts' => [
-            ['label' => 'Category',            'value' => 'Household & Appliances'],
-            ['label' => 'Declared value',      'value' => '150 pts (receipt Rs 15,000)'],
-            ['label' => 'Suggested lend rate', 'value' => '10 pts / day'],
-            ['label' => 'Condition',           'value' => 'Good · works well'],
-        ],
-        'photos'  => ['Receipt', 'Photo', 'Photo', 'Photo'],
-        'checked' => ['value-matches', 'photos-match', 'rate-in-range'],
-    ],
-    '6' => [
-        'listing' => [
-            'title'        => 'Petrol Generator',
-            'status'       => 'error',
-            'status_label' => 'Rejected',
-            'meta'         => 'Listed by S. Perera  ·  rejected 12 Jul 2026',
-            'description'  => '2.5 kVA petrol generator. Fuel-powered items are not lendable under the '
-                            . 'division’s safety policy, so this listing was rejected.',
-        ],
-        'facts' => [
-            ['label' => 'Category',            'value' => 'Tools & Equipment'],
-            ['label' => 'Declared value',      'value' => '450 pts (receipt Rs 45,000)'],
-            ['label' => 'Suggested lend rate', 'value' => '30 pts / day'],
-            ['label' => 'Condition',           'value' => 'Good'],
-        ],
-        'photos'  => ['Receipt', 'Photo', 'Photo'],
-        'checked' => ['value-matches'],
-    ],
-];
-
-$listingId = (string) ($_GET['id'] ?? '');
-$sample    = $sampleListings[$listingId] ?? null;
-if ($sample === null) {
-    http_response_code(404);
-    $noticeTitle = 'Record not found';
-    $noticeBody = 'This review is no longer available. Return to the queue to choose a record.';
-    include __DIR__ . '/../../errors/notice.php';
-    return;
-}
-
-$listing   ??= $sample['listing'];
-$facts     ??= $sample['facts'];
-$photos    ??= $sample['photos'];
-$checklist ??= array_map(
-    static fn (array $check): array => $check + ['checked' => in_array($check['id'], $sample['checked'], true)],
-    $sampleChecklist
-);
+$chrome    = ($chrome ?? 'moderator') === 'admin' ? 'admin' : 'moderator';
+$errors    = $errors ?? [];
+$old       = $old ?? ['decision' => '', 'declared_value' => '', 'reason' => ''];
+$photos    = $photos ?? [];
+$trail     = $trail ?? [];
+$proofGaps = $proofGaps ?? [];
 
 $pageTitle = $listing['title'];
 $navActive = 'listing-approvals';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+include __DIR__ . '/../../../partials/header-' . $chrome . '.php';
 
 ?>
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a class="breadcrumb__link link" href="<?= base_url() ?>/moderator/listing-approvals">Listing approvals</a>
+    <a class="breadcrumb__link link" href="<?= e($basePath) ?>">Listing approvals</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
     <span class="breadcrumb__current" aria-current="page"><?= e($listing['title']) ?></span>
 </nav>
@@ -167,9 +50,13 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 
 <p class="record-meta"><?= e($listing['meta']) ?></p>
 
-<div class="stack stack--loose" id="decision" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
+<?php include __DIR__ . '/../../../partials/flash.php'; ?>
+
+<?php if (isset($errors['form'])): ?>
+    <p class="notice notice--error" role="alert"><?= e($errors['form']) ?></p>
+<?php endif; ?>
+
+<div class="stack stack--loose" id="decision">
 
     <div class="two-col two-col--wide-main">
         <div class="stack">
@@ -184,60 +71,117 @@ include __DIR__ . '/../../../partials/header-moderator.php';
                         </span>
                     <?php endforeach; ?>
                 </div>
-                <p class="panel__prose"><?= e($listing['description']) ?></p>
+                <?php if ($listing['description'] !== ''): ?>
+                    <p class="panel__prose"><?= e($listing['description']) ?></p>
+                <?php endif; ?>
             </section>
 
             <section class="panel">
                 <h2 class="panel__title">Value proof &amp; condition photos</h2>
+                <p class="field__hint"><?= e($requirement) ?></p>
+                <?php foreach ($proofGaps as $gap): ?>
+                    <p class="notice notice--error"><?= e($gap) ?></p>
+                <?php endforeach; ?>
                 <div class="photo-grid">
                     <?php foreach ($photos as $photo): ?>
-                        <span class="thumb thumb--photo"><?= e($photo) ?></span>
+                        <a class="link" href="<?= e($photo['url']) ?>">
+                            <img class="thumb thumb--photo thumb__img" src="<?= e($photo['url']) ?>" alt="<?= e($photo['label']) ?>">
+                            <?= e($photo['label']) ?>
+                        </a>
                     <?php endforeach; ?>
                 </div>
+            </section>
+
+            <section class="panel">
+                <h2 class="panel__title">Audit trail</h2>
+                <?php if ($trail === []): ?>
+                    <p class="field__hint">No decisions yet.</p>
+                <?php else: ?>
+                    <ul class="checklist">
+                        <?php foreach ($trail as $entry): ?>
+                            <li>
+                                <span class="checklist__label"><?= e($entry['line']) ?></span>
+                                <?php if ($entry['reason'] !== ''): ?>
+                                    <span class="field__hint"><?= e($entry['reason']) ?></span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
             </section>
 
         </div>
 
         <div class="stack">
+            <?php if ($listing['decided']): ?>
+                <p class="notice notice--info">
+                    <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
+                    This listing has been decided. An edit by the lender sends it back to this queue.
+                </p>
+            <?php else: ?>
+                <form class="panel stack" method="post" action="<?= e($basePath) ?>/<?= e((string) $listing['id']) ?>">
+                    <?= csrf_field() ?>
+                    <h2 class="panel__title">Your decision</h2>
 
-            <section class="panel">
-                <h2 class="panel__title">Approval checklist</h2>
-                <ul class="checklist">
-                    <?php foreach ($checklist as $check): ?>
-                        <li>
-                            <label class="checklist__item" for="check-<?= e($check['id']) ?>">
+                    <fieldset class="field">
+                        <legend class="field__label">Decision</legend>
+                        <?php foreach (['approve' => 'Approve as declared', 'adjust' => 'Adjust the declared value', 'reject' => 'Reject the listing'] as $value => $label): ?>
+                            <label class="choice" for="decision-<?= e($value) ?>">
                                 <input
-                                    class="checklist__input"
-                                    type="checkbox"
-                                    id="check-<?= e($check['id']) ?>"
-                                    name="checks[]"
-                                    value="<?= e($check['id']) ?>"
-                                    <?= $check['checked'] ? 'checked' : '' ?>
-                                 disabled>
-                                <span class="checklist__label"><?= e($check['label']) ?></span>
+                                    type="radio"
+                                    id="decision-<?= e($value) ?>"
+                                    name="decision"
+                                    value="<?= e($value) ?>"
+                                    required
+                                    <?= $old['decision'] === $value ? 'checked' : '' ?>
+                                >
+                                <span><?= e($label) ?></span>
                             </label>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </section>
+                        <?php endforeach; ?>
+                        <?php if (isset($errors['decision'])): ?>
+                            <span class="field__error"><?= e($errors['decision']) ?></span>
+                        <?php endif; ?>
+                    </fieldset>
 
-            <div class="field">
-                <label class="field__label" for="approval-notes">Notes (optional)</label>
-                <textarea
-                    class="textarea"
-                    id="approval-notes"
-                    name="notes"
-                    placeholder="Add any notes for the record"
-                 disabled></textarea>
-            </div>
+                    <div class="field">
+                        <label class="field__label" for="adjusted-value">Corrected declared value (pts) — for “Adjust”</label>
+                        <input
+                            class="input input--narrow"
+                            type="number"
+                            id="adjusted-value"
+                            name="declared_value"
+                            min="1"
+                            step="1"
+                            value="<?= e($old['declared_value']) ?>"
+                            placeholder="<?= e((string) $listing['declared_value']) ?>"
+                            <?= isset($errors['declared_value']) ? 'aria-invalid="true"' : '' ?>
+                        >
+                        <?php if (isset($errors['declared_value'])): ?>
+                            <span class="field__error"><?= e($errors['declared_value']) ?></span>
+                        <?php endif; ?>
+                    </div>
 
+                    <div class="field">
+                        <label class="field__label" for="decision-reason">Reason — required to adjust or reject; the lender sees it</label>
+                        <textarea
+                            class="textarea"
+                            id="decision-reason"
+                            name="reason"
+                            maxlength="255"
+                            rows="3"
+                            <?= isset($errors['reason']) ? 'aria-invalid="true"' : '' ?>
+                        ><?= e($old['reason']) ?></textarea>
+                        <?php if (isset($errors['reason'])): ?>
+                            <span class="field__error"><?= e($errors['reason']) ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn btn--primary" type="submit">Record decision</button>
+                    </div>
+                </form>
+            <?php endif; ?>
         </div>
-    </div>
-
-    <div class="actions">
-        <button class="btn btn--ghost" type="submit" name="decision" value="reject" disabled>Reject listing</button>
-        <button class="btn btn--ghost" type="submit" name="decision" value="request-changes" disabled>Request changes</button>
-        <button class="btn btn--primary" type="submit" name="decision" value="approve" disabled>Approve listing</button>
     </div>
 </div>
 

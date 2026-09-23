@@ -3,90 +3,26 @@
 declare(strict_types=1);
 
 /**
- * Listing approvals queue — item listings waiting on a moderator's sign-off
- * before they go live, filtered by status.
+ * Listing approvals queue — listings waiting on a reviewer's declared-value
+ * decision before they go live (Plan §9.2), filtered by status. The same view
+ * serves the moderator and, for moderators' own listings, the Admin.
  *
- * @var array  $filters       pills: label, state, active
+ * @var string $chrome        'moderator' or 'admin' — which page chrome to use
+ * @var string $basePath      URL of this queue
+ * @var array  $filters       pills: label, href, active
  * @var string $filterSummary count line at the end of the filter bar
  * @var array  $listings      rows: title, meta, status, status_label, href
+ * @var array|null $flash
  */
 
-// Sample view data — replaced by the controller once ModerationController lands.
-$state = (string) ($_GET['status'] ?? '');
-
-$filters ??= array_map(
-    static fn (array $filter): array => $filter + ['active' => $filter['state'] === $state],
-    [
-        ['label' => 'All',      'state' => ''],
-        ['label' => 'Pending',  'state' => 'pending'],
-        ['label' => 'Approved', 'state' => 'approved'],
-        ['label' => 'Rejected', 'state' => 'rejected'],
-    ]
-);
-
-$sampleRows = [
-    [
-        'state'        => 'pending',
-        'title'        => 'Cordless Drill — Bosch 18V',
-        'meta'         => 'R. Fernando  ·  declared 12,000 LKR  ·  proof: receipt  ·  1 day ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/listing-approvals/2',
-    ],
-    [
-        'state'        => 'pending',
-        'title'        => 'Folding Table (6ft)',
-        'meta'         => 'N. Silva  ·  declared 8,500 LKR  ·  proof: photo  ·  2 days ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/listing-approvals/3',
-    ],
-    [
-        'state'        => 'pending',
-        'title'        => 'Pressure Washer',
-        'meta'         => 'K. Bandara  ·  declared 22,000 LKR  ·  inspection requested  ·  2 days ago',
-        'status'       => 'info',
-        'status_label' => 'Inspection requested',
-        'href'         => base_url() . '/moderator/listing-approvals/4',
-    ],
-    [
-        'state'        => 'pending',
-        'title'        => 'Sewing Machine — Singer',
-        'meta'         => 'P. Mendis  ·  declared 15,000 LKR  ·  proof: receipt  ·  3 days ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting review',
-        'href'         => base_url() . '/moderator/listing-approvals/5',
-    ],
-    [
-        'state'        => 'approved',
-        'title'        => 'Pressure Washer',
-        'meta'         => 'T.H.K. Madushan  ·  declared 32,000 LKR  ·  approved 15 Jul',
-        'status'       => 'success',
-        'status_label' => 'Approved',
-        'href'         => base_url() . '/moderator/listing-approvals/1',
-    ],
-    [
-        'state'        => 'rejected',
-        'title'        => 'Petrol Generator',
-        'meta'         => 'S. Perera  ·  fuel-powered items are not lendable  ·  rejected 12 Jul',
-        'status'       => 'error',
-        'status_label' => 'Rejected',
-        'href'         => base_url() . '/moderator/listing-approvals/6',
-    ],
-];
-
-$listings ??= array_values(array_filter(
-    $sampleRows,
-    static fn (array $row): bool => $state === '' || $row['state'] === $state
-));
-
-$filterSummary ??= count(array_filter($sampleRows, static fn (array $row): bool => $row['state'] === 'pending'))
-    . ' pending';
+$chrome   = ($chrome ?? 'moderator') === 'admin' ? 'admin' : 'moderator';
+$filters  = $filters ?? [];
+$listings = $listings ?? [];
 
 $pageTitle = 'Listing approvals';
 $navActive = 'listing-approvals';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+include __DIR__ . '/../../../partials/header-' . $chrome . '.php';
 
 ?>
 
@@ -94,18 +30,20 @@ include __DIR__ . '/../../../partials/header-moderator.php';
     <h1 class="page-header__title">Listing approvals</h1>
 </header>
 
+<?php include __DIR__ . '/../../../partials/flash.php'; ?>
+
 <div class="filter-bar">
     <ul class="filter-pills">
         <?php foreach ($filters as $filter): ?>
             <li>
                 <a class="pill<?= $filter['active'] ? ' pill--active' : '' ?>"
-                   href="<?= base_url() ?>/moderator/listing-approvals<?= $filter['state'] === '' ? '' : '?status=' . rawurlencode($filter['state']) ?>"
+                   href="<?= e($filter['href']) ?>"
                    <?= $filter['active'] ? 'aria-current="true"' : '' ?>
                 ><?= e($filter['label']) ?></a>
             </li>
         <?php endforeach; ?>
     </ul>
-    <span class="filter-bar__count"><?= e($filterSummary) ?></span>
+    <span class="filter-bar__count"><?= e($filterSummary ?? '') ?></span>
 </div>
 
 <?php if ($listings === []): ?>
@@ -115,9 +53,9 @@ include __DIR__ . '/../../../partials/header-moderator.php';
         </span>
         <p class="empty-state__title">Nothing in this queue</p>
         <p class="empty-state__body">
-            No listing matches this filter. Try “All” to see every listing awaiting approval in your division.
+            No listing you review matches this filter. Try “All” to see every listing you have decided.
         </p>
-        <a class="btn btn--primary" href="<?= base_url() ?>/moderator/listing-approvals">Show all listings</a>
+        <a class="btn btn--primary" href="<?= e($basePath ?? '') ?>">Show all listings</a>
     </div>
 <?php else: ?>
     <ul class="row-list">

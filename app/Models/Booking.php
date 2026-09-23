@@ -166,4 +166,31 @@ final class Booking extends BaseModel
             ['id' => $bookingId]
         );
     }
+
+    /**
+     * Bookings still running on either side — a member cannot close their
+     * account while any exist (Plan §17).
+     */
+    public function countOpenForMember(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings
+              WHERE (borrower_id = :borrower OR lender_id = :lender)
+                AND status IN ('requested','accepted','awaiting_handover','in_progress',
+                               'awaiting_return','pending_moderator','escalated')",
+            ['borrower' => $memberId, 'lender' => $memberId]
+        );
+    }
+
+    /** Damage claims not yet settled on any booking this member is party to (Plan §17). */
+    public function countPendingClaimsForMember(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM damage_claims dc
+               JOIN bookings b ON b.id = dc.booking_id
+              WHERE (b.borrower_id = :borrower OR b.lender_id = :lender)
+                AND dc.status NOT IN ('resolved','closed')",
+            ['borrower' => $memberId, 'lender' => $memberId]
+        );
+    }
 }

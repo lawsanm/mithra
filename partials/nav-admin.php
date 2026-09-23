@@ -21,6 +21,7 @@ $navItems = [
     'divisions'  => ['label' => 'Divisions',    'href' => base_url() . '/admin/divisions'],
     'moderators' => ['label' => 'Moderators',   'href' => base_url() . '/admin/moderators'],
     'disputes'   => ['label' => 'Disputes',     'href' => base_url() . '/admin/disputes'],
+    'listing-approvals' => ['label' => 'Listings', 'href' => base_url() . '/admin/listing-approvals'],
     'categories' => ['label' => 'Categories',   'href' => base_url() . '/admin/categories'],
     'pools'      => ['label' => 'Pools',        'href' => base_url() . '/admin/pools'],
     'ledger'     => ['label' => 'Ledger',       'href' => base_url() . '/admin/ledger'],

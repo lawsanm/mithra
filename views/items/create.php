@@ -16,10 +16,12 @@ declare(strict_types=1);
  * @var array  $photos     proxy URLs of the photos already uploaded
  * @var array  $errors     per-field messages from the Validator
  * @var string $summary    one-line recap shown on the last step
+ * @var array  $proofTypes value => label for the proof-of-value kinds (Plan §9.1)
  */
 
 $step       = $step ?? 1;
 $categories = $categories ?? [];
+$proofTypes = $proofTypes ?? [];
 $draft      = $draft ?? [];
 $photos     = $photos ?? [];
 $errors     = $errors ?? [];
@@ -169,12 +171,31 @@ include __DIR__ . '/../../partials/header.php';
             <?php endif; ?>
         </div>
 
-        <p class="form-card__legend">Proof of value</p>
+        <div class="field">
+            <label class="field__label" for="value-proof-type">Proof of value</label>
+            <select class="input" id="value-proof-type" name="value_proof_type">
+                <option value="">None — declared value is 2,000 points or less</option>
+                <?php foreach ($proofTypes as $proofValue => $proofLabel): ?>
+                    <option
+                        value="<?= e($proofValue) ?>"
+                        <?= (string) ($draft['value_proof_type'] ?? '') === $proofValue ? 'selected' : '' ?>
+                    ><?= e($proofLabel) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <span class="field__hint">
+                Up to 2,000 pts: photos are enough. 2,001 to 10,000 pts: a receipt, warranty card or
+                retail price reference. Above 10,000 pts: a receipt or warranty card, or an in-person
+                inspection by your moderator.
+            </span>
+            <?php if (isset($errors['value_proof_type'])): ?>
+                <span class="field__error"><?= e($errors['value_proof_type']) ?></span>
+            <?php endif; ?>
+        </div>
 
         <label class="upload-drop">
             <span class="upload-drop__glyph" aria-hidden="true">＋</span>
             <span>
-                <?= $draft['value_proof_path'] !== null ? 'Proof uploaded — choose another to replace it' : 'Upload a photo of a receipt, invoice or comparable ad' ?>
+                <?= $draft['value_proof_path'] !== null ? 'Proof uploaded — choose another to replace it' : 'Upload a photo of the receipt, warranty card or price reference' ?>
             </span>
             <input class="visually-hidden" type="file" name="value_proof" accept="image/jpeg,image/png,image/webp">
         </label>

@@ -22,9 +22,17 @@ final class AuthMiddleware
      * The only paths a signed-out visitor may reach.
      *
      * /logout is here because ending a session you no longer have should be a
-     * no-op, never a redirect loop.
+     * no-op, never a redirect loop. The reset pages are here because the
+     * member who needs them cannot sign in.
      */
-    private const PUBLIC_PATHS = ['/login', '/register', '/logout'];
+    private const PUBLIC_PATHS = [
+        '/login',
+        '/register',
+        '/logout',
+        '/forgot-password',
+        '/reset-password',
+        '/reset-password/code',
+    ];
 
     /**
      * @param int|null $userId the signed-in member, or null for a visitor

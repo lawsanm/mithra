@@ -34,7 +34,7 @@ $cronJobs ??= [
     ['name' => 'Nightly invariant check',  'schedule' => '02:00 daily',  'last_run' => 'last run 20 Jul, 02:00', 'status' => 'success', 'status_label' => 'On schedule'],
     ['name' => '48-hour auto-cancel sweep', 'schedule' => 'Hourly',      'last_run' => 'last run 20 Jul, 09:00', 'status' => 'success', 'status_label' => 'On schedule'],
     ['name' => 'Overdue booking flagger',   'schedule' => '06:00 daily', 'last_run' => 'last run 20 Jul, 06:00', 'status' => 'success', 'status_label' => 'On schedule'],
-    ['name' => 'Write-off candidate scan',  'schedule' => 'Weekly · Sun', 'last_run' => 'last run 13 Jul, 03:00', 'status' => 'warning', 'status_label' => 'Overdue - expected 20 Jul'],
+    ['name' => 'Trust score refresh',       'schedule' => '03:00 daily',  'last_run' => 'last run 19 Jul, 03:00', 'status' => 'warning', 'status_label' => 'Overdue - expected 20 Jul'],
 ];
 
 $pageTitle = 'Dashboard';
@@ -109,7 +109,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <div class="actions">
     <a class="btn btn--ghost" href="<?= base_url() ?>/admin/disaster">Disaster Mode</a>
-    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/writeoffs">Review write-offs</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/reserve">Reserve Pool</a>
     <a class="btn btn--primary" href="<?= base_url() ?>/admin/disputes">Open escalated disputes</a>
 </div>
 

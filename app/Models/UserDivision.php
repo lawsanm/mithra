@@ -17,17 +17,22 @@ final class UserDivision extends BaseModel
     protected string $columns = 'id, user_id, gn_division_id, membership_type, verified_by, verified_at, status, created_at';
 
     /**
-     * The home membership a new registration applies for. Pending until a
-     * moderator decides it (Proposal §19.1).
+     * The home membership a new registration applies for, carrying its proof
+     * of address. Pending until a moderator decides it (Plan §18.1).
      */
-    public function createHome(int $userId, int $divisionId): int
+    public function createHome(int $userId, int $divisionId, string $proofType, string $proofPath): int
     {
         $statement = $this->pdo->prepare(
-            "INSERT INTO user_divisions (user_id, gn_division_id, membership_type, status)
-             VALUES (:user_id, :division_id, 'home', 'pending')"
+            "INSERT INTO user_divisions (user_id, gn_division_id, membership_type, proof_type, proof_file_path, status)
+             VALUES (:user_id, :division_id, 'home', :proof_type, :proof_path, 'pending')"
         );
 
-        $statement->execute(['user_id' => $userId, 'division_id' => $divisionId]);
+        $statement->execute([
+            'user_id'     => $userId,
+            'division_id' => $divisionId,
+            'proof_type'  => $proofType,
+            'proof_path'  => $proofPath,
+        ]);
 
         return (int) $this->pdo->lastInsertId();
     }
@@ -84,7 +89,8 @@ final class UserDivision extends BaseModel
     {
         return $this->selectOne(
             'SELECT ud.id, ud.user_id, ud.gn_division_id, ud.status, ud.created_at, ud.verified_at,
-                    u.full_name, u.nic, u.phone, u.email, u.address, u.status AS user_status,
+                    ud.proof_type, ud.proof_file_path,
+                    u.full_name, u.nic, u.nic_photo_path, u.phone, u.email, u.address, u.status AS user_status,
                     d.name AS division_name, d.moderator_id,
                     v.full_name AS decided_by_name
                FROM user_divisions ud
@@ -130,5 +136,56 @@ final class UserDivision extends BaseModel
         );
 
         return $id === false || $id === null ? null : (int) $id;
+    }
+
+    /**
+     * Who may look at an identity document: the moderators of the divisions it
+     * was submitted to (Plan §25.3). Empty when the path is no one's document.
+     *
+     * @return list<int> moderator user ids
+     */
+    public function documentReviewers(string $path): array
+    {
+        $rows = $this->select(
+            'SELECT DISTINCT d.moderator_id
+               FROM user_divisions ud
+               JOIN users u        ON u.id = ud.user_id
+               JOIN gn_divisions d ON d.id = ud.gn_division_id
+              WHERE (ud.proof_file_path = :proof OR u.nic_photo_path = :nic)
+                AND d.moderator_id IS NOT NULL',
+            ['proof' => $path, 'nic' => $path]
+        );
+
+        return array_map(static fn (array $row): int => (int) $row['moderator_id'], $rows);
+    }
+
+    /** Whether this path is an identity document at all. */
+    public function isDocument(string $path): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT (SELECT COUNT(*) FROM user_divisions WHERE proof_file_path = :proof)
+                  + (SELECT COUNT(*) FROM users WHERE nic_photo_path = :nic)',
+            ['proof' => $path, 'nic' => $path]
+        ) > 0;
+    }
+
+    /** End every membership of a closing account (Plan §17). */
+    public function deactivateAllFor(int $userId): void
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE user_divisions SET status = 'deactivated'
+              WHERE user_id = :user AND status IN ('pending','active','paused')"
+        );
+        $statement->execute(['user' => $userId]);
+    }
+
+    /** Replace the verified address proof after an approved address change. */
+    public function replaceHomeProof(int $userId, string $proofPath): void
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE user_divisions SET proof_type = 'address', proof_file_path = :proof
+              WHERE user_id = :user AND membership_type = 'home'"
+        );
+        $statement->execute(['proof' => $proofPath, 'user' => $userId]);
     }
 }

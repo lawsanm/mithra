@@ -9,15 +9,31 @@ final class PointLedger extends BaseModel
 
     private const PER_PAGE = 25;
 
+    /** Filter pill => the ledger reasons it covers (Plan §7.3). */
+    private const GROUPS = [
+        'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout'],
+        'gifts'   => ['gift'],
+        'aid'     => ['aid_grant', 'aid_return', 'parting_gift'],
+        'fees'    => ['late_fee', 'damage_penalty'],
+        'sponsor' => ['sponsor_contribution', 'welcome_bonus', 'moderator_stipend', 'community_reward', 'bond_hold', 'bond_return'],
+        'reserve' => ['shortfall_cover', 'reserve_topup', 'bond_forfeit'],
+        'closures' => ['account_closure', 'parting_gift', 'recycle'],
+    ];
+
     /** @return array{rows: list<array<string, mixed>>, total: int, page: int, per_page: int} */
     public function adminList(string $filter, string $search, int $page): array
     {
         $where = '1=1';
         $params = [];
 
-        if ($filter !== '' && $filter !== 'all') {
-            $where .= ' AND pl.reason = :reason';
-            $params['reason'] = $filter;
+        if (isset(self::GROUPS[$filter])) {
+            // A fixed set of placeholders — the values stay bound.
+            $names = [];
+            foreach (self::GROUPS[$filter] as $index => $reason) {
+                $names[]                    = ':reason' . $index;
+                $params['reason' . $index] = $reason;
+            }
+            $where .= ' AND pl.reason IN (' . implode(', ', $names) . ')';
         }
 
         if ($search !== '') {
@@ -40,7 +56,7 @@ final class PointLedger extends BaseModel
         $rows = $this->select(
             "SELECT pl.id, pl.from_pool_code, pl.from_user_id, pl.to_pool_code, pl.to_user_id,
                     pl.amount, pl.reason, pl.booking_id, pl.gift_id, pl.aid_grant_id,
-                    pl.sponsor_purchase_id, pl.created_at,
+                    pl.contribution_id, pl.created_at,
                     fu.full_name AS from_user_name,
                     tu.full_name AS to_user_name
                FROM point_ledger pl
@@ -58,5 +74,44 @@ final class PointLedger extends BaseModel
             'page'     => $page,
             'per_page' => self::PER_PAGE,
         ];
+    }
+
+    /**
+     * Append one movement. The ledger is INSERT-only (Plan §15.5): there is no
+     * update or delete method on this model, and there never will be.
+     *
+     * Each side is a pool code or a member id, never both.
+     *
+     * @param array{from_pool_code:?string, from_user_id:?int, to_pool_code:?string,
+     *              to_user_id:?int, amount:int, reason:string} $entry
+     */
+    public function record(array $entry): int
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO point_ledger
+                 (from_pool_code, from_user_id, to_pool_code, to_user_id, amount, reason)
+             VALUES
+                 (:from_pool_code, :from_user_id, :to_pool_code, :to_user_id, :amount, :reason)'
+        );
+
+        $statement->execute([
+            'from_pool_code' => $entry['from_pool_code'],
+            'from_user_id'   => $entry['from_user_id'],
+            'to_pool_code'   => $entry['to_pool_code'],
+            'to_user_id'     => $entry['to_user_id'],
+            'amount'         => $entry['amount'],
+            'reason'         => $entry['reason'],
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /** Whether this member has ever received a movement of this kind. */
+    public function hasReceived(int $memberId, string $reason): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM point_ledger WHERE to_user_id = :id AND reason = :reason',
+            ['id' => $memberId, 'reason' => $reason]
+        ) > 0;
     }
 }
