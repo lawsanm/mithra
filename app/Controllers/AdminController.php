@@ -25,14 +25,15 @@ final class AdminController
         $cronRuns   = new CronRun($pdo);
         $moderators = new Moderator($pdo);
         $ledger     = new PointLedger($pdo);
-        $writeoffs  = new WriteOff($pdo);
+        $covers     = new ShortfallCover($pdo);
         $users      = new User($pdo);
         $cats       = new ItemCategory($pdo);
         $pools      = new PointPool($pdo);
         $bookings   = new Booking($pdo);
         $sponsors   = new Sponsor($pdo);
 
-        $adminUser = $users->find(6) ?? ['full_name' => 'System Admin'];
+        // RbacMiddleware only lets an admin session this far (§7.4).
+        $adminUser = $users->find((int) ($_SESSION['user_id'] ?? 0)) ?? ['full_name' => 'System Admin'];
 
         $shared = [
             'currentAdmin' => [
@@ -56,7 +57,7 @@ final class AdminController
             'admin/disaster/index'         => $this->disasterIndex($shared, $divisions),
             'admin/categories/index'       => $this->categoriesIndex($shared, $cats),
             'admin/pools/index'            => $this->poolsIndex($shared, $pools, $cronRuns),
-            'admin/pools/writeoffs'        => $this->writeoffsIndex($shared, $writeoffs, $pools),
+            'admin/pools/reserve'          => $this->reserveIndex($shared, $covers, $pools),
             'admin/pools/sponsor-ledger'   => $this->sponsorLedger($shared, $sponsors, $pools),
             'admin/pools/policies'         => $this->policies($shared),
             'admin/ledger/index'           => $this->ledgerIndex($shared, $ledger),
@@ -427,12 +428,12 @@ final class AdminController
         $invariantPassed = $invariant !== null && $invariant['status'] === 'success';
 
         $poolDescriptions = [
-            'sponsor'        => 'welcome bonuses · stipends · festival drops',
-            'aid'            => 'aid grants · 15% of every injection',
+            'sponsor'        => 'General contributions · welcome bonuses · stipends · bonds · rewards',
+            'aid'            => 'Aid contributions · parting gifts · approved aid grants only',
             'reserve'        => 'covers shortfalls — no negative balances',
             'in_flight'      => 'rental charges + late-fee buffers',
             'member_wallets' => 'sum of all member wallet balances',
-            'retired'        => 'closed accounts & write-offs',
+            'retired'        => 'Type A closures, awaiting recycling to the Sponsor Pool',
         ];
 
         return $shared + [
@@ -456,42 +457,31 @@ final class AdminController
         ];
     }
 
-    private function writeoffsIndex(array $shared, WriteOff $writeoffs, PointPool $pools): array
+    private function reserveIndex(array $shared, ShortfallCover $covers, PointPool $pools): array
     {
-        $reservePool = $pools->all();
-        $reserveBalance = 0;
-        foreach ($reservePool as $p) {
-            if ($p['pool_code'] === 'reserve') {
-                $reserveBalance = (int) $p['balance'];
-            }
-        }
-
-        $candidates = $writeoffs->candidates();
-        $yearStats = $writeoffs->yearStats();
+        $yearStats = $covers->yearStats();
 
         return $shared + [
-            'reserveBalance' => $reserveBalance,
-            'candidates' => array_map(fn(array $c): array => [
-                'id'           => $c['id'],
-                'initials'     => User::initials($c['user_name']),
-                'name'         => $c['user_name'],
-                'division'     => $c['division_name'],
-                'amount'       => number_format((int) $c['amount']) . ' pts',
-                'reason'       => 'Overdue debt — booking #' . $c['id'],
-                'age'          => $c['days_overdue'] . ' days overdue',
-                'extra'        => $c['user_status'] === 'suspended' ? 'Account suspended' : '',
-                'status'       => $c['user_status'] === 'suspended' ? 'error' : 'warning',
-                'status_label' => ucfirst($c['user_status']),
-            ], $candidates),
-            'yearStats' => ['total_pts' => $yearStats['total_pts'], 'accounts' => $yearStats['accounts']],
+            'stats' => [
+                ['label' => 'Reserve Pool balance',     'value' => number_format($pools->balance('reserve')) . ' pts', 'note' => 'Safety net — no member balance goes negative'],
+                ['label' => 'Shortfalls covered (' . date('Y') . ')', 'value' => number_format($yearStats['total_pts']) . ' pts', 'note' => $yearStats['covers'] . ' covers paid to lenders'],
+                ['label' => 'Top-ups from Sponsor Pool', 'value' => number_format($covers->topUpsThisYear()) . ' pts', 'note' => 'Recorded by the Sponsor Liaison this year'],
+            ],
+            'covers' => array_map(fn(array $c): array => [
+                'initials' => User::initials((string) ($c['borrower_name'] ?? '')),
+                'title'    => ($c['borrower_name'] ?? 'Unknown borrower') . ' → ' . ($c['lender_name'] ?? 'lender'),
+                'meta'     => trim(($c['division_name'] ?? '') . ' · booking #' . ($c['booking_id'] ?? '—')
+                    . ' · ' . date('j M Y', strtotime((string) $c['created_at'])), ' ·'),
+                'amount'   => '+' . number_format((int) $c['amount']) . ' pts',
+            ], $covers->recent()),
         ];
     }
 
     private function sponsorLedger(array $shared, Sponsor $sponsors, PointPool $pools): array
     {
-        $inflows = $sponsors->allInflows();
+        $inflows = $sponsors->allContributions();
 
-        $totalReceived = array_sum(array_column($inflows, 'points_credited'));
+        $totalReceived = array_sum(array_map('intval', array_column($inflows, 'points')));
 
         $sponsorPool = $pools->balance('sponsor');
 
@@ -505,9 +495,9 @@ final class AdminController
                 'date'     => date('d M Y', strtotime($r['recorded_at'])),
                 'sponsor'  => $r['company_name'],
                 'ref'      => $r['receipt_number'],
-                'category' => 'Sponsorship',
+                'category' => sprintf('General %s · Aid %s', number_format((int) $r['general_points']), number_format((int) $r['aid_points'])),
                 'cash'     => 'Rs ' . number_format((int) $r['cash_amount']),
-                'pts'      => '+' . number_format((int) $r['points_credited']),
+                'pts'      => '+' . number_format((int) $r['points']),
                 'status'   => 'success',
                 'status_label' => 'Settled',
             ], $inflows),
@@ -521,7 +511,9 @@ final class AdminController
                 ['name' => 'Daily gift cap', 'value' => '200 pts', 'description' => 'Maximum points a member can gift per day'],
                 ['name' => 'Annual gift cap', 'value' => '2,000 pts', 'description' => 'Maximum points a member can gift per year'],
                 ['name' => 'Moderator bond', 'value' => '500 pts', 'description' => 'Conduct bond deposited on appointment'],
-                ['name' => 'Write-off threshold', 'value' => '60 days', 'description' => 'Overdue debts become write-off candidates after this period'],
+                ['name' => 'Welcome bonus', 'value' => '200 pts', 'description' => 'Credited once from the Sponsor Pool after moderator verification'],
+                ['name' => 'Moderator stipend', 'value' => '100 pts / month', 'description' => 'Paid from the Sponsor Pool when the moderator acted that month'],
+                ['name' => 'Aid grant cap', 'value' => '500 pts / year', 'description' => 'Per member; one active grant, 60-day cooling period'],
                 ['name' => 'Dispute escalation timer', 'value' => '7 days', 'description' => 'Moderator disputes auto-escalate to admin after this period'],
             ],
         ];
@@ -538,8 +530,17 @@ final class AdminController
         $result = $ledger->adminList($filter, $search, $page);
 
         $reasonLabels = [
-            'sponsor_injection' => 'Sponsor injection',
+            'sponsor_contribution' => 'Sponsor contribution',
             'welcome_bonus'     => 'Welcome bonus',
+            'moderator_stipend' => 'Moderator stipend',
+            'community_reward'  => 'Community reward',
+            'reserve_topup'     => 'Reserve top-up',
+            'damage_penalty'    => 'Damage penalty',
+            'aid_return'        => 'Aid return',
+            'bond_forfeit'      => 'Bond forfeited',
+            'account_closure'   => 'Account closure (Type A)',
+            'parting_gift'      => 'Parting gift (Type B)',
+            'recycle'           => 'Retired recycling',
             'rental_charge'     => 'Rental charge',
             'rental_payout'     => 'Rental payout',
             'late_fee'          => 'Late fee',
@@ -547,7 +548,7 @@ final class AdminController
             'aid_grant'         => 'Aid grant',
             'bond_hold'         => 'Bond hold',
             'bond_return'       => 'Bond return',
-            'shortfall_writeoff'=> 'Write-off',
+            'shortfall_cover'   => 'Reserve shortfall cover',
             'buffer_hold'       => 'Buffer hold',
             'buffer_refund'     => 'Buffer refund',
         ];
@@ -714,14 +715,14 @@ final class AdminController
             ];
         }
 
-        // Pools — recent sponsor injections.
-        $sponsorRows = $sponsors->recentInjections(5);
+        // Pools — recent sponsor contributions.
+        $sponsorRows = $sponsors->recentContributions(5);
         foreach ($sponsorRows as $s) {
             $notices[] = [
                 'icon'     => '⚡',
                 'category' => 'pools',
-                'title'    => 'Sponsor injection received — ' . $s['receipt_number'],
-                'meta'     => $s['company_name'] . ' · +' . number_format((int) $s['points_credited']) . ' pts',
+                'title'    => 'Sponsor contribution recorded — ' . $s['receipt_number'],
+                'meta'     => $s['company_name'] . ' · +' . number_format((int) $s['points']) . ' pts',
                 'created_at' => $s['recorded_at'],
                 'read'     => true,
             ];
@@ -845,8 +846,13 @@ final class AdminController
 
     private function settings(array $shared, array $adminUser, string $tab): array
     {
+        // One-shot confirmation left by AccountController after a password change.
+        $flash = $_SESSION['flash'] ?? null;
+        unset($_SESSION['flash']);
+
         return $shared + [
             'activeTab' => $tab,
+            'flash'     => is_array($flash) ? ['type' => (string) $flash['type'], 'message' => (string) $flash['message']] : null,
             'admin' => [
                 'id'        => $adminUser['id'] ?? 6,
                 'name'      => $adminUser['full_name'],

@@ -11,7 +11,7 @@ final class User extends BaseModel
      * The columns one login attempt is allowed to see, shared by the two
      * finders below so email and mobile can never drift apart.
      */
-    private const LOGIN_SELECT = 'SELECT u.id, u.full_name, u.password_hash, u.status,
+    private const LOGIN_SELECT = 'SELECT u.id, u.full_name, u.password_hash, u.password_changed_at, u.status,
                     r.code AS role_code, ud.status AS membership_status
                FROM users u
                JOIN roles r ON r.id = u.role_id
@@ -123,24 +123,25 @@ final class User extends BaseModel
      * The caller passes an already-validated set and an already-hashed
      * password — this method makes no business decisions and never hashes (§6).
      * Every new account starts 'pending': only a moderator's approval moves it
-     * on (Proposal §19.1).
+     * on (Plan §18.1).
      *
-     * @param array{role_id:int, full_name:string, nic:string, phone:string,
-     *              email:?string, address:string, password_hash:string} $data
+     * @param array{role_id:int, full_name:string, nic:string, nic_photo_path:string,
+     *              phone:string, email:?string, address:string, password_hash:string} $data
      */
     public function create(array $data): int
     {
         $statement = $this->pdo->prepare(
             "INSERT INTO users
-                 (role_id, full_name, nic, phone, email, address, password_hash, status)
+                 (role_id, full_name, nic, nic_photo_path, phone, email, address, password_hash, status)
              VALUES
-                 (:role_id, :full_name, :nic, :phone, :email, :address, :password_hash, 'pending')"
+                 (:role_id, :full_name, :nic, :nic_photo_path, :phone, :email, :address, :password_hash, 'pending')"
         );
 
         $statement->execute([
-            'role_id'       => $data['role_id'],
-            'full_name'     => $data['full_name'],
-            'nic'           => $data['nic'],
+            'role_id'        => $data['role_id'],
+            'full_name'      => $data['full_name'],
+            'nic'            => $data['nic'],
+            'nic_photo_path' => $data['nic_photo_path'],
             'phone'         => $data['phone'],
             'email'         => $data['email'],
             'address'       => $data['address'],
@@ -349,5 +350,146 @@ final class User extends BaseModel
         }
 
         return strtoupper($letters[0] . ($letters[count($letters) - 1] ?? ''));
+    }
+
+    // ── Account security (module 1.1) ───────────────────────────────────────
+
+    /**
+     * The signed-in account with its password hash, for re-authentication
+     * (password change, account closure). Never used to render a page.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findAccount(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT u.id, u.full_name, u.email, u.phone, u.address, u.password_hash,
+                    u.password_changed_at, u.status, u.gift_receive_enabled, r.code AS role_code
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE u.id = :id',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * What the per-request session check needs: is the account still usable,
+     * and when did its password last change?
+     *
+     * @return array{status: string, password_changed_at: ?string, role_code: string}|null
+     */
+    public function sessionState(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT u.status, u.password_changed_at, r.code AS role_code
+               FROM users u JOIN roles r ON r.id = u.role_id
+              WHERE u.id = :id',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * An active account a reset email may be sent to.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findActiveByEmail(string $email): ?array
+    {
+        return $this->selectOne(
+            "SELECT id, full_name, email FROM users WHERE email = :email AND status = 'active' LIMIT 1",
+            ['email' => $email]
+        );
+    }
+
+    /**
+     * An account found by NIC or by the last nine digits of its mobile — the
+     * two things a moderator can check against the person standing in front
+     * of them when issuing a reset code.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForCodeIssue(string $nic, string $phoneDigits): ?array
+    {
+        return $this->selectOne(
+            "SELECT u.id, u.full_name, u.nic, u.phone, u.status, r.code AS role_code,
+                    ud.gn_division_id AS home_division_id
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+          LEFT JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = 'home'
+              WHERE u.nic = :nic OR u.phone_digits = :digits
+              ORDER BY u.id
+              LIMIT 1",
+            ['nic' => $nic, 'digits' => $phoneDigits]
+        );
+    }
+
+    /** Store a new password hash and stamp the change, which ends older sessions. */
+    public function updatePassword(int $id, string $passwordHash): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE users SET password_hash = :hash, password_changed_at = NOW() WHERE id = :id'
+        );
+        $statement->execute(['hash' => $passwordHash, 'id' => $id]);
+    }
+
+    /** Upgrade a hash to the current cost without counting as a password change. */
+    public function rehashPassword(int $id, string $passwordHash): void
+    {
+        $statement = $this->pdo->prepare('UPDATE users SET password_hash = :hash WHERE id = :id');
+        $statement->execute(['hash' => $passwordHash, 'id' => $id]);
+    }
+
+    public function updateContact(int $id, string $fullName, string $phone, ?string $email): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE users SET full_name = :name, phone = :phone, email = :email WHERE id = :id'
+        );
+        $statement->execute(['name' => $fullName, 'phone' => $phone, 'email' => $email, 'id' => $id]);
+    }
+
+    public function updateAddress(int $id, string $address): void
+    {
+        $statement = $this->pdo->prepare('UPDATE users SET address = :address WHERE id = :id');
+        $statement->execute(['address' => $address, 'id' => $id]);
+    }
+
+    public function setGiftReceive(int $id, bool $enabled): void
+    {
+        $statement = $this->pdo->prepare('UPDATE users SET gift_receive_enabled = :on WHERE id = :id');
+        $statement->execute(['on' => $enabled ? 1 : 0, 'id' => $id]);
+    }
+
+    public function emailTakenByOther(string $email, int $id): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM users WHERE email = :email AND id <> :id',
+            ['email' => $email, 'id' => $id]
+        ) > 0;
+    }
+
+    public function phoneTakenByOther(string $digits, int $id): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM users WHERE phone_digits = :digits AND id <> :id',
+            ['digits' => $digits, 'id' => $id]
+        ) > 0;
+    }
+
+    /**
+     * Close an active account (Plan §17).
+     *
+     * @param string $status 'closed_standard' or 'closed_donation'
+     *
+     * @return bool false when it was not active
+     */
+    public function close(int $id, string $status): bool
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE users SET status = :status, closed_at = NOW(), gift_receive_enabled = 0
+              WHERE id = :id AND status = 'active'"
+        );
+        $statement->execute(['status' => $status, 'id' => $id]);
+
+        return $statement->rowCount() === 1;
     }
 }

@@ -9,6 +9,7 @@ $memberId = (int) ($_SESSION['user_id'] ?? 0);
 $accountLinks = match ($accountRole) {
     'admin' => [
         ['Profile', '/admin/settings/profile'], ['Security', '/admin/settings/security'],
+        ['Reset codes', '/admin/reset-codes'],
         ['Notifications', '/admin/notifications'], ['Notification preferences', '/admin/settings/notifications'],
         ['Cron Jobs', '/admin/cron'], ['Point Policies', '/admin/pools/policies'],
         ['Disaster Mode', '/admin/disaster'],
@@ -16,18 +17,21 @@ $accountLinks = match ($accountRole) {
     'sponsor' => [
         ['Dashboard', '/sponsor/dashboard'], ['Purchase Points', '/sponsor/purchase-points'],
         ['CSR Reports', '/sponsor/csr-reports'], ['Branding', '/sponsor/branding'],
-        ['Notifications', '/sponsor/notifications'],
+        ['Notifications', '/sponsor/notifications'], ['Change password', '/account/password'],
     ],
     'sponsor-liaison' => [
         ['Dashboard', '/sponsor-liaison/dashboard'], ['Sponsors', '/sponsor-liaison/sponsors'],
         ['Record contribution', '/sponsor-liaison/purchases/create'],
         ['Aid Grants', '/sponsor-liaison/aid-grants'], ['CSR Reports', '/sponsor-liaison/csr-reports'],
+        ['Change password', '/account/password'],
     ],
     'moderator' => [
         ['Dashboard', '/moderator/dashboard'], ['Verifications', '/moderator/verifications'],
         ['Approvals', '/moderator/listing-approvals'], ['Cases', '/moderator/cases'],
         ['Aid Vouching', '/moderator/aid-vouching'], ['Disasters', '/moderator/disasters'],
-        ['Member Profile', '/profile?context=moderator'], ['Help', '/help?context=moderator'],
+        ['Address changes', '/moderator/address-changes'], ['Reset codes', '/moderator/reset-codes'],
+        ['Member Profile', '/profile?context=moderator'], ['Settings', '/settings'],
+        ['Help', '/help?context=moderator'],
     ],
     default => [
         ['Profile', '/profile'], ['Public Profile', '/members/' . $memberId],

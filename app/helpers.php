@@ -30,3 +30,40 @@ function csrf_field(): string
 {
     return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
 }
+
+/**
+ * One form field's uploads as a plain list, whether the input was single or
+ * multiple. Controllers call this so services never read $_FILES (§6).
+ *
+ * @return list<array{name: string, tmp_name: string, error: int, size: int}>
+ */
+function uploaded_files(string $field): array
+{
+    $raw = $_FILES[$field] ?? null;
+
+    if (!is_array($raw) || !isset($raw['name'])) {
+        return [];
+    }
+
+    if (!is_array($raw['name'])) {
+        return [[
+            'name'     => (string) $raw['name'],
+            'tmp_name' => (string) ($raw['tmp_name'] ?? ''),
+            'error'    => (int) ($raw['error'] ?? UPLOAD_ERR_NO_FILE),
+            'size'     => (int) ($raw['size'] ?? 0),
+        ]];
+    }
+
+    $files = [];
+
+    foreach (array_keys($raw['name']) as $index) {
+        $files[] = [
+            'name'     => (string) $raw['name'][$index],
+            'tmp_name' => (string) ($raw['tmp_name'][$index] ?? ''),
+            'error'    => (int) ($raw['error'][$index] ?? UPLOAD_ERR_NO_FILE),
+            'size'     => (int) ($raw['size'][$index] ?? 0),
+        ];
+    }
+
+    return $files;
+}

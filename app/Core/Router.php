@@ -3,13 +3,23 @@
 declare(strict_types=1);
 
 /**
- * Matches a URL, checks the submitted form's token and the visitor's session,
- * then calls the controller.
+ * Matches a URL, runs the middleware chain in the order the plan fixes
+ * (Plan §21.3, Rules/CONVENTIONS.md §1): Auth → RBAC → CSRF, then the session
+ * check, then calls the controller. The first three run before a database
+ * connection is opened.
  */
 final class Router
 {
-    public function __construct(private array $routes)
+    private array $routes;
+
+    /** @var array<string, list<string>> path prefix => roles, from routes.php */
+    private array $roles;
+
+    public function __construct(array $routes)
     {
+        $this->roles = $routes['ROLES'] ?? [];
+        unset($routes['ROLES']);
+        $this->routes = $routes;
     }
 
     public function dispatch(string $method, string $uri): void
@@ -43,16 +53,8 @@ final class Router
         }
 
         [$target, $params] = $match;
-        if ($method !== 'GET') {
-            $token = $_POST['csrf_token'] ?? '';
-            if (!is_string($token) || !hash_equals(csrf_token(), $token)) {
-                $this->notice(403, 'That form has expired', 'Reload the page and try again. Nothing was changed.');
-                return;
-            }
-        }
 
-        // Token first, session second: a forged POST is refused outright rather
-        // than bounced to a sign-in page that would accept it afterwards.
+        // 1. Auth — a visitor nobody has identified goes to the sign-in screen.
         $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
         $signIn = (new AuthMiddleware())->handle($path, $userId);
         if ($signIn !== null) {
@@ -60,7 +62,42 @@ final class Router
             return;
         }
 
+        // 2. RBAC — the role declared for this path in routes.php (§7.4).
+        $role = isset($_SESSION['role']) ? (string) $_SESSION['role'] : null;
+        if (!(new RbacMiddleware($this->roles))->handle($path, $role)) {
+            $this->notice(403, 'Not available to your account', 'This page belongs to a different role. Nothing was changed.');
+            return;
+        }
+
+        // 3. CSRF — every state-changing request carries the session's token.
+        if (!(new CsrfMiddleware())->handle($method, $_POST['csrf_token'] ?? null, csrf_token())) {
+            $this->notice(403, 'That form has expired', 'Reload the page and try again. Nothing was changed.');
+            return;
+        }
+
         $pdo = Database::connection();
+
+        // 4. Session — the account behind a signed-in session must still accept
+        //    it. One primary-key lookup, after the cheap checks above.
+        if ($userId !== null && $userId > 0 && !AuthMiddleware::isPublic($path)) {
+            $ended = (new SessionMiddleware())->handle(
+                (new User($pdo))->sessionState($userId),
+                $role,
+                isset($_SESSION['password_stamp']) ? (string) $_SESSION['password_stamp'] : null,
+                isset($_SESSION['last_seen']) ? (int) $_SESSION['last_seen'] : null,
+                time()
+            );
+
+            if ($ended !== null) {
+                $_SESSION = ['flash' => ['type' => 'error', 'message' => $ended]];
+                session_regenerate_id(true);
+                header('Location: ' . base_url() . '/login', true, 303);
+                return;
+            }
+
+            $_SESSION['last_seen'] = time();
+        }
+
         if (is_string($target)) {
             $controller = str_starts_with($target, 'admin/')
                 ? new AdminController($pdo)
