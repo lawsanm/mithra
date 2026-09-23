@@ -24,11 +24,6 @@ final class Mailer
         );
     }
 
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
     /**
      * @return bool true when mail() accepted the message for delivery
      */

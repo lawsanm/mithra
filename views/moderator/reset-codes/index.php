@@ -15,14 +15,14 @@ declare(strict_types=1);
  * @var array|null $flash
  */
 
-$chrome = ($chrome ?? 'moderator') === 'admin' ? 'admin' : 'moderator';
+$chrome = $chrome ?? 'moderator';
 $errors = $errors ?? [];
 $issued = $issued ?? null;
 
 $pageTitle = 'Password reset codes';
 $navActive = '';
 
-include __DIR__ . '/../../../partials/header-' . $chrome . '.php';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

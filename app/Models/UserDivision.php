@@ -123,22 +123,6 @@ final class UserDivision extends BaseModel
     }
 
     /**
-     * The division this member calls home, whatever state the membership is
-     * in. Used after sign-in to route a moderator to their own queue.
-     */
-    public function homeDivisionId(int $userId): ?int
-    {
-        $id = $this->selectValue(
-            "SELECT gn_division_id FROM user_divisions
-              WHERE user_id = :id AND membership_type = 'home'
-              LIMIT 1",
-            ['id' => $userId]
-        );
-
-        return $id === false || $id === null ? null : (int) $id;
-    }
-
-    /**
      * Who may look at an identity document: the moderators of the divisions it
      * was submitted to (Plan §25.3). Empty when the path is no one's document.
      *

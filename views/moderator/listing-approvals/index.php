@@ -15,14 +15,14 @@ declare(strict_types=1);
  * @var array|null $flash
  */
 
-$chrome   = ($chrome ?? 'moderator') === 'admin' ? 'admin' : 'moderator';
+$chrome   = $chrome ?? 'moderator';
 $filters  = $filters ?? [];
 $listings = $listings ?? [];
 
 $pageTitle = 'Listing approvals';
 $navActive = 'listing-approvals';
 
-include __DIR__ . '/../../../partials/header-' . $chrome . '.php';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

@@ -58,9 +58,7 @@ $giftReasonCount = sprintf(
     </div>
 
     <div class="stack" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="field">
             <label class="field__label" for="gift-recipient">Recipient</label>
             <select class="input" id="gift-recipient" name="recipient" required disabled>

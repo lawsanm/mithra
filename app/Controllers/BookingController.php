@@ -2,76 +2,94 @@
 
 declare(strict_types=1);
 
-/** Read-only booking navigation; decisions remain unavailable in the demo. */
-final class BookingController
+/**
+ * My Bookings — the member's bookings as borrower or lender, read-only until
+ * the Bookings module adds requests, handovers and returns.
+ */
+final class BookingController extends Controller
 {
-    public function __construct(private PDO $pdo)
-    {
-    }
-
+    /**
+     * GET /bookings.
+     */
     public function index(): void
     {
         $model = new Booking($this->pdo);
-        $role = ($_GET['role'] ?? '') === 'lender' ? 'lender' : 'borrower';
+        $me    = $this->userId();
+        $role  = ($_GET['role'] ?? '') === 'lender' ? 'lender' : 'borrower';
+
         $tabs = [];
         foreach (['borrower', 'lender'] as $tabRole) {
-            $tabs[] = ['label' => 'As ' . ucfirst($tabRole) . ' (' . $model->countForMember($this->memberId(), $tabRole) . ')',
-                'role' => $tabRole, 'active' => $role === $tabRole];
+            $tabs[] = [
+                'label'  => 'As ' . ucfirst($tabRole) . ' (' . $model->countForMember($me, $tabRole) . ')',
+                'role'   => $tabRole,
+                'active' => $role === $tabRole,
+            ];
         }
-        $bookings = array_map(fn (array $row): array => $this->listRow($row), $model->forMember($this->memberId(), $role));
+
+        $bookings = array_map(fn (array $row): array => $this->listRow($row), $model->forMember($me, $role));
+
         $this->render('bookings/index', compact('tabs', 'bookings'));
     }
 
+    /**
+     * GET /bookings/{id} — only the borrower and the lender may open it.
+     */
     public function show(int $id): void
     {
         $booking = (new Booking($this->pdo))->findForDetail($id);
-        if ($booking === null || !in_array($this->memberId(), [(int) $booking['borrower_id'], (int) $booking['lender_id']], true)) {
-            http_response_code(404);
-            $this->render('errors/notice', ['noticeTitle' => 'Booking not found',
-                'noticeBody' => 'Choose one of your bookings from My Bookings.']);
+        $me      = $this->userId();
+
+        if ($booking === null || !in_array($me, [(int) $booking['borrower_id'], (int) $booking['lender_id']], true)) {
+            $this->notice(404, 'Booking not found', 'Choose one of your bookings from My Bookings.');
+
             return;
         }
-        $role = $this->memberId() === (int) $booking['lender_id'] ? 'lender' : 'borrower';
-        $status = $this->status($booking['status']);
+
+        $role   = $me === (int) $booking['lender_id'] ? 'lender' : 'borrower';
+        $status = $this->status((string) $booking['status']);
+
         $this->render('bookings/detail', compact('booking', 'role', 'status'));
     }
 
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return array<string, string>
+     */
     private function listRow(array $row): array
     {
-        $status = $this->status((string) $row['status']);
-        return ['title' => (string) $row['item_title'],
-            'meta' => $row['counterparty'] . ' · ' . date('j M Y', strtotime($row['start_date']))
-                . ' – ' . date('j M Y', strtotime($row['end_date'])) . ' · ' . $row['rental_charge'] . ' pts rental charge',
-            'status' => $status[0], 'status_glyph' => $status[1], 'status_label' => $status[2],
-            'href' => base_url() . '/bookings/' . $row['id']];
+        [$badge, $glyph, $label] = $this->status((string) $row['status']);
+
+        return [
+            'title'        => (string) $row['item_title'],
+            'meta'         => sprintf(
+                '%s · %s – %s · %s pts rental charge',
+                $row['counterparty'],
+                date('j M Y', strtotime((string) $row['start_date'])),
+                date('j M Y', strtotime((string) $row['end_date'])),
+                $row['rental_charge']
+            ),
+            'status'       => $badge,
+            'status_glyph' => $glyph,
+            'status_label' => $label,
+            'href'         => base_url() . '/bookings/' . $row['id'],
+        ];
     }
 
+    /**
+     * @return array{0: string, 1: string, 2: string} badge class, glyph, label
+     */
     private function status(string $state): array
     {
         return match ($state) {
-            'requested' => ['info', 'i', 'Awaiting lender response'],
-            'accepted', 'awaiting_handover' => ['warning', '!', 'Handover pending'],
-            'in_progress' => ['success', '✓', 'In progress'],
-            'awaiting_return' => ['warning', '!', 'Return pending'],
-            'pending_moderator' => ['info', 'i', 'Pending moderator'],
-            'completed' => ['success', '✓', 'Completed'],
+            'requested'                               => ['info', 'i', 'Awaiting lender response'],
+            'accepted', 'awaiting_handover'           => ['warning', '!', 'Handover pending'],
+            'in_progress'                             => ['success', '✓', 'In progress'],
+            'awaiting_return'                         => ['warning', '!', 'Return pending'],
+            'pending_moderator'                       => ['info', 'i', 'Pending moderator'],
+            'completed'                               => ['success', '✓', 'Completed'],
             'cancelled', 'auto_cancelled', 'declined' => ['neutral', '—', ucfirst(str_replace('_', ' ', $state))],
-            default => ['neutral', 'i', ucfirst(str_replace('_', ' ', $state))],
+            default                                   => ['neutral', 'i', ucfirst(str_replace('_', ' ', $state))],
         };
-    }
-
-    /** The signed-in member. AuthMiddleware guarantees there is one (§7.4). */
-    private function memberId(): int
-    {
-        return (int) ($_SESSION['user_id'] ?? 0);
-    }
-
-    private function render(string $view, array $data): void
-    {
-        $member = (new User($this->pdo))->find($this->memberId());
-        $currentMember = ['initials' => User::initials((string) ($member['full_name'] ?? '')),
-            'points_balance' => number_format((new Wallet($this->pdo))->balance($this->memberId())) . ' pts'];
-        extract($data, EXTR_SKIP);
-        require dirname(__DIR__, 2) . '/views/' . $view . '.php';
     }
 }

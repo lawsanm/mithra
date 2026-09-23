@@ -92,7 +92,12 @@ final class Moderator extends BaseModel
             'SELECT u.id, u.full_name, u.trust_score, u.address, u.joined_at,
                     ud.verified_at,
                     (SELECT COUNT(*) FROM bookings WHERE (borrower_id = u.id OR lender_id = u.id)
-                       AND status = \'completed\') AS completed_bookings
+                       AND status = \'completed\') AS completed_bookings,
+                    (SELECT COUNT(*) FROM disputes dp JOIN bookings b ON b.id = dp.booking_id
+                      WHERE b.borrower_id = u.id OR b.lender_id = u.id) AS disputes,
+                    EXISTS (SELECT 1 FROM moderator_candidates mc
+                             WHERE mc.user_id = u.id AND mc.gn_division_id = :div2
+                               AND mc.endorsement IS NOT NULL) AS gn_endorsed
                FROM users u
                JOIN user_divisions ud ON ud.user_id = u.id AND ud.gn_division_id = :div
                     AND ud.membership_type = \'home\' AND ud.status = \'active\'
@@ -101,7 +106,7 @@ final class Moderator extends BaseModel
                 AND u.status = \'active\'
                 AND u.trust_score >= 70
               ORDER BY u.trust_score DESC',
-            ['div' => $divisionId]
+            ['div' => $divisionId, 'div2' => $divisionId]
         );
     }
 }

@@ -35,8 +35,6 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="panel panel--wide" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="media">
         <span class="thumb thumb--sm"></span>
         <span class="media__body">

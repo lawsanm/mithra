@@ -27,7 +27,8 @@ $dateRange ??= '';
 $pageTitle = 'Purchases & contributions';
 $navActive = 'purchases';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

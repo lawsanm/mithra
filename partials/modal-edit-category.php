@@ -8,10 +8,7 @@ declare(strict_types=1);
 ?>
 <dialog aria-labelledby="category-modal-title" class="modal modal--sm" id="modal-edit-category">
     <div id="form-edit-category" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="modal__head">
             <h2 class="modal__title" id="category-modal-title">Add category</h2>
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>

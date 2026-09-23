@@ -9,33 +9,27 @@ declare(strict_types=1);
  * read), then renders a view or redirects. No SQL, no business rules, no point
  * arithmetic (Rules/CONVENTIONS.md §6).
  *
- * The acting member is whoever is signed in; AuthMiddleware guarantees there is
- * one. Role enforcement is still missing — a member and an admin reach these
- * actions alike — so this is not yet a deployed application.
+ * The acting member is whoever is signed in; RbacMiddleware admits members and
+ * moderators (a moderator is a member too).
  */
-final class ItemController
+final class ItemController extends Controller
 {
     /** Session key holding the create wizard's half-finished listing. */
     private const DRAFT_KEY = 'item_draft';
 
     private const WIZARD_STEPS = 4;
 
-    private PDO $pdo;
     private ItemService $service;
     private Item $items;
     private ItemCategory $categories;
 
     public function __construct(PDO $pdo)
     {
-        $this->pdo        = $pdo;
+        parent::__construct($pdo);
+
         $this->items      = new Item($pdo);
         $this->categories = new ItemCategory($pdo);
-        $this->service    = new ItemService(
-            $this->items,
-            $this->categories,
-            new Booking($pdo),
-            new PhotoStore(dirname(__DIR__, 2) . '/storage/uploads')
-        );
+        $this->service    = new ItemService($this->items, $this->categories, new Booking($pdo), $this->uploads());
     }
 
     // ── Read ────────────────────────────────────────────────────────────────
@@ -45,7 +39,7 @@ final class ItemController
      */
     public function index(): void
     {
-        $me   = $this->memberId();
+        $me   = $this->userId();
         $type = $this->listingTypeFilter((string) ($_GET['type'] ?? ''));
 
         $rows   = $this->items->ownedBy($me, $type);
@@ -67,8 +61,9 @@ final class ItemController
      */
     public function browse(): void
     {
-        $me       = $this->memberId();
-        $division = $this->divisionId();
+        $me       = $this->userId();
+        $member   = (new User($this->pdo))->findWithDivision($me) ?? [];
+        $division = (int) ($member['division_id'] ?? 0);
         $query    = trim((string) ($_GET['q'] ?? ''));
         $page     = max(1, (int) ($_GET['page'] ?? 1));
 
@@ -96,7 +91,7 @@ final class ItemController
 
         $resultCount = $total === 0
             ? ($query === '' ? 'No items listed here yet' : 'No results for “' . $query . '”')
-            : $total . ' item' . ($total === 1 ? '' : 's') . ' available in ' . $this->divisionName();
+            : $total . ' item' . ($total === 1 ? '' : 's') . ' available in ' . (string) ($member['division_name'] ?? 'your community');
 
         $this->render('items/browse', [
             'query'       => $query,
@@ -116,17 +111,17 @@ final class ItemController
         $row = $this->items->findForDetail($id);
 
         if ($row === null) {
-            $this->renderNotice(404, 'Listing not found', 'This listing does not exist, or it has been removed.');
+            $this->notice(404, 'Listing not found', 'This listing does not exist, or it has been removed.');
 
             return;
         }
 
-        $me      = $this->memberId();
+        $me      = $this->userId();
         $isOwner = (int) $row['owner_id'] === $me;
 
         // An unapproved or paused listing is only visible to the member who owns it.
         if (!$isOwner && !in_array($row['status'], ['active', 'borrowed'], true)) {
-            $this->renderNotice(404, 'Listing not available', 'This listing is not on the shelf right now.');
+            $this->notice(404, 'Listing not available', 'This listing is not on the shelf right now.');
 
             return;
         }
@@ -295,7 +290,8 @@ final class ItemController
                     $draft['daily_rate']   = $validator->value('daily_rate');
                     $draft['monthly_rate'] = $validator->value('monthly_rate');
 
-                    $this->service->create($this->memberId(), $this->divisionId(), $draft, $draft['photos']);
+                    $member = (new User($this->pdo))->findWithDivision($this->userId()) ?? [];
+                    $this->service->create($this->userId(), (int) ($member['division_id'] ?? 0), $draft, $draft['photos']);
 
                     unset($_SESSION[self::DRAFT_KEY]);
                     $this->flash('Listing submitted. Your moderator reviews it before it goes live.');
@@ -323,7 +319,7 @@ final class ItemController
     public function editForm(int $id): void
     {
         try {
-            $row = $this->service->ownedOrFail($id, $this->memberId());
+            $row = $this->service->ownedOrFail($id, $this->userId());
         } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
@@ -338,7 +334,7 @@ final class ItemController
      */
     public function update(int $id): void
     {
-        $me = $this->memberId();
+        $me = $this->userId();
 
         try {
             $row = $this->service->ownedOrFail($id, $me);
@@ -442,7 +438,7 @@ final class ItemController
     private function transition(callable $change, string $message): void
     {
         try {
-            $change($this->memberId());
+            $change($this->userId());
             $this->flash($message);
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
@@ -577,32 +573,13 @@ final class ItemController
         $urls = [];
 
         foreach ($paths as $path) {
-            $urls[] = base_url() . '/photo.php?p=' . rawurlencode((string) $path);
+            $urls[] = photo_url((string) $path);
         }
 
         return $urls;
     }
 
     // ── Rendering ───────────────────────────────────────────────────────────
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function render(string $view, array $data): void
-    {
-        $member  = (new User($this->pdo))->findWithDivision($this->memberId()) ?? [];
-        $wallets = new Wallet($this->pdo);
-
-        $data['currentMember'] = [
-            'initials'       => User::initials((string) ($member['full_name'] ?? '')),
-            'points_balance' => number_format($wallets->balance($this->memberId())) . ' pts',
-        ];
-        $data['flash'] = $this->takeFlash();
-
-        extract($data, EXTR_SKIP);
-
-        include dirname(__DIR__, 2) . '/views/' . $view . '.php';
-    }
 
     /**
      * @param array<string, mixed> $draft
@@ -713,23 +690,15 @@ final class ItemController
     private function renderException(RuntimeException $exception): void
     {
         if ($exception instanceof AccessDeniedException) {
-            $this->renderNotice(403, 'Not your listing', 'You can only edit items you listed yourself.');
+            $this->notice(403, 'Not your listing', 'You can only edit items you listed yourself.');
 
             return;
         }
 
-        $this->renderNotice(404, 'Listing not found', 'This listing does not exist, or it has been removed.');
-    }
-
-    private function renderNotice(int $status, string $title, string $body): void
-    {
-        http_response_code($status);
-
-        $this->render('errors/notice', ['noticeTitle' => $title, 'noticeBody' => $body]);
+        $this->notice(404, 'Listing not found', 'This listing does not exist, or it has been removed.');
     }
 
     // ── Plumbing ────────────────────────────────────────────────────────────
-
 
     /**
      * @return array<string, mixed>
@@ -810,46 +779,5 @@ final class ItemController
     private function slug(string $name): string
     {
         return trim((string) preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($name)), '-');
-    }
-
-    /** The signed-in member. AuthMiddleware guarantees there is one (§7.4). */
-    private function memberId(): int
-    {
-        return (int) ($_SESSION['user_id'] ?? 0);
-    }
-
-    private function divisionId(): int
-    {
-        $member = (new User($this->pdo))->findWithDivision($this->memberId());
-
-        return (int) ($member['division_id'] ?? 0);
-    }
-
-    private function divisionName(): string
-    {
-        $member = (new User($this->pdo))->findWithDivision($this->memberId());
-
-        return (string) ($member['division_name'] ?? 'your community');
-    }
-
-    private function flash(string $message, string $type = 'success'): void
-    {
-        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
-    }
-
-    /**
-     * @return array{type: string, message: string}|null
-     */
-    private function takeFlash(): ?array
-    {
-        $flash = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
-
-        return is_array($flash) ? ['type' => (string) $flash['type'], 'message' => (string) $flash['message']] : null;
-    }
-
-    private function redirect(string $path): void
-    {
-        header('Location: ' . base_url() . $path, true, 303);
     }
 }

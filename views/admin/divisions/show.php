@@ -5,40 +5,16 @@ declare(strict_types=1);
 /**
  * Division detail view.
  *
- * @var array $division     id, name, status, status_label
- * @var array $stats        label, value, note, primary(bool)
- * @var array $staff        moderator(array|null), liaison(array|null)
+ * @var array      $division id, name, district, archived, moderator_name, moderator_since, status, status_label
+ * @var array      $stats    label, value, note, error(bool)
+ * @var array|null $flash    result of the last edit
  */
-
-$division ??= [
-    'id'           => 4,
-    'name'         => 'Bambalapitiya',
-    'district'     => 'Colombo',
-    'status'       => 'warning',
-    'status_label' => 'No moderator — 12 days',
-];
-
-$stats ??= [
-    ['label' => 'Members',         'value' => '241', 'note' => '+8 this month',     'primary' => true],
-    ['label' => 'Active listings', 'value' => '187', 'note' => '12 pending approval', 'primary' => true],
-    ['label' => 'Open disputes',   'value' => '1',   'note' => 'escalated to you',  'primary' => false, 'error' => true],
-];
-
-$staff ??= [
-    'moderator' => null,
-    'moderator_vacant_since' => '8 Jul',
-    'moderator_fallback' => 'Pending approvals are routed to the Dehiwala moderator meanwhile',
-    'liaison' => [
-        'name'     => 'A. Akalvily',
-        'initials' => 'AA',
-        'meta'     => 'Covers 6 divisions in Colombo District · assigned Jan 2026',
-    ],
-];
 
 $pageTitle = $division['name'];
 $navActive = 'divisions';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -53,23 +29,26 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <?= e($division['name']) ?>
         <span class="badge badge--<?= e($division['status']) ?>"><?= e($division['status_label']) ?></span>
     </h1>
-    <div class="actions">
-        <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-division"
-            data-division-id="<?= e((string) $division['id']) ?>"
-            data-division-name="<?= e($division['name']) ?>"
-            data-division-district="<?= e($division['district'] ?? '') ?>">Edit division</button>
-        <form method="post" action="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>/archive" id="form-archive-division">
-            <?= csrf_field() ?>
-            <button class="btn btn--ghost" type="submit" style="color: var(--color-error)">Archive division</button>
-        </form>
-    </div>
+    <?php if (!$division['archived']): ?>
+        <div class="actions">
+            <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-division">Edit division</button>
+            <form method="post" action="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>/archive"
+                data-confirm="Archive this division? It will no longer accept new members.">
+                <?= csrf_field() ?>
+                <button class="btn btn--ghost" type="submit" style="color: var(--color-error)">Archive division</button>
+            </form>
+        </div>
+    <?php endif; ?>
 </header>
+<p class="page-intro__meta"><?= e($division['district']) ?> District</p>
+
+<?php include __DIR__ . '/../../../partials/flash.php'; ?>
 
 <div class="stat-grid stat-grid--3">
     <?php foreach ($stats as $stat): ?>
         <div class="stat-card">
             <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value<?= !empty($stat['error']) ? '' : (!empty($stat['primary']) ? ' stat-card__value--primary' : '') ?>"
+            <strong class="stat-card__value<?= !empty($stat['error']) ? '' : ' stat-card__value--primary' ?>"
                 <?php if (!empty($stat['error'])): ?> style="color: var(--color-error)"<?php endif; ?>
             ><?= e($stat['value']) ?></strong>
             <span class="stat-card__note"><?= e($stat['note']) ?></span>
@@ -81,54 +60,26 @@ include __DIR__ . '/../../../partials/header-admin.php';
     <h3 class="form-card__legend">Division staff</h3>
 
     <div class="list-row">
-        <?php if ($staff['moderator'] === null): ?>
+        <?php if ($division['moderator_name'] === null): ?>
             <span class="avatar">—</span>
             <div class="list-row__body">
-                <span class="list-row__title" style="color: var(--color-error)">Moderator - vacant since <?= e($staff['moderator_vacant_since']) ?></span>
-                <span class="list-row__meta"><?= e($staff['moderator_fallback']) ?></span>
+                <span class="list-row__title" style="color: var(--color-error)">Moderator — vacant</span>
+                <span class="list-row__meta">Until one is appointed, the Admin approves this division's new members.</span>
             </div>
             <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Appoint moderator</a>
         <?php else: ?>
-            <span class="avatar"><?= e($staff['moderator']['initials']) ?></span>
+            <span class="avatar"><?= e(User::initials($division['moderator_name'])) ?></span>
             <div class="list-row__body">
-                <span class="list-row__title">Moderator - <?= e($staff['moderator']['name']) ?></span>
-                <span class="list-row__meta"><?= e($staff['moderator']['meta']) ?></span>
+                <span class="list-row__title">Moderator — <?= e($division['moderator_name']) ?></span>
+                <span class="list-row__meta"><?= $division['moderator_since'] === '' ? '' : 'Appointed ' . e($division['moderator_since']) ?></span>
             </div>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators">View</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators?division=<?= e((string) $division['id']) ?>">View</a>
         <?php endif; ?>
     </div>
-
-    <?php if ($staff['liaison'] !== null): ?>
-        <div class="list-row">
-            <span class="avatar"><?= e($staff['liaison']['initials']) ?></span>
-            <div class="list-row__body">
-                <span class="list-row__title">Sponsor Liaison - <?= e($staff['liaison']['name']) ?></span>
-                <span class="list-row__meta"><?= e($staff['liaison']['meta']) ?></span>
-            </div>
-            <span class="btn btn--ghost" style="opacity:0.5;pointer-events:none;">Reassign liaison</span>
-        </div>
-    <?php endif; ?>
 </div>
 
-<div class="notice notice--info notice--full">
-    Appointing a moderator uses the eligible candidate pool and the appointment flow - including the 7-day community objection window for launch-phase nominations.
-</div>
-
-<script>
-'use strict';
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('form-archive-division');
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            if (!confirm('Archive this division? It will no longer accept new members.')) {
-                e.preventDefault();
-            }
-        });
-    }
-});
-</script>
-
-
-<?php include __DIR__ . '/../../../partials/modal-edit-division.php'; ?>
-<?php $pageScripts = ['modal.js']; ?>
+<?php if (!$division['archived']): ?>
+    <?php include __DIR__ . '/../../../partials/modal-edit-division.php'; ?>
+<?php endif; ?>
+<?php $pageScripts = ['modal.js', 'confirm.js']; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

@@ -98,7 +98,8 @@ $relief ??= '1 active disaster in your division  ·  6 aid requests pending your
 $pageTitle = 'Moderator dashboard';
 $navActive = 'dashboard';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

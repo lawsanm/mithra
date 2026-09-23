@@ -6,36 +6,15 @@ declare(strict_types=1);
  * Six-pool accounting — admin global pool balances and invariant status.
  *
  * @var array $pools       list of pool cards: label, value, note
- * @var array $invariant   passed(bool), total, summary, verified_at
- * @var array $jobs        scheduled jobs: name, schedule, last_run, status, status_label
+ * @var array $invariant   passed(bool), total, summary, last_run
+ * @var array $jobs        recent job runs: name, last_run, status, status_label
  */
-
-$pools ??= [
-    ['label' => 'Sponsor Pool',   'value' => '48,200 pts',  'note' => 'General contributions · welcome bonuses · stipends · bonds · rewards'],
-    ['label' => 'Aid Pool',       'value' => '12,750 pts',  'note' => 'Aid contributions · parting gifts · approved aid grants only'],
-    ['label' => 'Reserve Pool',   'value' => '6,400 pts',   'note' => 'covers shortfalls — no negative balances'],
-    ['label' => 'In-Flight Pool', 'value' => '3,180 pts',   'note' => 'rental charges + late-fee buffers, 41 bookings'],
-    ['label' => 'Member Wallets', 'value' => '121,300 pts', 'note' => '2,412 wallets'],
-    ['label' => 'Retired Pool',   'value' => '1,140 pts',   'note' => 'Type A closures, awaiting recycling to the Sponsor Pool'],
-];
-
-$invariant ??= [
-    'passed'      => true,
-    'total'       => '192,970 pts',
-    'summary'     => 'Σ (Sponsor + Aid + Reserve + In-Flight + Wallets + Retired) = 192,970 pts = Σ points created from sponsor contributions',
-    'verified_at' => '20 Jul, 02:00',
-];
-
-$jobs ??= [
-    ['name' => 'Nightly invariant check',      'schedule' => '02:00 daily · last 20 Jul', 'status' => 'success', 'status_label' => 'OK'],
-    ['name' => '48-hour auto-cancel sweep',     'schedule' => 'Hourly · last 09:00',       'status' => 'success', 'status_label' => 'OK'],
-    ['name' => 'Retired → Sponsor recycling',   'schedule' => 'Monthly · next 01 Aug',     'status' => 'info',    'status_label' => 'Scheduled'],
-];
 
 $pageTitle = 'Six-pool accounting';
 $navActive = 'pools';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -45,8 +24,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/sponsor-ledger">Sponsor Fund Ledger</a>
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/ledger">Open ledger</a>
         <div style="display:inline" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-            
+            <p class="demo-note">Preview only. Saving is not available yet.</p>
             <button class="btn btn--primary" type="submit" disabled>Run invariant check now</button>
         </div>
     </div>
@@ -64,7 +42,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
 <div class="notice notice--<?= $invariant['passed'] ? 'success' : 'error' ?> notice--full">
     <strong><?= $invariant['passed'] ? 'Invariant holds' : 'Invariant FAILED' ?></strong>
-    <?= e($invariant['summary']) ?> · verified <?= e($invariant['verified_at']) ?>
+    <?= e($invariant['summary']) ?> · verified <?= e($invariant['last_run']) ?>
 </div>
 
 <section class="section">
@@ -77,12 +55,11 @@ include __DIR__ . '/../../../partials/header-admin.php';
             <li class="list-row">
                 <div class="list-row__body">
                     <span class="list-row__title"><?= e($job['name']) ?></span>
-                    <span class="list-row__meta"><?= e($job['schedule']) ?></span>
+                    <span class="list-row__meta"><?= e($job['last_run']) ?></span>
                 </div>
                 <span class="badge badge--<?= e($job['status']) ?>"><?= e($job['status_label']) ?></span>
                 <div style="display:inline" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-
+                    <p class="demo-note">Preview only. Saving is not available yet.</p>
                     <button class="btn btn--ghost" type="submit" disabled>Trigger</button>
                 </div>
             </li>

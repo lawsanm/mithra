@@ -37,7 +37,8 @@ $footnote ??= 'All figures reconcile with the append-only ledger and the nightly
 $pageTitle = $report['quarter'] . ' quarterly report';
 $navActive = 'csr-reports';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

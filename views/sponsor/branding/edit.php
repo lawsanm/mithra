@@ -29,7 +29,8 @@ $errors ??= [];
 $pageTitle = 'Branding & recognition';
 $navActive = 'branding';
 
-include __DIR__ . '/../../../partials/header-sponsor.php';
+$chrome = 'sponsor';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -39,9 +40,7 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
 <div class="panel-row">
     <div class="panel panel--half" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <h2 class="panel__title">Company logo</h2>
 
         <label class="upload-drop">

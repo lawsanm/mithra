@@ -9,35 +9,18 @@ declare(strict_types=1);
  * @var array $notices  notification rows: icon, title, meta, time, read
  */
 
-$filters ??= [
-    ['label' => 'All',       'slug' => '',        'active' => true],
-    ['label' => 'Disputes',  'slug' => 'disputes'],
-    ['label' => 'Pools',     'slug' => 'pools'],
-    ['label' => 'Users',     'slug' => 'users'],
-    ['label' => 'System',    'slug' => 'system'],
-];
-
-$notices ??= [
-    ['icon' => '⚠', 'title' => 'New dispute filed — booking #B-2188',                   'meta' => 'M. Lawsan vs T.H.K. Madushan · awaiting moderator',    'time' => '10 min ago',  'read' => false],
-    ['icon' => '✓', 'title' => 'Invariant check passed',                                 'meta' => 'All six pools reconciled · 192,970 pts',                'time' => '7 hours ago', 'read' => false],
-    ['icon' => '⚡', 'title' => 'Sponsor injection received — INV-0312',                  'meta' => 'Northwind Co · +10,000 pts',                            'time' => 'Yesterday',   'read' => true],
-    ['icon' => '🔒', 'title' => 'Account frozen — A. Akalvily',                           'meta' => 'Negative balance exceeded −100 pts floor',              'time' => '2 days ago',  'read' => true],
-    ['icon' => '👤', 'title' => 'New moderator appointed — J. Kavipriya',                  'meta' => 'Wellawatte division · appointed by Admin',              'time' => '3 days ago',  'read' => true],
-    ['icon' => '📊', 'title' => 'Monthly report generated',                                'meta' => 'June 2026 — 23 divisions, 4,120 bookings',             'time' => '1 week ago',  'read' => true],
-];
-
 $pageTitle = 'Notifications';
 $navActive = 'notifications';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
     <div class="page-header__action" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <button class="btn btn--ghost" type="submit" disabled>Mark all read</button>
     </div>
 </header>

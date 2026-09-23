@@ -3,18 +3,16 @@
 declare(strict_types=1);
 
 /**
- * Edit division modal — admin updates division details.
+ * Edit division modal — the Admin renames a division or corrects its district.
  *
- * @var array $division
+ * @var array $division id, name, district
  */
-
-$division ??= [];
 
 ?>
 <dialog aria-labelledby="modal-edit-division-title" class="modal modal--sm" id="modal-edit-division">
-    <form action="<?= base_url() ?>/admin/divisions/<?= e((string) ($division['id'] ?? 1)) ?>" method="POST">
+    <form action="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>" method="post">
         <?= csrf_field() ?>
-        
+
         <div class="modal__head">
             <h2 class="modal__title" id="modal-edit-division-title">Edit division</h2>
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>
@@ -24,12 +22,12 @@ $division ??= [];
 
         <div class="field">
             <label class="field__label" for="edit_division_name">Division name</label>
-            <input class="input" id="edit_division_name" name="name" type="text" value="<?= e($division['name'] ?? '') ?>" required>
+            <input class="input" id="edit_division_name" name="name" type="text" maxlength="120" value="<?= e($division['name']) ?>" required>
         </div>
 
         <div class="field" style="margin-top: var(--space-3);">
             <label class="field__label" for="edit_district">District</label>
-            <input class="input" id="edit_district" name="district" type="text" value="<?= e($division['district'] ?? '') ?>" required>
+            <input class="input" id="edit_district" name="district" type="text" maxlength="100" value="<?= e($division['district']) ?>" required>
         </div>
 
         <div class="modal__footer" style="margin-top: var(--space-4);">

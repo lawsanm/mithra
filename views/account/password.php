@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Change password — one page for every role, in that role's page chrome.
  *
- * @var string $chrome   '' (member), 'moderator', 'admin', 'sponsor' or 'sponsor-liaison'
+ * @var string $chrome   the signed-in role's navigation (chrome_for())
  * @var array  $errors   per-field messages
  * @var string $returnTo the whitelisted page to return to after saving
  * @var array|null $flash
@@ -13,12 +13,11 @@ declare(strict_types=1);
 
 $errors   = $errors ?? [];
 $returnTo = $returnTo ?? '/account/password';
-$chrome   = in_array($chrome ?? '', ['moderator', 'admin', 'sponsor', 'sponsor-liaison'], true) ? $chrome : '';
 
 $pageTitle = 'Change password';
 $navActive = '';
 
-include __DIR__ . '/../../partials/header' . ($chrome === '' ? '' : '-' . $chrome) . '.php';
+include __DIR__ . '/../../partials/header.php';
 
 ?>
 

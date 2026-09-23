@@ -13,9 +13,7 @@ $divisions ??= [];
 ?>
 <dialog aria-labelledby="modal-activate-disaster-title" class="modal modal--sm" id="modal-activate-disaster">
     <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <div class="modal__head">
             <h2 class="modal__title" id="modal-activate-disaster-title">Activate Disaster Mode</h2>
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>

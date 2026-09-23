@@ -30,7 +30,8 @@ $agreementStatuses = [
 $pageTitle = 'Onboard a sponsor';
 $navActive = 'sponsors';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -44,8 +45,6 @@ include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
 
 <div class="form-card" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="field">
         <label class="field__label" for="company-name">Company name</label>
         <input

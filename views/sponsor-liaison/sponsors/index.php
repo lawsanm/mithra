@@ -39,7 +39,8 @@ $statusOptions = [
 $pageTitle = 'Sponsors';
 $navActive = 'sponsors';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

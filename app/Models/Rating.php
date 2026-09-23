@@ -46,12 +46,4 @@ final class Rating extends BaseModel
             ['member' => $memberId]
         );
     }
-
-    public function averageStars(int $memberId): float
-    {
-        return (float) $this->selectValue(
-            'SELECT COALESCE(AVG(stars), 0) FROM ratings WHERE ratee_id = :id',
-            ['id' => $memberId]
-        );
-    }
 }

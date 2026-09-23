@@ -43,7 +43,8 @@ $liaisonNote ??= 'No in-app payment. Submitting sends a purchase request to your
 $pageTitle = 'Purchase points';
 $navActive = 'purchase-points';
 
-include __DIR__ . '/../../../partials/header-sponsor.php';
+$chrome = 'sponsor';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -57,8 +58,6 @@ include __DIR__ . '/../../../partials/header-sponsor.php';
 
 <div class="stack" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="stat-grid">
         <?php foreach ($packages as $package): ?>
             <label class="choice">

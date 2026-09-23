@@ -9,39 +9,6 @@ declare(strict_types=1);
  * @var array $bookings rows: title, meta, status, status_glyph, status_label, href
  */
 
-// Sample view data — replaced by the controller once BookingController lands.
-$tabs ??= [
-    ['label' => 'As Borrower (2)', 'role' => 'borrower', 'active' => true],
-    ['label' => 'As Lender (3)',   'role' => 'lender'],
-];
-
-$bookings ??= [
-    [
-        'title'        => 'Bosch Cordless Drill',
-        'meta'         => 'T.H.K. Madushan  ·  12–17 Jul  ·  75 pts in escrow',
-        'status'       => 'warning',
-        'status_glyph' => '!',
-        'status_label' => 'Return due tomorrow',
-        'href'         => base_url() . '/bookings/1',
-    ],
-    [
-        'title'        => 'Camping Tent (4-person)',
-        'meta'         => 'J. Kavipriya  ·  14–21 Jul  ·  126 pts in escrow',
-        'status'       => 'success',
-        'status_glyph' => '✓',
-        'status_label' => 'In progress',
-        'href'         => base_url() . '/bookings/2',
-    ],
-    [
-        'title'        => 'Projector (Full HD)',
-        'meta'         => 'A. Akalvily  ·  requested 20–22 Jul',
-        'status'       => 'info',
-        'status_glyph' => 'i',
-        'status_label' => 'Awaiting lender response',
-        'href'         => base_url() . '/bookings/3',
-    ],
-];
-
 $pageTitle = 'My bookings';
 $navActive = 'bookings';
 

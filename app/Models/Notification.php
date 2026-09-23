@@ -42,14 +42,6 @@ final class Notification extends BaseModel
         return $this->select($sql . ' ORDER BY created_at DESC', $params);
     }
 
-    public function countUnread(int $memberId): int
-    {
-        return (int) $this->selectValue(
-            'SELECT COUNT(*) FROM notifications WHERE user_id = :id AND read_at IS NULL',
-            ['id' => $memberId]
-        );
-    }
-
     /**
      * @return list<string>
      */

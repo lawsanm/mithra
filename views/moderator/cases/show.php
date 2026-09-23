@@ -12,6 +12,7 @@ declare(strict_types=1);
  * escalation stays disabled. A case already escalated shows that as its own
  * settled state regardless of the above.
  *
+ * @var int    $id       the case number from the URL
  * @var array  $case     title, status_label, meta, moderator_is_party, escalated
  * @var array  $parties  rows: initials, name, meta
  * @var string $report   the damage report and counter-statement
@@ -174,7 +175,7 @@ $sampleCases = [
     ],
 ];
 
-$caseId = (string) ($_GET['id'] ?? '');
+$caseId = (string) ($id ?? '');
 $sample = $sampleCases[$caseId] ?? null;
 if ($sample === null) {
     http_response_code(404);
@@ -213,7 +214,8 @@ if ($case['escalated']) {
 $pageTitle = $case['title'];
 $navActive = 'cases';
 
-include __DIR__ . '/../../../partials/header-moderator.php';
+$chrome = 'moderator';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -239,8 +241,6 @@ include __DIR__ . '/../../../partials/header-moderator.php';
 
 <div class="stack stack--loose" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
-    
-
     <div class="two-col two-col--wide-main">
         <div class="stack">
 

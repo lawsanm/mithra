@@ -6,56 +6,15 @@ declare(strict_types=1);
  * Individual moderator profile page.
  *
  * @var array $moderator     initials, name, division, status, status_label, appointed_at
- * @var array $bond          value, status, status_label, deductions(array)
+ * @var array $bond          value, status, status_label
  * @var array $activityStats label, value pairs
- * @var array $appointHistory how_selected, appointed_by, objection_outcome, gn_endorsement
- * @var array $recentActivity timeline events: text, date
  */
-
-$moderator ??= [
-    'initials'     => 'KP',
-    'name'         => 'Kamal Perera',
-    'division'     => 'Kaduwela West',
-    'status'       => 'success',
-    'status_label' => 'Active',
-    'appointed_at' => '15 Jan 2026',
-];
-
-$bond ??= [
-    'value'        => 500,
-    'status'       => 'success',
-    'status_label' => 'Intact',
-    'deductions'   => [],
-];
-
-$activityStats ??= [
-    ['label' => 'Members verified',   'value' => '47'],
-    ['label' => 'Listings approved',  'value' => '83'],
-    ['label' => 'Aid grants vouched', 'value' => '12'],
-    ['label' => 'Disputes mediated',  'value' => '8'],
-    ['label' => 'Months active',      'value' => '6'],
-    ['label' => 'Stipends received',  'value' => '6'],
-];
-
-$appointHistory ??= [
-    'how_selected'      => 'Phase 2 — Admin appointed',
-    'appointed_by'      => 'System Admin',
-    'objection_outcome' => 'Passed — 0 objections',
-    'gn_endorsement'    => 'Yes',
-];
-
-$recentActivity ??= [
-    ['text' => 'Approved listing: Rice Cooker (1.8 L)',  'date' => '27 Jul 2026'],
-    ['text' => 'Verified member: Dilani Jayasuriya',     'date' => '26 Jul 2026'],
-    ['text' => 'Mediated dispute DC-0039 — resolved',    'date' => '24 Jul 2026'],
-    ['text' => 'Approved aid grant AG-015',              'date' => '22 Jul 2026'],
-    ['text' => 'Monthly stipend credited: 50 pts',       'date' => '1 Jul 2026'],
-];
 
 $pageTitle = $moderator['name'] . ' — Moderator';
 $navActive = 'moderators';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -86,21 +45,6 @@ include __DIR__ . '/../../../partials/header-admin.php';
                 <span class="bond-widget__value"><?= e(number_format($bond['value'])) ?> pts</span>
                 <span class="badge badge--<?= e($bond['status']) ?>"><?= e($bond['status_label']) ?></span>
             </div>
-            <details style="margin-top: var(--space-3);">
-                <summary style="font-size: var(--text-ui-caption); color: var(--color-text-muted); cursor: pointer;">Bond deduction history</summary>
-                <div style="margin-top: var(--space-3);">
-                    <?php if ($bond['deductions'] === []): ?>
-                        <p style="font-size: var(--text-ui-body); color: var(--color-text-muted);">No deductions recorded</p>
-                    <?php else: ?>
-                        <?php foreach ($bond['deductions'] as $ded): ?>
-                            <div class="line-item">
-                                <span class="line-item__label"><?= e($ded['reason']) ?></span>
-                                <span class="line-item__value">−<?= e((string) $ded['amount']) ?> pts</span>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </details>
         </div>
     </div>
 </div>
@@ -117,38 +61,6 @@ include __DIR__ . '/../../../partials/header-admin.php';
     </div>
 </section>
 
-<div class="form-card" style="width: 100%; max-width: 100%;">
-    <h3 class="form-card__legend">Appointment history</h3>
-    <div class="line-item">
-        <span class="line-item__label">How selected</span>
-        <span class="line-item__value"><span class="badge badge--info"><?= e($appointHistory['how_selected']) ?></span></span>
-    </div>
-    <div class="line-item">
-        <span class="line-item__label">Appointed by</span>
-        <span class="line-item__value"><?= e($appointHistory['appointed_by']) ?></span>
-    </div>
-    <div class="line-item">
-        <span class="line-item__label">Objection window</span>
-        <span class="line-item__value"><span class="badge badge--success"><?= e($appointHistory['objection_outcome']) ?></span></span>
-    </div>
-    <div class="line-item">
-        <span class="line-item__label">GN Officer endorsement</span>
-        <span class="line-item__value"><span class="badge badge--success"><?= e($appointHistory['gn_endorsement']) ?></span></span>
-    </div>
-</div>
-
-<section class="section">
-    <h2 class="section__title">Recent activity</h2>
-    <div class="timeline">
-        <?php foreach ($recentActivity as $event): ?>
-            <div class="timeline__item">
-                <p class="timeline__title"><?= e($event['text']) ?></p>
-                <span class="timeline__date"><?= e($event['date']) ?></span>
-            </div>
-        <?php endforeach; ?>
-    </div>
-</section>
-
 <div class="form-card form-card--danger" style="width: 100%; max-width: 100%;">
     <h3 class="form-card__legend" style="color: var(--color-error);">Remove moderator</h3>
 
@@ -158,9 +70,7 @@ include __DIR__ . '/../../../partials/header-admin.php';
 
     <div id="removal-section" style="display: none;">
         <div data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-            
-
+            <p class="demo-note">Preview only. Saving is not available yet.</p>
             <div class="field" style="margin-bottom: var(--space-4);">
                 <label class="field__label" for="removal-reason-type">Reason</label>
                 <select class="input" id="removal-reason-type" name="reason_type" required disabled>

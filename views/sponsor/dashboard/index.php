@@ -54,7 +54,8 @@ $impact ??= [
 $pageTitle = 'Sponsor dashboard';
 $navActive = 'dashboard';
 
-include __DIR__ . '/../../../partials/header-sponsor.php';
+$chrome = 'sponsor';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

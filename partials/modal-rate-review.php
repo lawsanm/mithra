@@ -46,9 +46,7 @@ $quickTags = $quickTags ?? [
     </div>
 
     <div class="stack" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
-
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <fieldset class="rating">
             <legend class="visually-hidden">Rating out of 5</legend>
             <?php for ($star = 5; $star >= 1; $star--): ?>

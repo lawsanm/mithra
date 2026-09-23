@@ -47,8 +47,7 @@ $promotion = ($promotion ?? []) + [
     </p>
 
     <div class="modal__footer" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-        
+        <p class="demo-note">Preview only. Saving is not available yet.</p>
         <button class="btn btn--ghost" type="button" data-modal-close>Keep as temporary</button>
         <button class="btn btn--primary" type="submit" disabled>Confirm promotion</button>
     </div>

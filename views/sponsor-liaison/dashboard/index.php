@@ -95,7 +95,8 @@ $disaster ??= [
 $pageTitle = 'Sponsor Liaison dashboard';
 $navActive = 'dashboard';
 
-include __DIR__ . '/../../../partials/header-sponsor-liaison.php';
+$chrome = 'sponsor-liaison';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 

@@ -5,53 +5,16 @@ declare(strict_types=1);
 /**
  * Member approvals for a division (initial setup phase).
  *
- * @var array  $division       name
+ * @var array  $division       id, name
  * @var array  $approvalStats  label, value
- * @var array  $pendingMembers initials, name, nic_ending, address, applied_ago, evidence(array), evidence_warning(string|null)
+ * @var array  $pendingMembers initials, name, nic_ending, address, applied_ago
  */
-
-$division ??= ['name' => 'Kollupitiya', 'id' => 1];
-
-$approvalStats ??= [
-    ['label' => 'Pending requests',            'value' => '4'],
-    ['label' => 'Approved members',            'value' => '6'],
-    ['label' => 'Progress to first moderator', 'value' => '6 / 10'],
-];
-
-$pendingMembers ??= [
-    [
-        'initials'         => 'ML',
-        'name'             => 'M. Lawsan',
-        'nic_ending'       => '4471',
-        'address'          => '22/3, Temple Lane',
-        'applied_ago'      => 'Applied 2 days ago',
-        'evidence'         => ['NIC photo', 'Utility bill', 'Address matches register'],
-        'evidence_warning' => null,
-    ],
-    [
-        'initials'         => 'JK',
-        'name'             => 'J. Kavipriya',
-        'nic_ending'       => '8823',
-        'address'          => '8, Beach Road',
-        'applied_ago'      => 'Applied 1 day ago',
-        'evidence'         => ['NIC photo', 'Lease letter'],
-        'evidence_warning' => null,
-    ],
-    [
-        'initials'         => 'AA',
-        'name'             => 'A. Akalvily',
-        'nic_ending'       => '1130',
-        'address'          => '45/1, Galle Road',
-        'applied_ago'      => 'Applied 4 hours ago',
-        'evidence'         => ['NIC photo', 'Employment letter'],
-        'evidence_warning' => 'Evidence incomplete',
-    ],
-];
 
 $pageTitle = 'Member Approvals';
 $navActive = 'divisions';
 
-include __DIR__ . '/../../../partials/header-admin.php';
+$chrome = 'admin';
+include __DIR__ . '/../../../partials/header.php';
 
 ?>
 
@@ -79,6 +42,10 @@ include __DIR__ . '/../../../partials/header-admin.php';
 <section class="section">
     <h2 class="section__title">Pending registration requests</h2>
 
+    <?php if ($pendingMembers === []): ?>
+        <p class="empty-state__body">No registration requests are waiting in this division.</p>
+    <?php endif; ?>
+
     <ul class="row-list">
         <?php foreach ($pendingMembers as $member): ?>
             <li class="list-row">
@@ -88,23 +55,13 @@ include __DIR__ . '/../../../partials/header-admin.php';
                     <span class="list-row__meta">
                         NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?>
                     </span>
-                    <div class="actions" style="margin-top: var(--space-2);">
-                        <?php foreach ($member['evidence'] as $tag): ?>
-                            <span class="pill"><?= e($tag) ?></span>
-                        <?php endforeach; ?>
-                        <?php if ($member['evidence_warning'] !== null): ?>
-                            <span class="pill" style="background-color: var(--color-warning-tint); color: var(--color-warning-text);"><?= e($member['evidence_warning']) ?></span>
-                        <?php endif; ?>
-                    </div>
                 </div>
                 <div style="display:inline;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-
+                    <p class="demo-note">Preview only. Saving is not available yet.</p>
                     <button class="btn btn--ghost" type="submit" disabled>Reject</button>
                 </div>
                 <div style="display:inline;" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-
+                    <p class="demo-note">Preview only. Saving is not available yet.</p>
                     <button class="btn btn--primary" type="submit" disabled>Approve</button>
                 </div>
             </li>
