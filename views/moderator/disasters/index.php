@@ -82,6 +82,18 @@ $reliefUrl = base_url() . '/moderator/disasters/relief';
     </div>
 <?php endif; ?>
 
+<section class="panel">
+    <div class="panel__head">
+        <div class="media__body">
+            <h2 class="panel__title">Sponsor contributions to confirm</h2>
+            <p class="panel__note">
+                When the Sponsor Liaison records a sponsor's contribution, confirm what you actually received so it can be verified.
+            </p>
+        </div>
+        <a class="btn btn--ghost panel__actions" href="<?= base_url() ?>/moderator/disasters/contributions">Open</a>
+    </div>
+</section>
+
 <section class="section">
     <div class="section__head">
         <h2 class="section__title">Relief handed out</h2>
