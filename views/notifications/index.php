@@ -9,57 +9,6 @@ declare(strict_types=1);
  * @var array $notifications rows: icon, title, detail, time, unread, href
  */
 
-// Sample view data — replaced by the controller once NotificationController lands.
-$filters ??= [
-    ['label' => 'All',         'slug' => '',      'active' => true],
-    ['label' => 'Bookings',    'slug' => 'bookings'],
-    ['label' => 'Gifts & aid', 'slug' => 'gifts-aid'],
-    ['label' => 'System',      'slug' => 'system'],
-];
-
-$notifications ??= [
-    [
-        'icon'   => 'handshake',
-        'title'  => 'Abishan accepted your request for Bosch Cordless Drill',
-        'detail' => 'Handover step is now open — upload your photos.',
-        'time'   => '10 min ago',
-        'unread' => true,
-        'href'   => base_url() . '/bookings',
-    ],
-    [
-        'icon'   => 'alert-triangle',
-        'title'  => 'Return due tomorrow: Bosch Cordless Drill',
-        'detail' => 'Return by 17 Jul to keep your on-time streak.',
-        'time'   => '2 h ago',
-        'unread' => true,
-        'href'   => base_url() . '/bookings',
-    ],
-    [
-        'icon'   => 'gift',
-        'title'  => 'Arun sent you a gift of 10 pts',
-        'detail' => '“Thanks for the jumper cables last week!”',
-        'time'   => 'Yesterday',
-        'unread' => false,
-        'href'   => base_url() . '/gifts?box=received',
-    ],
-    [
-        'icon'   => 'heart',
-        'title'  => 'Your aid grant moved to liaison approval',
-        'detail' => 'Moderator ' . $viewer['moderator'] . ' vouched for request #A-1042.',
-        'time'   => '12 Jul',
-        'unread' => false,
-        'href'   => base_url() . '/aid-grants/1042',
-    ],
-    [
-        'icon'   => 'check-circle',
-        'title'  => 'Listing approved: Pressure Washer',
-        'detail' => 'Your listing is now visible to Kollupitiya members.',
-        'time'   => '10 Jul',
-        'unread' => false,
-        'href'   => base_url() . '/items/3',
-    ],
-];
-
 $pageTitle = 'Notifications';
 $navActive = '';
 

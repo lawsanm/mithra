@@ -9,43 +9,6 @@ declare(strict_types=1);
  * @var array $reviews rows: initials, author, stars, text, meta
  */
 
-// Sample view data — replaced by the controller once RatingController lands.
-$tabs ??= [
-    ['label' => 'Received (23)', 'box' => 'received', 'active' => true],
-    ['label' => 'Given (21)',    'box' => 'given'],
-];
-
-$reviews ??= [
-    [
-        'initials' => User::initials('N. Abishan'),
-        'author'   => 'N. Abishan',
-        'rating'   => 5,
-        'text'     => '“Returned the drill spotless and on time. Would lend again without hesitation.”',
-        'meta'     => '17 Jul 2026  ·  Bosch Cordless Drill',
-    ],
-    [
-        'initials' => User::initials('N. Arun'),
-        'author'   => 'N. Arun',
-        'rating'   => 5,
-        'text'     => '“Careful with the tent, great communication about pickup.”',
-        'meta'     => '2 Jul 2026  ·  Camping Tent',
-    ],
-    [
-        'initials' => User::initials('N. Abishan'),
-        'author'   => 'N. Abishan',
-        'rating'   => 4,
-        'text'     => '“All good — slightly late confirming the return window.”',
-        'meta'     => '18 Jun 2026  ·  Stand Mixer',
-    ],
-    [
-        'initials' => User::initials('N. Arun'),
-        'author'   => 'N. Arun',
-        'rating'   => 5,
-        'text'     => '“Textbook borrower. On time, item as handed over.”',
-        'meta'     => '30 May 2026  ·  Projector',
-    ],
-];
-
 $pageTitle = 'Ratings';
 $navActive = '';
 
@@ -55,9 +18,7 @@ include __DIR__ . '/../../partials/header.php';
 
 <header class="page-header">
     <h1 class="detail__title">Ratings</h1>
-    <button class="btn btn--primary page-header__action" type="button" data-modal-open="rate-review">
-        Rate a completed booking
-    </button>
+    <button class="btn btn--ghost" type="button" disabled>Rating submission unavailable</button>
 </header>
 
 <nav class="tabs" aria-label="Rating direction">
@@ -70,6 +31,9 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </nav>
 
+<?php if ($reviews === []): ?>
+    <p class="empty-state">No ratings to show.</p>
+<?php endif; ?>
 <ul class="row-list">
     <?php foreach ($reviews as $review): ?>
         <li class="review">
@@ -89,7 +53,7 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
-<?php include __DIR__ . '/../../partials/modal-rate-review.php'; ?>
+
 
 <?php
 $pageScripts = ['modal.js'];

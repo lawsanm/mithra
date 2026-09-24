@@ -11,23 +11,6 @@ declare(strict_types=1);
  * @var array $confirmed rows: reference, sponsor, received, ack, status, status_label
  */
 
-// Sample view data — replaced by the controller once the Liaison's contribution module lands.
-$pending ??= [
-    [
-        'id'        => 5,
-        'reference' => 'DC-0005',
-        'sponsor'   => 'ACM Corp',
-        'claim'     => 'Sponsor says: 60 tarpaulin sheets · LKR 90,000 · handed over 18 Jul',
-        'recorded'  => 'Asked by the Liaison on 19 Jul',
-    ],
-];
-
-$confirmed ??= [
-    ['reference' => 'DC-0007', 'sponsor' => 'Northwind Co', 'received' => '40 dry-ration packs', 'ack' => 'ACK-KOL-014', 'status' => 'info',    'status_label' => 'With Liaison'],
-    ['reference' => 'DC-0004', 'sponsor' => 'Texa',         'received' => 'LKR 40,000 cash',     'ack' => 'ACK-KOL-012', 'status' => 'error',   'status_label' => 'Queried'],
-    ['reference' => 'DC-0006', 'sponsor' => 'Northwind Co', 'received' => 'LKR 25,000 cash',     'ack' => 'ACK-KOL-011', 'status' => 'success', 'status_label' => 'Verified'],
-];
-
 $pageTitle = 'Sponsor contributions to confirm';
 $navActive = 'disasters';
 

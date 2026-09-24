@@ -14,32 +14,6 @@ declare(strict_types=1);
  * @var array $draft         outcome, received_description, received_value, received_on, ack_reference, note
  */
 
-// Sample view data — replaced by the controller once the Liaison's contribution module lands.
-$claim ??= [
-    'reference'   => 'DC-0005',
-    'sponsor'     => 'ACM Corp',
-    'kind'        => 'Goods',
-    'description' => '60 tarpaulin sheets',
-    'value'       => 'LKR 90,000',
-    'date'        => '18 Jul 2026',
-    'receipt'     => 'ACM-INV-118 (supplier invoice)',
-];
-
-$reliefRecords ??= [
-    ['id' => 21, 'title' => '35 tarpaulins · Temple Road lanes · 19 Jul',     'checked' => false],
-    ['id' => 22, 'title' => '25 tarpaulins · Galle Road shelter · 20 Jul',    'checked' => false],
-    ['id' => 20, 'title' => '18 dry-ration packs · Galle Road · 18 Jul',     'checked' => false],
-];
-
-$draft ??= [
-    'outcome'              => 'received',
-    'received_description' => '60 tarpaulin sheets',
-    'received_value'       => '',
-    'received_on'          => '2026-07-18',
-    'ack_reference'        => '',
-    'note'                 => '',
-];
-
 $pageTitle = 'Confirm ' . $claim['reference'];
 $navActive = 'disasters';
 

@@ -44,7 +44,7 @@ Working modules:
 - **Divisions (Admin)** — create, edit and archive GN divisions.
 - **Sponsors (Sponsor Liaison)** — list, search, sort and filter sponsors; onboard, view, edit, deactivate and reactivate them.
 
-The member dashboard, gifts list, bookings and the admin screens read live data. Screens for modules that are not built yet are design previews with their own sample content, and their actions are visibly disabled. Every route outside the sign-in pages needs a session, and each path is limited to the roles declared in `app/routes.php`. This is an interim demonstration, not a finished deployment.
+Record displays across the member, moderator, admin, sponsor and liaison areas read the database populated by the migrations. Names, amounts, counts, dates and links follow the related records; missing records return an empty state or 404. Notifications store record IDs so names remain current after profile edits. Forms for unfinished workflows still have visibly disabled actions. Every route outside the sign-in pages needs a session, and each path is limited to the roles declared in `app/routes.php`. This is an interim demonstration, not a finished deployment.
 
 ## Useful files
 
@@ -60,9 +60,11 @@ The member dashboard, gifts list, bookings and the admin screens read live data.
 | `app/Controllers/AdminController.php` | Admin screens and the division CRUD |
 | `app/Services/DivisionService.php` | Division rules: unique names per district, archiving |
 | `app/Controllers/BookingController.php` | Read-only member bookings and record-specific details |
-| `app/Controllers/SponsorLiaisonController.php` | The liaison's sponsor CRUD, and a design preview of contributions and aid grants |
+| `app/Controllers/SponsorLiaisonController.php` | The liaison's sponsor CRUD, contribution records and aid grants |
 | `app/Services/SponsorService.php` | Sponsor rules: contact formats, unique company names, deactivating |
-| `app/Controllers/DemoController.php` | Member dashboard and gifts data, and the design-preview pages |
+| `app/Controllers/DemoController.php` | Member records and dispatch to the role-specific read controllers |
+| `app/Controllers/ModeratorScreenController.php`, `SponsorScreenController.php` | Database-backed role dashboards and reports |
+| `app/Controllers/DisasterContributionController.php` | Shared disaster contribution records for moderators and liaisons |
 | `app/Services/ItemService.php` | Item validation, ownership and state changes |
 | `app/Models/` | Database queries |
 | `views/`, `partials/` | Pages, the one shared header/navigation, and modals |
@@ -87,9 +89,12 @@ With the local application and database running at `http://localhost/mithra/`, r
 
 ```cmd
 python tests/ui-navigation.py
+C:\xampp\php\php.exe tests\dynamic-data.php
 ```
 
 This checks routes, links, assets, selected records, filters and HTML interaction wiring. It signs in first — as the demo member, and as the moderator for the verification screens — because every screen is behind the sign-in check. It does not render pages or simulate browser interactions.
+
+The dynamic-data integration test requires the migrated seed database. It temporarily changes names, a division, a listing, a wallet balance and an aid grant, checks that related screens reflect the changes, and checks record ownership and sponsor isolation. All test writes run in one transaction and are rolled back, including on failure. The UI test uses HTTP and makes no data changes.
 
 ## Troubleshooting
 

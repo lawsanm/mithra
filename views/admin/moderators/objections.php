@@ -11,40 +11,6 @@ declare(strict_types=1);
  * @var bool   $allDismissed
  */
 
-$appointment ??= [
-    'name'            => 'Kamal Perera',
-    'division'        => 'Kaduwela West',
-    'opened'          => '22 Jul 2026',
-    'closes'          => '29 Jul 2026',
-    'objection_count' => 2,
-    'status'          => 'warning',
-    'status_label'    => 'In progress',
-];
-
-$objections ??= [
-    [
-        'id'           => 1,
-        'member'       => 'Ruwan Fernando',
-        'against'      => 'Kamal Perera',
-        'reason'       => 'Concern about conflict of interest — operates a competing rental business',
-        'date'         => '23 Jul 2026',
-        'status'       => 'warning',
-        'status_label' => 'Pending',
-    ],
-    [
-        'id'           => 2,
-        'member'       => 'Dilani Jayasuriya',
-        'against'      => 'Kamal Perera',
-        'reason'       => 'No specific concern — general disagreement with choice',
-        'date'         => '25 Jul 2026',
-        'status'       => 'neutral',
-        'status_label' => 'Dismissed',
-    ],
-];
-
-$windowExpired ??= false;
-$allDismissed  ??= false;
-
 $pageTitle = 'Objection management';
 $navActive = 'moderators';
 
@@ -135,10 +101,12 @@ include __DIR__ . '/../../../partials/header.php';
         <p class="demo-note">Preview only. Saving is not available yet.</p>
         <button class="btn btn--primary" type="submit" disabled>Finalise appointment</button>
     </div>
-<?php else: ?>
+<?php elseif (!$windowExpired): ?>
     <div class="notice notice--info notice--full u-mt-6">
         Window still open — <?= e($appointment['closes']) ?>. Objections can be raised until the window closes.
     </div>
+<?php else: ?>
+    <p class="notice notice--warning">The objection window has closed. Review the outstanding objections.</p>
 <?php endif; ?>
 
 <?php include __DIR__ . '/../../../partials/modal-dismiss-objection.php'; ?>

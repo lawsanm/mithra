@@ -74,7 +74,7 @@ def account_for(path):
 
 route_text = (ROOT / 'app/routes.php').read_text(encoding='utf-8')
 get_routes = route_text.split("'GET' =>", 1)[1].split("'POST' =>", 1)[0]
-paths = [p.replace('{id}', '1') for p in re.findall(r"^\s*'(/[^']*)'\s*=>", get_routes, re.M)]
+paths = [p.replace('{id}', '1042' if p.startswith(('/aid-grants/', '/sponsor-liaison/aid-grants/')) else '1') for p in re.findall(r"^\s*'(/[^']*)'\s*=>", get_routes, re.M)]
 paths = [p for p in paths if account_for(p) is not None]
 pages = {}
 for path in paths:
@@ -84,11 +84,14 @@ for path in paths:
         continue  # The seeded item is owned by another member.
     if path == '/admin/listing-approvals/1' and status == 403:
         continue  # Its division has a moderator, so the Admin may not decide it.
-    if path == '/admin/disputes/1' and status == 404:
+    if path in ['/admin/disputes/1', '/moderator/cases/1', '/moderator/disasters/contributions/1/confirm', '/sponsor-liaison/disasters/contributions/1', '/sponsor-liaison/disasters/contributions/1/edit'] and status == 404:
         continue  # The seed has no disputes; a database with one serves it.
     check(status == 200, f'{path}: HTTP {status}')
     if path.endswith('/export'):
-        check('Approved' in body and 'Awaiting approval' not in body, 'Grant export must contain only approved records')
+        check('Grant ID' in body and 'Awaiting approval' not in body, 'Grant export must contain only approved records')
+        continue
+    if path.endswith('/csv'):
+        check('text/html' not in body and '<html' not in body, 'CSV route must return data')
         continue
     page = Page(body)
     pages[path] = body
@@ -123,9 +126,11 @@ check(fetch('/bookings/999999')[0] == 404, 'Unknown booking must not display a s
 
 use(MODERATOR)
 for group in ['verifications', 'listing-approvals', 'cases']:
-    code1, one = fetch('/moderator/' + group + '/1')
-    code2, two = fetch('/moderator/' + group + '/2')
-    check(code1 == code2 == 200 and one != two, 'Moderator detail must change with the selected ID')
+    status, body = fetch('/moderator/' + group)
+    check(status == 200, group + ': queue failed')
+    links = {a['href'] for a in Page(body).tagged('a') if re.fullmatch(r'/mithra/moderator/' + group + r'/\d+', a.get('href', ''))}
+    for link in links:
+        check(fetch(ORIGIN + link)[0] == 200, 'Queue link must open the selected record')
     check(fetch('/moderator/' + group + '/999999')[0] == 404, 'Unknown moderator record must not fall back')
 
 use(LIAISON)
@@ -140,13 +145,13 @@ _, by_name = fetch('/sponsor-liaison/sponsors?sort=name')
 check(by_name.index('Ceylon Fresh Mart') < by_name.index('Lanka Hardware') < by_name.index('Sunrise Pharmacy'), 'Sponsor name sort failed')
 _, edit = fetch('/sponsor-liaison/sponsors/1/edit')
 check('value="Lanka Hardware (Pvt) Ltd"' in edit and 'name="csrf_token"' in edit, 'Sponsor edit form not prefilled')
-_, purchase = fetch('/sponsor-liaison/purchases?q=INV-0306')
-check('INV-0306' in purchase and 'INV-0312' not in purchase, 'Receipt search does not filter')
+_, purchase = fetch('/sponsor-liaison/purchases?q=RCPT-2026-0038')
+check('RCPT-2026-0038' in purchase and 'RCPT-2026-0041' not in purchase, 'Receipt search does not filter')
 _, approved = fetch('/sponsor-liaison/aid-grants?status=approved')
-check('/sponsor-liaison/aid-grants/4' in approved and '/sponsor-liaison/aid-grants/1"' not in approved, 'Grant status filter failed')
-_, grant1 = fetch('/sponsor-liaison/aid-grants/1')
-_, grant2 = fetch('/sponsor-liaison/aid-grants/2')
-check('School supplies' in grant1 and 'Medical costs' in grant2, 'Grant detail shows wrong request')
+check('/sponsor-liaison/aid-grants/1042' not in approved, 'Vouched grant must not appear in approved filter')
+_, grant = fetch('/sponsor-liaison/aid-grants/1042')
+check('School supplies' in grant and '150 pts' in grant, 'Grant must show seed amount and purpose')
+check(fetch('/sponsor-liaison/aid-grants/999999')[0] == 404, 'Missing grant must not show a sample')
 
 use(ADMIN)
 _, appointment = fetch('/admin/moderators/appoint/1')

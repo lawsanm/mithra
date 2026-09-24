@@ -10,14 +10,6 @@ declare(strict_types=1);
  * @var array $errors   per-field messages from the Validator
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$sponsors ??= [
-    ['id' => 1, 'name' => 'Northwind Co'],
-    ['id' => 2, 'name' => 'ACM Corp'],
-    ['id' => 3, 'name' => 'Texa'],
-    ['id' => 4, 'name' => 'MNM'],
-];
-
 $draft ??= [
     'sponsor_id'      => '',
     'amount'          => '',
@@ -31,7 +23,7 @@ $errors ??= [];
 $splitPresets = ['100/0', '70/30', '50/50', '0/100'];
 $currentSplit = $draft['sponsor_pct'] . '/' . $draft['aid_pct'];
 
-$amountValue    = (int) ($draft['amount'] ?: 100000);
+$amountValue    = (int) ($draft['amount'] ?: 0);
 $sponsorPoints  = number_format((int) round($amountValue * $draft['sponsor_pct'] / 100));
 $aidPoints      = number_format((int) round($amountValue * $draft['aid_pct'] / 100));
 

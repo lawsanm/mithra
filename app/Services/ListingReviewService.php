@@ -212,6 +212,7 @@ final class ListingReviewService
                 'title'  => 'Listing approved: ' . $title,
                 'detail' => 'Your listing is now visible to members of your division.',
                 'icon'   => 'check-circle',
+                'item_id' => $id,
                 'href'   => '/items/' . $id . '/edit',
             ],
             'adjusted' => [
@@ -223,12 +224,14 @@ final class ListingReviewService
                     (string) $reason
                 ),
                 'icon'   => 'check-circle',
+                'item_id' => $id,
                 'href'   => '/items/' . $id . '/edit',
             ],
             default => [
                 'title'  => 'Listing not approved: ' . $title,
                 'detail' => 'Reason: ' . (string) $reason,
                 'icon'   => 'alert-triangle',
+                'item_id' => $id,
                 'href'   => '/items/' . $id . '/edit',
             ],
         };

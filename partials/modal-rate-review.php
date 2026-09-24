@@ -13,11 +13,7 @@ declare(strict_types=1);
  * @var array $quickTags label, value, selected
  */
 
-$ratee = ($ratee ?? []) + [
-    'initials' => User::initials('N. Abishan'),
-    'name'     => 'N. Abishan',
-    'booking'  => 'Bosch Cordless Drill  ·  12–17 Jul',
-];
+$ratee = ($ratee ?? []) + ['initials' => '', 'name' => '', 'booking' => ''];
 
 $rating = $rating ?? 4;
 

@@ -11,46 +11,6 @@ declare(strict_types=1);
  * @var array $impact        CSR impact panel note
  */
 
-// Sample view data — replaced by the controller once SponsorController lands.
-$sponsor ??= [
-    'greeting'  => $viewer['greeting'],
-    'standing'  => 'Active sponsor since 2024  ·  written agreement on file  ·  liaison: ' . $viewer['liaison'],
-];
-
-$stats ??= [
-    ['label' => 'Total contributed', 'value' => 'LKR 16,000', 'note' => '2 purchases this year', 'tone' => 'primary'],
-    ['label' => 'Points generated',  'value' => '16,000',     'note' => '1 rupee = 1 point, no deductions', 'tone' => 'primary'],
-    ['label' => 'Aid grants funded', 'value' => '9',          'note' => 'From your Aid Pool share', 'tone' => 'primary', 'href' => base_url() . '/sponsor/csr-reports'],
-    ['label' => 'Unread alerts',     'value' => '1',          'note' => 'Disaster Mode active', 'tone' => 'accent', 'href' => base_url() . '/sponsor/notifications'],
-];
-
-$callouts ??= [
-    [
-        'icon'          => 'alert-triangle',
-        'title'         => 'Disaster Mode active — Kollupitiya flooding',
-        'meta'          => 'Regional flood event declared. Moderators are coordinating relief on the ground.  ·  2 hrs ago',
-        'status'        => 'error',
-        'status_label'  => 'Urgent',
-        'action_label'  => 'View',
-        'action_href'   => base_url() . '/sponsor/disasters/1',
-    ],
-    [
-        'icon'          => 'heart',
-        'title'         => 'Aid request pending your response',
-        'meta'          => 'Your liaison shared a relief request matching your CSR focus.  ·  1 day ago',
-        'status'        => 'warning',
-        'status_label'  => 'Action needed',
-        'action_label'  => 'View',
-        'action_href'   => base_url() . '/sponsor/disasters/1',
-    ],
-];
-
-$impact ??= [
-    'title' => 'Your CSR impact',
-    'note'  => 'LKR 16,000 contributed  ·  funded 14 welcome bonuses and 9 aid grants  ·  '
-             . 'featured on the sponsor wall & monthly newsletter',
-];
-
 $pageTitle = 'Sponsor dashboard';
 $navActive = 'dashboard';
 
@@ -71,10 +31,28 @@ include __DIR__ . '/../../../partials/header.php';
 </div>
 
 <section class="section">
+    <?php if ($activeEvents !== []): ?>
+        <h2 class="section__title">Active disaster relief</h2>
+        <ul class="row-list">
+            <?php foreach ($activeEvents as $event): ?>
+                <li class="list-row">
+                    <div class="list-row__body">
+                        <span class="list-row__title"><?= e($event['reason']) ?></span>
+                        <span class="list-row__meta"><?= e($event['division_name']) ?></span>
+                    </div>
+                    <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor/disasters/<?= e((string) $event['id']) ?>">View relief</a>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
     <div class="section__head">
         <h2 class="section__title">Recent notifications</h2>
         <a class="link section__action" href="<?= base_url() ?>/sponsor/notifications">View all</a>
     </div>
+
+    <?php if ($callouts === []): ?>
+        <p class="empty-state">No notifications to show.</p>
+    <?php endif; ?>
 
     <ul class="row-list">
         <?php foreach ($callouts as $callout): ?>
