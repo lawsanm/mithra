@@ -19,9 +19,6 @@ final class AuthService
      */
     private const ABSENT_ACCOUNT_HASH = '$2y$10$S.UjDRRMER1LfC7iFEErY.DmuxwBXu4TBl.TEwVm9xwqCdaZ6T6PO';
 
-    /** Sri Lankan numbers are matched on their final nine digits. */
-    private const PHONE_DIGITS = 9;
-
     /** The throttle scope for sign-in attempts. */
     public const SCOPE = 'login';
 
@@ -108,13 +105,13 @@ final class AuthService
             return $this->users->findForLoginByEmail($identifier);
         }
 
-        $digits = (string) preg_replace('/\D/', '', $identifier);
+        $digits = RegistrationService::phoneDigits($identifier);
 
-        if (strlen($digits) < self::PHONE_DIGITS) {
+        if (strlen($digits) < RegistrationService::PHONE_DIGITS) {
             return null;
         }
 
-        return $this->users->findForLoginByPhone(substr($digits, -self::PHONE_DIGITS));
+        return $this->users->findForLoginByPhone($digits);
     }
 
     /**

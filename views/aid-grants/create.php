@@ -45,16 +45,14 @@ include __DIR__ . '/../../partials/header.php';
     <p class="demo-note">Preview only. Saving is not available yet.</p>
     <div class="field">
         <label class="field__label" for="grant-purpose">Purpose</label>
-        <select class="input" id="grant-purpose" name="purpose" required disabled>
+        <select class="input" id="grant-purpose" name="purpose" disabled>
             <?php foreach ($purposes as $purpose): ?>
                 <option value="<?= e($purpose) ?>"<?= $draft['purpose'] === $purpose ? ' selected' : '' ?>>
                     <?= e($purpose) ?>
                 </option>
             <?php endforeach; ?>
         </select>
-        <?php if (isset($errors['purpose'])): ?>
-            <span class="field__error"><?= e($errors['purpose']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'purpose') ?>
     </div>
 
     <div class="field">
@@ -65,16 +63,11 @@ include __DIR__ . '/../../partials/header.php';
             id="grant-amount"
             name="amount"
             value="<?= e($draft['amount']) ?>"
-            min="1"
-            step="1"
-            required
          disabled>
         <span class="field__hint">
             Grants are sized to need — the liaison may adjust the amount at approval.
         </span>
-        <?php if (isset($errors['amount'])): ?>
-            <span class="field__error"><?= e($errors['amount']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'amount') ?>
     </div>
 
     <div class="field">
@@ -86,11 +79,8 @@ include __DIR__ . '/../../partials/header.php';
             name="details"
             value="<?= e($draft['details']) ?>"
             placeholder="Two children starting the new term, need books and shoes…"
-            required
          disabled>
-        <?php if (isset($errors['details'])): ?>
-            <span class="field__error"><?= e($errors['details']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'details') ?>
     </div>
 
     <p class="form-card__legend">Evidence (optional)</p>

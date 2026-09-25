@@ -31,7 +31,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="users-layout">
     <div>
-        <div class="form-card" style="width: 100%; max-width: 100%;">
+        <div class="form-card form-card--wide">
             <h2 class="form-card__legend">Member details</h2>
 
             <div class="line-item">
@@ -64,7 +64,7 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
         </div>
 
-        <section class="section" style="margin-top: var(--space-6);">
+        <section class="section u-mt-6">
             <h2 class="section__title">Recent point movements</h2>
             <?php if ($activity === []): ?>
                 <p class="empty-state__body">No point movements yet.</p>

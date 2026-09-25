@@ -61,8 +61,7 @@ final class LoginThrottle
         if (str_contains($identifier, '@')) {
             $key = mb_strtolower($identifier);
         } else {
-            $digits = (string) preg_replace('/\D/', '', $identifier);
-            $key    = strlen($digits) > 9 ? substr($digits, -9) : $digits;
+            $key = RegistrationService::phoneDigits($identifier);
         }
 
         return hash('sha256', $scope . '|' . $key);

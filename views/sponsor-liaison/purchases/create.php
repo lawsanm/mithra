@@ -55,7 +55,7 @@ include __DIR__ . '/../../../partials/header.php';
     <p class="demo-note">Preview only. Saving is not available yet.</p>
     <div class="field">
         <label class="field__label" for="sponsor-id">Sponsor</label>
-        <select class="input" id="sponsor-id" name="sponsor_id" required disabled>
+        <select class="input" id="sponsor-id" name="sponsor_id" disabled>
             <option value="">Select sponsor</option>
             <?php foreach ($sponsors as $sponsor): ?>
                 <option value="<?= e((string) $sponsor['id']) ?>"<?= (string) $draft['sponsor_id'] === (string) $sponsor['id'] ? ' selected' : '' ?>>
@@ -63,9 +63,7 @@ include __DIR__ . '/../../../partials/header.php';
                 </option>
             <?php endforeach; ?>
         </select>
-        <?php if (isset($errors['sponsor_id'])): ?>
-            <span class="field__error"><?= e($errors['sponsor_id']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'sponsor_id') ?>
     </div>
 
     <div class="field-row">
@@ -78,13 +76,8 @@ include __DIR__ . '/../../../partials/header.php';
                 name="amount"
                 value="<?= e((string) $draft['amount']) ?>"
                 placeholder="100,000"
-                min="1"
-                step="1"
-                required
              disabled>
-            <?php if (isset($errors['amount'])): ?>
-                <span class="field__error"><?= e($errors['amount']) ?></span>
-            <?php endif; ?>
+            <?= field_error($errors, 'amount') ?>
         </div>
         <div class="field">
             <label class="field__label" for="receipt-number">Receipt number</label>
@@ -95,11 +88,8 @@ include __DIR__ . '/../../../partials/header.php';
                 name="receipt_number"
                 value="<?= e($draft['receipt_number']) ?>"
                 placeholder="INV-0318"
-                required
              disabled>
-            <?php if (isset($errors['receipt_number'])): ?>
-                <span class="field__error"><?= e($errors['receipt_number']) ?></span>
-            <?php endif; ?>
+            <?= field_error($errors, 'receipt_number') ?>
         </div>
     </div>
 

@@ -30,18 +30,18 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid stat-grid--3">
     <div class="stat-card" style="background-color: var(--color-info-tint);">
-        <span class="stat-card__label" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-ui-caption);">Total Received</span>
+        <span class="stat-card__label stat-card__label--caps">Total Received</span>
         <strong class="stat-card__value stat-card__value--primary"><?= e($summary['totalReceived']['value']) ?></strong>
         <span class="stat-card__note"><?= e($summary['totalReceived']['sub']) ?></span>
     </div>
     <div class="stat-card" style="background-color: var(--color-accent-tint);">
-        <span class="stat-card__label" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-ui-caption);">Total Used</span>
+        <span class="stat-card__label stat-card__label--caps">Total Used</span>
         <strong class="stat-card__value" style="color: var(--color-accent-text);"><?= e($summary['totalUsed']['value']) ?></strong>
         <span class="stat-card__note"><?= e($summary['totalUsed']['sub']) ?></span>
     </div>
     <div class="stat-card" style="background-color: var(--color-success-tint);">
-        <span class="stat-card__label" style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-ui-caption);">Remaining Balance</span>
-        <strong class="stat-card__value" style="color: var(--color-success-text);"><?= e($summary['remaining']['value']) ?></strong>
+        <span class="stat-card__label stat-card__label--caps">Remaining Balance</span>
+        <strong class="stat-card__value u-text-success"><?= e($summary['remaining']['value']) ?></strong>
         <span class="stat-card__note"><?= e($summary['remaining']['sub']) ?></span>
     </div>
 </div>
@@ -55,7 +55,7 @@ include __DIR__ . '/../../../partials/header.php';
 <?php if ($inflows === []): ?>
     <p class="empty-state__body">No sponsor contribution has been recorded yet.</p>
 <?php else: ?>
-    <div style="overflow-x: auto;">
+    <div class="scroll-x">
         <table class="data-table">
             <thead>
                 <tr>
@@ -76,7 +76,7 @@ include __DIR__ . '/../../../partials/header.php';
                         <td><span style="font-family: monospace; font-size: var(--text-ui-caption);"><?= e($row['ref']) ?></span></td>
                         <td><span class="badge badge--info"><?= e($row['category']) ?></span></td>
                         <td><?= e($row['cash']) ?></td>
-                        <td><strong style="color: var(--color-success-text);"><?= e($row['pts']) ?></strong></td>
+                        <td><strong class="u-text-success"><?= e($row['pts']) ?></strong></td>
                         <td><span class="badge badge--<?= e($row['status']) ?>"><?= e($row['status_label']) ?></span></td>
                     </tr>
                 <?php endforeach; ?>

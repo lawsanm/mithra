@@ -65,11 +65,11 @@ $quote = ($quote ?? []) + [
         <div class="field-row">
             <div class="field">
                 <label class="visually-hidden" for="modal-from">From date</label>
-                <input class="input input--half" type="date" id="modal-from" name="from_date" value="<?= e($quote['from']) ?>" required disabled>
+                <input class="input input--half" type="date" id="modal-from" name="from_date" value="<?= e($quote['from']) ?>" disabled>
             </div>
             <div class="field">
                 <label class="visually-hidden" for="modal-to">To date</label>
-                <input class="input input--half" type="date" id="modal-to" name="to_date" value="<?= e($quote['to']) ?>" required disabled>
+                <input class="input input--half" type="date" id="modal-to" name="to_date" value="<?= e($quote['to']) ?>" disabled>
             </div>
         </div>
 

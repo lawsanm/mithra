@@ -73,7 +73,7 @@ include __DIR__ . '/../../../partials/header.php';
             <p class="demo-note">Preview only. Saving is not available yet.</p>
             <div class="field">
                 <label class="field__label" for="offer_amount">Amount (LKR)</label>
-                <input class="input" type="number" id="offer_amount" name="amount" min="1" step="1" placeholder="25,000" required disabled>
+                <input class="input" type="number" id="offer_amount" name="amount" placeholder="25,000" disabled>
             </div>
 
             <p class="field__hint"><?= e($offerNote) ?></p>

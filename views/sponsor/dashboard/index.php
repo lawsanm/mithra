@@ -66,20 +66,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid">
     <?php foreach ($stats as $stat): ?>
-        <?php $valueClass = 'stat-card__value' . (isset($stat['tone']) ? ' stat-card__value--' . $stat['tone'] : ''); ?>
-        <?php if (isset($stat['href'])): ?>
-            <a class="stat-card" href="<?= e($stat['href']) ?>">
-                <span class="stat-card__label"><?= e($stat['label']) ?></span>
-                <strong class="<?= e($valueClass) ?>"><?= e($stat['value']) ?></strong>
-                <span class="stat-card__note"><?= e($stat['note']) ?></span>
-            </a>
-        <?php else: ?>
-            <div class="stat-card">
-                <span class="stat-card__label"><?= e($stat['label']) ?></span>
-                <strong class="<?= e($valueClass) ?>"><?= e($stat['value']) ?></strong>
-                <span class="stat-card__note"><?= e($stat['note']) ?></span>
-            </div>
-        <?php endif; ?>
+        <?php $statTone = ''; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 

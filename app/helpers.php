@@ -31,6 +31,12 @@ function csrf_field(): string
     return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
 }
 
+// A form field's validation message, or nothing when the field passed.
+function field_error(array $errors, string $field): string
+{
+    return isset($errors[$field]) ? '<span class="field__error">' . e($errors[$field]) . '</span>' : '';
+}
+
 // Which navigation bar a role uses. Signed-out visitors get the public bar.
 function chrome_for(?string $role): string
 {

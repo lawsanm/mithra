@@ -46,7 +46,16 @@ final class ItemService
     ];
 
     /** Points: a plausible declared value for a household item. */
-    private const MAX_DECLARED_VALUE = 1000000;
+    public const MAX_DECLARED_VALUE = 1000000;
+
+    /** Points per day or per month. */
+    public const MAX_RATE = 1000000;
+
+    /** items.title is VARCHAR(150); the description cap keeps listings readable. */
+    public const NAME_MAX        = 150;
+    public const DESCRIPTION_MAX = 2000;
+
+    public const LISTING_TYPES = ['rental', 'donation'];
 
     /** Statuses a member may still edit. 'borrowed' is out — the item is away. */
     private const EDITABLE_STATES = ['pending_approval', 'active', 'paused', 'rejected'];
@@ -369,7 +378,7 @@ final class ItemService
 
         $listingType = (string) ($input['listing_type'] ?? 'rental');
 
-        if (!in_array($listingType, ['rental', 'donation'], true)) {
+        if (!in_array($listingType, self::LISTING_TYPES, true)) {
             $errors['listing_type'] = 'Choose whether this is a rental or a donation.';
         }
 

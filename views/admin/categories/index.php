@@ -18,7 +18,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Category management</h1>
-    <button class="btn btn--primary page-header__action" type="button" data-modal-open="modal-edit-category" data-mode="create">
+    <button class="btn btn--primary page-header__action" type="button" data-modal-open="modal-edit-category" data-modal-title="Add category">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
         Add category
     </button>
@@ -32,7 +32,7 @@ include __DIR__ . '/../../../partials/header.php';
                 <span class="list-row__meta"><?= e(number_format($cat['listing_count'])) ?> listings</span>
             </div>
             <span class="badge badge--<?= e($cat['status']) ?>"><?= e($cat['status_label']) ?></span>
-            <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-category" data-category-id="<?= e((string) $cat['id']) ?>" data-category-name="<?= e($cat['name']) ?>">Edit</button>
+            <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-category" data-modal-title="Edit category" data-category-id="<?= e((string) $cat['id']) ?>" data-category-name="<?= e($cat['name']) ?>">Edit</button>
         </li>
     <?php endforeach; ?>
 </ul>

@@ -73,9 +73,9 @@ include __DIR__ . '/../../../partials/header.php';
                 <div class="list-row__body">
                     <span class="list-row__title">
                         <?= e($candidate['name']) ?>
-                        <span class="badge badge--info" style="margin-left: var(--space-2);">Trust <?= e((string) $candidate['trust_score']) ?></span>
+                        <span class="badge badge--info u-ml-2">Trust <?= e((string) $candidate['trust_score']) ?></span>
                         <?php if ($candidate['recommended']): ?>
-                            <span class="badge badge--warning" style="margin-left: var(--space-2);">Recommended — highest trust score</span>
+                            <span class="badge badge--warning u-ml-2">Recommended — highest trust score</span>
                         <?php endif; ?>
                     </span>
                     <span class="list-row__meta">Member since <?= e($candidate['member_since']) ?></span>
@@ -95,13 +95,13 @@ include __DIR__ . '/../../../partials/header.php';
 <!-- ── Step 2: Review appointment ── -->
 <div class="step-content" id="step-2" <?= $currentStep === 2 ? '' : 'hidden' ?>>
     <div class="two-col">
-        <div class="form-card" style="width: 100%;">
+        <div class="form-card form-card--wide">
             <h2 class="form-card__legend">Selected member</h2>
 
             <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-5);">
                 <span class="avatar avatar--lg" id="review-initials"><?= e((string) ($selected['initials'] ?? '')) ?></span>
                 <div>
-                    <strong id="review-name" style="font-size: var(--text-lede);"><?= e((string) ($selected['name'] ?? '')) ?></strong>
+                    <strong id="review-name" class="u-text-lede"><?= e((string) ($selected['name'] ?? '')) ?></strong>
                     <p class="list-row__meta" style="margin: 0;">
                         <span id="review-division"><?= e($division['name']) ?></span> · Trust score <span id="review-trust"><?= e((string) ($selected['trust_score'] ?? '')) ?></span> · Member since <span id="review-since"><?= e((string) ($selected['member_since'] ?? '')) ?></span>
                     </p>
@@ -128,7 +128,7 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
         </div>
 
-        <div class="form-card" style="width: 100%;">
+        <div class="form-card form-card--wide">
             <h2 class="form-card__legend">What happens next</h2>
             <div class="timeline">
                 <div class="timeline__item">
@@ -157,7 +157,7 @@ include __DIR__ . '/../../../partials/header.php';
 
     <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Back to selection</a>
-        <div style="display:inline;" data-demo-form>
+        <div class="inline-form" data-demo-form>
             <p class="demo-note">Preview only. Saving is not available yet.</p>
             <button class="btn btn--primary" type="button" id="btn-confirm-appointment" disabled>Confirm and start objection window</button>
         </div>
@@ -205,11 +205,11 @@ include __DIR__ . '/../../../partials/header.php';
                             <span class="list-row__meta"><?= e($obj['reason']) ?></span>
                             <span class="list-row__meta"><?= e($obj['date']) ?></span>
                         </div>
-                        <div style="display:inline;" data-demo-form>
+                        <div class="inline-form" data-demo-form>
                             <p class="demo-note">Preview only. Saving is not available yet.</p>
                             <button class="btn btn--ghost" type="submit" disabled>Dismiss</button>
                         </div>
-                        <div style="display:inline;" data-demo-form>
+                        <div class="inline-form" data-demo-form>
                             <p class="demo-note">Preview only. Saving is not available yet.</p>
                             <button class="btn btn--danger" type="submit" disabled>Uphold</button>
                         </div>
@@ -219,7 +219,7 @@ include __DIR__ . '/../../../partials/header.php';
         <?php endif; ?>
     </section>
 
-    <div style="margin-top: var(--space-6);">
+    <div class="u-mt-6">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/objections/<?= e((string) $division['id']) ?>">View objection details</a>
     </div>
 </div>

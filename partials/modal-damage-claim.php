@@ -75,7 +75,7 @@ $claimDraft = ($claimDraft ?? []) + [
 
         <div class="field">
             <label class="field__label" for="claim-amount">Claim amount (pts)</label>
-            <input class="input" type="number" id="claim-amount" name="amount" value="<?= e($claimDraft['amount']) ?>" min="1" step="1" required disabled>
+            <input class="input" type="number" id="claim-amount" name="amount" value="<?= e($claimDraft['amount']) ?>" disabled>
             <span class="field__hint"><?= e($claimDraft['cap']) ?></span>
         </div>
 
@@ -88,7 +88,6 @@ $claimDraft = ($claimDraft ?? []) + [
                 name="description"
                 value="<?= e($claimDraft['description']) ?>"
                 placeholder="Chuck no longer grips bits — worked at handover…"
-                required
              disabled>
         </div>
 
@@ -97,7 +96,7 @@ $claimDraft = ($claimDraft ?? []) + [
         <label class="upload-drop">
             <span class="upload-drop__glyph" aria-hidden="true">＋</span>
             <span>Upload photos of the damage</span>
-            <input class="visually-hidden" type="file" name="evidence[]" accept="image/*" multiple required disabled>
+            <input class="visually-hidden" type="file" name="evidence[]" accept="image/*" multiple disabled>
         </label>
 
         <p class="notice notice--warning">

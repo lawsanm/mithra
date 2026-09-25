@@ -25,8 +25,8 @@ final class RegistrationService
     /** Public sign-up only ever creates members (§7.4). */
     private const MEMBER_ROLE = 'member';
 
-    /** Sri Lankan mobile numbers, stored the way the seeded accounts write them. */
-    private const PHONE_DIGITS = 9;
+    /** Sri Lankan mobile numbers are matched on their final nine digits. */
+    public const PHONE_DIGITS = 9;
 
     /**
      * Identity documents are kept apart from item photos: they are served only

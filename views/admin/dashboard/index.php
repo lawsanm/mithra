@@ -27,11 +27,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid">
     <?php foreach ($stats as $stat): ?>
-        <div class="stat-card">
-            <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value <?= !empty($stat['error']) ? 'stat-card__value--warning' : 'stat-card__value--primary' ?>"><?= e($stat['value']) ?></strong>
-            <span class="stat-card__note"><?= e($stat['note']) ?></span>
-        </div>
+        <?php $statTone = !empty($stat['error']) ? 'warning' : 'primary'; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 

@@ -312,7 +312,6 @@ include __DIR__ . '/../../../partials/header.php';
                     id="mediation-decision"
                     name="decision_notes"
                     placeholder="Record the agreed resolution and any points awarded…"
-                    required
                  disabled></textarea>
             </div>
 
@@ -320,8 +319,8 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 
     <div class="actions">
-        <button class="btn btn--ghost" type="submit" name="action" value="escalate" formnovalidate disabled><?= e($escalateLabel) ?></button>
-        <button class="btn btn--ghost" type="submit" name="action" value="request-info" formnovalidate disabled>Request more info</button>
+        <button class="btn btn--ghost" type="submit" name="action" value="escalate" disabled><?= e($escalateLabel) ?></button>
+        <button class="btn btn--ghost" type="submit" name="action" value="request-info" disabled>Request more info</button>
         <button class="btn btn--primary" type="submit" name="action" value="resolve" disabled>Record resolution</button>
     </div>
 </div>

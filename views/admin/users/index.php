@@ -27,14 +27,11 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid stat-grid--4">
     <?php foreach ($stats as $stat): ?>
-        <div class="stat-card">
-            <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value stat-card__value--primary"><?= e($stat['value']) ?></strong>
-        </div>
+        <?php $statTone = 'primary'; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 
-<form class="field-row" method="get" action="<?= base_url() ?>/admin/users" role="search">
+<form class="field-row" method="get" action="<?= base_url() ?>/admin/users" role="search" novalidate>
     <input type="hidden" name="status" value="<?= e($status) ?>">
     <div class="field">
         <input class="input" type="search" name="q" placeholder="Search name or division" aria-label="Search name or division" value="<?= e($search) ?>">

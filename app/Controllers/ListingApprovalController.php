@@ -71,7 +71,7 @@ final class ListingApprovalController extends Controller
         $validator = new Validator($_POST);
         $validator
             ->inList('decision', 'Decision', ListingReviewService::DECISIONS)
-            ->integer('declared_value', 'Corrected declared value', 1, 1000000)
+            ->integer('declared_value', 'Corrected declared value', 1, ItemService::MAX_DECLARED_VALUE)
             ->maxLength('reason', 'Reason', 255);
 
         if (!$validator->passes()) {
@@ -321,7 +321,7 @@ final class ListingApprovalController extends Controller
      */
     protected function render(string $view, array $data = []): void
     {
-        $data['chrome']   = $this->role() === 'admin' ? 'admin' : 'moderator';
+        $data['chrome']   = chrome_for($this->role());
         $data['basePath'] = base_url() . $this->basePath();
 
         parent::render($view, $data);

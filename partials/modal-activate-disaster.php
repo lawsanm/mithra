@@ -21,7 +21,7 @@ $divisions ??= [];
 
         <div class="field">
             <label class="field__label" for="disaster_division">Division</label>
-            <select class="input" id="disaster_division" data-modal-field="divisionId" name="division_id" required disabled>
+            <select class="input" id="disaster_division" data-modal-field="divisionId" name="division_id" disabled>
                 <option value="">Select division...</option>
                 <?php foreach ($divisions as $d): ?>
                     <option value="<?= e((string) $d['id']) ?>"><?= e($d['name']) ?></option>
@@ -31,7 +31,7 @@ $divisions ??= [];
 
         <div class="field">
             <label class="field__label" for="disaster_type">Disaster type</label>
-            <select class="input" id="disaster_type" name="type" required disabled>
+            <select class="input" id="disaster_type" name="type" disabled>
                 <option value="">Select type...</option>
                 <option value="flooding">Flooding</option>
                 <option value="fire">Fire</option>
@@ -43,7 +43,7 @@ $divisions ??= [];
 
         <div class="field">
             <label class="field__label" for="disaster_end">End date</label>
-            <input class="input" id="disaster_end" name="end_date" type="date" required disabled>
+            <input class="input" id="disaster_end" name="end_date" type="date" disabled>
         </div>
 
         <div class="field">
