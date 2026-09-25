@@ -14,8 +14,8 @@ declare(strict_types=1);
  */
 
 $ratee = ($ratee ?? []) + [
-    'initials' => 'TM',
-    'name'     => 'T.H.K. Madushan',
+    'initials' => User::initials('N. Abishan'),
+    'name'     => 'N. Abishan',
     'booking'  => 'Bosch Cordless Drill  ·  12–17 Jul',
 ];
 

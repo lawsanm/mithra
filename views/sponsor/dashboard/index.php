@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 // Sample view data — replaced by the controller once SponsorController lands.
 $sponsor ??= [
-    'greeting'  => 'Good morning, Northwind Co',
-    'standing'  => 'Active sponsor since 2024  ·  written agreement on file  ·  liaison: A. Akalvily',
+    'greeting'  => $viewer['greeting'],
+    'standing'  => 'Active sponsor since 2024  ·  written agreement on file  ·  liaison: ' . $viewer['liaison'],
 ];
 
 $stats ??= [
@@ -27,7 +27,7 @@ $stats ??= [
 $callouts ??= [
     [
         'icon'          => 'alert-triangle',
-        'title'         => 'Disaster Mode active — Wellawatte flooding',
+        'title'         => 'Disaster Mode active — Kollupitiya flooding',
         'meta'          => 'Regional flood event declared. Moderators are coordinating relief on the ground.  ·  2 hrs ago',
         'status'        => 'error',
         'status_label'  => 'Urgent',

@@ -44,7 +44,7 @@ $sampleRows = [
     [
         'state'        => 'open',
         'title'        => 'Case #CD-0142 — Grinding Drill',
-        'meta'         => 'T.H.K. Madushan ↔ J. Kavipriya  ·  you are a party to this case',
+        'meta'         => 'N. Abishan ↔ N. Arun  ·  moderate damage  ·  mediating',
         'status'       => 'warning',
         'status_label' => 'Mediating',
         'href'         => base_url() . '/moderator/cases/1',
@@ -52,7 +52,7 @@ $sampleRows = [
     [
         'state'        => 'resolved',
         'title'        => 'Case #CD-0138 — Camping Tent (4-person)',
-        'meta'         => 'M. Lawsan ↔ J. Kavipriya  ·  repair confirmed  ·  closed 12 Jul',
+        'meta'         => 'M. Lawsan ↔ N. Arun  ·  repair confirmed  ·  closed 12 Jul',
         'status'       => 'success',
         'status_label' => 'Resolved',
         'href'         => base_url() . '/moderator/cases/2',

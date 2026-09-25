@@ -16,9 +16,9 @@ declare(strict_types=1);
 
 // Sample view data — replaced by the controller once SponsorLiaisonController lands.
 $disaster ??= [
-    'title'        => 'Wellawatte flooding – relief coordination',
+    'title'        => 'Kollupitiya flooding – relief coordination',
     'status_label' => 'Disaster Mode active',
-    'meta'         => 'Activated 15 Jul, 09:20 by Mod. J. Kavipriya  ·  13 sponsors notified',
+    'meta'         => 'Activated 15 Jul, 09:20 by Mod. ' . $viewer['moderator'] . '  ·  13 sponsors notified',
 ];
 
 $sponsorSide ??= [
@@ -28,8 +28,8 @@ $sponsorSide ??= [
 ];
 
 $moderatorSide ??= [
-    'initials' => 'JK',
-    'name'     => 'Mod. J. Kavipriya  on the ground',
+    'initials' => User::initials($viewer['moderator']),
+    'name'     => 'Mod. ' . $viewer['moderator'] . '  on the ground',
     'note'     => 'Confirms need: 60 households affected, low-lying lanes worst hit',
 ];
 
@@ -57,7 +57,7 @@ include __DIR__ . '/../../../partials/header.php';
 <nav class="breadcrumb" aria-label="Breadcrumb">
     <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/disasters">Disasters</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
-    <span class="breadcrumb__current" aria-current="page">Wellawatte flooding · connection</span>
+    <span class="breadcrumb__current" aria-current="page">Kollupitiya flooding · connection</span>
 </nav>
 
 <div style="display: flex; align-items: center; gap: var(--space-4);">
