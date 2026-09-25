@@ -23,7 +23,7 @@ include __DIR__ . '/../../../partials/header.php';
     <div class="page-header__action actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/sponsor-ledger">Sponsor Fund Ledger</a>
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/ledger">Open ledger</a>
-        <div style="display:inline" data-demo-form>
+        <div class="inline-form" data-demo-form>
             <p class="demo-note">Preview only. Saving is not available yet.</p>
             <button class="btn btn--primary" type="submit" disabled>Run invariant check now</button>
         </div>
@@ -31,12 +31,8 @@ include __DIR__ . '/../../../partials/header.php';
 </header>
 
 <div class="stat-grid stat-grid--6">
-    <?php foreach ($pools as $pool): ?>
-        <div class="stat-card">
-            <span class="stat-card__label"><?= e($pool['label']) ?></span>
-            <strong class="stat-card__value stat-card__value--primary"><?= e($pool['value']) ?></strong>
-            <span class="stat-card__note"><?= e($pool['note']) ?></span>
-        </div>
+    <?php foreach ($pools as $stat): ?>
+        <?php $statTone = 'primary'; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 
@@ -58,7 +54,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <span class="list-row__meta"><?= e($job['last_run']) ?></span>
                 </div>
                 <span class="badge badge--<?= e($job['status']) ?>"><?= e($job['status_label']) ?></span>
-                <div style="display:inline" data-demo-form>
+                <div class="inline-form" data-demo-form>
                     <p class="demo-note">Preview only. Saving is not available yet.</p>
                     <button class="btn btn--ghost" type="submit" disabled>Trigger</button>
                 </div>

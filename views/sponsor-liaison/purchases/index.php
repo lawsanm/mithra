@@ -40,7 +40,7 @@ include __DIR__ . '/../../../partials/header.php';
     </a>
 </header>
 
-<form class="field-row" method="get" action="<?= base_url() ?>/sponsor-liaison/purchases">
+<form class="field-row" method="get" action="<?= base_url() ?>/sponsor-liaison/purchases" novalidate>
     <div class="field">
         <input class="input input--search" aria-label="Search purchases" type="search" name="q" placeholder="Search by receipt no." value="<?= e($search) ?>">
     </div>
@@ -72,7 +72,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <span class="list-row__title"><?= e($purchase['sponsor']) ?></span>
                     <span class="list-row__meta">Receipt <?= e($purchase['receipt']) ?>  ·  <?= e($purchase['allocation']) ?></span>
                 </div>
-                <strong class="list-row__title" style="color: var(--color-success-text);"><?= e($purchase['amount']) ?></strong>
+                <strong class="list-row__title u-text-success"><?= e($purchase['amount']) ?></strong>
                 <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/purchases/<?= e((string) $purchase['id']) ?>">View</a>
             </li>
         <?php endforeach; ?>

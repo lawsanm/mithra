@@ -39,11 +39,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid">
     <?php foreach ($stats as $stat): ?>
-        <div class="stat-card">
-            <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value stat-card__value--primary"><?= e($stat['value']) ?></strong>
-            <span class="stat-card__note"><?= e($stat['note']) ?></span>
-        </div>
+        <?php $statTone = 'primary'; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 
@@ -59,7 +55,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <span class="list-row__title"><?= e($sponsor['name']) ?></span>
                     <span class="list-row__meta"><?= e($sponsor['meta']) ?></span>
                 </div>
-                <span class="list-row__title" style="color: var(--color-success-text);"><?= e($sponsor['contributed']) ?></span>
+                <span class="list-row__title u-text-success"><?= e($sponsor['contributed']) ?></span>
                 <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/csr-reports/quarterly">Report</a>
             </li>
         <?php endforeach; ?>

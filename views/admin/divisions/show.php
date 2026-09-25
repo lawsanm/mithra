@@ -33,9 +33,9 @@ include __DIR__ . '/../../../partials/header.php';
         <div class="actions">
             <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-division">Edit division</button>
             <form method="post" action="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>/archive"
-                data-confirm="Archive this division? It will no longer accept new members.">
+                data-confirm="Archive this division? It will no longer accept new members." novalidate>
                 <?= csrf_field() ?>
-                <button class="btn btn--ghost" type="submit" style="color: var(--color-error)">Archive division</button>
+                <button class="btn btn--ghost u-text-error" type="submit">Archive division</button>
             </form>
         </div>
     <?php endif; ?>
@@ -46,24 +46,18 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="stat-grid stat-grid--3">
     <?php foreach ($stats as $stat): ?>
-        <div class="stat-card">
-            <span class="stat-card__label"><?= e($stat['label']) ?></span>
-            <strong class="stat-card__value<?= !empty($stat['error']) ? '' : ' stat-card__value--primary' ?>"
-                <?php if (!empty($stat['error'])): ?> style="color: var(--color-error)"<?php endif; ?>
-            ><?= e($stat['value']) ?></strong>
-            <span class="stat-card__note"><?= e($stat['note']) ?></span>
-        </div>
+        <?php $statTone = !empty($stat['error']) ? 'error' : 'primary'; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
 
-<div class="form-card" style="width: 100%; max-width: 100%;">
+<div class="form-card form-card--wide">
     <h3 class="form-card__legend">Division staff</h3>
 
     <div class="list-row">
         <?php if ($division['moderator_name'] === null): ?>
             <span class="avatar">—</span>
             <div class="list-row__body">
-                <span class="list-row__title" style="color: var(--color-error)">Moderator — vacant</span>
+                <span class="list-row__title u-text-error">Moderator — vacant</span>
                 <span class="list-row__meta">Until one is appointed, the Admin approves this division's new members.</span>
             </div>
             <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Appoint moderator</a>

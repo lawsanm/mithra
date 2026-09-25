@@ -65,7 +65,7 @@ include __DIR__ . '/../../partials/header.php';
 <h1 class="page-header__title">Help &amp; FAQ</h1>
 
 <?php // Read-only GET search: no CSRF token, so it never lands in the URL. ?>
-<form method="get" action="<?= base_url() ?>/help" role="search">
+<form method="get" action="<?= base_url() ?>/help" role="search" novalidate>
     <label class="visually-hidden" for="help-search">Search help articles</label>
     <input
         class="input input--search"

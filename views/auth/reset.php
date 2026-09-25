@@ -23,7 +23,7 @@ include __DIR__ . '/../../partials/header.php';
 
 ?>
 
-<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/reset-password">
+<form class="form-card form-card--auth" method="post" action="<?= base_url() ?>/reset-password" novalidate>
     <?= csrf_field() ?>
     <input type="hidden" name="token" value="<?= e($token) ?>">
 

@@ -29,7 +29,7 @@ include __DIR__ . '/../../../partials/header.php';
     <span class="badge badge--<?= e($moderator['status']) ?>"><?= e($moderator['status_label']) ?></span>
 </header>
 
-<div class="form-card" style="width: 100%; max-width: 100%;">
+<div class="form-card form-card--wide">
     <div class="two-col">
         <div style="display: flex; align-items: flex-start; gap: var(--space-5);">
             <span class="avatar" style="width: 64px; height: 64px; font-size: var(--text-h2);"><?= e($moderator['initials']) ?></span>
@@ -53,27 +53,25 @@ include __DIR__ . '/../../../partials/header.php';
     <h2 class="section__title">Activity stats</h2>
     <div class="stat-grid stat-grid--3">
         <?php foreach ($activityStats as $stat): ?>
-            <div class="stat-card">
-                <span class="stat-card__label"><?= e($stat['label']) ?></span>
-                <strong class="stat-card__value stat-card__value--primary"><?= e($stat['value']) ?></strong>
-            </div>
+            <?php $statTone = 'primary'; include __DIR__ . '/../../../partials/stat-card.php'; ?>
         <?php endforeach; ?>
     </div>
 </section>
 
-<div class="form-card form-card--danger" style="width: 100%; max-width: 100%;">
-    <h3 class="form-card__legend" style="color: var(--color-error);">Remove moderator</h3>
+<div class="form-card form-card--danger form-card--wide">
+    <h3 class="form-card__legend u-text-error">Remove moderator</h3>
 
     <div class="notice notice--warning notice--full" style="margin-bottom: var(--space-5);">
         Removing a moderator returns their bond to the Sponsor Pool (good standing) or forfeits it to the Reserve Pool (removed for cause).
     </div>
 
-    <div id="removal-section" style="display: none;">
+    <details class="disclosure">
+        <summary class="btn btn--ghost">Remove moderator…</summary>
         <div data-demo-form>
             <p class="demo-note">Preview only. Saving is not available yet.</p>
-            <div class="field" style="margin-bottom: var(--space-4);">
+            <div class="field u-mb-4">
                 <label class="field__label" for="removal-reason-type">Reason</label>
-                <select class="input" id="removal-reason-type" name="reason_type" required disabled>
+                <select class="input" id="removal-reason-type" name="reason_type" disabled>
                     <option value="">Select reason…</option>
                     <option value="good_standing">Good standing</option>
                     <option value="for_cause">Removed for cause</option>
@@ -81,34 +79,14 @@ include __DIR__ . '/../../../partials/header.php';
                 </select>
             </div>
 
-            <div class="field" style="margin-bottom: var(--space-4);">
+            <div class="field u-mb-4">
                 <label class="field__label" for="removal-reason">Details</label>
-                <textarea class="input" id="removal-reason" name="reason" rows="3" required placeholder="Provide the reason for removal…" disabled></textarea>
+                <textarea class="input" id="removal-reason" name="reason" rows="3" placeholder="Provide the reason for removal…" disabled></textarea>
             </div>
 
             <button class="btn btn--danger" type="submit" disabled>Remove moderator</button>
         </div>
-    </div>
-
-    <button class="btn btn--ghost" type="button" id="toggle-removal">Remove moderator…</button>
+    </details>
 </div>
-
-<script>
-(function () {
-    var btn = document.getElementById('toggle-removal');
-    var section = document.getElementById('removal-section');
-    if (!btn || !section) return;
-
-    btn.addEventListener('click', function () {
-        if (section.style.display === 'none') {
-            section.style.display = 'block';
-            btn.textContent = 'Cancel';
-        } else {
-            section.style.display = 'none';
-            btn.textContent = 'Remove moderator…';
-        }
-    });
-})();
-</script>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

@@ -16,10 +16,10 @@ declare(strict_types=1);
         </div>
 
         <p style="font-size: var(--text-ui-label); margin-bottom: var(--space-4);">
-            This will cancel the appointment of <strong id="uphold-appointee-name"></strong>. The division will need a new moderator selection.
+            This will cancel the appointment of <strong id="uphold-appointee-name" data-modal-field="appointee"></strong>. The division will need a new moderator selection.
         </p>
 
-        <div class="notice notice--warning" style="margin-bottom: var(--space-4);">
+        <div class="notice notice--warning u-mb-4">
             Upholding this objection permanently cancels the current appointment. The objection window closes immediately and the division returns to the moderator selection process.
         </div>
 

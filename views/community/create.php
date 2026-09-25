@@ -43,16 +43,14 @@ include __DIR__ . '/../../partials/header.php';
 
     <div class="field">
         <label class="field__label" for="temporary-community">Temporary community</label>
-        <select class="input" id="temporary-community" name="temporary_community" required disabled>
+        <select class="input" id="temporary-community" name="temporary_community" disabled>
             <?php foreach ($divisions as $division): ?>
                 <option value="<?= e($division) ?>"<?= $draft['temporary_community'] === $division ? ' selected' : '' ?>>
                     <?= e($division) ?>
                 </option>
             <?php endforeach; ?>
         </select>
-        <?php if (isset($errors['temporary_community'])): ?>
-            <span class="field__error"><?= e($errors['temporary_community']) ?></span>
-        <?php endif; ?>
+        <?= field_error($errors, 'temporary_community') ?>
     </div>
 
     <p class="form-card__legend">Proof of temporary stay</p>
@@ -60,7 +58,7 @@ include __DIR__ . '/../../partials/header.php';
     <label class="upload-drop">
         <span class="upload-drop__glyph" aria-hidden="true">＋</span>
         <span>Upload rental agreement, employer letter, or similar</span>
-        <input class="visually-hidden" type="file" name="proof" accept="image/*,application/pdf" required disabled>
+        <input class="visually-hidden" type="file" name="proof" accept="image/*,application/pdf" disabled>
     </label>
 
     <p class="notice notice--info">

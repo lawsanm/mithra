@@ -3279,6 +3279,29 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .modal { max-width: calc(100vw - var(--space-8)); max-height: calc(100dvh - var(--space-8)); overflow-y: auto; }
 .step-indicator__number { display: inline-flex; align-items: center; justify-content: center; width: var(--size-nav-icon); height: var(--size-nav-icon); border-radius: var(--radius-pill); background: var(--color-primary-50); }
 
+/* ==========================================================================
+   Layout helpers — the small adjustments several pages repeat, named once
+   instead of written as inline style="" attributes.
+   ========================================================================== */
+
+.form-card--wide { width: 100%; max-width: 100%; }
+.form-card__legend--lg { font-size: var(--text-lede); }
+.stat-card__label--caps { text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-ui-caption); }
+.inline-form { display: inline; }
+.scroll-x { overflow-x: auto; }
+.cluster { display: flex; align-items: center; gap: var(--space-3); }
+.disclosure > summary { list-style: none; width: fit-content; }
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure[open] > summary { margin-bottom: var(--space-4); }
+.u-mt-6 { margin-top: var(--space-6); }
+.u-mb-1 { margin-bottom: var(--space-1); }
+.u-mb-4 { margin-bottom: var(--space-4); }
+.u-ml-2 { margin-left: var(--space-2); }
+.u-text-center { text-align: center; }
+.u-text-lede { font-size: var(--text-lede); }
+.u-text-success { color: var(--color-success-text); }
+.u-text-error { color: var(--color-error); }
+
 @media (max-width: 1200px) {
     .nav { gap: var(--space-4); }
     .nav__tagline { display: none; }

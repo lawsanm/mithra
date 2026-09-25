@@ -56,7 +56,6 @@ $quickTags = $quickTags ?? [
                     name="rating"
                     value="<?= e((string) $star) ?>"
                     <?= $star === $rating ? 'checked' : '' ?>
-                    required
                  disabled>
                 <label for="star-<?= e((string) $star) ?>">
                     <span aria-hidden="true">★</span>

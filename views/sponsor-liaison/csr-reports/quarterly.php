@@ -56,7 +56,7 @@ include __DIR__ . '/../../../partials/header.php';
         </div>
         <div style="flex: 1 0 0;"></div>
         <img src="<?= base_url() ?>/img/logo-mark.svg" alt="" style="height: 26px;">
-        <span class="nav__wordmark" style="margin-left: var(--space-2);">Mithra</span>
+        <span class="nav__wordmark u-ml-2">Mithra</span>
     </div>
 
     <hr style="width: 100%; border: none; border-top: 1px solid var(--color-border); margin: 0;">
@@ -85,13 +85,8 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="actions">
     <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/csr-reports">Back to CSR impact</a>
-    <button class="btn btn--primary" type="button" id="print-report">Print / Save as PDF</button>
+    <button class="btn btn--primary" type="button" data-print>Print / Save as PDF</button>
 </div>
 
-<script>
-document.getElementById('print-report').addEventListener('click', function () {
-    window.print();
-});
-</script>
-
+<?php $pageScripts = ['print.js']; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

@@ -68,10 +68,10 @@ include __DIR__ . '/../../../partials/header.php';
 
 <div class="two-col">
     <div class="stack" style="display: flex; flex-direction: column; gap: var(--space-5);">
-        <div class="form-card" style="width: 100%;">
-            <h2 class="form-card__legend" style="font-size: var(--text-lede);">Sponsor ↔ Moderator connection</h2>
+        <div class="form-card form-card--wide">
+            <h2 class="form-card__legend form-card__legend--lg">Sponsor ↔ Moderator connection</h2>
 
-            <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <div class="cluster">
                 <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius-md); background-color: var(--color-warm-100); color: var(--color-text-muted); font-weight: var(--weight-bold); font-size: var(--text-lede);"><?= e($sponsorSide['initial']) ?></span>
                 <div>
                     <p class="list-row__title"><?= e($sponsorSide['name']) ?></p>
@@ -79,7 +79,7 @@ include __DIR__ . '/../../../partials/header.php';
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <div class="cluster">
                 <span class="avatar avatar--md"><?= e($moderatorSide['initials']) ?></span>
                 <div>
                     <p class="list-row__title"><?= e($moderatorSide['name']) ?></p>
@@ -90,8 +90,8 @@ include __DIR__ . '/../../../partials/header.php';
             <span class="badge badge--info"><?= e($connectedNote) ?></span>
         </div>
 
-        <div class="form-card" style="width: 100%;">
-            <h2 class="form-card__legend" style="font-size: var(--text-lede);">Coordination log</h2>
+        <div class="form-card form-card--wide">
+            <h2 class="form-card__legend form-card__legend--lg">Coordination log</h2>
             <div class="timeline">
                 <?php foreach ($log as $entry): ?>
                     <div class="timeline__item">
@@ -104,13 +104,13 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 
     <div>
-        <div class="form-card" style="width: 100%;" data-demo-form>
+        <div class="form-card form-card--wide" data-demo-form>
             <p class="demo-note">Preview only. Saving is not available yet.</p>
-            <h2 class="form-card__legend" style="font-size: var(--text-lede);">Verify &amp; record relief contribution</h2>
+            <h2 class="form-card__legend form-card__legend--lg">Verify &amp; record relief contribution</h2>
 
             <div class="field">
                 <label class="field__label" for="cash-amount">Cash portion (LKR)</label>
-                <input class="input" type="number" id="cash-amount" name="cash_amount" value="<?= e($draft['cash_amount']) ?>" placeholder="25,000" min="0" step="1" disabled>
+                <input class="input" type="number" id="cash-amount" name="cash_amount" value="<?= e($draft['cash_amount']) ?>" placeholder="25,000" disabled>
             </div>
 
             <div class="field">

@@ -54,7 +54,7 @@ include __DIR__ . '/../../partials/header.php';
 <?php include __DIR__ . '/../../partials/flash.php'; ?>
 
 <?php // Search is a read-only GET: no CSRF token, so it never lands in the URL. ?>
-<form class="search-bar" method="get" action="<?= base_url() ?>/items/browse" role="search">
+<form class="search-bar" method="get" action="<?= base_url() ?>/items/browse" role="search" novalidate>
     <label class="visually-hidden" for="item-search">Search items</label>
     <input
         class="input input--search"

@@ -26,9 +26,12 @@ ways:
   `views/bookings/`.
 - Cross-cutting concerns are isolated into middleware with one job each:
   `AuthMiddleware` (is anyone logged in?), `RbacMiddleware` (may this role do this?),
-  `CsrfMiddleware` (is this POST genuine?). None of the 24 modules re-implements these.
-- Each cron script does one scheduled job (`charge_late_fees.php`,
-  `check_invariant.php`), so a bug in stipend payment cannot break the invariant check.
+  `CsrfMiddleware` (is this POST genuine?), `SessionMiddleware` (is this session still
+  valid?). None of the 24 modules re-implements these.
+- *Planned (Points module):* each cron script in `/scripts/` will do one scheduled job
+  (`charge_late_fees.php`, `check_invariant.php`), so a bug in stipend payment cannot
+  break the invariant check. Today `/scripts/` holds only the setup tools
+  (`migrate.php`, `check-database.php`).
 
 **Justification:** "We separated HTTP handling, business rules, persistence, and
 presentation into distinct layers so that each class has a single reason to change,
@@ -40,12 +43,13 @@ which localises the impact of requirement changes across a 24-module codebase."
 
 **Where Mithra applies it**
 
-- The **middleware chain** is extended by registering a new middleware on a route —
-  adding a future `RateLimitMiddleware` requires zero changes to existing middleware,
-  the router, or any controller.
-- The **damage state machine** (`created → simple/moderator path → resolved → closed`)
-  is data-driven: allowed transitions live in one transition table/map. New states or
-  transitions are added there without editing the code that executes transitions.
+- The **middleware chain** runs in one fixed order inside `Router`. Adding a future
+  `RateLimitMiddleware` means a new class plus one line in that chain — no changes to
+  the existing middleware or to any controller.
+- *Planned (Damage module):* the **damage state machine** (`created → simple/moderator
+  path → resolved → closed`) will be data-driven: allowed transitions live in one
+  transition map, so new states are added there without editing the code that executes
+  transitions.
 - The **router** maps patterns to controllers declaratively; every new module extends the
   system by *adding* a controller + routes, never by modifying dispatch logic.
 - Core plumbing (router, middleware, `BaseModel`, `BaseController`) is **frozen after
@@ -62,12 +66,11 @@ rather than edits to tested code, reducing regression risk across the year."
 **Where Mithra applies it**
 
 - Every model extends `BaseModel` and honours its contract exactly: `find(int $id):
-  ?array`, `create(array $data): int`, `paginate(int $page): array` return the same
-  shapes for every table. Generic code — pagination partials, the admin listing screens,
-  test helpers — works with any model without knowing which one it received.
-- Overrides may strengthen behaviour (e.g., `PointLedgerModel` refuses `update()` and
-  `delete()` because the ledger is append-only) but this is declared in the base contract
-  as a documented capability check, not a surprise exception. No override widens
+  ?array` returns one row or `null` for every table, and the protected `select()`,
+  `selectOne()` and `selectValue()` helpers return the same shapes for every query.
+  Code that calls `find()` works with any model without knowing which one it received.
+- Append-only tables keep their guarantee by omission: `PointLedger` exposes `record()`
+  and no update or delete method, so no caller can rewrite history. No model widens
   parameter expectations or narrows return types.
 
 **Justification:** "All models are substitutable behind the BaseModel contract, which is
@@ -80,11 +83,14 @@ any of the 20+ tables without type-specific branching."
 
 **Where Mithra applies it**
 
-- `MiddlewareInterface` declares exactly one method: `handle(Request $r, callable
-  $next)`. A middleware never has to stub out irrelevant methods.
-- Instead of one fat `NotificationInterface`, notification creation is a small
-  `Notifier::push(int $memberId, string $type, array $data)` service — pages that only
-  *read* notifications depend on the polling read model, not on sending capability.
+- Each middleware has exactly one public method, `handle()`, taking only the inputs its
+  check needs (`AuthMiddleware` a path and user id, `CsrfMiddleware` a method and two
+  tokens). No middleware depends on request data it does not use, so each one is tested
+  with plain values (`tests/router.php`).
+- *Planned (Notifications module):* instead of one fat `NotificationInterface`,
+  notification creation will be a small `Notifier::push(int $memberId, string $type,
+  array $data)` service — pages that only *read* notifications depend on the
+  `Notification` model, not on sending capability.
 - `BaseModel` stays deliberately small (CRUD + pagination). Specialised behaviour
   (`findActiveByDivision()`) lives on the specific model that needs it, so other models
   are not forced to carry meaningless methods.
@@ -99,19 +105,21 @@ each of the 24 modules easy to reason about in isolation."
 
 **Where Mithra applies it**
 
-- Services receive the `PDO` connection and any collaborating services through their
-  **constructors**. `PointLedger` never calls `new PDO(...)` and never reads config —
-  the front controller's bootstrap wires everything once.
-- This inversion is what makes the highest-risk code **testable**: PHPUnit constructs
-  `PointLedger` with a connection to a throwaway test database (or an SQLite/transaction
-  sandbox) and exercises the accounting invariant directly, with no HTTP involved.
+- Services receive the `PDO` connection and any collaborating models and services
+  through their **constructors**. No service calls `new PDO(...)` or reads config: only
+  `Database` opens a connection, and controllers wire services from it
+  (`Controller::profiles()`, `Controller::passwordResets()`).
+- This inversion is what makes the business rules **testable** with no HTTP involved:
+  the scripts in `/tests/` (`identity.php`, `items.php`, `router.php`) construct
+  services and middleware directly. *Planned:* the same approach unit-tests the point
+  ledger's accounting invariant against a throwaway test database.
 - Controllers depend on services (policy), not on SQL (detail); views depend on plain
   arrays handed to them, not on models.
 
 **Justification:** "Constructor injection inverts the dependency between business logic
-and infrastructure, which is precisely what allows our CI pipeline to unit-test the
-point ledger — the component our risk register rates as critical — on every pull
-request."
+and infrastructure, which is precisely what allows our CI pipeline to test the identity,
+listing and routing rules directly on every pull request — and, as the Points module
+lands, the point ledger that our risk register rates as critical."
 
 ---
 
@@ -119,15 +127,26 @@ request."
 
 **Where Mithra applies it**
 
-- **HTML:** shared chrome and repeated widgets live in `/partials/` (`header.php`,
-  `nav.php`, `listing-card.php`, `trust-score.php`, `photo-grid.php`) and are included,
-  never copy-pasted.
+- **HTML:** shared chrome and repeated widgets live in `/partials/` and are included,
+  never copy-pasted: `header.php`, `nav.php`, `footer.php`, `flash.php`,
+  `stat-card.php` (every dashboard tile), `photo-grid.php`, `notification-list.php`,
+  `password-fields.php`, the item fields shared by the create wizard and the edit page
+  (`item-details.php`, `item-value.php`, `item-rates.php`), and one `modal-*.php` per
+  dialog. Field errors render through one helper, `field_error()`.
+- **JS:** one file per behaviour in `/public/js/` (`modal.js`, `print.js`,
+  `list-filter.js`, …), driven by `data-*` attributes; views carry no inline scripts.
 - **CSS:** one design system in `/public/css/main.css`; every colour, spacing step, and
   font size is a custom property used by all four developers — the direct mitigation for
-  the "inconsistent UI across four developers" risk.
-- **PHP:** generic CRUD lives once in `BaseModel`; validation rules once in `Validator`;
-  escaping once in `e()`; CSRF once in `csrf_field()` + middleware. The 24 modules are
-  thin compositions of these shared pieces.
+  the "inconsistent UI across four developers" risk. Adjustments several pages share
+  (`.form-card--wide`, `.cluster`, `.u-mb-4`, …) are named classes, not repeated inline
+  `style=""` attributes.
+- **PHP:** query plumbing lives once in `BaseModel`; field checks once in `Validator`,
+  with each form's rule set written once and shared by every action that accepts it
+  (`ItemController::detailRules()` serves both the wizard and the edit form); domain
+  rules once in their service (`PasswordPolicy`, `RegistrationService::phoneDigits()`
+  for every phone comparison, `ItemService` for the proof-of-value tiers and field
+  limits); escaping once in `e()`; CSRF once in `csrf_field()` + middleware. The 24
+  modules are thin compositions of these shared pieces.
 - **Schema:** derived business numbers (late fees, rate suggestions) are computed in one
   service each; the same formula is never re-implemented in a second place.
 - **Guard rail:** DRY is applied to *knowledge*, not to lines that merely look alike.
@@ -174,13 +193,17 @@ where correctness demands it."
   12-month project with AI-assisted code from different tools.
 - **Separation of concerns** (see SRP) means changes are local; the frozen core means
   the foundation under everyone's code stops moving after Month 2.
-- **Conventions are machine-enforced**, not aspirational: `.editorconfig`, PSR-12 code
-  style checks, and PHPStan run in CI on every pull request; a human review with the PR
-  checklist covers what machines can't.
+- **Conventions are machine-enforced**, not aspirational: on every pull request CI runs
+  `php -l` over every file, the `/tests/` scripts, and
+  `.github/scripts/conventions-check.php`, which blocks
+  unescaped output, SQL outside models and the other hard rules of `CONVENTIONS.md`; a
+  human review with the PR checklist covers what machines can't. *Planned:* PHPStan.
 - **Self-documenting structure** is preferred to comments: purpose-named service methods
   (`chargeLateFee()`, `promoteTemporaryCommunity()`), purpose-named model queries, and
   numbered migrations that read as the schema's history.
-- **Tests as a safety net** on the service layer let future changes (Month 9 refactors,
+- **Tests as a safety net** on the service layer (`tests/identity.php`,
+  `tests/items.php`, `tests/router.php`, and the HTTP crawl `tests/ui-navigation.py`)
+  let future changes (Month 9 refactors,
   post-pilot fixes) be made with confidence.
 
 **Justification:** "Maintainability comes from repetition of one well-understood pattern
@@ -222,8 +245,9 @@ community-scale pilot cannot justify, while documenting the upgrade path."
 **How the design resists and recovers from failure**
 
 - **Input validation at every boundary:** the shared `Validator` runs in every controller
-  action (type, range, length, enum, ownership); client-side JS validation is a UX
-  duplicate, never the defence. Invalid input re-renders the form with field errors —
+  action (type, range, length, enum, ownership). The browser enforces nothing — forms
+  carry `novalidate` and no length/range attributes — so every rule has one home and
+  cannot drift from a client-side copy. Invalid input re-renders the form with field errors —
   the app never white-screens on bad data.
 - **Defence in depth against hostile input:** PDO prepared statements (SQLi), `e()` on
   all output (XSS), CSRF tokens on all forms, RBAC middleware on every route, finfo +
@@ -232,14 +256,15 @@ community-scale pilot cannot justify, while documenting the upgrade path."
 - **Transactional integrity:** every multi-row write — and *every* point movement — is a
   single ACID transaction with row locks; any exception rolls the whole operation back,
   so the ledger can never half-apply.
-- **Systemic self-checking:** the nightly cron verifies the accounting invariant
+- **Systemic self-checking** *(planned with the Points module)*: the nightly cron verifies the accounting invariant
   (Σ six pools = points issued − points exited) over the append-only ledger; the Reserve
   Pool guarantees no member balance goes negative. Errors are *detected*, not assumed
   absent.
 - **Graceful failure:** domain exceptions map to friendly user messages; a top-level
   handler logs details server-side and shows a generic error page
   (`display_errors=Off`); auth/CSRF/ownership checks fail closed.
-- **Operational resilience:** every cron job is idempotent and logs to `cron_runs`; the
+- **Operational resilience** *(planned with the cron scripts; the `cron_runs` table and
+  `CronRun` model exist)*: every cron job is idempotent and logs to `cron_runs`; the
   admin dashboard flags any job >24 h overdue; if the host lacks cron, checks fall back
   to lazy per-request triggering.
 
@@ -255,13 +280,13 @@ corrupting community trust."
 
 | Criterion | Primary evidence in repo |
 | --- | --- |
-| SRP | `/app/{Controllers,Services,Models,Middleware}` split; one-job cron scripts |
-| OCP | Route/middleware registration; data-driven damage state machine; Month-2 core freeze |
-| LSP | `BaseModel` contract + uniform return shapes across all models |
-| ISP | Single-method `MiddlewareInterface`; small `BaseModel` |
-| DIP | Constructor injection in `/app/Services`; wiring only in bootstrap; service unit tests |
-| DRY | `/partials/`, `main.css` custom properties, `BaseModel`, `Validator`, `e()` |
+| SRP | `/app/{Controllers,Services,Models,Middleware}` split; one job per middleware |
+| OCP | Declarative `app/routes.php`; one-place middleware chain in `Router`; Month-2 core freeze |
+| LSP | `BaseModel::find()` contract + uniform return shapes across all models |
+| ISP | One `handle()` per middleware taking only what it checks; small `BaseModel` |
+| DIP | Constructor injection in `/app/Services`; only `Database` opens connections; `/tests/` scripts |
+| DRY | `/partials/` (`stat-card`, `item-*`, `photo-grid`), `field_error()`, `main.css` tokens, `BaseModel`, `Validator`, `e()` |
 | KISS | Decision table §3; absence of frameworks/queues/websockets |
-| Maintainability | Identical module recipe ×24; CI style+static-analysis gates; PR checklist |
+| Maintainability | Identical module recipe ×24; CI `php -l` + conventions gate; PR checklist |
 | Scalability | Indexed migrations; pagination everywhere; cached balances; Month-8 concurrency test |
-| Robustness | `Validator`; transactions + `FOR UPDATE`; invariant cron; `cron_runs`; fail-closed middleware |
+| Robustness | `Validator`; transactions + `FOR UPDATE`; fail-closed middleware; invariant cron + `cron_runs` (planned) |
