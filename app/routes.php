@@ -38,7 +38,7 @@ return [
         '/items/create'    => ['ItemController', 'createForm'],
         '/items/{id}'      => ['ItemController', 'show'],
         '/items/{id}/edit' => ['ItemController', 'editForm'],
-        '/'                        => 'dashboard/index',
+        '/'                        => ['HomeController', 'index'],
         '/dashboard'               => 'dashboard/index',
         '/bookings'                => ['BookingController', 'index'],
         '/bookings/{id}'           => ['BookingController', 'show'],

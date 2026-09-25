@@ -21,11 +21,15 @@ final class AuthMiddleware
     /**
      * The only paths a signed-out visitor may reach.
      *
+     * / is the public home page: what Mithra is, how it works and the common
+     * questions, for a visitor deciding whether to register.
+     *
      * /logout is here because ending a session you no longer have should be a
      * no-op, never a redirect loop. The reset pages are here because the
      * member who needs them cannot sign in.
      */
     private const PUBLIC_PATHS = [
+        '/',
         '/login',
         '/register',
         '/logout',

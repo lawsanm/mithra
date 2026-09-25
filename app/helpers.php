@@ -50,6 +50,19 @@ function chrome_for(?string $role): string
     };
 }
 
+// Where each role lands after signing in, and where the logo sends a signed-in
+// account that opens the public home page.
+function home_for(string $role): string
+{
+    return match ($role) {
+        'admin'           => '/admin',
+        'moderator'       => '/moderator',
+        'sponsor_liaison' => '/sponsor-liaison',
+        'sponsor'         => '/sponsor',
+        default           => '/dashboard',
+    };
+}
+
 // Stored upload paths are served through the access-checked proxy (§7.5).
 function photo_url(string $path): string
 {
