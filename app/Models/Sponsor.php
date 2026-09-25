@@ -146,6 +146,24 @@ final class Sponsor extends BaseModel
         $statement->execute(['id' => $id, 'active' => $active ? 1 : 0]);
     }
 
+    /**
+     * Active sponsors by name, for a "which sponsor helped" picker.
+     *
+     * @return list<array{id: int, company_name: string}>
+     */
+    public function activeNames(): array
+    {
+        return $this->select('SELECT id, company_name FROM sponsors WHERE active = 1 ORDER BY company_name');
+    }
+
+    public function isActive(int $id): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM sponsors WHERE id = :id AND active = 1',
+            ['id' => $id]
+        ) === 1;
+    }
+
     /** The company a sponsor login account represents, or null when none is linked. */
     public function companyForUser(int $userId): ?string
     {
