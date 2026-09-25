@@ -26,14 +26,14 @@ $reports     = $reports ?? [];
 $requests ??= [
     [
         'id'       => '1',
-        'initials' => 'AA',
-        'name'     => 'A. Akalvily',
+        'initials' => User::initials('N. Arun'),
+        'name'     => 'N. Arun',
         'meta'     => 'Requesting dry rations and drinking water  ·  household of 4  ·  requested 15 Jul',
     ],
     [
         'id'       => '2',
-        'initials' => 'TM',
-        'name'     => 'T.H.K. Madushan',
+        'initials' => User::initials('N. Abishan'),
+        'name'     => 'N. Abishan',
         'meta'     => 'Requesting temporary shelter tarp  ·  roof damage  ·  requested 16 Jul',
     ],
 ];

@@ -103,11 +103,40 @@ abstract class Controller
         );
     }
 
+    /** "Good morning, Lawsan" — the greeting a dashboard opens with. */
+    protected function greeting(string $who): string
+    {
+        $hour = (int) date('G');
+        $part = $hour < 12 ? 'morning' : ($hour < 18 ? 'afternoon' : 'evening');
+
+        return sprintf('Good %s, %s', $part, $who);
+    }
+
     /**
-     * The signed-in account as the navigation bar shows it, or null on the
-     * signed-out pages.
+     * The moderator the signed-in account deals with: their home division's
+     * moderator, or — for staff with no division — the platform's first
+     * moderator, so preview screens never name someone who does not hold it.
+     */
+    protected function moderatorName(): string
+    {
+        $users = new User($this->pdo);
+
+        return $users->homeModeratorName($this->userId()) ?? $users->firstNameInRole('moderator') ?? '';
+    }
+
+    protected function liaisonName(): string
+    {
+        return (new User($this->pdo))->firstNameInRole('sponsor_liaison') ?? '';
+    }
+
+    /**
+     * The signed-in account as the navigation bar and page headings show it,
+     * with its home division (empty for staff) and the moderator and liaison it
+     * deals with, or null on the signed-out pages. Views name people from here,
+     * never from typed-in text.
      *
-     * @return array{initials: string, points: string, bond: string, company: string}|null
+     * @return array{name: string, division: string, greeting: string, initials: string, points: string,
+     *               bond: string, company: string, moderator: string, liaison: string}|null
      */
     private function viewer(): ?array
     {
@@ -117,16 +146,25 @@ abstract class Controller
             return null;
         }
 
-        $name    = (string) ((new User($this->pdo))->find($id)['full_name'] ?? '');
+        $users   = new User($this->pdo);
+        $account = $users->findWithDivision($id) ?? $users->find($id) ?? [];
+        $name    = (string) ($account['full_name'] ?? '');
         $wallets = new Wallet($this->pdo);
 
+        $company = $this->role() === 'sponsor'
+            ? ((new Sponsor($this->pdo))->companyForUser($id) ?? $name)
+            : '';
+
         return [
-            'initials' => User::initials($name),
-            'points'   => number_format($wallets->balance($id)) . ' pts',
-            'bond'     => 'Bond: ' . number_format($wallets->bondLocked($id)) . ' pts',
-            'company'  => $this->role() === 'sponsor'
-                ? ((new Sponsor($this->pdo))->companyForUser($id) ?? $name)
-                : '',
+            'name'      => $name,
+            'division'  => (string) ($account['division_name'] ?? ''),
+            'greeting'  => $this->greeting($company !== '' ? $company : User::shortName($name)),
+            'initials'  => User::initials($name),
+            'points'    => number_format($wallets->balance($id)) . ' pts',
+            'bond'      => 'Bond: ' . number_format($wallets->bondLocked($id)) . ' pts',
+            'company'   => $company,
+            'moderator' => $this->moderatorName(),
+            'liaison'   => $this->liaisonName(),
         ];
     }
 

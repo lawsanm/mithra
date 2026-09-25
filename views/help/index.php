@@ -51,7 +51,7 @@ $faqs ??= [
 ];
 
 $moderator ??= [
-    'line' => 'Your moderator, A. Akalvily, can help with verification, disputes and anything '
+    'line' => 'Your moderator, ' . $viewer['moderator'] . ', can help with verification, disputes and anything '
             . 'division-specific.',
 ];
 

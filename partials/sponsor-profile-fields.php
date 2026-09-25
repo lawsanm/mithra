@@ -34,7 +34,7 @@ declare(strict_types=1);
         id="contact-person"
         name="contact_person"
         value="<?= e($draft['contact_person']) ?>"
-        placeholder="T.H.K. Madushan"
+        placeholder="R. Fernando"
         <?= isset($errors['contact_person']) ? 'aria-invalid="true"' : '' ?>
     >
     <?= field_error($errors, 'contact_person') ?>

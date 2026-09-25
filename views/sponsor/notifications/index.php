@@ -12,7 +12,7 @@ declare(strict_types=1);
 $notifications ??= [
     [
         'icon'   => 'alert-triangle',
-        'title'  => 'Disaster Mode active — Wellawatte flooding',
+        'title'  => 'Disaster Mode active — Kollupitiya flooding',
         'detail' => 'Disaster response is now active. Your support can provide urgent relief and connect with the moderator on the ground.',
         'time'   => '2 hrs ago',
         'unread' => true,

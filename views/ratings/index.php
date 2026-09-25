@@ -17,29 +17,29 @@ $tabs ??= [
 
 $reviews ??= [
     [
-        'initials' => 'TM',
-        'author'   => 'T.H.K. Madushan',
+        'initials' => User::initials('N. Abishan'),
+        'author'   => 'N. Abishan',
         'rating'   => 5,
         'text'     => '“Returned the drill spotless and on time. Would lend again without hesitation.”',
         'meta'     => '17 Jul 2026  ·  Bosch Cordless Drill',
     ],
     [
-        'initials' => 'JK',
-        'author'   => 'J. Kavipriya',
+        'initials' => User::initials('N. Arun'),
+        'author'   => 'N. Arun',
         'rating'   => 5,
         'text'     => '“Careful with the tent, great communication about pickup.”',
         'meta'     => '2 Jul 2026  ·  Camping Tent',
     ],
     [
-        'initials' => 'AA',
-        'author'   => 'A. Akalvily',
+        'initials' => User::initials('N. Abishan'),
+        'author'   => 'N. Abishan',
         'rating'   => 4,
         'text'     => '“All good — slightly late confirming the return window.”',
         'meta'     => '18 Jun 2026  ·  Stand Mixer',
     ],
     [
-        'initials' => 'AA',
-        'author'   => 'A. Akalvily',
+        'initials' => User::initials('N. Arun'),
+        'author'   => 'N. Arun',
         'rating'   => 5,
         'text'     => '“Textbook borrower. On time, item as handed over.”',
         'meta'     => '30 May 2026  ·  Projector',

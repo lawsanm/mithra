@@ -17,8 +17,8 @@ declare(strict_types=1);
 // modal needs, so ??= on the whole array would leave gaps.
 $item = ($item ?? []) + [
     'title'      => 'Bosch Cordless Drill GSB 120',
-    'owner'      => 'Madushan',
-    'owner_meta' => 'T.H.K. Madushan  ·  Trust 96  ·  0.4 km',
+    'owner'      => 'Abishan',
+    'owner_meta' => 'N. Abishan  ·  Trust 96  ·  0.4 km',
 ];
 
 $pricing ??= [

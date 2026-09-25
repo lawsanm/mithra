@@ -26,9 +26,9 @@ $stats ??= [
 ];
 
 $history ??= [
-    ['period' => 'Activated 15 Jul, 09:20  →  deactivated 17 Jul, 06:20', 'meta' => 'Triggered by Mod. J. Kavipriya  ·  13 sponsors notified', 'duration' => '45 hrs'],
-    ['period' => 'Activated 01 Jul, 20:30  →  deactivated 03 Jul, 09:30', 'meta' => 'Triggered by Mod. A. Akalvily  ·  18 sponsors notified',  'duration' => '37 hrs'],
-    ['period' => 'Activated 15 Jun, 12:00  →  deactivated 18 Jun, 12:00', 'meta' => 'Triggered by Mod. J. Kavipriya  ·  23 sponsors notified', 'duration' => '72 hrs'],
+    ['period' => 'Activated 15 Jul, 09:20  →  deactivated 17 Jul, 06:20', 'meta' => 'Triggered by Mod. ' . $viewer['moderator'] . '  ·  13 sponsors notified', 'duration' => '45 hrs'],
+    ['period' => 'Activated 01 Jul, 20:30  →  deactivated 03 Jul, 09:30', 'meta' => 'Triggered by Mod. ' . $viewer['moderator'] . '  ·  18 sponsors notified',  'duration' => '37 hrs'],
+    ['period' => 'Activated 15 Jun, 12:00  →  deactivated 18 Jun, 12:00', 'meta' => 'Triggered by Mod. ' . $viewer['moderator'] . '  ·  23 sponsors notified', 'duration' => '72 hrs'],
 ];
 
 $pageTitle = 'Disaster Mode';

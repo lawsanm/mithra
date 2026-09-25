@@ -47,7 +47,7 @@ final class DemoController extends Controller
 
         return [
             'member' => [
-                'greeting'   => $this->greeting((string) ($member['full_name'] ?? '')),
+                'greeting'   => $this->greeting(User::shortName((string) ($member['full_name'] ?? ''))),
                 'membership' => sprintf(
                     '%s GN Division  ·  Verified member since %s',
                     (string) ($member['division_name'] ?? ''),
@@ -107,7 +107,7 @@ final class DemoController extends Controller
                         'rate'  => $item['daily_rate'] . ' pts / day',
                         'meta'  => $who === ''
                             ? 'Available'
-                            : sprintf('Lent to %s  ·  due %s', $this->lastName($who), date('j M', strtotime($due))),
+                            : sprintf('Lent to %s  ·  due %s', User::shortName($who), date('j M', strtotime($due))),
                         'href'  => base_url() . '/items/' . $item['id'],
                     ];
                 },
@@ -151,13 +151,6 @@ final class DemoController extends Controller
         ];
     }
 
-    private function greeting(string $fullName): string
-    {
-        $hour = (int) date('G');
-        $part = $hour < 12 ? 'morning' : ($hour < 18 ? 'afternoon' : 'evening');
-
-        return sprintf('Good %s, %s', $part, $this->lastName($fullName));
-    }
 
     private function dueNote(int $dueTomorrow): string
     {
@@ -180,12 +173,5 @@ final class DemoController extends Controller
         }
 
         return ['success', '✓', 'On track'];
-    }
-
-    private function lastName(string $fullName): string
-    {
-        $parts = explode(' ', trim($fullName));
-
-        return end($parts) ?: $fullName;
     }
 }
