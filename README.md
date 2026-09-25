@@ -77,10 +77,11 @@ C:\xampp\php\php.exe tests\router.php
 C:\xampp\php\php.exe tests\identity.php
 C:\xampp\php\php.exe tests\items.php
 C:\xampp\php\php.exe tests\sponsors.php
+C:\xampp\php\php.exe tests\disaster-relief.php
 C:\xampp\php\php.exe .github\scripts\conventions-check.php
 ```
 
-These test files run without MySQL. The router checks cover every route's target, numeric IDs, exact-route priority, unsupported methods, invalid form tokens and which paths a signed-out visitor may reach. The identity checks cover mobile and NIC normalisation, password handling and the refusals behind sign-in. The listing checks cover the declared-value proof tiers, and the sponsor checks cover how an onboarding or edit form is stored and which contact details are refused.
+These test files run without MySQL. The router checks cover every route's target, numeric IDs, exact-route priority, unsupported methods, invalid form tokens and which paths a signed-out visitor may reach. The identity checks cover mobile and NIC normalisation, password handling and the refusals behind sign-in. The listing checks cover the declared-value proof tiers, and the sponsor checks cover how an onboarding or edit form is stored and which contact details are refused. The disaster relief checks cover how a relief form is stored and which types, household counts and dates are refused.
 
 With the local application and database running at `http://localhost/mithra/`, run these read-only HTTP checks (Python required):
 
