@@ -5,23 +5,30 @@ declare(strict_types=1);
 /**
  * Sponsors — List. Figma "Sponsors — List" (377:208).
  *
- * @var array  $sponsors rows: id, name, email, points, status
- * @var string $search   current search term
- * @var string $sort     current sort key
- * @var string $status   current status filter
+ * @var array  $sponsors    rows: id, name, contact, points, agreement_label, badge, badge_label, active
+ * @var string $search      current search term
+ * @var string $sort        current sort key
+ * @var string $status      current agreement-status filter
+ * @var array  $agreementStatuses value => label
+ * @var int    $page        current page
+ * @var bool   $hasNextPage whether another page follows
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$sponsors ??= [
-    ['id' => 1, 'name' => 'Northwind Co', 'email' => 'contact@northwind.lk', 'points' => '16,000 pts'],
-    ['id' => 2, 'name' => 'ACM Corp',     'email' => 'hello@acm.lk',         'points' => '6,500 pts'],
-    ['id' => 3, 'name' => 'Texa',         'email' => 'team@texa.lk',         'points' => '7,500 pts'],
-    ['id' => 4, 'name' => 'MNM',          'email' => 'contact@mnm.lk',       'points' => '7,000 pts'],
-];
+$sponsors    = $sponsors ?? [];
+$search      = $search ?? '';
+$sort        = $sort ?? '';
+$status      = $status ?? '';
+$page        = $page ?? 1;
+$hasNextPage = $hasNextPage ?? false;
 
-$search ??= '';
-$sort   ??= '';
-$status ??= '';
+$pageQuery = static function (int $target) use ($search, $sort, $status): string {
+    return base_url() . '/sponsor-liaison/sponsors?' . http_build_query(array_filter([
+        'q'      => $search,
+        'sort'   => $sort,
+        'status' => $status,
+        'page'   => $target > 1 ? $target : null,
+    ]));
+};
 
 $sortOptions = [
     ''             => 'Sort: contribution',
@@ -29,12 +36,7 @@ $sortOptions = [
     'recently_added' => 'Sort: recently added',
 ];
 
-$statusOptions = [
-    ''        => 'All statuses',
-    'signed'  => 'Signed agreement on file',
-    'pending' => 'Pending signature',
-    'verbal'  => 'Verbal agreement only',
-];
+$statusOptions = ['' => 'All statuses'] + ($agreementStatuses ?? []);
 
 $pageTitle = 'Sponsors';
 $navActive = 'sponsors';
@@ -83,17 +85,30 @@ include __DIR__ . '/../../../partials/header.php';
         <?php foreach ($sponsors as $sponsor): ?>
             <li class="list-row">
                 <div class="list-row__body">
-                    <span class="list-row__title"><?= e($sponsor['name']) ?></span>
-                    <span class="list-row__meta"><?= e($sponsor['email']) ?></span>
+                    <span class="list-row__title">
+                        <?= e($sponsor['name']) ?>
+                        <?php if (!$sponsor['active']): ?>
+                            <span class="badge badge--<?= e($sponsor['badge']) ?>"><?= e($sponsor['badge_label']) ?></span>
+                        <?php endif; ?>
+                    </span>
+                    <span class="list-row__meta"><?= e($sponsor['contact']) ?>  ·  <?= e($sponsor['agreement_label']) ?></span>
                 </div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-                    <span class="list-row__title"><?= e($sponsor['points']) ?></span>
-                    <span class="stat-card__note">injected</span>
-                </div>
+                <strong class="list-row__amount"><?= e($sponsor['points']) ?></strong>
                 <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/sponsors/<?= e((string) $sponsor['id']) ?>">View</a>
             </li>
         <?php endforeach; ?>
     </ul>
+
+    <?php if ($page > 1 || $hasNextPage): ?>
+        <div class="actions">
+            <?php if ($page > 1): ?>
+                <a class="btn btn--ghost" href="<?= e($pageQuery($page - 1)) ?>">Previous</a>
+            <?php endif; ?>
+            <?php if ($hasNextPage): ?>
+                <a class="btn btn--ghost" href="<?= e($pageQuery($page + 1)) ?>">Next</a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>
 
 <?php $pageScripts = ['filter-select.js']; ?>
