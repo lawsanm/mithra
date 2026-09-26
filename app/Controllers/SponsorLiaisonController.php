@@ -57,6 +57,9 @@ final class SponsorLiaisonController extends Controller
             'contact_phone'      => (string) ($row['contact_phone'] ?? ''),
             'agreement_details'  => (string) ($row['agreement_details'] ?? ''),
             'internal_notes'     => (string) ($row['internal_notes'] ?? ''),
+            'account'            => $row['user_id'] === null
+                ? 'Not linked yet'
+                : trim((string) $row['account_name'] . ' · ' . (string) ($row['account_email'] ?? ''), ' ·'),
             'contributions'      => (int) $row['contribution_count'] === 0
                 ? 'None recorded yet'
                 : $row['contribution_count'] . ' · last on ' . date('j M Y', strtotime((string) $row['last_contribution_at'])),
@@ -204,6 +207,7 @@ final class SponsorLiaisonController extends Controller
         return (new Validator($_POST))
             ->required('company_name', 'Company name')
             ->maxLength('company_name', 'Company name', 150)
+            ->integer('user_id', 'Sponsor account', 1)
             ->maxLength('contact_person', 'Contact person', 100)
             ->maxLength('contact_phone', 'Contact phone', 20)
             ->maxLength('contact_email', 'Contact email', 150)
@@ -220,17 +224,19 @@ final class SponsorLiaisonController extends Controller
      */
     private function renderSponsorForm(string $view, array $errors, array $input, ?array $row = null): void
     {
-        $fields = ['company_name', 'contact_person', 'contact_phone', 'contact_email',
+        $fields = ['user_id', 'company_name', 'contact_person', 'contact_phone', 'contact_email',
             'agreement_status', 'agreement_details', 'internal_notes'];
 
         $this->render($view, [
             'draft'             => array_map(static fn (string $field): string => (string) ($input[$field] ?? ''), array_combine($fields, $fields)),
             'errors'            => $errors,
             'agreementStatuses' => SponsorService::AGREEMENT_STATUSES,
+            'accounts'          => $this->sponsorModel()->availableAccounts((int) ($row['user_id'] ?? 0)),
             'sponsor'           => $row === null ? null : [
                 'id'     => (int) $row['id'],
                 'name'   => (string) $row['company_name'],
                 'active' => (int) $row['active'] === 1,
+                'linked' => $row['user_id'] !== null,
             ],
         ]);
     }
@@ -245,6 +251,7 @@ final class SponsorLiaisonController extends Controller
     private function sponsorAsInput(array $row): array
     {
         return [
+            'user_id'           => (string) ($row['user_id'] ?? ''),
             'company_name'      => (string) $row['company_name'],
             'contact_person'    => (string) ($row['contact_name'] ?? ''),
             'contact_phone'     => (string) ($row['contact_phone'] ?? ''),
