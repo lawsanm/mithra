@@ -16,7 +16,7 @@ $disaster ??= [
     'active'       => false,
     'status'       => 'success',
     'status_label' => 'Currently inactive',
-    'note'         => 'Pool payouts are operating normally across all divisions.',
+    'note'         => 'No division is in Disaster Mode. The Admin activates it when a Moderator reports an emergency.',
 ];
 
 $stats ??= [
@@ -49,8 +49,7 @@ include __DIR__ . '/../../../partials/header.php';
         <span class="badge badge--<?= e($disaster['status']) ?>"><?= e($disaster['status_label']) ?></span>
         <p class="panel__note"><?= e($disaster['note']) ?></p>
         <div class="actions panel__actions">
-            <button class="btn btn--ghost" type="button" disabled title="Not available in this demo">Notify sponsors</button>
-            <button class="btn btn--primary" type="button" disabled title="Not available in this demo">Activate Disaster Mode</button>
+            <a class="btn btn--primary" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions">Verify contributions</a>
         </div>
     </div>
 </section>
@@ -60,6 +59,21 @@ include __DIR__ . '/../../../partials/header.php';
         <?php $statTone = ($stat['primary'] ?? true) ? 'primary' : ''; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
+
+<section class="section">
+    <div class="section__head">
+        <h2 class="section__title">Sponsor contributions</h2>
+        <a class="link section__action" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions">View all</a>
+    </div>
+    <p class="page-intro__meta">
+        Sponsors give relief to the Moderator off-platform. Record each contribution with the sponsor's proof,
+        let the Moderator confirm what they received, then verify it for the sponsor's CSR report.
+    </p>
+    <div class="actions">
+        <a class="btn btn--primary" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions/create">Record contribution</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions?status=ready">Ready to verify</a>
+    </div>
+</section>
 
 <section class="section">
     <div class="section__head">
