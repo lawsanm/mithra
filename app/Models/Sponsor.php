@@ -16,6 +16,25 @@ final class Sponsor extends BaseModel
 {
     public const PER_PAGE = 20;
 
+    public function forUser(int $userId): ?array
+    {
+        return $this->selectOne('SELECT ' . $this->columns . ' FROM sponsors WHERE user_id = :id', ['id' => $userId]);
+    }
+
+    public function summaries(): array
+    {
+        return $this->select(
+            'SELECT s.id, s.company_name, s.contact_email, s.agreement_status, s.active,
+                    COALESCE(c.cash, 0) AS cash, COALESCE(c.general, 0) AS general,
+                    COALESCE(c.aid, 0) AS aid, COALESCE(c.purchases, 0) AS purchases
+               FROM sponsors s LEFT JOIN
+                    (SELECT sponsor_id, SUM(cash_amount) AS cash, SUM(general_points) AS general,
+                            SUM(aid_points) AS aid, COUNT(*) AS purchases
+                       FROM sponsor_contributions GROUP BY sponsor_id) c ON c.sponsor_id = s.id
+              ORDER BY s.company_name'
+        );
+    }
+
     protected string $table = 'sponsors';
     protected string $columns = 'id, user_id, company_name, contact_name, contact_phone, contact_email,
                                  agreement_status, agreement_details, internal_notes, total_contributed,

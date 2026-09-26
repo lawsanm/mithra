@@ -10,37 +10,6 @@ declare(strict_types=1);
  * @var array $requests rows: initials, name, meta, message, profile_href
  */
 
-// Sample view data — replaced by the controller once DonationController lands.
-$donation ??= [
-    'item'          => 'Baby Clothes Bundle',
-    'request_count' => '3 requests',
-    'first_come'    => false,
-];
-
-$requests ??= [
-    [
-        'initials'     => User::initials('N. Arun'),
-        'name'         => 'N. Arun',
-        'meta'         => 'Trust 98  ·  8 transactions  ·  Kollupitiya',
-        'message'      => '“Expecting our second in August — this would help so much. Can collect any evening.”',
-        'profile_href' => base_url() . '/members/2',
-    ],
-    [
-        'initials'     => User::initials('N. Abishan'),
-        'name'         => 'N. Abishan',
-        'meta'         => 'Trust 88  ·  12 transactions  ·  Bambalapitiya',
-        'message'      => '“My sister just moved back with her baby. Happy to come to you this weekend.”',
-        'profile_href' => base_url() . '/members/1',
-    ],
-    [
-        'initials'     => User::initials('K. Bandara'),
-        'name'         => 'K. Bandara',
-        'meta'         => 'Trust 96  ·  31 transactions  ·  Kollupitiya',
-        'message'      => '“For my niece — we’re setting up on a tight budget. Thank you for donating!”',
-        'profile_href' => base_url() . '/members/3',
-    ],
-];
-
 $pageTitle = 'Donation requests';
 $navActive = 'items';
 

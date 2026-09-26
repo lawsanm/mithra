@@ -18,8 +18,8 @@ $recipients = $recipients ?? [];
 
 $giftDraft = ($giftDraft ?? []) + [
     'recipient' => (string) ($recipients[0]['id'] ?? ''),
-    'amount'    => '45',
-    'reason'    => 'Thank you for the school run help!',
+    'amount'    => '',
+    'reason'    => '',
 ];
 
 // Remaining daily allowance, so the cap line and any error reflect real usage

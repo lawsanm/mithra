@@ -9,65 +9,6 @@ declare(strict_types=1);
  * @var array $activity  ledger rows: icon, title, note, amount, tone, date
  */
 
-// Sample view data — replaced by the controller once WalletController lands.
-$balances ??= [
-    [
-        'label' => 'Available balance',
-        'value' => '1,250 pts',
-        'note'  => '+85 pts earned this month',
-        'dark'  => true,
-    ],
-    [
-        'label' => 'Held in escrow',
-        'value' => '75 pts',
-        'note'  => '1 active booking — released on return',
-        'dark'  => false,
-    ],
-];
-
-$activity ??= [
-    [
-        'icon'   => 'arrow-down-left',
-        'title'  => 'Rental income — Rice Cooker (5 days)',
-        'note'   => 'from N. Abishan  ·  released from escrow',
-        'amount' => '+25 pts',
-        'tone'   => 'in',
-        'date'   => '16 Jul 2026',
-    ],
-    [
-        'icon'   => 'pause',
-        'title'  => 'Escrow hold — Bosch Cordless Drill',
-        'note'   => 'held until return confirmed',
-        'amount' => '−75 pts',
-        'tone'   => 'hold',
-        'date'   => '12 Jul 2026',
-    ],
-    [
-        'icon'   => 'arrow-up-right',
-        'title'  => 'Gift sent — N. Arun',
-        'note'   => '“Thank you for the school run help!”',
-        'amount' => '−15 pts',
-        'tone'   => 'out',
-        'date'   => '16 Jul 2026',
-    ],
-    [
-        'icon'   => 'arrow-down-left',
-        'title'  => 'Gift received — N. Arun',
-        'note'   => '“Great neighbour — welcome gift”',
-        'amount' => '+10 pts',
-        'tone'   => 'in',
-        'date'   => '2 Jul 2026',
-    ],
-    [
-        'icon'   => 'arrow-up-right',
-        'title'  => 'Late fee — Stand Mixer return',
-        'note'   => '2 days late  ·  paid to lender',
-        'amount' => '−10 pts',
-        'tone'   => 'out',
-        'date'   => '22 Jun 2026',
-    ],
-];
-
 $pageTitle = 'Wallet';
 $navActive = 'wallet';
 
@@ -95,6 +36,9 @@ include __DIR__ . '/../../partials/header.php';
 
 <h2 class="section-heading">Recent activity</h2>
 
+<?php if ($activity === []): ?>
+    <p class="empty-state">No wallet activity recorded.</p>
+<?php endif; ?>
 <ul class="row-list">
     <?php foreach ($activity as $entry): ?>
         <li class="txn-row">

@@ -7,6 +7,25 @@ final class Moderator extends BaseModel
     protected string $table = 'moderator_assignments';
     protected string $columns = 'id, user_id, gn_division_id, appointed_by, appointed_at, bond_points, bond_status, status';
 
+    public function appointment(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT ma.id, ma.appointed_at, ma.objection_window_ends, ma.status,
+                    u.full_name, d.name AS division_name
+               FROM moderator_assignments ma JOIN users u ON u.id = ma.user_id
+               JOIN gn_divisions d ON d.id = ma.gn_division_id WHERE ma.id = :id', ['id' => $id]
+        );
+    }
+
+    public function objections(int $id): array
+    {
+        return $this->select(
+            'SELECT o.id, o.reason, o.status, o.created_at, u.full_name
+               FROM moderator_objections o JOIN users u ON u.id = o.member_id
+              WHERE o.moderator_assignment_id = :id ORDER BY o.created_at', ['id' => $id]
+        );
+    }
+
     /** @return list<array<string, mixed>> */
     public function allActive(): array
     {

@@ -11,15 +11,6 @@ declare(strict_types=1);
  * @var array  $errors         per-field messages from the Validator
  */
 
-// Sample view data — replaced by the controller once CommunityController lands.
-$homeCommunity ??= 'Kollupitiya (home — unchanged)';
-
-$divisions ??= ['Dehiwala', 'Bambalapitiya', 'Wellawatte', 'Mount Lavinia', 'Nugegoda'];
-
-$draft ??= ['temporary_community' => 'Dehiwala'];
-
-$errors ??= [];
-
 $pageTitle = 'Request a temporary community';
 $navActive = '';
 
@@ -63,8 +54,8 @@ include __DIR__ . '/../../partials/header.php';
 
     <p class="notice notice--info">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
-        Temporary membership lasts 6 months — until 17 Jan 2027 — and needs verification by
-        the Dehiwala moderator. You keep full membership of your home community.
+        Temporary membership lasts 6 months and needs verification by
+        the selected division's moderator. You keep full membership of your home community.
     </p>
 
     <div class="actions">

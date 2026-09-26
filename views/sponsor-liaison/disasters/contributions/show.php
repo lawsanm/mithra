@@ -19,71 +19,8 @@ declare(strict_types=1);
  * @var array $draft         verified_value, note
  */
 
-// Sample view data — replaced by the controller once the Liaison's contribution module lands.
-$contribution ??= [
-    'reference'    => 'DC-0007',
-    'sponsor'      => 'Northwind Co',
-    'disaster'     => 'Kollupitiya flooding',
-    'moderator'    => 'Mod. ' . $viewer['moderator'],
-    'status'       => 'info',
-    'status_label' => 'Ready to verify',
-    'meta'         => 'Goods  ·  handed over 16 Jul  ·  recorded 17 Jul  ·  Moderator confirmed 18 Jul',
-    'editable'     => true,
-];
-
-$comparison ??= [
-    ['label' => 'Kind',           'sponsor' => 'Goods',                       'moderator' => 'Goods',                       'match' => true],
-    ['label' => 'What was given', 'sponsor' => '40 dry-ration packs',         'moderator' => '40 dry-ration packs',         'match' => true],
-    ['label' => 'Value',          'sponsor' => 'LKR 48,000 (invoice)',        'moderator' => 'Goods — valued by invoice',    'match' => true],
-    ['label' => 'Date',           'sponsor' => '16 Jul 2026',                 'moderator' => '16 Jul 2026',                 'match' => true],
-    ['label' => 'Receipt',        'sponsor' => 'NW-DN-2231 (delivery note)',  'moderator' => 'ACK-KOL-014 (acknowledgement)', 'match' => true],
-];
-
-$evidence ??= [
-    [
-        'label' => "Sponsor's proof · sent to you 17 Jul",
-        'files' => [
-            ['name' => 'NW-DN-2231 delivery note.pdf', 'meta' => 'PDF · 212 KB'],
-            ['name' => 'Supplier invoice 8841.pdf',    'meta' => 'PDF · 180 KB'],
-        ],
-    ],
-    [
-        'label' => "Moderator's acknowledgement · 18 Jul",
-        'files' => [
-            ['name' => 'Signed acknowledgement ACK-KOL-014.jpg', 'meta' => 'Photo · 1.1 MB'],
-            ['name' => 'Packs at Temple Road hall.jpg',          'meta' => 'Photo · 2.4 MB'],
-        ],
-    ],
-];
-
-$reliefRecords ??= [
-    ['title' => '22 dry-ration packs · Temple Road community hall', 'meta' => '17 Jul  ·  22 households', 'value' => 'LKR 26,400'],
-    ['title' => '18 dry-ration packs · Galle Road lanes 4–7',       'meta' => '18 Jul  ·  18 households', 'value' => 'LKR 21,600'],
-];
-
-$reliefTotal ??= 'LKR 48,000 across 40 households';
-
-$checks ??= [
-    ['label' => "Sponsor's proof matches the amount or goods claimed",       'checked' => true],
-    ['label' => 'Moderator confirmed receipt with their own acknowledgement', 'checked' => true],
-    ['label' => 'Both accounts agree on kind, quantity and date',            'checked' => true],
-    ['label' => 'Relief records account for what was received',             'checked' => false],
-];
-
-$log ??= [
-    ['title' => 'Sponsor handed goods to the Moderator (off-platform)', 'date' => '16 Jul'],
-    ['title' => 'Recorded by you with the sponsor’s delivery note',     'date' => '17 Jul, 11:05'],
-    ['title' => 'Moderator asked to confirm',                           'date' => '17 Jul, 11:05'],
-    ['title' => 'Moderator confirmed receipt · ACK-KOL-014',            'date' => '18 Jul, 08:40'],
-];
-
-$draft ??= [
-    'verified_value' => '48000',
-    'note'           => '',
-];
-
 $baseUrl = base_url() . '/sponsor-liaison/disasters/contributions';
-$showUrl = $baseUrl . '/' . rawurlencode((string) ($id ?? 7));
+$showUrl = $baseUrl . '/' . rawurlencode((string) $id);
 
 $pageTitle = $contribution['reference'] . ' — verify contribution';
 $navActive = 'disasters';

@@ -9,21 +9,6 @@ declare(strict_types=1);
  * @var array $sponsors  rows: name, meta, contributed
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$stats ??= [
-    ['label' => 'Items shared',            'value' => '11,240', 'note' => '+18% vs last quarter'],
-    ['label' => 'Households reached',      'value' => '2,412',  'note' => 'Across 6 GN divisions'],
-    ['label' => 'Aid grants enabled',      'value' => '41',     'note' => '16,600 pts distributed'],
-    ['label' => 'Est. community savings',  'value' => 'Rs 9.4M', 'note' => 'vs buying or renting retail'],
-];
-
-$sponsors ??= [
-    ['name' => 'Northwind Co', 'meta' => 'funded 14 welcome bonuses · 9 aid grants · 2 festival drops', 'contributed' => '16,000 pts contributed'],
-    ['name' => 'Texa',         'meta' => 'funded 8 welcome bonuses · 4 aid grants',                     'contributed' => '7,500 pts contributed'],
-    ['name' => 'ACM Corp',     'meta' => 'funded 6 welcome bonuses · 3 aid grants · moderator stipends (Jun)', 'contributed' => '6,500 pts contributed'],
-    ['name' => 'MNM',          'meta' => 'funded 100% Aid Pool · 11 aid grants',                        'contributed' => '7,000 pts contributed'],
-];
-
 $pageTitle = 'CSR impact';
 $navActive = 'csr-reports';
 

@@ -16,57 +16,6 @@ declare(strict_types=1);
  *                            sponsor_proof, moderator_check, status, status_label
  */
 
-// Sample view data — replaced by the controller once the Liaison's contribution module lands.
-$stats ??= [
-    ['label' => 'Ready to verify',     'value' => '1',          'note' => 'Both accounts in'],
-    ['label' => 'Awaiting Moderator',  'value' => '1',          'note' => 'Asked to confirm receipt'],
-    ['label' => 'Verified this year',  'value' => 'LKR 73,000', 'note' => 'Feeds sponsor CSR reports', 'primary' => false],
-];
-
-$filters ??= [
-    ['label' => 'All',                'state' => '',          'active' => true],
-    ['label' => 'Awaiting Moderator', 'state' => 'awaiting',  'active' => false],
-    ['label' => 'Ready to verify',    'state' => 'ready',     'active' => false],
-    ['label' => 'Queried',            'state' => 'queried',   'active' => false],
-    ['label' => 'Verified',           'state' => 'verified',  'active' => false],
-    ['label' => 'Rejected',           'state' => 'rejected',  'active' => false],
-];
-
-$filterSummary ??= '5 contributions';
-
-$contributions ??= [
-    [
-        'id' => 7, 'reference' => 'DC-0007', 'sponsor' => 'Northwind Co', 'disaster' => 'Kollupitiya flooding',
-        'kind' => 'Goods', 'description' => '40 dry-ration packs', 'value' => 'LKR 48,000',
-        'sponsor_proof' => 'NW-DN-2231', 'moderator_check' => 'Confirmed · ACK-KOL-014',
-        'status' => 'info', 'status_label' => 'Ready to verify',
-    ],
-    [
-        'id' => 5, 'reference' => 'DC-0005', 'sponsor' => 'ACM Corp', 'disaster' => 'Kollupitiya flooding',
-        'kind' => 'Goods', 'description' => '60 tarpaulin sheets', 'value' => 'LKR 90,000',
-        'sponsor_proof' => 'ACM-INV-118', 'moderator_check' => 'Not yet confirmed',
-        'status' => 'warning', 'status_label' => 'Awaiting Moderator',
-    ],
-    [
-        'id' => 4, 'reference' => 'DC-0004', 'sponsor' => 'Texa', 'disaster' => 'Kollupitiya flooding',
-        'kind' => 'Cash', 'description' => 'Relief cash', 'value' => 'LKR 50,000',
-        'sponsor_proof' => 'TX-TRF-0442', 'moderator_check' => 'Received LKR 40,000',
-        'status' => 'error', 'status_label' => 'Queried',
-    ],
-    [
-        'id' => 6, 'reference' => 'DC-0006', 'sponsor' => 'Northwind Co', 'disaster' => 'Kollupitiya flooding',
-        'kind' => 'Cash', 'description' => 'Relief cash', 'value' => 'LKR 25,000',
-        'sponsor_proof' => 'NW-TRF-0715', 'moderator_check' => 'Confirmed · ACK-KOL-011',
-        'status' => 'success', 'status_label' => 'Verified',
-    ],
-    [
-        'id' => 3, 'reference' => 'DC-0003', 'sponsor' => 'MNM', 'disaster' => 'Wellawatte landslide',
-        'kind' => 'Goods', 'description' => '200 L drinking water', 'value' => 'LKR 12,000',
-        'sponsor_proof' => 'MNM-DN-077', 'moderator_check' => 'Not received',
-        'status' => 'neutral', 'status_label' => 'Rejected',
-    ],
-];
-
 $pageTitle = 'Disaster contributions';
 $navActive = 'disasters';
 

@@ -132,6 +132,8 @@ final class ItemController extends Controller
             'item' => [
                 'id'             => (int) $row['id'],
                 'title'          => (string) $row['title'],
+                'owner'          => (string) $row['owner_name'],
+                'owner_meta'     => $row['owner_name'] . ' · Trust ' . $row['trust_score'],
                 'category'       => (string) $row['category_name'],
                 'category_slug'  => $this->slug((string) $row['category_name']),
                 'rate'           => $this->rateLabel($row),
@@ -158,6 +160,12 @@ final class ItemController extends Controller
             ],
             'isOwner' => $isOwner,
             'quote'   => ['from' => '', 'to' => '', 'days_label' => 'Select dates  ·  Total', 'total' => '—'],
+            'pricing' => array_values(array_filter([
+                $row['daily_rate'] === null ? null : ['value' => 'daily', 'title' => 'Daily rate',
+                    'total' => number_format((int) $row['daily_rate']) . ' pts / day', 'selected' => false],
+                $row['monthly_rate'] === null ? null : ['value' => 'monthly', 'title' => 'Monthly rate',
+                    'total' => number_format((int) $row['monthly_rate']) . ' pts / month', 'selected' => false],
+            ])),
         ]);
     }
 

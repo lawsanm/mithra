@@ -22,22 +22,6 @@ $page        = $page ?? 1;
 $hasNextPage = $hasNextPage ?? false;
 $reports     = $reports ?? [];
 
-// Sample view data — replaced by the controller once AidGrantController lands.
-$requests ??= [
-    [
-        'id'       => '1',
-        'initials' => User::initials('N. Arun'),
-        'name'     => 'N. Arun',
-        'meta'     => 'Requesting dry rations and drinking water  ·  household of 4  ·  requested 15 Jul',
-    ],
-    [
-        'id'       => '2',
-        'initials' => User::initials('N. Abishan'),
-        'name'     => 'N. Abishan',
-        'meta'     => 'Requesting temporary shelter tarp  ·  roof damage  ·  requested 16 Jul',
-    ],
-];
-
 $pageTitle = 'Disaster relief';
 $navActive = 'disasters';
 

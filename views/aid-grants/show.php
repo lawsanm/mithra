@@ -12,31 +12,6 @@ declare(strict_types=1);
  * @var string     $cooling cooling-period message, empty when not cooling
  */
 
-// Sample view data — replaced by the controller once AidGrantController lands.
-$grant ??= [
-    'reference' => 'Aid grant #A-1042',
-    'stage'     => 2,
-    'badge'     => ['info', 'i', 'Pending liaison approval'],
-    'facts'     => [
-        ['label' => 'Purpose',          'value' => 'School supplies'],
-        ['label' => 'Amount requested', 'value' => '150 pts'],
-        ['label' => 'Requested',        'value' => '10 Jul 2026'],
-        ['label' => 'Division',         'value' => 'Kollupitiya'],
-    ],
-    'notice'    => 'Now with the sponsor liaison. They can approve (and may adjust the amount), '
-                 . 'reject with a reason, or ask for more information. You’ll be notified either way.',
-];
-
-$vouch ??= [
-    'initials' => User::initials($viewer['moderator']),
-    'line'     => 'Vouched by Moderator ' . $viewer['moderator'] . '  ·  12 Jul',
-    'quote'    => '“Known family, genuine need for the new school term. No conflict of interest.”',
-    'badge'    => 'Vouch complete — no conflict declared',
-];
-
-$cooling ??= 'Cooling period: your previous grant closed on 30 Jun 2026. '
-           . 'You can request your next aid grant after 14 Aug 2026.';
-
 $stages = ['Pending vouch', 'Liaison approval', 'Approved', 'In use', 'Closed'];
 
 $pageTitle = $grant === null ? 'Aid grants' : $grant['reference'];

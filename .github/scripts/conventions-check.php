@@ -186,7 +186,10 @@ foreach ($phpFiles as $file) {
         }
 
         $isModel = isUnder($file, 'app/Models') || isUnder($file, 'app/Core');
-        if (!$isModel && preg_match('/->\s*(prepare|query|exec)\s*\(/', $line) === 1) {
+        // Integration tests prepare transaction-scoped fixtures through PDO.
+        // Application SQL remains restricted to models and core infrastructure.
+        $isTest = isUnder($file, 'tests');
+        if (!$isModel && !$isTest && preg_match('/->\s*(prepare|query|exec)\s*\(/', $line) === 1) {
             fail('sql-in-models', $file, $number, 'SQL lives in /app/Models and nowhere else (§6).');
         }
     }

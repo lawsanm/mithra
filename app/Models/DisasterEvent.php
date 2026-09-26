@@ -11,6 +11,18 @@ final class DisasterEvent extends BaseModel
     protected string $table = 'disaster_events';
     protected string $columns = 'id, gn_division_id, started_by, reason, started_at, planned_end_at, ended_at';
 
+    public function records(): array
+    {
+        return $this->select(
+            'SELECT de.id, de.gn_division_id, de.reason, de.started_at, de.planned_end_at, de.ended_at,
+                    d.name AS division_name, m.full_name AS moderator_name, u.full_name AS started_by_name
+               FROM disaster_events de JOIN gn_divisions d ON d.id = de.gn_division_id
+          LEFT JOIN users m ON m.id = d.moderator_id
+               JOIN users u ON u.id = de.started_by
+              ORDER BY de.started_at DESC, de.id DESC'
+        );
+    }
+
     /**
      * The division's current disaster, or null when Disaster Mode is off.
      *

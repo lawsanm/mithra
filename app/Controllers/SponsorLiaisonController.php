@@ -8,36 +8,13 @@ declare(strict_types=1);
  * Sponsors are the working CRUD (Plan §20.4 module 4.2): list, view, onboard,
  * edit, deactivate and reactivate, read from and written to the database.
  *
- * Contributions and aid grants are still a design preview over fixed sample
- * records, so their lists, filters and detail pages can be clicked through.
- * Nothing there is read or written until modules 4.3 and 4.4 are built.
+ * Contributions and aid grants read the same records used by member and admin
+ * screens. Their submission and approval actions remain unavailable.
  */
 final class SponsorLiaisonController extends Controller
 {
-    private const PURCHASES = [
-    ['id' => 1, 'date' => '15 Jul', 'sponsor' => 'Northwind Co', 'receipt' => 'INV-0312', 'allocation' => 'allocation 70% Sponsor · 30% Aid', 'amount' => 'LKR 10,000'],
-    ['id' => 2, 'date' => '05 Jul', 'sponsor' => 'ACM Corp',     'receipt' => 'INV-0306', 'allocation' => 'allocation 50% Sponsor · 50% Aid', 'amount' => 'LKR 7,500'],
-    ['id' => 3, 'date' => '28 Jun', 'sponsor' => 'MNM',          'receipt' => 'INV-0298', 'allocation' => 'allocation 100% Aid',              'amount' => 'LKR 6,500'],
-    ['id' => 4, 'date' => '19 Jun', 'sponsor' => 'Global Ltd',   'receipt' => 'INV-0265', 'allocation' => 'allocation 70% Sponsor · 30% Aid', 'amount' => 'LKR 5,000'],
-    ['id' => 5, 'date' => '10 Jun', 'sponsor' => 'Texa',         'receipt' => 'INV-0276', 'allocation' => 'allocation 60% Sponsor · 40% Aid', 'amount' => 'LKR 5,000'],
-];
-
-    /** Sample aid grants; sampleGrants() adds each avatar's initials and names the real moderator. */
-    private const GRANTS = [
-    ['id' => 1, 'name' => 'M. Lawsan',  'meta' => '300 pts · school supplies · vouched by Mod. {moderator} · 15 Jul',   'status' => 'info',    'status_label' => 'Awaiting approval', 'action' => 'review'],
-    ['id' => 2, 'name' => 'N. Abishan', 'meta' => '200 pts · medical costs · vouched by Mod. {moderator} · 14 Jul',     'status' => 'info',    'status_label' => 'Awaiting approval', 'action' => 'review'],
-    ['id' => 3, 'name' => 'N. Arun',    'meta' => '450 pts · roof repair · awaiting moderator vouch · 16 Jul',          'status' => 'warning', 'status_label' => 'Awaiting vouch',    'action' => 'view'],
-    ['id' => 4, 'name' => 'N. Abishan', 'meta' => '500 pts · flood recovery · approved 01 Jul · funded by Northwind Co', 'status' => 'success', 'status_label' => 'Approved',          'action' => 'view'],
-    ['id' => 5, 'name' => 'N. Arun',    'meta' => '400 pts · declined 28 Jun · insufficient evidence, may re-apply',    'status' => 'error',   'status_label' => 'Declined',          'action' => 'view'],
-];
-
     private const SORTS = ['name', 'recently_added'];
 
-    // ── Sponsors: read ──────────────────────────────────────────────────────
-
-    /**
-     * GET /sponsor-liaison/sponsors — the sponsor list.
-     */
     public function sponsors(): void
     {
         $search = $this->queryValue('q');
@@ -327,52 +304,64 @@ final class SponsorLiaisonController extends Controller
         $search = $this->queryValue('q');
         $sponsor = $this->queryValue('sponsor');
         $dateRange = $this->queryValue('date_range');
-        $purchases = array_values(array_filter(self::PURCHASES, static fn (array $row): bool =>
+        $purchases = array_values(array_filter($this->purchaseRows(), static fn (array $row): bool =>
             str_contains(strtolower($row['receipt']), strtolower($search))
             && ($sponsor === '' || $row['sponsor'] === $sponsor)
             && ($dateRange === '' || str_contains(strtolower($row['date']), strtolower($dateRange)))));
-        $this->render('sponsor-liaison/purchases/index', compact('purchases', 'search', 'sponsor', 'dateRange'));
+         $sponsorOptions = array_column((new Sponsor($this->pdo))->summaries(), 'company_name');
+        $this->render('sponsor-liaison/purchases/index', compact('purchases', 'search', 'sponsor', 'dateRange', 'sponsorOptions'));
     }
 
     public function purchase(int $id): void
     {
-        $this->record('purchases/show', self::PURCHASES, $id);
+        $this->record('purchases/show', $this->purchaseRows(), $id);
     }
 
     public function grants(): void
     {
         $status = $this->queryValue('status');
-        $labels = ['awaiting_vouch' => 'Awaiting vouch', 'awaiting_approval' => 'Awaiting approval',
-            'approved' => 'Approved', 'declined' => 'Declined'];
-        $grants = array_values(array_filter($this->sampleGrants(), static fn (array $row): bool =>
+        $labels = ['' => 'All', 'awaiting_vouch' => 'Awaiting vouch', 'awaiting_approval' => 'Awaiting approval',
+            'approved' => 'Approved', 'declined' => 'Declined', 'disbursed' => 'Disbursed',
+            'partially_returned' => 'Partially returned', 'expired' => 'Expired', 'closed' => 'Closed'];
+        $rows = $this->grantRows();
+        $filters = [];
+        foreach ($labels as $slug => $label) {
+            $count = count(array_filter($rows, static fn (array $row): bool => $slug === '' || $row['status_label'] === $label));
+            $filters[] = ['slug' => $slug, 'label' => $label . ' (' . $count . ')'];
+        }
+        $grants = array_values(array_filter($rows, static fn (array $row): bool =>
             $status === '' || $row['status_label'] === ($labels[$status] ?? '')));
-        $this->render('sponsor-liaison/aid-grants/index', compact('grants', 'status'));
+        $this->render('sponsor-liaison/aid-grants/index', compact('grants', 'status', 'filters'));
     }
 
     public function grant(int $id): void
     {
-        $row = $this->find($this->sampleGrants(), $id);
+        $row = $this->find($this->grantRows(), $id);
         if ($row === null) {
             $this->notice(404, 'Record not found', 'Return to the list to select a sponsor, contribution or aid grant.');
             return;
         }
-        $parts = explode(' · ', $row['meta']);
-        $grant = $row + ['grant_number' => '#A-' . (1041 + $id)];
-        $request = ['purpose' => ucfirst($parts[1] ?? 'Aid request'), 'amount_requested' => $parts[0],
-            'pool_balance' => 'Sample balance', 'prior_grants' => 'Not shown in this preview',
-            'note' => $row['meta']];
-        $vouch = ['initials' => User::initials($this->moderatorName()), 'name' => 'Moderator review', 'note' => $parts[2] ?? 'See request status'];
-        $draft = ['approved_amount' => (string) (int) $parts[0], 'reason' => ''];
+        $record = $row['record'];
+        $grant = $row + ['grant_number' => '#A-' . $id];
+        $request = ['purpose' => $record['purpose'], 'amount_requested' => $record['requested_amount'] . ' pts',
+            'pool_balance' => number_format((new PointPool($this->pdo))->balance('aid')) . ' pts',
+            'prior_grants' => (string) max(0, count((new AidGrant($this->pdo))->records((int) $record['member_id'])) - 1),
+            'note' => $record['purpose']];
+        $vouch = ['initials' => User::initials((string) $record['moderator_name']),
+            'name' => empty($record['vouched_at']) ? 'Awaiting moderator vouch' : 'Vouched by ' . $record['moderator_name']
+                . ' · ' . date('j M Y', strtotime($record['vouched_at'])),
+            'note' => (string) ($record['moderator_vouch'] ?? '')];
+        $draft = ['approved_amount' => (string) ($record['approved_amount'] ?? $record['requested_amount']), 'reason' => ''];
         $this->render('sponsor-liaison/aid-grants/show', compact('grant', 'request', 'vouch', 'draft'));
     }
 
     public function exportGrants(): void
     {
         header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="approved-grants-demo.csv"');
+        header('Content-Disposition: attachment; filename="approved-grants.csv"');
         $output = fopen('php://output', 'wb');
-        fputcsv($output, ['Demo grant ID', 'Member', 'Details', 'Status'], ',', '"', '');
-        foreach ($this->sampleGrants() as $grant) {
+        fputcsv($output, ['Grant ID', 'Member', 'Details', 'Status'], ',', '"', '');
+        foreach ($this->grantRows() as $grant) {
             if ($grant['status_label'] === 'Approved') {
                 fputcsv($output, [$grant['id'], $grant['name'], $grant['meta'], $grant['status_label']], ',', '"', '');
             }
@@ -391,22 +380,36 @@ final class SponsorLiaisonController extends Controller
     }
 
     /**
-     * The sample grants with initials worked out from each name and the real
-     * moderator named in each vouch.
+     * Contribution rows with their current sponsor and recorder names.
      *
      * @return list<array<string, mixed>>
      */
-    private function sampleGrants(): array
+    private function purchaseRows(): array
     {
-        $moderator = $this->moderatorName();
+        return array_map(static fn (array $row): array => [
+            'id' => (int) $row['id'], 'date' => date('j M Y', strtotime($row['recorded_at'])),
+            'sponsor' => $row['company_name'], 'receipt' => $row['receipt_number'],
+            'allocation' => 'General ' . number_format((int) $row['general_points']) . ' pts · Aid '
+                . number_format((int) $row['aid_points']) . ' pts · Recorded by ' . $row['recorded_by_name'],
+            'amount' => 'LKR ' . number_format((int) $row['cash_amount']),
+        ], (new SponsorContribution($this->pdo))->records());
+    }
 
-        return array_map(
-            static fn (array $row): array => [
-                'initials' => User::initials($row['name']),
-                'meta'     => str_replace('{moderator}', $moderator, $row['meta']),
-            ] + $row,
-            self::GRANTS
-        );
+    private function grantRows(): array
+    {
+        return array_map(static function (array $row): array {
+            $label = match ($row['status']) {
+                'requested', 'info_requested' => 'Awaiting vouch',
+                'vouched' => 'Awaiting approval',
+                'rejected_moderator', 'rejected_liaison' => 'Declined',
+                default => ucfirst(str_replace('_', ' ', $row['status'])),
+            };
+            return ['id' => (int) $row['id'], 'name' => $row['member_name'],
+                'initials' => User::initials($row['member_name']), 'status' => 'info', 'status_label' => $label,
+                'meta' => $row['requested_amount'] . ' pts · ' . $row['purpose'] . ' · ' . $row['division_name']
+                    . ' · ' . date('j M Y', strtotime($row['created_at'])),
+                'action' => $row['status'] === 'vouched' ? 'review' : 'view', 'record' => $row];
+        }, (new AidGrant($this->pdo))->records());
     }
 
     private function find(array $rows, int $id): ?array
