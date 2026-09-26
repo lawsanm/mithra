@@ -10,22 +10,6 @@ declare(strict_types=1);
  * @var array $errors per-field messages from the Validator
  */
 
-// Sample view data — replaced by the controller once SponsorController lands.
-$draft ??= [
-    'display_name' => 'Northwind Co',
-    'tagline'      => 'Hardware for every home',
-    'tag_bonuses'  => true,
-];
-
-$wall ??= [
-    'initials' => 'N',
-    'name'     => 'Northwind Co',
-    'tagline'  => 'Hardware for every home',
-    'meta'     => 'Supporting Mithra since 2024  ·  LKR 34,500 contributed',
-];
-
-$errors ??= [];
-
 $pageTitle = 'Branding & recognition';
 $navActive = 'branding';
 

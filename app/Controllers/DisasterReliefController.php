@@ -38,6 +38,11 @@ final class DisasterReliefController extends Controller
         $totals  = $disaster === null ? null : $records->totalsForEvent((int) $disaster['id']);
 
         $this->render('moderator/disasters/index', [
+            'requests' => array_map(static fn (array $row): array => [
+                'id' => (string) $row['id'], 'initials' => User::initials($row['member_name']), 'name' => $row['member_name'],
+                'meta' => $row['requested_amount'] . ' pts · ' . $row['purpose'] . ' · ' . date('j M Y', strtotime($row['created_at'])),
+            ], array_values(array_filter((new AidGrant($this->pdo))->records(null, $division),
+                static fn (array $row): bool => in_array($row['status'], ['requested', 'info_requested'], true)))),
             'disaster'    => $disaster === null ? null : [
                 'division' => (string) $disaster['division_name'],
                 'note'     => (string) $disaster['reason'] . '  ·  started ' . date('j M Y', strtotime((string) $disaster['started_at']))

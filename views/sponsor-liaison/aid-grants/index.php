@@ -12,14 +12,6 @@ declare(strict_types=1);
 
 $status ??= '';
 
-$filters = [
-    ['label' => 'All (5)',               'slug' => ''],
-    ['label' => 'Awaiting vouch (1)',    'slug' => 'awaiting_vouch'],
-    ['label' => 'Awaiting approval (2)', 'slug' => 'awaiting_approval'],
-    ['label' => 'Approved (1)',          'slug' => 'approved'],
-    ['label' => 'Declined (1)',          'slug' => 'declined'],
-];
-
 $pageTitle = 'Aid grant approvals';
 $navActive = 'aid-grants';
 

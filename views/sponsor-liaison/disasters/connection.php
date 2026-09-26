@@ -13,33 +13,6 @@ declare(strict_types=1);
  * @var array $log          rows: title, date
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$disaster ??= [
-    'title'        => 'Kollupitiya flooding – relief coordination',
-    'status_label' => 'Disaster Mode active',
-    'meta'         => 'Activated 15 Jul, 09:20 by Mod. ' . $viewer['moderator'] . '  ·  13 sponsors notified',
-];
-
-$sponsorSide ??= [
-    'initial' => 'N',
-    'name'    => 'Northwind Co',
-    'offer'   => 'Offering: 40 dry ration packs + LKR 25,000 relief contribution',
-];
-
-$moderatorSide ??= [
-    'initials' => User::initials($viewer['moderator']),
-    'name'     => 'Mod. ' . $viewer['moderator'] . '  on the ground',
-    'note'     => 'Confirms need: 60 households affected, low-lying lanes worst hit',
-];
-
-$connectedNote ??= 'Connected 15 Jul, 14:30  delivery arranged for 17 Jul';
-
-$log ??= [
-    ['title' => 'Sponsor notified and responded',        'date' => '15 Jul, 10:05'],
-    ['title' => 'Moderator confirmed need on the ground', 'date' => '15 Jul, 13:40'],
-    ['title' => 'Delivery of ration packs arranged',      'date' => '15 Jul, 14:30'],
-];
-
 $pageTitle = $disaster['title'];
 $navActive = 'disasters';
 
@@ -51,7 +24,7 @@ include __DIR__ . '/../../../partials/header.php';
 <nav class="breadcrumb" aria-label="Breadcrumb">
     <a class="breadcrumb__link" href="<?= base_url() ?>/sponsor-liaison/disasters">Disasters</a>
     <span class="breadcrumb__separator" aria-hidden="true">›</span>
-    <span class="breadcrumb__current" aria-current="page">Kollupitiya flooding · connection</span>
+    <span class="breadcrumb__current" aria-current="page"><?= e($disaster['title']) ?> · connection</span>
 </nav>
 
 <div style="display: flex; align-items: center; gap: var(--space-4);">

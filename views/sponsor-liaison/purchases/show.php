@@ -21,7 +21,7 @@ include __DIR__ . '/../../../partials/header.php';
         <div class="fact"><dt class="fact__label">Receipt</dt><dd class="fact__value"><?= e($record['receipt']) ?></dd></div>
     </dl>
     <p class="panel__note"><?= e($record['allocation']) ?></p>
-    <p class="demo-note">Sample contribution record. No payment is made from this page.</p>
+    <p class="demo-note">Recorded contribution. No payment is made from this page.</p>
 </section>
 <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/purchases">Back to contributions</a>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

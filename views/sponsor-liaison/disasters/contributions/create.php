@@ -14,32 +14,6 @@ declare(strict_types=1);
  * @var array $errors    per-field messages from the Validator
  */
 
-// Sample view data — replaced by the controller once the Liaison's contribution module lands.
-$disasters ??= [
-    ['id' => 3, 'title' => 'Kollupitiya flooding · active since 15 Jul'],
-    ['id' => 2, 'title' => 'Wellawatte landslide · ended 03 Jul'],
-];
-
-$sponsors ??= [
-    ['id' => 1, 'name' => 'Northwind Co'],
-    ['id' => 2, 'name' => 'ACM Corp'],
-    ['id' => 3, 'name' => 'Texa'],
-    ['id' => 4, 'name' => 'MNM'],
-];
-
-$draft ??= [
-    'disaster_event_id' => '3',
-    'sponsor_id'        => '',
-    'contribution_kind' => 'goods',
-    'description'       => '',
-    'estimated_value'   => '',
-    'handed_over_on'    => '',
-    'receipt_reference' => '',
-    'notes'             => '',
-];
-
-$errors ??= [];
-
 $pageTitle = 'Record a disaster contribution';
 $navActive = 'disasters';
 

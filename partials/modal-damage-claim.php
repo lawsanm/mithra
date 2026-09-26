@@ -13,10 +13,7 @@ declare(strict_types=1);
  * @var array $claimDraft amount, description, declared value cap
  */
 
-$claimItem = ($claimItem ?? []) + [
-    'title' => 'Bosch Cordless Drill GSB 120',
-    'party' => 'Borrower: M. Lawsan  ·  returned 17 Jul',
-];
+$claimItem = ($claimItem ?? []) + ['title' => '', 'party' => ''];
 
 $severities = $severities ?? [
     ['value' => 'minor',      'label' => 'Minor'],
@@ -26,9 +23,9 @@ $severities = $severities ?? [
 ];
 
 $claimDraft = ($claimDraft ?? []) + [
-    'amount'      => '60',
+    'amount'      => '',
     'description' => '',
-    'cap'         => 'Capped at the declared value: 300 pts.',
+    'cap'         => 'Capped at the declared value of this item.',
 ];
 
 ?>

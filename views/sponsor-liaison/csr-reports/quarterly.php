@@ -12,28 +12,6 @@ declare(strict_types=1);
  * @var string $footnote
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$report ??= [
-    'quarter'     => 'Q2 2026 (Apr – Jun)',
-    'prepared_by' => 'Sponsor Liaison ' . $viewer['liaison'],
-    'prepared_at' => '20 Jul 2026',
-];
-
-$stats ??= [
-    ['label' => 'Items shared',       'value' => '5,180'],
-    ['label' => 'Households reached', 'value' => '1,940'],
-    ['label' => 'Aid grants enabled', 'value' => '22'],
-    ['label' => 'Est. savings',       'value' => 'Rs 4.1M'],
-];
-
-$contributions ??= [
-    ['sponsor' => 'Northwind Co · INV-0312', 'amount' => 'LKR 10,000 · 70% Sponsor / 30% Aid'],
-    ['sponsor' => 'ACM Corp · INV-0306',     'amount' => 'LKR 7,500 · 50% Sponsor / 50% Aid'],
-    ['sponsor' => 'MNM · INV-0298',          'amount' => 'LKR 6,500 · 100% Aid'],
-];
-
-$footnote ??= 'All figures reconcile with the append-only ledger and the nightly six-pool invariant check. 100% of contributions reached the community: 1 rupee = 1 point, no deductions.';
-
 $pageTitle = $report['quarter'] . ' quarterly report';
 $navActive = 'csr-reports';
 

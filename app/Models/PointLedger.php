@@ -9,6 +9,22 @@ final class PointLedger extends BaseModel
 
     private const PER_PAGE = 25;
 
+    public function sponsorPoolActivity(): array
+    {
+        return $this->select(
+            "SELECT l.amount, l.reason, l.created_at, l.from_pool_code, l.to_pool_code,
+                    fu.full_name AS from_name, tu.full_name AS to_name,
+                    s.company_name, c.receipt_number
+               FROM point_ledger l
+          LEFT JOIN users fu ON fu.id = l.from_user_id
+          LEFT JOIN users tu ON tu.id = l.to_user_id
+          LEFT JOIN sponsor_contributions c ON c.id = l.contribution_id
+          LEFT JOIN sponsors s ON s.id = c.sponsor_id
+              WHERE l.from_pool_code IN ('sponsor','aid') OR l.to_pool_code IN ('sponsor','aid')
+              ORDER BY l.created_at DESC, l.id DESC LIMIT 50"
+        );
+    }
+
     /** Filter pill => the ledger reasons it covers (Plan §7.3). */
     public const GROUPS = [
         'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout'],

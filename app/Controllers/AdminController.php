@@ -71,6 +71,7 @@ final class AdminController extends Controller
             'admin/moderators/performance' => $this->moderatorPerformance(),
             'admin/moderators/appoint'     => $this->appointment($id),
             'admin/moderators/show'        => $this->moderator($id),
+            'admin/moderators/objections'  => $this->objections($id),
             'admin/disputes/index'         => $this->disputes(),
             'admin/disputes/show'          => $this->dispute($id),
             'admin/disaster/index'         => $this->disaster(),
@@ -98,6 +99,25 @@ final class AdminController extends Controller
         }
 
         $this->render($view, $data);
+    }
+
+    private function objections(int $id): ?array
+    {
+        $model = new Moderator($this->pdo);
+        $row = $model->appointment($id);
+        if ($row === null) { return null; }
+        $records = $model->objections($id);
+        return ['appointment' => ['name' => $row['full_name'], 'division' => $row['division_name'],
+                'opened' => date('j M Y', strtotime($row['appointed_at'])),
+                'closes' => $row['objection_window_ends'] === null ? 'Not recorded' : date('j M Y', strtotime($row['objection_window_ends'])),
+                'objection_count' => count($records), 'status' => 'info', 'status_label' => ucfirst($row['status'])],
+            'objections' => array_map(static fn (array $record): array => [
+                'id' => (int) $record['id'], 'member' => $record['full_name'], 'against' => $row['full_name'],
+                'reason' => $record['reason'], 'date' => date('j M Y', strtotime($record['created_at'])),
+                'status' => $record['status'] === 'pending' ? 'warning' : 'neutral', 'status_label' => ucfirst($record['status']),
+            ], $records),
+            'windowExpired' => $row['objection_window_ends'] !== null && strtotime($row['objection_window_ends']) < time(),
+            'allDismissed' => count(array_filter($records, static fn (array $record): bool => $record['status'] !== 'dismissed')) === 0];
     }
 
     // ── Division CRUD ───────────────────────────────────────────────────────

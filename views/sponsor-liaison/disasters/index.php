@@ -11,26 +11,6 @@ declare(strict_types=1);
  * @var array $history   rows: period, meta, duration
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$disaster ??= [
-    'active'       => false,
-    'status'       => 'success',
-    'status_label' => 'Currently inactive',
-    'note'         => 'No division is in Disaster Mode. The Admin activates it when a Moderator reports an emergency.',
-];
-
-$stats ??= [
-    ['label' => 'Activations (all time)', 'value' => '4',      'note' => 'Most recent: 15 Jul'],
-    ['label' => 'Sponsors notified',      'value' => '23',     'note' => 'Across all activations'],
-    ['label' => 'Avg. duration',          'value' => '48 hrs', 'note' => 'From activation to close', 'primary' => false],
-];
-
-$history ??= [
-    ['period' => 'Activated 15 Jul, 09:20  →  deactivated 17 Jul, 06:20', 'meta' => 'Triggered by Mod. ' . $viewer['moderator'] . '  ·  13 sponsors notified', 'duration' => '45 hrs'],
-    ['period' => 'Activated 01 Jul, 20:30  →  deactivated 03 Jul, 09:30', 'meta' => 'Triggered by Mod. ' . $viewer['moderator'] . '  ·  18 sponsors notified',  'duration' => '37 hrs'],
-    ['period' => 'Activated 15 Jun, 12:00  →  deactivated 18 Jun, 12:00', 'meta' => 'Triggered by Mod. ' . $viewer['moderator'] . '  ·  23 sponsors notified', 'duration' => '72 hrs'],
-];
-
 $pageTitle = 'Disaster Mode';
 $navActive = 'disasters';
 

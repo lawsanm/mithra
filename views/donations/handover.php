@@ -10,20 +10,6 @@ declare(strict_types=1);
  * @var array $badge     donor badge line
  */
 
-// Sample view data — replaced by the controller once DonationController lands.
-$donation ??= [
-    'item' => 'Baby Clothes Bundle',
-    'meta' => 'Donation  ·  declared 80 pts  ·  listed 8 Jul',
-];
-
-$recipient ??= [
-    'initials' => User::initials('N. Arun'),
-    'name'     => 'Recipient: N. Arun',
-    'meta'     => 'Trust 98  ·  8 transactions  ·  chosen 16 Jul',
-];
-
-$badge ??= 'Donor  ·  will become 4 items given';
-
 $pageTitle = 'Confirm donation handover';
 $navActive = 'items';
 
@@ -65,7 +51,7 @@ include __DIR__ . '/../../partials/header.php';
     </p>
 
     <div class="actions">
-        <a class="btn btn--ghost" href="<?= base_url() ?>/donations/1">Back</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/donations/<?= e((string) $donation['id']) ?>">Back</a>
         <button class="btn btn--primary" type="submit" disabled>Confirm handover</button>
     </div>
 </div>
