@@ -10,7 +10,8 @@
  *
  * The dialog element handles Escape, focus trapping and the backdrop itself, so
  * this only wires the triggers. Forms still submit normally without JavaScript;
- * a page that must work JS-free should link to a full page instead of a modal.
+ * a trigger that is a link (href) still works without it, landing on a page
+ * that renders the dialog open.
  */
 
 'use strict';
@@ -44,6 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             closer.closest('dialog').close();
         });
+    });
+
+    // A dialog the server rendered open (a form returned with errors, or a
+    // page whose address is the dialog) becomes a true modal: backdrop, focus
+    // trap and Escape. Without JavaScript it simply shows in the page.
+    document.querySelectorAll('dialog.modal[open]').forEach((dialog) => {
+        dialog.close();
+        dialog.showModal();
     });
 
     // Clicking the backdrop (outside the dialog box) dismisses it.

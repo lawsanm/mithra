@@ -6,11 +6,11 @@ declare(strict_types=1);
  * "New password" + "Confirm new password", shared by the reset pages and the
  * change-password form so the rule text and field names never drift.
  *
- * @var array  $errors         per-field messages
+ * @var array  $passwordErrors per-field messages; defaults to the page's $errors
  * @var string $passwordPrefix id prefix, unique per page
  */
 
-$errors         = $errors ?? [];
+$passwordErrors = $passwordErrors ?? $errors ?? [];
 $passwordPrefix = $passwordPrefix ?? 'new';
 
 ?>
@@ -22,10 +22,10 @@ $passwordPrefix = $passwordPrefix ?? 'new';
         id="<?= e($passwordPrefix) ?>-password"
         name="password"
         autocomplete="new-password"
-        <?= isset($errors['password']) ? 'aria-invalid="true"' : '' ?>
+        <?= isset($passwordErrors['password']) ? 'aria-invalid="true"' : '' ?>
     >
-    <?php if (isset($errors['password'])): ?>
-        <span class="field__error"><?= e($errors['password']) ?></span>
+    <?php if (isset($passwordErrors['password'])): ?>
+        <span class="field__error"><?= e($passwordErrors['password']) ?></span>
     <?php else: ?>
         <span class="field__hint">
             At least <?= e((string) PasswordPolicy::MIN_LENGTH) ?> characters. A short phrase you will
@@ -42,7 +42,7 @@ $passwordPrefix = $passwordPrefix ?? 'new';
         id="<?= e($passwordPrefix) ?>-password-confirmation"
         name="password_confirmation"
         autocomplete="new-password"
-        <?= isset($errors['password_confirmation']) ? 'aria-invalid="true"' : '' ?>
+        <?= isset($passwordErrors['password_confirmation']) ? 'aria-invalid="true"' : '' ?>
     >
-    <?= field_error($errors, 'password_confirmation') ?>
+    <?= field_error($passwordErrors, 'password_confirmation') ?>
 </div>

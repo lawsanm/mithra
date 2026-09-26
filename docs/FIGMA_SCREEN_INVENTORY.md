@@ -128,4 +128,18 @@ Retrieved from the five direct page links on 17 September 2026. These are discov
 | [Cases — List](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=812-400) | 1440 × 1024 |
 | [Aid Vouching — Queue](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=812-495) | 1440 × 1024 |
 
+## common (9 frames)
 
+Retrieved from the Common page link on 25 September 2026. Built in `views/home/` and `views/auth/`, except the MFA screen: the plan has no two-factor sign-in and there is no SMS gateway. Registration follows Plan §18.1 where the frames differ (one NIC photo, proof of address required, password collected on step 2).
+
+| Frame | Size |
+| --- | --- |
+| [Landing Page](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=92-120) | 1440 × 1024 |
+| [About — How It Works](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=92-178) | 1440 × 1024 |
+| [Register — Step 1](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=93-127) | 1440 × 1024 |
+| [Register — Step 2](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=93-187) | 1440 × 1024 |
+| [Register — Pending Review](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=93-240) | 1440 × 1024 |
+| [Login](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=93-282) | 1440 × 1024 |
+| [Forgot Password — Modal](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=93-315) | 1440 × 1024 |
+| [Login — Verify Code (MFA)](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=646-728) | 1440 × 1024 |
+| [Reset Password — New Password](https://www.figma.com/design/m9EZDG6TpxnaBCFbHCiyQn/Design?node-id=646-764) | 1440 × 1024 |

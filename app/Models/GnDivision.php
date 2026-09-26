@@ -145,6 +145,11 @@ final class GnDivision extends BaseModel
         return (int) $this->selectValue('SELECT COUNT(*) FROM gn_divisions');
     }
 
+    public function countActive(): int
+    {
+        return (int) $this->selectValue("SELECT COUNT(*) FROM gn_divisions WHERE status = 'active'");
+    }
+
     /**
      * Most recent pending member approvals across every division, for the
      * admin notification feed.

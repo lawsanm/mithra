@@ -89,8 +89,11 @@ With the local application and database running at `http://localhost/mithra/`, r
 
 ```cmd
 python tests/ui-navigation.py
+python tests/public-auth.py
 C:\xampp\php\php.exe tests\dynamic-data.php
 ```
+
+The public-auth check uses a fresh visitor session to check public pages, registration steps, CSRF rejection and password-reset dialogs. It creates no accounts, uploads no documents and sends no email.
 
 This checks routes, links, assets, selected records, filters and HTML interaction wiring. It signs in first — as the demo member, and as the moderator for the verification screens — because every screen is behind the sign-in check. It does not render pages or simulate browser interactions.
 

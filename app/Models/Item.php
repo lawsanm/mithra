@@ -312,6 +312,14 @@ final class Item extends BaseModel
         $statement->execute(['status' => $status, 'id' => $id, 'owner' => $ownerId]);
     }
 
+    /** Listings a moderator approved that are still on offer, out on loan or already given away. */
+    public function countShared(): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM items WHERE status IN ('active', 'paused', 'borrowed', 'donated')"
+        );
+    }
+
     /**
      * Is this stored path referenced by a live listing? The photo proxy asks
      * before serving a file, so storage cannot be enumerated (§7.5).

@@ -25,6 +25,17 @@ abstract class Controller
         return (string) ($_SESSION['role'] ?? '');
     }
 
+    protected function signedIn(): bool
+    {
+        return $this->userId() > 0;
+    }
+
+    /** Where each role lands after signing in, and when it opens a signed-out page. */
+    protected function homeFor(string $role): string
+    {
+        return home_for($role);
+    }
+
     /**
      * Render views/<view>.php with $data as local variables.
      *

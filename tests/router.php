@@ -131,13 +131,19 @@ foreach (['/dashboard', '/items', '/admin', '/moderator/verifications'] as $path
     $checks++;
 }
 
-// The home page and the sign-in screens are the exception, and every other path is not.
+// The sign-in screens and the pages that introduce Mithra are the exception,
+// and every other path is not.
 $gate = new AuthMiddleware();
-foreach (['/', '/login', '/register', '/logout', '/login/', '/register/'] as $path) {
+foreach (['/login', '/register', '/register/pending', '/logout', '/login/', '/register/', '/', '/how-it-works', '/transparency', '/help'] as $path) {
     check($gate->handle($path, null) === null, 'Signed-out visitor must reach ' . $path);
     $checks++;
 }
-foreach (['/dashboard', '/items/42', '/admin', '/wallet', '/loginx', '/register/step-2'] as $path) {
+// A signed-in visitor keeps having their session checked on the open pages.
+foreach (['/', '/how-it-works', '/transparency', '/help'] as $path) {
+    check(!AuthMiddleware::isSignInPath($path), 'An open page must not skip the session check: ' . $path);
+    $checks++;
+}
+foreach (['/dashboard', '/items/42', '/admin', '/wallet', '/loginx', '/register/step-2', '/how-it-works/x', '/help/secret'] as $path) {
     check($gate->handle($path, null) === '/login', 'Path must require a session: ' . $path);
     $checks++;
 }

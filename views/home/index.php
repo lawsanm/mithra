@@ -3,31 +3,21 @@
 declare(strict_types=1);
 
 /**
- * Public home page — what a visitor sees on the Mithra logo before signing in.
- * The copy follows Rules/Mithra_Project_Plan_Revised.md §1, §2 and §4.
+ * Landing page for a visitor who has not signed in. Figma: Common → "Landing
+ * Page" (92:120).
  *
- * @var array|null $flash
+ * The figures are counted from the database, never sample numbers. The design's
+ * "estimated savings" figure is left out: nothing in Mithra records one.
+ *
+ * @var array $stats value, label
  */
 
+$stats = $stats ?? [];
+
 $steps = [
-    [
-        'icon'  => 'icon-check-circle',
-        'title' => 'Get verified',
-        'body'  => 'Register with your NIC and proof of address. Your GN division moderator '
-                 . 'verifies you, and you receive a 200-point welcome bonus.',
-    ],
-    [
-        'icon'  => 'icon-package',
-        'title' => 'List what you own',
-        'body'  => 'Photograph the drill, tent or projector sitting in your cupboard. Neighbours '
-                 . 'borrow it and you earn points for every day it is out.',
-    ],
-    [
-        'icon'  => 'icon-handshake',
-        'title' => 'Borrow what you need',
-        'body'  => 'Spend your points to borrow from verified neighbours in your own division, '
-                 . 'hand it back, and rate each other.',
-    ],
+    ['List & lend', 'Photograph an item you rarely use, declare its value, and your division moderator approves it.'],
+    ['Borrow with points', 'Request items nearby. Points are held in escrow until the item comes back safely.'],
+    ['Give & support', 'Donate items, gift points to neighbours, or request an aid grant when times are tight.'],
 ];
 
 $pillars = [
@@ -75,8 +65,9 @@ $faqs = [
     ],
 ];
 
-$pageTitle = 'Lend, share and care with your neighbours';
-$navActive = 'home';
+$pageTitle = 'Lend · Share · Care';
+$navActive = '';
+$pageClass = 'page--public';
 
 $chrome = 'public';
 include __DIR__ . '/../../partials/header.php';
@@ -85,31 +76,44 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php include __DIR__ . '/../../partials/flash.php'; ?>
 
-<section class="hero" aria-labelledby="hero-title">
-    <p class="hero__eyebrow">Lend · Share · Care</p>
-    <h1 class="hero__title" id="hero-title">Your neighbours already own what you need.</h1>
-    <p class="hero__lede">
-        Mithra means <em>friend</em>. It helps verified neighbours in the same GN division lend,
-        share and give to each other with points instead of cash, so the cupboards of a whole
-        neighbourhood become a shared library of things.
-    </p>
-    <a class="btn btn--primary" href="<?= base_url() ?>/register">Join your community</a>
+<section class="landing-hero">
+    <div class="landing-hero__copy">
+        <h1 class="landing-hero__title">Borrow what you need. Lend what you don't.</h1>
+        <p class="landing-hero__lede">
+            Mithra is a money-free sharing network for Sri Lankan communities. Lend items to
+            neighbours in your GN division, earn points, and borrow what you need — with escrow
+            protection and trusted local moderators.
+        </p>
+        <div class="actions">
+            <a class="btn btn--primary" href="<?= base_url() ?>/register">Join your community</a>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/how-it-works">See how it works</a>
+        </div>
+        <span class="landing-hero__tag">No money changes hands — only points</span>
+    </div>
+    <div class="landing-hero__photo" aria-hidden="true"></div>
 </section>
 
-<section class="section home-section" aria-labelledby="how-title">
-    <h2 class="section__title" id="how-title">How it works</h2>
-    <ol class="feature-grid">
-        <?php foreach ($steps as $number => $step): ?>
-            <li class="feature">
-                <span class="feature__icon" aria-hidden="true">
-                    <svg class="icon"><use href="#<?= e($step['icon']) ?>"></use></svg>
-                </span>
-                <h3 class="feature__title"><?= e(($number + 1) . '. ' . $step['title']) ?></h3>
-                <p class="feature__body"><?= e($step['body']) ?></p>
+<section class="section">
+    <h2 class="section-title">How it works</h2>
+    <ol class="step-cards">
+        <?php foreach ($steps as $index => [$title, $body]): ?>
+            <li class="step-card">
+                <span class="step-card__number"><?= e((string) ($index + 1)) ?></span>
+                <h3 class="step-card__title"><?= e($title) ?></h3>
+                <p class="step-card__body"><?= e($body) ?></p>
             </li>
         <?php endforeach; ?>
     </ol>
 </section>
+
+<dl class="stat-band">
+    <?php foreach ($stats as $stat): ?>
+        <div class="stat-band__item">
+            <dt class="stat-band__label"><?= e($stat['label']) ?></dt>
+            <dd class="stat-band__value"><?= e($stat['value']) ?></dd>
+        </div>
+    <?php endforeach; ?>
+</dl>
 
 <section class="section home-section" aria-labelledby="pillars-title">
     <h2 class="section__title" id="pillars-title">One platform, three ways to help</h2>

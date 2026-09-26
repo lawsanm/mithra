@@ -303,6 +303,16 @@ final class User extends BaseModel
         return (int) $this->selectValue('SELECT COUNT(*) FROM users');
     }
 
+    /** Members a moderator has verified and who can still take part — moderators are members too. */
+    public function countVerifiedMembers(): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE r.code IN ('member', 'moderator') AND u.status = 'active'"
+        );
+    }
+
     public function countByStatus(string $status): int
     {
         return (int) $this->selectValue(

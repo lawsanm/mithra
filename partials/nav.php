@@ -85,6 +85,14 @@ $bar = $bars[$chrome] ?? null;
     </a>
 
 <?php if ($bar === null): ?>
+    <ul class="nav__items">
+        <?php foreach (['how-it-works' => ['How It Works', '/how-it-works'], 'transparency' => ['Transparency', '/transparency'], 'help' => ['Help', '/help']] as $key => [$label, $href]): ?>
+            <li>
+                <a class="nav__link<?= $navActive === $key ? ' nav__link--active' : '' ?>" href="<?= e(base_url() . $href) ?>"<?= $navActive === $key ? ' aria-current="page"' : '' ?>><?= e($label) ?></a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+
     <span class="nav__spacer"></span>
 
     <div class="nav__actions">

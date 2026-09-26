@@ -29,6 +29,7 @@ return [
     'GET' => [
         '/login'           => ['AuthController', 'loginForm'],
         '/register'        => ['AuthController', 'registerForm'],
+        '/register/pending'     => ['AuthController', 'registerPending'],
         '/forgot-password'      => ['AuthController', 'forgotForm'],
         '/reset-password'       => ['AuthController', 'resetForm'],
         '/reset-password/code'  => ['AuthController', 'codeForm'],
@@ -39,6 +40,7 @@ return [
         '/items/{id}'      => ['ItemController', 'show'],
         '/items/{id}/edit' => ['ItemController', 'editForm'],
         '/'                        => ['HomeController', 'index'],
+        '/how-it-works'            => ['HomeController', 'howItWorks'],
         '/dashboard'               => 'dashboard/index',
         '/bookings'                => ['BookingController', 'index'],
         '/bookings/{id}'           => ['BookingController', 'show'],

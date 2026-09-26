@@ -79,7 +79,7 @@ final class Router
 
         // 4. Session — the account behind a signed-in session must still accept
         //    it. One primary-key lookup, after the cheap checks above.
-        if ($userId !== null && $userId > 0 && !AuthMiddleware::isPublic($path)) {
+        if ($userId !== null && $userId > 0 && !AuthMiddleware::isSignInPath($path)) {
             $ended = (new SessionMiddleware())->handle(
                 (new User($pdo))->sessionState($userId),
                 $role,
