@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @var array $moderatorSide initials, name, note
  * @var string $connectedNote
  * @var array $log          rows: title, date
- * @var array $draft        cash_amount, receipt_number
  */
 
 // Sample view data — replaced by the controller once SponsorLiaisonController lands.
@@ -39,11 +38,6 @@ $log ??= [
     ['title' => 'Sponsor notified and responded',        'date' => '15 Jul, 10:05'],
     ['title' => 'Moderator confirmed need on the ground', 'date' => '15 Jul, 13:40'],
     ['title' => 'Delivery of ration packs arranged',      'date' => '15 Jul, 14:30'],
-];
-
-$draft ??= [
-    'cash_amount'     => '',
-    'receipt_number'  => '',
 ];
 
 $pageTitle = $disaster['title'];
@@ -104,31 +98,22 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 
     <div>
-        <div class="form-card form-card--wide" data-demo-form>
-            <p class="demo-note">Preview only. Saving is not available yet.</p>
+        <div class="form-card form-card--wide">
             <h2 class="form-card__legend form-card__legend--lg">Verify &amp; record relief contribution</h2>
-
-            <div class="field">
-                <label class="field__label" for="cash-amount">Cash portion (LKR)</label>
-                <input class="input" type="number" id="cash-amount" name="cash_amount" value="<?= e($draft['cash_amount']) ?>" placeholder="25,000" disabled>
-            </div>
-
-            <div class="field">
-                <label class="field__label" for="receipt-number">Receipt number</label>
-                <input class="input" type="text" id="receipt-number" name="receipt_number" value="<?= e($draft['receipt_number']) ?>" placeholder="INV-0319" disabled>
-            </div>
-
-            <p class="page-intro__meta">Allocation: 100% Aid Pool (Disaster Mode default)</p>
-
+            <p class="page-intro__meta">
+                Once the sponsor sends you their proof, record the contribution. The Moderator then confirms
+                what they received, and you verify both accounts before it goes into the CSR report.
+            </p>
             <div class="actions">
-                <button class="btn btn--primary" type="submit" disabled>Verify &amp; record</button>
+                <a class="btn btn--primary" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions/create">Record contribution</a>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions">All contributions</a>
             </div>
         </div>
     </div>
 </div>
 
 <div class="notice notice--info notice--full">
-    Disaster mode contributions follow the same rules: recorded with a receipt, logged in the append-only ledger, visible on the Transparency Dashboard.
+    Disaster Mode contributions are record-keeping only: no points move and nothing touches the ledger. Verified contributions appear in the sponsor's CSR report and the transparency records.
 </div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

@@ -24,7 +24,7 @@ $notifications ??= [
         'detail' => 'Handover step is now open — upload your photos.',
         'time'   => '10 min ago',
         'unread' => true,
-        'href'   => base_url() . '/bookings/1?state=handover',
+        'href'   => base_url() . '/bookings',
     ],
     [
         'icon'   => 'alert-triangle',
@@ -32,7 +32,7 @@ $notifications ??= [
         'detail' => 'Return by 17 Jul to keep your on-time streak.',
         'time'   => '2 h ago',
         'unread' => true,
-        'href'   => base_url() . '/bookings/1',
+        'href'   => base_url() . '/bookings',
     ],
     [
         'icon'   => 'gift',
