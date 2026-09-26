@@ -11,6 +11,7 @@ declare(strict_types=1);
  * @var array $draft             values entered so far
  * @var array $errors            per-field messages from the Validator
  * @var array $agreementStatuses value => label
+ * @var array $accounts          sponsor login accounts that may be linked
  */
 
 $draft             = $draft ?? [];
@@ -60,7 +61,8 @@ include __DIR__ . '/../../../partials/header.php';
         </div>
         <p class="field__hint">
             The login is in the contact person's name and signs in with the contact email above,
-            so both are required when this is on. Leave it off to add the company without a login.
+            so both are required when this is on. Leave the existing account selection empty to
+            create a new login. Leave this off to link the existing sponsor account selected above.
         </p>
 
         <div class="field">
