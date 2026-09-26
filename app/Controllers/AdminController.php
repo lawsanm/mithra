@@ -775,7 +775,8 @@ final class AdminController extends Controller
     private function user(int $id): ?array
     {
         $users = new User($this->pdo);
-        $row   = $users->findWithDivision($id);
+        // Staff accounts (liaison, admin, sponsor) belong to no division.
+        $row   = $users->findWithDivision($id) ?? $users->find($id);
 
         if ($row === null) {
             return null;

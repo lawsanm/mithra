@@ -2,8 +2,8 @@
 /config/config.php
 
 # Uploaded member photos and evidence
-/storage/uploads/*
-!/storage/uploads/*/
+/storage/uploads/**
+!/storage/uploads/**/
 !/storage/uploads/**/.gitkeep
 /public/uploads/
 
