@@ -41,7 +41,7 @@ $accountLinks = match ($chrome) {
     default => [
         ['Profile', '/profile'], ['Public Profile', '/members/' . $memberId],
         ['Trust Score', '/trust'], ['Ratings', '/ratings'], ['Wallet', '/wallet'],
-        ['Gifting History', '/gifts'], ['Donations', '/donations/1'],
+        ['Gifting History', '/gifts'], ['Donations', '/items?type=donations'],
         ['Aid Grants', '/aid-grants'], ['Community', '/community/temporary'],
         ['Notifications', '/notifications'], ['Settings', '/settings'],
         ['Transparency', '/transparency'], ['Help', '/help'],

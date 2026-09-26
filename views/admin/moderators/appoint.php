@@ -220,7 +220,8 @@ include __DIR__ . '/../../../partials/header.php';
     </section>
 
     <div class="u-mt-6">
-        <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/objections/<?= e((string) $division['id']) ?>">View objection details</a>
+        <?php // Objection details belong to an appointment record, which this preview never saves. ?>
+        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">View objection details</button><span class="demo-note">Not available in this demo</span></span>
     </div>
 </div>
 

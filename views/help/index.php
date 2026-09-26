@@ -50,9 +50,11 @@ $faqs ??= [
     ],
 ];
 
+// Visitors and staff have no division moderator, so the line stays generic for them.
+$moderatorName = (string) ($viewer['moderator'] ?? '');
 $moderator ??= [
-    'line' => 'Your moderator, ' . $viewer['moderator'] . ', can help with verification, disputes and anything '
-            . 'division-specific.',
+    'line' => ($moderatorName !== '' ? 'Your moderator, ' . $moderatorName . ',' : 'Your GN division moderator')
+            . ' can help with verification, disputes and anything division-specific.',
 ];
 
 $pageTitle = 'Help & FAQ';
