@@ -183,7 +183,7 @@ Borrower, Lender, Donor and Recipient are all the same Member role — every mem
 | :--- | :--- | :--- |
 | **Member** | A verified resident of one GN division (home community), optionally also holding one temporary community. | List items, browse, request, confirm handover and return, donate, gift, request aid, rate. |
 | **Moderator** | One trusted resident per GN division, selected through the process in Section 16. Holds a 500-point conduct bond. | Verify new members, approve listings and validate declared values, vouch for aid requests, resolve contested damage cases in person, report disasters. |
-| **Sponsor Liaison** | Platform-wide role linking sponsor companies and the platform. | Onboard sponsors, record contributions (General / Aid), approve aid grants, top up the Reserve Pool, verify and record Disaster Mode contributions, generate CSR reports, receive monthly moderator-activity summaries. |
+| **Sponsor Liaison** | Platform-wide role linking sponsor companies and the platform. | Onboard sponsors and create their sponsor logins (Section 15.10), record contributions (General / Aid), approve aid grants, top up the Reserve Pool, verify and record Disaster Mode contributions, generate CSR reports, receive monthly moderator-activity summaries. |
 | **Admin** | The platform operator (project team in production; lecturer/panel during evaluation). | Manage divisions and categories, run moderator selection and appointment, view global analytics, handle escalated disputes, toggle Disaster Mode, act as interim moderator before the first appointment. |
 | **Sponsor** | A company funding the points economy for CSR visibility. | Make contributions and choose their type (General / Aid), view the CSR impact dashboard and reports, upload branding, respond to Disaster Mode alerts. |
 
@@ -593,13 +593,62 @@ Disaster Mode is an alert-and-connect bridge between a GN division and its spons
 3. **All sponsors are alerted** that there is an emergency in the named division.
 4. **The platform connects** each interested sponsor directly with the division's Moderator.
 5. **Relief is arranged off-platform.** A sponsor who chooses to help provides cash or goods directly to the Moderator for relief work. Mithra does not process this contribution and no points are involved.
-6. **The Sponsor Liaison verifies and records** the contribution (amount or goods, date, recipient Moderator, receipts), so it appears in the sponsor's CSR report and the transparency records. The Liaison does not gate or approve the relief.
+6. **The Sponsor Liaison verifies and records** the contribution (amount or goods, date, recipient Moderator, receipts), so it appears in the sponsor's CSR report and the transparency records. The Liaison does not gate or approve the relief. Verification checks the sponsor's account against the Moderator's (see 14.3).
 
 ### 14.2 Turning it off
 
 - The Admin switches Disaster Mode off when the emergency has passed (or at the planned end date).
 - Alerts and the active-emergency status stop. Because no in-system rules were changed, nothing needs to be reverted.
 - The Liaison's verified contribution records remain available for CSR reporting and audit.
+
+### 14.3 Contribution verification — receipts from both parties
+
+The contribution itself is always off-platform. What the platform adds is two independent accounts of it, which the Liaison checks against each other before anything reaches a CSR report.
+
+1. **Handover (off-platform).** The sponsor gives cash or goods to the division's Moderator. The Moderator gives the sponsor a signed acknowledgement slip with a number (e.g. `ACK-KOL-014`).
+2. **Sponsor's proof → Liaison.** The sponsor sends the Liaison their proof (bank transfer slip, supplier invoice or delivery note). The Liaison **records the contribution**: disaster, sponsor, cash or goods, description, value, date handed over, the sponsor's receipt reference and uploaded proof. Status: *Awaiting Moderator*. The Moderator is notified.
+3. **Moderator's confirmation.** The Moderator states what they actually received: *received as described*, *received but different* (with a note) or *not received*. They enter their acknowledgement number, upload the signed slip and a photo of what arrived, and link the relief records (§16.3) they handed out from it. Status: *Ready to verify*.
+4. **Liaison verifies.** The Liaison sees both accounts side by side (kind, quantity, value, date, receipts), with a per-line *agrees / differs* check, plus the linked relief records and their total. Then the Liaison:
+   - **Verifies & records**, entering the verified value. The record locks and appears in the sponsor's CSR report and the transparency records.
+   - **Queries the sponsor or the Moderator** with a note when the accounts differ. The record returns to that party and the status is *Queried*.
+   - **Rejects** with a reason (e.g. never received, or a duplicate). The record is kept for audit but excluded from CSR figures.
+
+**Rules**
+- No points move and nothing touches the ledger at any step. This is record-keeping only (§14).
+- The Liaison can edit or delete a contribution only until it is verified. Changing its kind, value or date clears the Moderator's confirmation and asks them to confirm again.
+- A Moderator confirms only contributions for disasters in their own division.
+- The verified value, not the sponsor's claimed value, is what the CSR report shows.
+- Every status change is kept as a timeline entry (who, what, when) for audit.
+
+**Statuses:** Awaiting Moderator → Ready to verify → Verified, or Queried (then back to Ready to verify) / Rejected.
+
+### 14.4 Implementation status (as of 26 Sep 2026)
+
+**Built — front end (preview pages: inputs disabled, own sample data):**
+
+| Screen | Route | View |
+| :--- | :--- | :--- |
+| Liaison: contribution list with status filters | `/sponsor-liaison/disasters/contributions` | `views/sponsor-liaison/disasters/contributions/index.php` |
+| Liaison: record a contribution | `/sponsor-liaison/disasters/contributions/create` | `.../contributions/create.php` |
+| Liaison: verify (both accounts, receipts, linked relief, decision) | `/sponsor-liaison/disasters/contributions/{id}` | `.../contributions/show.php` |
+| Liaison: edit before verification | `/sponsor-liaison/disasters/contributions/{id}/edit` | `.../contributions/edit.php` |
+| Moderator: contributions to confirm | `/moderator/disasters/contributions` | `views/moderator/disasters/contributions/index.php` |
+| Moderator: confirm receipt | `/moderator/disasters/contributions/{id}/confirm` | `.../contributions/confirm.php` |
+
+Shared form fields: `partials/disaster-contribution-fields.php`. Entry links were added to the Liaison's Disasters and Connection pages and to the Moderator's Disaster relief page.
+
+**Already built — backend:** the Moderator's relief records (`DisasterReliefController`, `DisasterReliefService`, `disaster_relief_records`).
+
+**Remaining — backend (module 4.6):**
+- **Schema migration:** extend `disaster_contributions` with `status`, `handed_over_on`, `sponsor_proof` file paths, `verified_value`, `liaison_note` and `recorded_by`. Add `disaster_contribution_confirmations` (contribution_id, moderator_id, outcome, received_description, received_value, received_on, ack_reference, proof file paths, note, confirmed_at), `disaster_contribution_relief_links` (contribution_id, relief_record_id) and `disaster_contribution_events` (contribution_id, actor_id, action, note, at) for the timeline.
+- **Model:** `DisasterContribution` (list by status and filter, find with both accounts, linked relief, timeline).
+- **Service:** `DisasterContributionService` with `record`, `update` (clears the confirmation when kind, value or date changes), `delete` (unverified only), `confirm` (Moderator, own division only), `verify`, `query` and `reject`. It enforces the status transitions and the lock after verification, and runs each change in a transaction with a timeline entry.
+- **Controllers:** Liaison actions in `SponsorLiaisonController` (or a new `DisasterContributionController`), and Moderator confirm actions alongside `DisasterReliefController`. Swap the six routes above from view names to controller actions and add the POST routes (store, update, delete, confirm, decide).
+- **Uploads:** store the sponsor's proof and the Moderator's acknowledgement through `PhotoStore` under `storage/uploads/disaster-proofs/`, served only to the Liaison, the Moderator and the Admin.
+- **Notifications:** notify the Moderator when a contribution is recorded or queried, the Liaison when the Moderator confirms, and the sponsor when a contribution is verified.
+- **CSR report:** read verified contributions (verified value) into `/sponsor-liaison/csr-reports` and the sponsor's CSR page, and into the transparency records.
+- **Tests:** status transitions, the lock after verification, re-confirmation on edit, and the Moderator division check.
+- **Views:** remove the sample data and `disabled` attributes once the controllers pass real data (no mixing of sample and real data).
 
 ---
 
@@ -664,6 +713,22 @@ Because point contributions are converted 1:1 with no deductions, operating cost
 
 - **Sponsor Liaison** — compensated in money from operational funding, not in points. The Liaison receives no point stipend (a company-side role should not draw on community points). In the project demo, the team plays the Liaison at no cost.
 - **Moderator expense reimbursements** — see Section 16.6.
+
+### 15.10 Sponsor accounts
+
+The **Sponsor Liaison** onboards each sponsor company after agreeing the written terms offline (Section 15.1), and gives it a login:
+
+| Onboarding choice | What is created | When the sponsor can sign in |
+| :--- | :--- | :--- |
+| **Onboard sponsor** with *Create a login* switched on | An active sponsor profile and an active sponsor login in the contact person's name (contact person, contact email, NIC, mobile, company address), with a starting password the Liaison hands over in person. | Immediately, with the contact email and starting password. The sponsor can change the password from their account settings. |
+| **Onboard sponsor** with *Create a login* off | An active sponsor profile with no login. | Not at all — the Liaison records contributions on the company's behalf. |
+
+Rules:
+
+- Only the Sponsor Liaison creates sponsor logins.
+- A login never creates points — contributions are still collected offline and recorded by the Liaison (Section 15.1).
+- The company name, NIC, mobile number and email must not already be on file.
+- The sponsor profile shows the Liaison whether the company has a login and whether it is active.
 
 ---
 
@@ -814,7 +879,11 @@ Member submits → Moderator vouches or rejects (5 days) → Liaison approves, a
 
 ### 18.7 Disaster Mode
 
-Moderator reports → Admin activates with end date → all sponsors alerted → platform connects sponsor and Moderator → relief arranged off-platform → Liaison verifies and records the contribution → Admin switches off.
+Moderator reports → Admin activates with end date → all sponsors alerted → platform connects sponsor and Moderator → relief arranged off-platform → Liaison records the sponsor's proof → Moderator confirms receipt → Liaison verifies both and records the contribution (§14.3) → Admin switches off.
+
+### 18.8 Sponsor onboarding
+
+Liaison agrees the written terms with the company offline → opens **Onboard sponsor** → enters company, contact and agreement details → switches on *Create a login* and adds the contact person's NIC, mobile, company address and a starting password → company and login are created active → Liaison hands the starting password to the sponsor → sponsor signs in. See Section 15.10.
 
 ---
 
@@ -886,11 +955,11 @@ Moderator reports → Admin activates with end date → all sponsors alerted →
 | # | Module | Scope |
 | :--- | :--- | :--- |
 | 4.1 | Point Ledger & Transparency CRUD | Append-only ledger, member and global views, six-pool invariant check, transparency dashboard. |
-| 4.2 | Sponsor CRUD | Liaison: sponsor profiles, agreements, branding, CSR tags. |
+| 4.2 | Sponsor CRUD | Liaison: sponsor profiles, agreements, branding, CSR tags, and sponsor logins created at onboarding (§15.10). |
 | 4.3 | Sponsor Contribution & Pool CRUD | Record contributions (amount, receipt number, General/Aid split), 1:1 point creation, Reserve top-ups, pool balance views, CSR reports. |
 | 4.4 | Aid Grant CRUD | Request → vouch → approve → use → expiry → audit. |
 | 4.5 | Gifting CRUD | Send/receive with reason, caps, pattern detection, receive toggle. |
-| 4.6 | Disaster Mode & Notifications CRUD | Admin toggle, sponsor alerts, sponsor–moderator connection, Liaison contribution records; in-app notifications; scheduled temporary-membership expiry. |
+| 4.6 | Disaster Mode & Notifications CRUD | Admin toggle, sponsor alerts, sponsor–moderator connection, Liaison contribution records with two-party verification (sponsor proof + Moderator confirmation, §14.3); in-app notifications; scheduled temporary-membership expiry. |
 
 ---
 
@@ -970,7 +1039,7 @@ MySQL 8.x, InnoDB engine, `utf8mb4` character set with `utf8mb4_unicode_ci` coll
 | `moderator_resolutions` | id, damage_claim_id, moderator_id, outcome_category, notes, points_movement (JSON), lender_signoff_at, borrower_signoff_at, closed_at |
 | `disputes` | id, claim_or_booking_id, escalated_to_admin, status, resolution, ruling_at |
 | `aid_grants` | id, member_id, requested_amount, purpose, moderator_id, moderator_vouch, liaison_id, approved_amount, status, expires_at |
-| `sponsors` | id, company_name, agreement_ref, branding, active |
+| `sponsors` | id, user_id (sponsor login, optional), company_name, agreement_ref, branding, active |
 | `sponsor_contributions` | id, sponsor_id, cash_amount, receipt_number, general_points, aid_points, recorded_by_liaison, recorded_at |
 | `gifts` | id, sender_id, recipient_id, amount, reason, sent_at |
 | `gift_usage_counters` | id, user_id, day, day_total, year, year_total |
@@ -980,7 +1049,10 @@ MySQL 8.x, InnoDB engine, `utf8mb4` character set with `utf8mb4_unicode_ci` coll
 | `moderator_conduct_history` | id, moderator_id, incident_type, notes, recorded_by, at *(permanent)* |
 | `notifications` | id, user_id, type, payload, read_at |
 | `disaster_events` | id, gn_division_id, started_by, started_at, planned_end, ended_at, reason |
-| `disaster_contributions` | id, disaster_event_id, sponsor_id, contribution_kind (cash/goods), amount_or_description, receipt_reference, verified_by_liaison, verified_at |
+| `disaster_contributions` | id, disaster_event_id, sponsor_id, contribution_kind (cash/goods), amount_or_description, receipt_reference, status, verified_value, verified_by_liaison, verified_at |
+| `disaster_contribution_confirmations` | id, contribution_id, moderator_id, outcome (received/partial/none), received_description, received_value, received_on, ack_reference, note, confirmed_at |
+| `disaster_contribution_relief_links` | contribution_id, relief_record_id |
+| `disaster_relief_records` | id, disaster_event_id, moderator_id, sponsor_id, relief_type, description, location, households_reached, estimated_value, distributed_on |
 | `cron_runs` | id, job_name, started_at, finished_at, status, notes |
 
 ---

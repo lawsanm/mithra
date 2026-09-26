@@ -28,7 +28,15 @@ final class GnDivision extends BaseModel
         );
     }
 
-    /** @return array<string, mixed>|null */
+    /**
+     * The moderator_assignments columns are wrapped in MAX() because MySQL 8's
+     * ONLY_FULL_GROUP_BY refuses bare columns it cannot prove are single-valued.
+     * The join matches only the division's current moderator's active
+     * appointment (one moderator per division), so MAX() reads that
+     * single row's values.
+     *
+     * @return array<string, mixed>|null
+     */
     public function findWithStaff(int $id): ?array
     {
         return $this->selectOne(
@@ -36,8 +44,9 @@ final class GnDivision extends BaseModel
                     d.moderator_id, d.disaster_mode_active, d.disaster_mode_until,
                     COUNT(DISTINCT ud.user_id) AS member_count,
                     m.full_name AS moderator_name,
-                    ma.appointed_at AS moderator_since,
-                    ma.bond_points, ma.bond_status
+                    MAX(ma.appointed_at) AS moderator_since,
+                    MAX(ma.bond_points) AS bond_points,
+                    MAX(ma.bond_status) AS bond_status
                FROM gn_divisions d
                LEFT JOIN user_divisions ud ON ud.gn_division_id = d.id AND ud.status = :udactive
                LEFT JOIN users m ON m.id = d.moderator_id

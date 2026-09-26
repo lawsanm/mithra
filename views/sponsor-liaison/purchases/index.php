@@ -11,19 +11,6 @@ declare(strict_types=1);
  * @var string $dateRange current date range filter
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$purchases ??= [
-    ['id' => 1, 'date' => '15 Jul', 'sponsor' => 'Northwind Co', 'receipt' => 'INV-0312', 'allocation' => 'allocation 70% Sponsor · 30% Aid', 'amount' => 'LKR 10,000'],
-    ['id' => 2, 'date' => '05 Jul', 'sponsor' => 'ACM Corp',     'receipt' => 'INV-0306', 'allocation' => 'allocation 50% Sponsor · 50% Aid', 'amount' => 'LKR 7,500'],
-    ['id' => 3, 'date' => '28 Jun', 'sponsor' => 'MNM',          'receipt' => 'INV-0298', 'allocation' => 'allocation 100% Aid',              'amount' => 'LKR 6,500'],
-    ['id' => 4, 'date' => '19 Jun', 'sponsor' => 'Global Ltd',   'receipt' => 'INV-0265', 'allocation' => 'allocation 70% Sponsor · 30% Aid', 'amount' => 'LKR 5,000'],
-    ['id' => 5, 'date' => '10 Jun', 'sponsor' => 'Texa',         'receipt' => 'INV-0276', 'allocation' => 'allocation 60% Sponsor · 40% Aid', 'amount' => 'LKR 5,000'],
-];
-
-$search    ??= '';
-$sponsor   ??= '';
-$dateRange ??= '';
-
 $pageTitle = 'Purchases & contributions';
 $navActive = 'purchases';
 
@@ -47,7 +34,7 @@ include __DIR__ . '/../../../partials/header.php';
     <div class="field">
         <select class="input" aria-label="Sponsor" name="sponsor" data-auto-submit>
             <option value="">All sponsors</option>
-            <?php foreach (['Northwind Co', 'ACM Corp', 'MNM', 'Global Ltd', 'Texa'] as $option): ?>
+            <?php foreach ($sponsorOptions as $option): ?>
                 <option value="<?= e($option) ?>"<?= $sponsor === $option ? ' selected' : '' ?>><?= e($option) ?></option>
             <?php endforeach; ?>
         </select>

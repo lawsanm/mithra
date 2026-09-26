@@ -37,7 +37,7 @@ $allocations ??= [
 ];
 
 $liaisonNote ??= 'No in-app payment. Submitting sends a purchase request to your Sponsor Liaison '
-                . '(A. Akalvily), who coordinates payment offline under your written agreement and '
+                . '(' . $viewer['liaison'] . '), who coordinates payment offline under your written agreement and '
                 . 'records the contribution with a receipt number.';
 
 $pageTitle = 'Purchase points';

@@ -12,66 +12,6 @@ declare(strict_types=1);
  * @var array  $requests      rows: id, title, meta, status, status_label, vouchable
  */
 
-// Sample view data — replaced by the controller once AidGrantController lands.
-$state = (string) ($_GET['status'] ?? '');
-
-$filters ??= array_map(
-    static fn (array $filter): array => $filter + ['active' => $filter['state'] === $state],
-    [
-        ['label' => 'All',            'state' => ''],
-        ['label' => 'Awaiting vouch', 'state' => 'awaiting'],
-        ['label' => 'Vouched',        'state' => 'vouched'],
-        ['label' => 'Rejected',       'state' => 'rejected'],
-    ]
-);
-
-$sampleRows = [
-    [
-        'state'        => 'awaiting',
-        'id'           => '1',
-        'title'        => 'D. Kumari — 300 pts',
-        'meta'         => 'School supplies  ·  household of 4  ·  requested 2 days ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting vouch',
-        'vouchable'    => true,
-    ],
-    [
-        'state'        => 'awaiting',
-        'id'           => '2',
-        'title'        => 'H. Perera — 500 pts',
-        'meta'         => 'Medical transport  ·  requested 4 days ago',
-        'status'       => 'warning',
-        'status_label' => 'Awaiting vouch',
-        'vouchable'    => true,
-    ],
-    [
-        'state'        => 'vouched',
-        'id'           => '3',
-        'title'        => 'A. Akalvily — 250 pts',
-        'meta'         => 'Dry rations and drinking water  ·  vouched 15 Jul  ·  with Admin',
-        'status'       => 'success',
-        'status_label' => 'Vouched',
-        'vouchable'    => false,
-    ],
-    [
-        'state'        => 'rejected',
-        'id'           => '4',
-        'title'        => 'B. Silva — 400 pts',
-        'meta'         => 'Outside this GN division  ·  rejected 13 Jul',
-        'status'       => 'error',
-        'status_label' => 'Rejected',
-        'vouchable'    => false,
-    ],
-];
-
-$requests ??= array_values(array_filter(
-    $sampleRows,
-    static fn (array $row): bool => $state === '' || $row['state'] === $state
-));
-
-$filterSummary ??= count(array_filter($sampleRows, static fn (array $row): bool => $row['state'] === 'awaiting'))
-    . ' awaiting vouch';
-
 $pageTitle = 'Aid vouching';
 $navActive = 'disasters';
 

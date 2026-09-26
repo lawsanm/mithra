@@ -13,9 +13,9 @@ declare(strict_types=1);
  */
 
 $promotion = ($promotion ?? []) + [
-    'temporary_name' => 'Dehiwala',
-    'home_line'      => 'Kollupitiya  ·  member since 2025',
-    'temporary_line' => 'Dehiwala  ·  joined 17 Jul 2026',
+    'temporary_name' => 'No temporary community selected',
+    'home_line' => $viewer['division'] ?? '',
+    'temporary_line' => 'No temporary membership recorded',
 ];
 
 ?>
@@ -42,7 +42,7 @@ $promotion = ($promotion ?? []) + [
     <p class="notice notice--warning">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-alert-triangle"></use></svg>
         Promoting swaps the two: <?= e($promotion['temporary_name']) ?> becomes your home
-        community and your Kollupitiya membership ends. Your listings there are unlisted
+        community and your current home membership ends. Your listings there are unlisted
         and active bookings must complete first. This can’t be undone from this screen.
     </p>
 

@@ -10,42 +10,6 @@ declare(strict_types=1);
  * @var array $contributions recent sponsor contributions: name, split, amount, date
  */
 
-// Sample view data — replaced by the controller once TransparencyController lands.
-$pools ??= [
-    ['label' => 'Sponsor Pool',   'value' => '48,200 pts',  'note' => 'welcome bonuses, stipends and community rewards'],
-    ['label' => 'Aid Pool',       'value' => '12,750 pts',  'note' => 'grants for essential needs'],
-    ['label' => 'Reserve Pool',   'value' => '6,400 pts',   'note' => 'covers shortfalls so no balance goes negative'],
-    ['label' => 'In-Flight Pool', 'value' => '3,180 pts',   'note' => 'rental charges + late-fee buffers · 41 bookings'],
-    ['label' => 'Retired Pool',   'value' => '1,140 pts',   'note' => 'Type A closures, awaiting recycling'],
-    ['label' => 'Member Wallets', 'value' => '121,300 pts', 'note' => 'across 2,412 wallets'],
-];
-
-$invariant ??= [
-    'badge' => 'Nightly invariant check passed',
-    'line'  => 'Last run: 17 Jul 2026, 02:00  ·  sum of the six pools = total points created from sponsor contributions',
-];
-
-$contributions ??= [
-    [
-        'name'   => 'Lanka Hardware (Pvt) Ltd',
-        'split'  => 'General 7,000  ·  Aid 3,000',
-        'amount' => '10,000 pts',
-        'date'   => '14 Jul 2026',
-    ],
-    [
-        'name'   => 'Ceylon Fresh Mart',
-        'split'  => 'General 2,500  ·  Aid 2,500',
-        'amount' => '5,000 pts',
-        'date'   => '30 Jun 2026',
-    ],
-    [
-        'name'   => 'Sunrise Pharmacy',
-        'split'  => 'Aid 2,500',
-        'amount' => '2,500 pts',
-        'date'   => '12 Jun 2026',
-    ],
-];
-
 $pageTitle = 'Transparency dashboard';
 $navActive = '';
 
@@ -72,7 +36,7 @@ include __DIR__ . '/../../partials/header.php';
 <section class="panel">
     <h2 class="visually-hidden">Accounting invariant</h2>
     <div class="media">
-        <span class="badge badge--success">
+        <span class="badge badge--<?= e($invariant['tone']) ?>">
             <span aria-hidden="true">✓</span>
             <?= e($invariant['badge']) ?>
         </span>

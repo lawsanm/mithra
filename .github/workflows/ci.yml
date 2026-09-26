@@ -55,10 +55,11 @@ jobs:
       - name: Router regression checks
         run: php tests/router.php
 
-      - name: Identity and listing rule checks
+      - name: Identity, listing and sponsor rule checks
         run: |
           php tests/identity.php
           php tests/items.php
+          php tests/sponsors.php
 
       - name: Every migration applies to a clean MySQL 8
         run: |

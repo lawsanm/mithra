@@ -41,6 +41,18 @@ final class Wallet extends BaseModel
         );
     }
 
+    public function escrow(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COALESCE(SUM(CASE WHEN l.to_pool_code = 'in_flight' THEN l.amount
+                        WHEN l.from_pool_code = 'in_flight' THEN -l.amount ELSE 0 END), 0)
+               FROM point_ledger l JOIN bookings b ON b.id = l.booking_id
+              WHERE b.borrower_id = :member
+                AND b.status IN ('accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator')",
+            ['member' => $memberId]
+        );
+    }
+
     /**
      * Points earned this month, for the dashboard's "Earned N this month".
      */

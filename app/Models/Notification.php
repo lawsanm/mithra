@@ -24,8 +24,27 @@ final class Notification extends BaseModel
      */
     public function forMember(int $memberId, string $group = ''): array
     {
-        $sql    = 'SELECT id, type, payload, created_at, read_at
-                     FROM notifications WHERE user_id = :member';
+        $sql    = 'SELECT n.id, n.type, n.payload, n.created_at, n.read_at,
+                          b.id AS booking_id, b.end_date, bi.title AS booking_title,
+                          lender.full_name AS lender_name, g.id AS gift_id, g.amount AS gift_amount,
+                          g.reason AS gift_reason, sender.full_name AS sender_name,
+                          ag.id AS grant_id, moderator.full_name AS moderator_name,
+                          i.id AS item_id, i.title AS item_title, d.name AS division_name
+                     FROM notifications n
+                LEFT JOIN bookings b ON b.id = JSON_UNQUOTE(JSON_EXTRACT(n.payload, \'$.booking_id\'))
+                                    AND b.borrower_id = n.user_id
+                LEFT JOIN items bi ON bi.id = b.item_id
+                LEFT JOIN users lender ON lender.id = b.lender_id
+                LEFT JOIN gifts g ON g.id = JSON_UNQUOTE(JSON_EXTRACT(n.payload, \'$.gift_id\'))
+                                 AND g.recipient_id = n.user_id
+                LEFT JOIN users sender ON sender.id = g.sender_id
+                LEFT JOIN aid_grants ag ON ag.id = JSON_UNQUOTE(JSON_EXTRACT(n.payload, \'$.aid_grant_id\'))
+                                      AND ag.member_id = n.user_id
+                LEFT JOIN users moderator ON moderator.id = ag.moderator_id
+                LEFT JOIN items i ON i.id = JSON_UNQUOTE(JSON_EXTRACT(n.payload, \'$.item_id\'))
+                                 AND i.owner_id = n.user_id
+                LEFT JOIN gn_divisions d ON d.id = i.gn_division_id
+                    WHERE n.user_id = :member';
         $params = ['member' => $memberId];
 
         if (isset(self::GROUPS[$group])) {
@@ -36,10 +55,57 @@ final class Notification extends BaseModel
                 $names[]       = ':' . $name;
                 $params[$name] = $type;
             }
-            $sql .= ' AND type IN (' . implode(', ', $names) . ')';
+            $sql .= ' AND n.type IN (' . implode(', ', $names) . ')';
         }
 
-        return $this->select($sql . ' ORDER BY created_at DESC', $params);
+        return $this->select($sql . ' ORDER BY n.created_at DESC, n.id DESC', $params);
+    }
+
+    public function unreadCount(int $memberId): int
+    {
+        return (int) $this->selectValue('SELECT COUNT(*) FROM notifications WHERE user_id = :id AND read_at IS NULL', ['id' => $memberId]);
+    }
+
+    /** Entity names are resolved from IDs, so account and listing edits appear immediately. */
+    public function displayForMember(int $memberId, string $group = ''): array
+    {
+        return array_map(static function (array $row): array {
+            $payload = json_decode((string) $row['payload'], true) ?: [];
+            if ($row['booking_id'] !== null) {
+                $payload['title'] = $row['type'] === 'return_due'
+                    ? 'Return due ' . date('j M Y', strtotime($row['end_date'])) . ': ' . $row['booking_title']
+                    : $row['lender_name'] . ' accepted your request for ' . $row['booking_title'];
+                $payload['detail'] = $row['type'] === 'return_due'
+                    ? 'Return by ' . date('j M Y', strtotime($row['end_date'])) . '.'
+                    : 'View your booking for handover details.';
+                $payload['href'] = '/bookings/' . $row['booking_id'];
+            }
+            if ($row['gift_id'] !== null) {
+                $payload['title'] = $row['sender_name'] . ' sent you a gift of ' . $row['gift_amount'] . ' pts';
+                $payload['detail'] = $row['gift_reason'];
+            }
+            if ($row['grant_id'] !== null) {
+                $payload['detail'] = 'Moderator ' . ($row['moderator_name'] ?? 'not assigned') . ' · request #A-' . $row['grant_id'];
+            }
+            if ($row['item_id'] !== null) {
+                $label = match ($row['type']) {
+                    'listing_adjusted' => 'Listing approved with a new value',
+                    'listing_rejected' => 'Listing rejected',
+                    default => 'Listing approved',
+                };
+                $payload['title'] = $label . ': ' . $row['item_title'];
+                if ($row['type'] === 'listing_approved') {
+                    $payload['detail'] = 'Approved for ' . $row['division_name'] . ' members.';
+                }
+            }
+            $href = (string) ($payload['href'] ?? '/notifications');
+            if (!str_starts_with($href, '/') || str_starts_with($href, '//')) {
+                $href = '/notifications';
+            }
+            return ['icon' => (string) ($payload['icon'] ?? 'info'), 'title' => (string) ($payload['title'] ?? 'Notification'),
+                'detail' => (string) ($payload['detail'] ?? ''), 'time' => date('j M Y, H:i', strtotime($row['created_at'])),
+                'unread' => $row['read_at'] === null, 'href' => base_url() . $href];
+        }, $this->forMember($memberId, $group));
     }
 
     /**

@@ -12,33 +12,6 @@ declare(strict_types=1);
  * @var string $offerNote
  */
 
-// Sample view data — replaced by the controller once SponsorController lands.
-$disaster ??= [
-    'title'        => 'Wellawatte flooding — How you can help',
-    'status'       => 'error',
-    'status_label' => 'Disaster Mode active',
-    'meta'         => 'Declared 15 Jul  ·  60 households affected  ·  coordinated by your liaison A. Akalvily',
-];
-
-$moderator ??= [
-    'initials'     => 'JK',
-    'name'         => 'Mod. J. Kavipriya — Wellawatte GN Division',
-    'quote'        => '"Low-lying lanes are worst hit. Most urgent: dry rations, drinking water, and tarpaulins for roof damage."',
-    'status_label' => 'Verified need — confirmed 15 Jul, 13:40',
-];
-
-$activeAlert ??= [
-    'event_name' => 'Wellawatte flooding',
-    'division'   => 'Wellawatte GN Division',
-    'affected'   => '60 households affected',
-];
-
-$offerNote ??= 'Disaster contributions default to 100% Aid Pool. Your liaison verifies and records '
-             . 'everything with a receipt.';
-
-$footerNote ??= 'Relief reaches members through the moderator — sponsors never handle member data. '
-              . 'Your contribution is logged and appears on the Transparency Dashboard.';
-
 $pageTitle = 'Disaster relief';
 $navActive = 'dashboard';
 

@@ -11,26 +11,6 @@ declare(strict_types=1);
  * @var array $history   rows: period, meta, duration
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$disaster ??= [
-    'active'       => false,
-    'status'       => 'success',
-    'status_label' => 'Currently inactive',
-    'note'         => 'Pool payouts are operating normally across all divisions.',
-];
-
-$stats ??= [
-    ['label' => 'Activations (all time)', 'value' => '4',      'note' => 'Most recent: 15 Jul'],
-    ['label' => 'Sponsors notified',      'value' => '23',     'note' => 'Across all activations'],
-    ['label' => 'Avg. duration',          'value' => '48 hrs', 'note' => 'From activation to close', 'primary' => false],
-];
-
-$history ??= [
-    ['period' => 'Activated 15 Jul, 09:20  →  deactivated 17 Jul, 06:20', 'meta' => 'Triggered by Mod. J. Kavipriya  ·  13 sponsors notified', 'duration' => '45 hrs'],
-    ['period' => 'Activated 01 Jul, 20:30  →  deactivated 03 Jul, 09:30', 'meta' => 'Triggered by Mod. A. Akalvily  ·  18 sponsors notified',  'duration' => '37 hrs'],
-    ['period' => 'Activated 15 Jun, 12:00  →  deactivated 18 Jun, 12:00', 'meta' => 'Triggered by Mod. J. Kavipriya  ·  23 sponsors notified', 'duration' => '72 hrs'],
-];
-
 $pageTitle = 'Disaster Mode';
 $navActive = 'disasters';
 
@@ -49,8 +29,7 @@ include __DIR__ . '/../../../partials/header.php';
         <span class="badge badge--<?= e($disaster['status']) ?>"><?= e($disaster['status_label']) ?></span>
         <p class="panel__note"><?= e($disaster['note']) ?></p>
         <div class="actions panel__actions">
-            <button class="btn btn--ghost" type="button" disabled title="Not available in this demo">Notify sponsors</button>
-            <button class="btn btn--primary" type="button" disabled title="Not available in this demo">Activate Disaster Mode</button>
+            <a class="btn btn--primary" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions">Verify contributions</a>
         </div>
     </div>
 </section>
@@ -60,6 +39,21 @@ include __DIR__ . '/../../../partials/header.php';
         <?php $statTone = ($stat['primary'] ?? true) ? 'primary' : ''; include __DIR__ . '/../../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
+
+<section class="section">
+    <div class="section__head">
+        <h2 class="section__title">Sponsor contributions</h2>
+        <a class="link section__action" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions">View all</a>
+    </div>
+    <p class="page-intro__meta">
+        Sponsors give relief to the Moderator off-platform. Record each contribution with the sponsor's proof,
+        let the Moderator confirm what they received, then verify it for the sponsor's CSR report.
+    </p>
+    <div class="actions">
+        <a class="btn btn--primary" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions/create">Record contribution</a>
+        <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/disasters/contributions?status=ready">Ready to verify</a>
+    </div>
+</section>
 
 <section class="section">
     <div class="section__head">

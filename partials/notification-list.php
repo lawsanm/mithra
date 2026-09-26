@@ -9,6 +9,9 @@ declare(strict_types=1);
  */
 
 ?>
+<?php if ($notifications === []): ?>
+    <p class="empty-state">No notifications to show.</p>
+<?php endif; ?>
 <ul class="row-list">
     <?php foreach ($notifications as $notification): ?>
         <li>

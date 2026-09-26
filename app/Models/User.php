@@ -123,9 +123,10 @@ final class User extends BaseModel
      * The caller passes an already-validated set and an already-hashed
      * password — this method makes no business decisions and never hashes (§6).
      * Every new account starts 'pending': only a moderator's approval moves it
-     * on (Plan §18.1).
+     * on (Plan §18.1). A sponsor login the Sponsor Liaison creates is opened
+     * straight after, in the same transaction (§15.10).
      *
-     * @param array{role_id:int, full_name:string, nic:string, nic_photo_path:string,
+     * @param array{role_id:int, full_name:string, nic:string, nic_photo_path:?string,
      *              phone:string, email:?string, address:string, password_hash:string} $data
      */
     public function create(array $data): int
@@ -232,6 +233,52 @@ final class User extends BaseModel
               ORDER BY u.full_name",
             ['id' => $id]
         );
+    }
+
+    /**
+     * The moderator of a member's home division, or null when the account has
+     * no home division or the division has no moderator.
+     */
+    public function homeModeratorName(int $userId): ?string
+    {
+        $name = $this->selectValue(
+            "SELECT m.full_name
+               FROM user_divisions ud
+               JOIN gn_divisions d ON d.id = ud.gn_division_id
+               JOIN users m        ON m.id = d.moderator_id
+              WHERE ud.user_id = :id AND ud.membership_type = 'home'",
+            ['id' => $userId]
+        );
+
+        return $name === false ? null : (string) $name;
+    }
+
+    /**
+     * The longest-standing active account in a role, e.g. the Sponsor Liaison.
+     */
+    public function firstNameInRole(string $roleCode): ?string
+    {
+        $name = $this->selectValue(
+            "SELECT u.full_name
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE r.code = :code AND u.status = 'active'
+              ORDER BY u.id
+              LIMIT 1",
+            ['code' => $roleCode]
+        );
+
+        return $name === false ? null : (string) $name;
+    }
+
+    /**
+     * The name a greeting uses, e.g. "T.H.K. Madushan" -> "Madushan".
+     */
+    public static function shortName(string $fullName): string
+    {
+        $parts = explode(' ', trim($fullName));
+
+        return end($parts) ?: $fullName;
     }
 
     public function countByRole(string $roleCode): int

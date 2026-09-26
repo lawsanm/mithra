@@ -150,7 +150,7 @@ foreach (['+94 77 123 4567', '0771234567', '94771234567'] as $spelling) {
     expect('throttle key for ' . $spelling, LoginThrottle::identifierHash('login', $spelling), $phoneKey);
     $checks++;
 }
-expect('email case', LoginThrottle::identifierHash('login', ' Lawsan@Email.com'), LoginThrottle::identifierHash('login', 'lawsan@email.com'));
+expect('email case', LoginThrottle::identifierHash('login', ' LawsanM@Gmail.com'), LoginThrottle::identifierHash('login', 'lawsanm@gmail.com'));
 check(LoginThrottle::identifierHash('reset-code', '0771234567') !== $phoneKey, 'Scopes must be separate.');
 $checks += 2;
 

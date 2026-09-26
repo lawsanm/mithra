@@ -15,32 +15,14 @@ declare(strict_types=1);
 
 // Merge key-by-key: the host page already sets $item, but not every key the
 // modal needs, so ??= on the whole array would leave gaps.
-$item = ($item ?? []) + [
-    'title'      => 'Bosch Cordless Drill GSB 120',
-    'owner'      => 'Madushan',
-    'owner_meta' => 'T.H.K. Madushan  ·  Trust 96  ·  0.4 km',
-];
+$item = ($item ?? []) + ['title' => '', 'owner' => '', 'owner_meta' => ''];
 
-$pricing ??= [
-    [
-        'value'    => 'daily',
-        'title'    => 'Daily rate  ·  15 pts × 12 days',
-        'total'    => 'Total 180 pts',
-        'selected' => false,
-    ],
-    [
-        'value'       => 'monthly',
-        'title'       => 'Monthly rate  ·  flat',
-        'total'       => 'Total 150 pts',
-        'selected'    => true,
-        'recommended' => 'Cheaper — save 30 pts',
-    ],
-];
+$pricing ??= [];
 
 $quote = ($quote ?? []) + [
     'from'   => '',
     'to'     => '',
-    'escrow' => '150 pts',
+    'escrow' => 'Choose dates for a quote',
 ];
 
 ?>

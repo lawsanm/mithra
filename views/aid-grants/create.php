@@ -20,8 +20,8 @@ $purposes ??= [
 ];
 
 $draft ??= [
-    'purpose' => 'School supplies',
-    'amount'  => '150',
+    'purpose' => '',
+    'amount'  => '',
     'details' => '',
 ];
 

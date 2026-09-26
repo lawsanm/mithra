@@ -11,36 +11,6 @@ declare(strict_types=1);
  * @var array $draft   approved_amount, reason
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$grant ??= [
-    'id'           => 1,
-    'initials'     => 'ML',
-    'name'         => 'M. Lawsan',
-    'grant_number' => '#A-1042',
-    'status'       => 'info',
-    'status_label' => 'Awaiting your approval',
-    'meta'         => 'Grant #A-1042  ·  requested 10 Jul  ·  Kollupitiya  ·  Trust 96',
-];
-
-$request ??= [
-    'purpose'          => 'School supplies',
-    'amount_requested' => '300 pts',
-    'pool_balance'      => '12,750 pts',
-    'prior_grants'      => '1 (closed Jun 2026)',
-    'note'              => 'Two children starting the new term, need books and shoes. Evidence attached — school letters for both.',
-];
-
-$vouch ??= [
-    'initials' => 'JK',
-    'name'     => 'Vouched by Moderator J. Kavipriya  ·  12 Jul',
-    'note'     => 'Known family, genuine need. No conflict of interest declared.',
-];
-
-$draft ??= [
-    'approved_amount' => '300',
-    'reason'          => '',
-];
-
 $pageTitle = $grant['name'] . ' — aid grant review';
 $navActive = 'aid-grants';
 

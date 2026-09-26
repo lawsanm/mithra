@@ -5,27 +5,18 @@ declare(strict_types=1);
 /**
  * Onboard a sponsor. Figma "Sponsor — Onboarding" (377:155).
  *
- * @var array $draft  values entered so far
- * @var array $errors per-field messages from the Validator
+ * The Sponsor login section is optional: switched on, the Liaison creates the
+ * company's login in the same step, already active.
+ *
+ * @var array $draft             values entered so far
+ * @var array $errors            per-field messages from the Validator
+ * @var array $agreementStatuses value => label
+ * @var array $accounts          sponsor login accounts that may be linked
  */
 
-// Sample view data — replaced by the controller once SponsorLiaisonController lands.
-$draft ??= [
-    'company_name'       => '',
-    'contact_person'     => '',
-    'contact_email'      => '',
-    'agreement_status'   => '',
-    'agreement_details'  => '',
-    'internal_notes'     => '',
-];
-
-$errors ??= [];
-
-$agreementStatuses = [
-    'signed'  => 'Signed agreement on file',
-    'pending' => 'Pending signature',
-    'verbal'  => 'Verbal agreement only',
-];
+$draft             = $draft ?? [];
+$errors            = $errors ?? [];
+$agreementStatuses = $agreementStatuses ?? [];
 
 $pageTitle = 'Onboard a sponsor';
 $navActive = 'sponsors';
@@ -43,90 +34,118 @@ include __DIR__ . '/../../../partials/header.php';
 
 <h1 class="detail__title">Onboard a sponsor</h1>
 
-<div class="form-card" data-demo-form>
-    <p class="demo-note">Preview only. Saving is not available yet.</p>
-    <div class="field">
-        <label class="field__label" for="company-name">Company name</label>
-        <input
-            class="input"
-            type="text"
-            id="company-name"
-            name="company_name"
-            value="<?= e($draft['company_name']) ?>"
-            placeholder="Northwind Co"
-         disabled>
-        <?= field_error($errors, 'company_name') ?>
-    </div>
+<?php if ($errors !== []): ?>
+    <p class="notice notice--error" role="alert">Please correct the highlighted fields.</p>
+<?php endif; ?>
 
-    <div class="field">
-        <label class="field__label" for="contact-person">Contact person</label>
-        <input
-            class="input"
-            type="text"
-            id="contact-person"
-            name="contact_person"
-            value="<?= e($draft['contact_person']) ?>"
-            placeholder="T.H.K. Madushan"
-         disabled>
-        <?= field_error($errors, 'contact_person') ?>
-    </div>
+<form class="form-card" method="post" action="<?= base_url() ?>/sponsor-liaison/sponsors" novalidate>
+    <?= csrf_field() ?>
 
-    <div class="field">
-        <label class="field__label" for="contact-email">Contact email</label>
-        <input
-            class="input"
-            type="email"
-            id="contact-email"
-            name="contact_email"
-            value="<?= e($draft['contact_email']) ?>"
-            placeholder="contact@northwind.lk"
-         disabled>
-        <?= field_error($errors, 'contact_email') ?>
-    </div>
+    <?php include __DIR__ . '/../../../partials/sponsor-profile-fields.php'; ?>
 
-    <div class="field">
-        <label class="field__label" for="agreement-status">Agreement status</label>
-        <select class="input" id="agreement-status" name="agreement_status" disabled>
-            <option value="">Select status</option>
-            <?php foreach ($agreementStatuses as $value => $label): ?>
-                <option value="<?= e($value) ?>"<?= $draft['agreement_status'] === $value ? ' selected' : '' ?>>
-                    <?= e($label) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <?= field_error($errors, 'agreement_status') ?>
-    </div>
+    <fieldset class="form-card__section">
+        <legend class="form-card__legend">Sponsor login</legend>
 
-    <div class="field">
-        <label class="field__label" for="agreement-details">Agreement details</label>
-        <input
-            class="input"
-            type="text"
-            id="agreement-details"
-            name="agreement_details"
-            value="<?= e($draft['agreement_details']) ?>"
-            placeholder="CSR agreement ref, contribution schedule"
-         disabled>
-        <?= field_error($errors, 'agreement_details') ?>
-    </div>
+        <div class="toggle-field">
+            <input
+                class="toggle"
+                type="checkbox"
+                id="create-login"
+                name="create_login"
+                value="1"
+                <?= $draft['create_login'] === '1' ? 'checked' : '' ?>
+            >
+            <label class="toggle-field__label" for="create-login">
+                Create a login so the company can sign in to its sponsor dashboard
+            </label>
+        </div>
+        <p class="field__hint">
+            The login is in the contact person's name and signs in with the contact email above,
+            so both are required when this is on. Leave the existing account selection empty to
+            create a new login. Leave this off to link the existing sponsor account selected above.
+        </p>
 
-    <div class="field">
-        <label class="field__label" for="internal-notes">Internal notes</label>
-        <input
-            class="input"
-            type="text"
-            id="internal-notes"
-            name="internal_notes"
-            value="<?= e($draft['internal_notes']) ?>"
-            placeholder="Notes about this sponsor (visible to liaisons only)"
-         disabled>
-        <?= field_error($errors, 'internal_notes') ?>
-    </div>
+        <div class="field">
+            <label class="field__label" for="login-nic">Contact person's NIC number</label>
+            <input
+                class="input"
+                type="text"
+                id="login-nic"
+                name="login_nic"
+                value="<?= e($draft['login_nic']) ?>"
+                placeholder="199012345V or 199012345671"
+                autocapitalize="characters"
+                spellcheck="false"
+                <?= isset($errors['login_nic']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?= field_error($errors, 'login_nic') ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="login-phone">Contact person's mobile number</label>
+            <input
+                class="input"
+                type="tel"
+                id="login-phone"
+                name="login_phone"
+                value="<?= e($draft['login_phone']) ?>"
+                placeholder="077 123 4567"
+                <?= isset($errors['login_phone']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?= field_error($errors, 'login_phone') ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="login-address">Company address</label>
+            <textarea
+                class="textarea"
+                id="login-address"
+                name="login_address"
+                rows="2"
+                placeholder="120 Main Street, Colombo 10"
+                <?= isset($errors['login_address']) ? 'aria-invalid="true"' : '' ?>
+            ><?= e($draft['login_address']) ?></textarea>
+            <?= field_error($errors, 'login_address') ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="login-password">Starting password</label>
+            <input
+                class="input"
+                type="password"
+                id="login-password"
+                name="password"
+                autocomplete="new-password"
+                <?= isset($errors['password']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?php if (isset($errors['password'])): ?>
+                <span class="field__error"><?= e($errors['password']) ?></span>
+            <?php else: ?>
+                <span class="field__hint">
+                    At least <?= e((string) RegistrationService::MIN_PASSWORD) ?> characters. Give it to
+                    the sponsor in person; they can change it from their account settings.
+                </span>
+            <?php endif; ?>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="login-password-confirmation">Confirm starting password</label>
+            <input
+                class="input"
+                type="password"
+                id="login-password-confirmation"
+                name="password_confirmation"
+                autocomplete="new-password"
+                <?= isset($errors['password_confirmation']) ? 'aria-invalid="true"' : '' ?>
+            >
+            <?= field_error($errors, 'password_confirmation') ?>
+        </div>
+    </fieldset>
 
     <div class="actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/sponsor-liaison/sponsors">Cancel</a>
-        <button class="btn btn--primary" type="submit" disabled>Connect sponsor</button>
+        <button class="btn btn--primary" type="submit">Connect sponsor</button>
     </div>
-</div>
+</form>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

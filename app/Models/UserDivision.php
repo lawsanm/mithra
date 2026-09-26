@@ -13,6 +13,16 @@ declare(strict_types=1);
  */
 final class UserDivision extends BaseModel
 {
+    public function temporaryForUser(int $userId): ?array
+    {
+        return $this->selectOne(
+            "SELECT d.name, ud.created_at, ud.expires_at, ud.status
+               FROM user_divisions ud JOIN gn_divisions d ON d.id = ud.gn_division_id
+              WHERE ud.user_id = :user AND ud.membership_type = 'temporary'
+                AND ud.status IN ('active','pending','paused')
+              ORDER BY ud.created_at DESC LIMIT 1", ['user' => $userId]
+        );
+    }
     protected string $table = 'user_divisions';
     protected string $columns = 'id, user_id, gn_division_id, membership_type, verified_by, verified_at, status, created_at';
 
