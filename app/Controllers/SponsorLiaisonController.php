@@ -7,6 +7,7 @@ declare(strict_types=1);
  *
  * Sponsors are the working CRUD (Plan §20.4 module 4.2): list, view, onboard,
  * edit, deactivate and reactivate, read from and written to the database.
+ * Onboarding can also create the company's sponsor login (Plan §15.10).
  *
  * Contributions and aid grants read the same records used by member and admin
  * screens. Their submission and approval actions remain unavailable.
@@ -57,6 +58,7 @@ final class SponsorLiaisonController extends Controller
             'contact_phone'      => (string) ($row['contact_phone'] ?? ''),
             'agreement_details'  => (string) ($row['agreement_details'] ?? ''),
             'internal_notes'     => (string) ($row['internal_notes'] ?? ''),
+            'login'              => $this->loginLabel($row),
             'account'            => $row['user_id'] === null
                 ? 'Not linked yet'
                 : trim((string) $row['account_name'] . ' · ' . (string) ($row['account_email'] ?? ''), ' ·'),
@@ -89,14 +91,22 @@ final class SponsorLiaisonController extends Controller
                 throw new ValidationException($validator->errors());
             }
 
-            $id = $this->sponsorService()->create($validator->values());
+            $withLogin = $validator->value('create_login') === '1';
+            $id = $withLogin
+                ? $this->accounts()->onboardWithLogin(
+                    $validator->values(),
+                    $this->postedPassword('password'),
+                    $this->postedPassword('password_confirmation')
+                )
+                : $this->sponsorService()->create($validator->values());
         } catch (ValidationException $exception) {
             $this->renderSponsorForm('sponsor-liaison/sponsors/onboarding', $exception->errors(), $validator->values());
 
             return;
         }
 
-        $this->flash($validator->value('company_name') . ' onboarded as a sponsor.');
+        $this->flash($validator->value('company_name') . ' onboarded as a sponsor.'
+            . ($withLogin ? ' Their login is open: share the starting password with ' . $validator->value('contact_email') . '.' : ''));
         $this->redirect('/sponsor-liaison/sponsors/' . $id);
     }
 
@@ -214,7 +224,10 @@ final class SponsorLiaisonController extends Controller
             ->required('agreement_status', 'Agreement status')
             ->inList('agreement_status', 'Agreement status', array_keys(SponsorService::AGREEMENT_STATUSES))
             ->maxLength('agreement_details', 'Agreement details', 255)
-            ->maxLength('internal_notes', 'Internal notes', 500);
+            ->maxLength('internal_notes', 'Internal notes', 500)
+            ->maxLength('login_nic', 'NIC number', 20)
+            ->maxLength('login_phone', 'Mobile number', 20)
+            ->maxLength('login_address', 'Company address', 255);
     }
 
     /**
@@ -225,7 +238,8 @@ final class SponsorLiaisonController extends Controller
     private function renderSponsorForm(string $view, array $errors, array $input, ?array $row = null): void
     {
         $fields = ['user_id', 'company_name', 'contact_person', 'contact_phone', 'contact_email',
-            'agreement_status', 'agreement_details', 'internal_notes'];
+            'agreement_status', 'agreement_details', 'internal_notes',
+            'create_login', 'login_nic', 'login_phone', 'login_address'];
 
         $this->render($view, [
             'draft'             => array_map(static fn (string $field): string => (string) ($input[$field] ?? ''), array_combine($fields, $fields)),
@@ -289,6 +303,26 @@ final class SponsorLiaisonController extends Controller
         ];
     }
 
+    /**
+     * Who signs in for this sponsor, as the profile page shows it.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function loginLabel(array $row): string
+    {
+        if (($row['account_status'] ?? null) === null) {
+            return 'No login — the company cannot sign in';
+        }
+
+        $state = match ((string) $row['account_status']) {
+            'active'    => 'active',
+            'suspended' => 'suspended',
+            default     => 'closed',
+        };
+
+        return (string) $row['login_email'] . ' · ' . $state;
+    }
+
     private function sponsorNotFound(): void
     {
         $this->notice(404, 'Sponsor not found', 'Return to the sponsor list to choose another.');
@@ -302,6 +336,11 @@ final class SponsorLiaisonController extends Controller
     private function sponsorService(): SponsorService
     {
         return new SponsorService($this->sponsorModel());
+    }
+
+    private function accounts(): SponsorAccountService
+    {
+        return new SponsorAccountService($this->pdo, new User($this->pdo), $this->sponsorModel());
     }
 
     // ── Contributions and aid grants (design preview) ───────────────────────

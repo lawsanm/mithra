@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @var array      $record id, name, account, contact, email, contact_name, contact_phone, points,
  *                         agreement_label, agreement_details, internal_notes, contributions,
- *                         onboarded, active, badge, badge_label
+ *                         onboarded, login, active, badge, badge_label
  * @var array|null $flash  result of the last change
  */
 
@@ -57,6 +57,7 @@ $profileUrl = base_url() . '/sponsor-liaison/sponsors/' . $record['id'];
         <div class="fact"><dt class="fact__label">Contact person</dt><dd class="fact__value"><?= e($record['contact_name'] !== '' ? $record['contact_name'] : '—') ?></dd></div>
         <div class="fact"><dt class="fact__label">Contact email</dt><dd class="fact__value"><?= e($record['email'] !== '' ? $record['email'] : '—') ?></dd></div>
         <div class="fact"><dt class="fact__label">Contact phone</dt><dd class="fact__value"><?= e($record['contact_phone'] !== '' ? $record['contact_phone'] : '—') ?></dd></div>
+        <div class="fact"><dt class="fact__label">Sponsor login</dt><dd class="fact__value"><?= e($record['login']) ?></dd></div>
         <div class="fact"><dt class="fact__label">Onboarded</dt><dd class="fact__value"><?= e($record['onboarded']) ?></dd></div>
     </dl>
 </section>

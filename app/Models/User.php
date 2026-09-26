@@ -123,9 +123,10 @@ final class User extends BaseModel
      * The caller passes an already-validated set and an already-hashed
      * password — this method makes no business decisions and never hashes (§6).
      * Every new account starts 'pending': only a moderator's approval moves it
-     * on (Plan §18.1).
+     * on (Plan §18.1). A sponsor login the Sponsor Liaison creates is opened
+     * straight after, in the same transaction (§15.10).
      *
-     * @param array{role_id:int, full_name:string, nic:string, nic_photo_path:string,
+     * @param array{role_id:int, full_name:string, nic:string, nic_photo_path:?string,
      *              phone:string, email:?string, address:string, password_hash:string} $data
      */
     public function create(array $data): int

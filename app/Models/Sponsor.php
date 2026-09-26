@@ -90,7 +90,8 @@ final class Sponsor extends BaseModel
     }
 
     /**
-     * One sponsor's profile with a summary of what they have contributed.
+     * One sponsor's profile with a summary of what they have contributed, and
+     * the status of its login account (NULL when the company has none).
      *
      * @return array<string, mixed>|null
      */
@@ -100,6 +101,7 @@ final class Sponsor extends BaseModel
             'SELECT s.id, s.company_name, s.contact_name, s.contact_phone, s.contact_email,
                     s.agreement_status, s.agreement_details, s.internal_notes,
                     s.total_contributed, s.active, s.created_at, s.user_id,
+                    u.status AS account_status, u.email AS login_email,
                     u.full_name AS account_name, u.email AS account_email,
                     COUNT(c.id) AS contribution_count,
                     MAX(c.recorded_at) AS last_contribution_at
@@ -177,6 +179,18 @@ final class Sponsor extends BaseModel
         $statement->execute($profile);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * A sponsor the Liaison onboards together with its login account.
+     *
+     * @param array{company_name: string, contact_name: ?string, contact_phone: ?string,
+     *              contact_email: ?string, agreement_status: string,
+     *              agreement_details: ?string, internal_notes: ?string} $profile
+     */
+    public function createWithLogin(array $profile, int $userId): int
+    {
+        return $this->create(['user_id' => $userId] + $profile);
     }
 
     /**

@@ -18,7 +18,7 @@ $sponsor  = $sponsor ?? null;
 
 ?>
 <div class="field">
-    <label class="field__label" for="sponsor-account">Sponsor login account</label>
+    <label class="field__label" for="sponsor-account">Existing sponsor login account</label>
     <select
         class="input"
         id="sponsor-account"
@@ -38,11 +38,20 @@ $sponsor  = $sponsor ?? null;
     </select>
     <?php if ($accounts === []): ?>
         <span class="field__hint">
-            No sponsor account is free. Each company is linked to its own sponsor login, so one must
-            exist before the company can be onboarded.
+            No sponsor account is free.
+            <?php if ($sponsor === null): ?>
+                Use "Create a login" below to create one for this company.
+            <?php else: ?>
+                Each company needs its own active sponsor login account.
+            <?php endif; ?>
         </span>
     <?php else: ?>
-        <span class="field__hint">Only active sponsor accounts not linked to another company are listed.</span>
+        <span class="field__hint">
+            Only active sponsor accounts not linked to another company are listed.
+            <?php if ($sponsor === null): ?>
+                Leave this empty when creating a new login below.
+            <?php endif; ?>
+        </span>
     <?php endif; ?>
     <?= field_error($errors, 'user_id') ?>
 </div>

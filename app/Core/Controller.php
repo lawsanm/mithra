@@ -159,7 +159,7 @@ abstract class Controller
             'name'      => $name,
             'division'  => (string) ($account['division_name'] ?? ''),
             'greeting'  => $this->greeting($company !== '' ? $company : User::shortName($name)),
-            'initials'  => User::initials($name),
+            'initials'  => User::initials($company !== '' ? $company : $name),
             'points'    => number_format($wallets->balance($id)) . ' pts',
             'bond'      => 'Bond: ' . number_format($wallets->bondLocked($id)) . ' pts',
             'company'   => $company,
