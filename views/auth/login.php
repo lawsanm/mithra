@@ -47,7 +47,7 @@ include __DIR__ . '/../../partials/header.php';
             id="login-identifier"
             name="identifier"
             value="<?= e($identifier) ?>"
-            placeholder="lawsan@email.com"
+            placeholder="lawsanm@gmail.com"
             autocomplete="username"
             autocapitalize="none"
             spellcheck="false"

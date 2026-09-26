@@ -53,7 +53,7 @@ def sign_in(email, password):
 
 # One seeded account per role; whoever is signed in is swapped as the run moves
 # between areas.
-MEMBER = ('lawsan@email.com', 'password')
+MEMBER = ('lawsanm@gmail.com', 'password')
 MODERATOR = ('kavipriya@email.com', 'password')
 ADMIN = ('madushan@email.com', 'password')
 LIAISON = ('akalvily@email.com', 'password')
