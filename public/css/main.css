@@ -1246,6 +1246,20 @@ legend {
     max-width: 100%;
 }
 
+/* A titled group of fields inside a form card, set off by a rule above it. */
+.form-card__section {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+}
+
+.form-card__section > .field {
+    width: 100%;
+}
+
 .input--narrow {
     width: 330px;
 }

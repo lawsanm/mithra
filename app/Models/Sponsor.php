@@ -90,7 +90,8 @@ final class Sponsor extends BaseModel
     }
 
     /**
-     * One sponsor's profile with a summary of what they have contributed.
+     * One sponsor's profile with a summary of what they have contributed, and
+     * the status of its login account (NULL when the company has none).
      *
      * @return array<string, mixed>|null
      */
@@ -99,10 +100,12 @@ final class Sponsor extends BaseModel
         return $this->selectOne(
             'SELECT s.id, s.company_name, s.contact_name, s.contact_phone, s.contact_email,
                     s.agreement_status, s.agreement_details, s.internal_notes,
-                    s.total_contributed, s.active, s.created_at,
+                    s.total_contributed, s.active, s.created_at, s.user_id,
+                    u.status AS account_status, u.email AS login_email,
                     COUNT(c.id) AS contribution_count,
                     MAX(c.recorded_at) AS last_contribution_at
                FROM sponsors s
+               LEFT JOIN users u ON u.id = s.user_id
                LEFT JOIN sponsor_contributions c ON c.sponsor_id = s.id
               WHERE s.id = :id
               GROUP BY s.id',
@@ -137,6 +140,27 @@ final class Sponsor extends BaseModel
                      :agreement_status, :agreement_details, :internal_notes, 1)'
         );
         $statement->execute($profile);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * A sponsor the Liaison onboards together with its login account.
+     *
+     * @param array{company_name: string, contact_name: ?string, contact_phone: ?string,
+     *              contact_email: ?string, agreement_status: string,
+     *              agreement_details: ?string, internal_notes: ?string} $profile
+     */
+    public function createWithLogin(array $profile, int $userId): int
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO sponsors
+                    (user_id, company_name, contact_name, contact_phone, contact_email,
+                     agreement_status, agreement_details, internal_notes, active)
+             VALUES (:user_id, :company_name, :contact_name, :contact_phone, :contact_email,
+                     :agreement_status, :agreement_details, :internal_notes, 1)'
+        );
+        $statement->execute($profile + ['user_id' => $userId]);
 
         return (int) $this->pdo->lastInsertId();
     }

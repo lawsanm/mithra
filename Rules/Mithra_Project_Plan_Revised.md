@@ -183,7 +183,7 @@ Borrower, Lender, Donor and Recipient are all the same Member role — every mem
 | :--- | :--- | :--- |
 | **Member** | A verified resident of one GN division (home community), optionally also holding one temporary community. | List items, browse, request, confirm handover and return, donate, gift, request aid, rate. |
 | **Moderator** | One trusted resident per GN division, selected through the process in Section 16. Holds a 500-point conduct bond. | Verify new members, approve listings and validate declared values, vouch for aid requests, resolve contested damage cases in person, report disasters. |
-| **Sponsor Liaison** | Platform-wide role linking sponsor companies and the platform. | Onboard sponsors, record contributions (General / Aid), approve aid grants, top up the Reserve Pool, verify and record Disaster Mode contributions, generate CSR reports, receive monthly moderator-activity summaries. |
+| **Sponsor Liaison** | Platform-wide role linking sponsor companies and the platform. | Onboard sponsors and create their sponsor logins (Section 15.10), record contributions (General / Aid), approve aid grants, top up the Reserve Pool, verify and record Disaster Mode contributions, generate CSR reports, receive monthly moderator-activity summaries. |
 | **Admin** | The platform operator (project team in production; lecturer/panel during evaluation). | Manage divisions and categories, run moderator selection and appointment, view global analytics, handle escalated disputes, toggle Disaster Mode, act as interim moderator before the first appointment. |
 | **Sponsor** | A company funding the points economy for CSR visibility. | Make contributions and choose their type (General / Aid), view the CSR impact dashboard and reports, upload branding, respond to Disaster Mode alerts. |
 
@@ -714,6 +714,22 @@ Because point contributions are converted 1:1 with no deductions, operating cost
 - **Sponsor Liaison** — compensated in money from operational funding, not in points. The Liaison receives no point stipend (a company-side role should not draw on community points). In the project demo, the team plays the Liaison at no cost.
 - **Moderator expense reimbursements** — see Section 16.6.
 
+### 15.10 Sponsor accounts
+
+The **Sponsor Liaison** onboards each sponsor company after agreeing the written terms offline (Section 15.1), and gives it a login:
+
+| Onboarding choice | What is created | When the sponsor can sign in |
+| :--- | :--- | :--- |
+| **Onboard sponsor** with *Create a login* switched on | An active sponsor profile and an active sponsor login in the contact person's name (contact person, contact email, NIC, mobile, company address), with a starting password the Liaison hands over in person. | Immediately, with the contact email and starting password. The sponsor can change the password from their account settings. |
+| **Onboard sponsor** with *Create a login* off | An active sponsor profile with no login. | Not at all — the Liaison records contributions on the company's behalf. |
+
+Rules:
+
+- Only the Sponsor Liaison creates sponsor logins.
+- A login never creates points — contributions are still collected offline and recorded by the Liaison (Section 15.1).
+- The company name, NIC, mobile number and email must not already be on file.
+- The sponsor profile shows the Liaison whether the company has a login and whether it is active.
+
 ---
 
 ## 16. Moderators — Selection, Role, Authority and Limitations
@@ -865,6 +881,10 @@ Member submits → Moderator vouches or rejects (5 days) → Liaison approves, a
 
 Moderator reports → Admin activates with end date → all sponsors alerted → platform connects sponsor and Moderator → relief arranged off-platform → Liaison records the sponsor's proof → Moderator confirms receipt → Liaison verifies both and records the contribution (§14.3) → Admin switches off.
 
+### 18.8 Sponsor onboarding
+
+Liaison agrees the written terms with the company offline → opens **Onboard sponsor** → enters company, contact and agreement details → switches on *Create a login* and adds the contact person's NIC, mobile, company address and a starting password → company and login are created active → Liaison hands the starting password to the sponsor → sponsor signs in. See Section 15.10.
+
 ---
 
 ## 19. Edge Cases
@@ -935,7 +955,7 @@ Moderator reports → Admin activates with end date → all sponsors alerted →
 | # | Module | Scope |
 | :--- | :--- | :--- |
 | 4.1 | Point Ledger & Transparency CRUD | Append-only ledger, member and global views, six-pool invariant check, transparency dashboard. |
-| 4.2 | Sponsor CRUD | Liaison: sponsor profiles, agreements, branding, CSR tags. |
+| 4.2 | Sponsor CRUD | Liaison: sponsor profiles, agreements, branding, CSR tags, and sponsor logins created at onboarding (§15.10). |
 | 4.3 | Sponsor Contribution & Pool CRUD | Record contributions (amount, receipt number, General/Aid split), 1:1 point creation, Reserve top-ups, pool balance views, CSR reports. |
 | 4.4 | Aid Grant CRUD | Request → vouch → approve → use → expiry → audit. |
 | 4.5 | Gifting CRUD | Send/receive with reason, caps, pattern detection, receive toggle. |
@@ -1019,7 +1039,7 @@ MySQL 8.x, InnoDB engine, `utf8mb4` character set with `utf8mb4_unicode_ci` coll
 | `moderator_resolutions` | id, damage_claim_id, moderator_id, outcome_category, notes, points_movement (JSON), lender_signoff_at, borrower_signoff_at, closed_at |
 | `disputes` | id, claim_or_booking_id, escalated_to_admin, status, resolution, ruling_at |
 | `aid_grants` | id, member_id, requested_amount, purpose, moderator_id, moderator_vouch, liaison_id, approved_amount, status, expires_at |
-| `sponsors` | id, company_name, agreement_ref, branding, active |
+| `sponsors` | id, user_id (sponsor login, optional), company_name, agreement_ref, branding, active |
 | `sponsor_contributions` | id, sponsor_id, cash_amount, receipt_number, general_points, aid_points, recorded_by_liaison, recorded_at |
 | `gifts` | id, sender_id, recipient_id, amount, reason, sent_at |
 | `gift_usage_counters` | id, user_id, day, day_total, year, year_total |
