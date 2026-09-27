@@ -101,6 +101,9 @@ The dynamic-data integration test requires the migrated seed database. It tempor
 
 ## Troubleshooting
 
+The seeded item catalog includes 22 generated photos matched to the site's warm blue-and-amber theme. See [image assets and prompts](docs/GENERATED_IMAGES.md). Migration 017 attaches them only to listings with no photos. With local Apache and the migrated database running, `C:\xampp\php\php.exe tests\item-images.php` checks image delivery and the screens that display them using a temporary test session, which it destroys afterward.
+
+
 - **MySQL unavailable:** check XAMPP and the credentials in `config/config.php`. The supplied migrations create the database named `mithra`.
 - **Apache already running after a configuration change:** stop and start Apache in XAMPP, then run `run.cmd` again.
 - **Port 80 in use:** stop the conflicting web server before starting Apache.

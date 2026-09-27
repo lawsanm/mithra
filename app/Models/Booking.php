@@ -27,7 +27,8 @@ final class Booking extends BaseModel
 
         return $this->select(
             "SELECT b.id, b.start_date, b.end_date, b.rental_charge, b.status,
-                    i.title AS item_title, o.full_name AS counterparty
+                    i.title AS item_title, o.full_name AS counterparty,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo
                FROM bookings b
                JOIN items i ON i.id = b.item_id
                JOIN users o ON o.id = {$other}
@@ -56,7 +57,8 @@ final class Booking extends BaseModel
     {
         return $this->select(
             "SELECT b.id, b.start_date, b.end_date, b.status,
-                    i.title AS item_title, l.full_name AS lender_name
+                    i.title AS item_title, l.full_name AS lender_name,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo
                FROM bookings b
                JOIN items i ON i.id = b.item_id
                JOIN users l ON l.id = b.lender_id

@@ -45,12 +45,12 @@ include __DIR__ . '/../../partials/header.php';
         <?php if ($item['photos'] === []): ?>
             <span class="thumb gallery__main">No photo</span>
         <?php else: ?>
-            <img class="thumb gallery__main thumb__img" src="<?= e($item['photos'][0]) ?>" alt="<?= e($item['title']) ?>">
+            <img class="thumb gallery__main thumb__img thumb--item" src="<?= e($item['photos'][0]) ?>" alt="<?= e($item['title']) ?>" decoding="async">
             <?php if (count($item['photos']) > 1): ?>
                 <div class="gallery__thumbs">
                     <?php foreach ($item['photos'] as $index => $photo): ?>
                         <img
-                            class="thumb gallery__thumb thumb__img<?= $index === 0 ? ' gallery__thumb--current' : '' ?>"
+                            class="thumb gallery__thumb thumb__img thumb--item<?= $index === 0 ? ' gallery__thumb--current' : '' ?>"
                             src="<?= e($photo) ?>"
                             alt=""
                         >

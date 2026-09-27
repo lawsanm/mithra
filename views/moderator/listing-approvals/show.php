@@ -43,7 +43,7 @@ include __DIR__ . '/../../../partials/header.php';
 </nav>
 
 <header class="record-head">
-    <span class="thumb thumb--sm">Photo</span>
+    <?php $photoUrl = $listing['photo']; $photoTitle = $listing['title']; $photoClass = 'thumb--sm'; include __DIR__ . '/../../../partials/item-photo.php'; ?>
     <h1 class="record-head__title"><?= e($listing['title']) ?></h1>
     <span class="badge badge--<?= e($listing['status']) ?>"><?= e($listing['status_label']) ?></span>
 </header>

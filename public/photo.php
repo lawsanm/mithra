@@ -30,7 +30,7 @@ $requested = (string) ($_GET['p'] ?? '');
 
 $store = new PhotoStore(dirname(__DIR__) . '/storage/uploads');
 
-// Rejects anything that is not folder/<32 hex>.jpg, so "../" never resolves.
+// Accepts generated upload names and bundled demo item photos; rejects traversal.
 $absolute = $store->absolutePath($requested);
 
 if ($absolute === null) {

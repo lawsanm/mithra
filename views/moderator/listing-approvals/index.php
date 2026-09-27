@@ -61,7 +61,7 @@ include __DIR__ . '/../../../partials/header.php';
     <ul class="row-list">
         <?php foreach ($listings as $listing): ?>
             <li class="list-row">
-                <span class="thumb thumb--sm">Photo</span>
+                <?php $photoUrl = $listing['photo']; $photoTitle = $listing['title']; $photoClass = 'thumb--sm'; include __DIR__ . '/../../../partials/item-photo.php'; ?>
                 <div class="list-row__body">
                     <span class="list-row__title"><?= e($listing['title']) ?></span>
                     <span class="list-row__meta"><?= e($listing['meta']) ?></span>

@@ -38,7 +38,7 @@ include __DIR__ . '/../../partials/header.php';
 <ul class="row-list">
     <?php foreach ($bookings as $booking): ?>
         <li class="list-row">
-            <span class="thumb thumb--sm"></span>
+            <?php $photoUrl = $booking['photo']; $photoTitle = $booking['title']; $photoClass = 'thumb--sm'; include __DIR__ . '/../../partials/item-photo.php'; ?>
             <div class="list-row__body">
                 <span class="list-row__title"><?= e($booking['title']) ?></span>
                 <span class="list-row__meta"><?= e($booking['meta']) ?></span>

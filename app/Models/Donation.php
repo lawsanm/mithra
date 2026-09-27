@@ -11,7 +11,8 @@ final class Donation extends BaseModel
     {
         return $this->selectOne(
             'SELECT d.id, d.donor_id, d.recipient_id, d.selection_mode, d.status, d.created_at,
-                    i.title, u.full_name AS recipient_name, u.trust_score
+                    i.title, u.full_name AS recipient_name, u.trust_score,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, \'$[0]\')) AS photo
                FROM donations d JOIN items i ON i.id = d.item_id
           LEFT JOIN users u ON u.id = d.recipient_id
               WHERE d.id = :id AND (d.donor_id = :donor OR d.recipient_id = :recipient)',

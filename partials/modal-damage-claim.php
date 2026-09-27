@@ -38,7 +38,7 @@ $claimDraft = ($claimDraft ?? []) + [
     </div>
 
     <div class="media">
-        <span class="thumb thumb--modal"></span>
+        <?php $photoUrl = $claimItem['photo'] ?? null; $photoTitle = $claimItem['title']; $photoClass = 'thumb--modal'; include __DIR__ . '/item-photo.php'; ?>
         <span class="media__body">
             <span class="media__title"><?= e($claimItem['title']) ?></span>
             <span class="media__meta"><?= e($claimItem['party']) ?></span>

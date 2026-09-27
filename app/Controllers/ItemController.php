@@ -66,12 +66,13 @@ final class ItemController extends Controller
         $division = (int) ($member['division_id'] ?? 0);
         $query    = trim((string) ($_GET['q'] ?? ''));
         $page     = max(1, (int) ($_GET['page'] ?? 1));
+        $type     = $this->listingTypeFilter((string) ($_GET['type'] ?? ''));
 
         $allCategories = $this->categories->allActive();
         $categoryId    = $this->categoryIdFromSlug((string) ($_GET['category'] ?? ''), $allCategories);
 
-        $rows  = $this->items->browse($division, $me, $categoryId, $query, $page);
-        $total = $this->items->countBrowse($division, $me, $categoryId, $query);
+        $rows  = $this->items->browse($division, $me, $categoryId, $query, $page, $type);
+        $total = $this->items->countBrowse($division, $me, $categoryId, $query, $type);
 
         $categories = [[
             'label'  => 'All',
@@ -95,6 +96,7 @@ final class ItemController extends Controller
 
         $this->render('items/browse', [
             'query'       => $query,
+            'typeSlug'    => $type === null ? '' : ($type === 'rental' ? 'rentals' : 'donations'),
             'categories'  => $categories,
             'results'     => $results,
             'resultCount' => $resultCount,

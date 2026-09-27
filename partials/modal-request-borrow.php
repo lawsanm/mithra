@@ -35,7 +35,7 @@ $quote = ($quote ?? []) + [
     </div>
 
     <div class="media">
-        <span class="thumb thumb--modal"></span>
+        <?php $photoUrl = $item['photos'][0] ?? null; $photoTitle = $item['title']; $photoClass = 'thumb--modal'; include __DIR__ . '/item-photo.php'; ?>
         <span class="media__body">
             <span class="media__title"><?= e($item['title']) ?></span>
             <span class="media__meta"><?= e($item['owner_meta']) ?></span>

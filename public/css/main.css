@@ -596,6 +596,22 @@ legend {
     object-fit: cover;
 }
 
+/* Keep the complete item visible, including tall ladders and wide tool kits. */
+.thumb--item {
+    object-fit: contain;
+    background-color: var(--color-bg);
+}
+
+.thumb--item.thumb--card {
+    height: auto;
+    aspect-ratio: 4 / 3;
+}
+
+.thumb--item.thumb--row {
+    width: 80px;
+    height: 60px;
+}
+
 .thumb--row {
     width: 56px;
     height: 80px;
