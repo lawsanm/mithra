@@ -23,10 +23,7 @@ include __DIR__ . '/../../../partials/header.php';
     <div class="page-header__action actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/pools/sponsor-ledger">Sponsor Fund Ledger</a>
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/ledger">Open ledger</a>
-        <div class="inline-form" data-demo-form>
-            <p class="demo-note">Preview only. Saving is not available yet.</p>
-            <button class="btn btn--primary" type="submit" disabled>Run invariant check now</button>
-        </div>
+        <button class="btn btn--primary" type="button" disabled title="Not available in this demo">Run invariant check now</button>
     </div>
 </header>
 
@@ -54,10 +51,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <span class="list-row__meta"><?= e($job['last_run']) ?></span>
                 </div>
                 <span class="badge badge--<?= e($job['status']) ?>"><?= e($job['status_label']) ?></span>
-                <div class="inline-form" data-demo-form>
-                    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                    <button class="btn btn--ghost" type="submit" disabled>Trigger</button>
-                </div>
+                <button class="btn btn--ghost" type="button" disabled title="Not available in this demo">Trigger</button>
             </li>
         <?php endforeach; ?>
     </ul>

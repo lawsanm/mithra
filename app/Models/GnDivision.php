@@ -9,13 +9,13 @@ declare(strict_types=1);
 final class GnDivision extends BaseModel
 {
     protected string $table = 'gn_divisions';
-    protected string $columns = 'id, name, district, moderator_id, disaster_mode_active, disaster_mode_until, status, created_at';
+    protected string $columns = 'id, province, district, name, postal_code, moderator_id, disaster_mode_active, disaster_mode_until, status, created_at';
 
     /** @return list<array<string, mixed>> */
     public function allWithStaff(): array
     {
         return $this->select(
-            'SELECT d.id, d.name, d.district, d.status, d.created_at,
+            'SELECT d.id, d.province, d.district, d.name, d.postal_code, d.status, d.created_at,
                     d.moderator_id, d.disaster_mode_active,
                     COUNT(DISTINCT ud.user_id) AS member_count,
                     m.full_name AS moderator_name
@@ -40,7 +40,7 @@ final class GnDivision extends BaseModel
     public function findWithStaff(int $id): ?array
     {
         return $this->selectOne(
-            'SELECT d.id, d.name, d.district, d.status, d.created_at,
+            'SELECT d.id, d.province, d.district, d.name, d.postal_code, d.status, d.created_at,
                     d.moderator_id, d.disaster_mode_active, d.disaster_mode_until,
                     COUNT(DISTINCT ud.user_id) AS member_count,
                     m.full_name AS moderator_name,
@@ -212,22 +212,36 @@ final class GnDivision extends BaseModel
         ) > 0;
     }
 
-    public function create(string $name, string $district): int
+    public function create(string $province, string $district, string $name, string $postalCode): int
     {
         $statement = $this->pdo->prepare(
-            "INSERT INTO gn_divisions (name, district, status) VALUES (:name, :district, 'active')"
+            "INSERT INTO gn_divisions (province, district, name, postal_code, status)
+             VALUES (:province, :district, :name, :postal_code, 'active')"
         );
-        $statement->execute(['name' => $name, 'district' => $district]);
+        $statement->execute([
+            'province'    => $province,
+            'district'    => $district,
+            'name'        => $name,
+            'postal_code' => $postalCode,
+        ]);
 
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function updateDetails(int $id, string $name, string $district): void
+    public function updateDetails(int $id, string $province, string $district, string $name, string $postalCode): void
     {
         $statement = $this->pdo->prepare(
-            'UPDATE gn_divisions SET name = :name, district = :district WHERE id = :id'
+            'UPDATE gn_divisions
+                SET province = :province, district = :district, name = :name, postal_code = :postal_code
+              WHERE id = :id'
         );
-        $statement->execute(['id' => $id, 'name' => $name, 'district' => $district]);
+        $statement->execute([
+            'id'          => $id,
+            'province'    => $province,
+            'district'    => $district,
+            'name'        => $name,
+            'postal_code' => $postalCode,
+        ]);
     }
 
     public function archive(int $id): void

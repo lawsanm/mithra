@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Division detail view.
  *
- * @var array      $division id, name, district, archived, moderator_name, moderator_since, status, status_label
+ * @var array      $division id, province, district, name, postal_code, archived, moderator_name, moderator_since, status, status_label
  * @var array      $stats    label, value, note, error(bool)
  * @var array|null $flash    result of the last edit
  */
@@ -24,13 +24,11 @@ include __DIR__ . '/../../../partials/header.php';
     <span class="breadcrumb__current"><?= e($division['name']) ?></span>
 </nav>
 
-<header class="page-intro">
-    <h1 class="page-intro__title">
-        <?= e($division['name']) ?>
-        <span class="badge badge--<?= e($division['status']) ?>"><?= e($division['status_label']) ?></span>
-    </h1>
+<header class="page-header">
+    <h1 class="page-header__title"><?= e($division['name']) ?></h1>
+    <span class="badge badge--<?= e($division['status']) ?>"><?= e($division['status_label']) ?></span>
     <?php if (!$division['archived']): ?>
-        <div class="actions">
+        <div class="page-header__action actions">
             <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-division">Edit division</button>
             <form method="post" action="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>/archive"
                 data-confirm="Archive this division? It will no longer accept new members." novalidate>
@@ -40,7 +38,7 @@ include __DIR__ . '/../../../partials/header.php';
         </div>
     <?php endif; ?>
 </header>
-<p class="page-intro__meta"><?= e($division['district']) ?> District</p>
+<p class="page-intro__meta"><?= e($division['district']) ?> District · <?= e($division['province']) ?> · Postal code <?= e($division['postal_code'] !== '' ? $division['postal_code'] : '—') ?></p>
 
 <?php include __DIR__ . '/../../../partials/flash.php'; ?>
 
@@ -75,5 +73,5 @@ include __DIR__ . '/../../../partials/header.php';
 <?php if (!$division['archived']): ?>
     <?php include __DIR__ . '/../../../partials/modal-edit-division.php'; ?>
 <?php endif; ?>
-<?php $pageScripts = ['modal.js', 'confirm.js']; ?>
+<?php $pageScripts = ['modal.js', 'confirm.js', 'district-select.js']; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

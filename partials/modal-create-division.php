@@ -19,14 +19,21 @@ declare(strict_types=1);
 
         <p class="page-intro__meta u-mb-4">A division maps to one GN division. New members register against it and its moderator handles first-line disputes.</p>
 
+        <?php
+        $fieldPrefix      = 'create_';
+        $selectedProvince = '';
+        $selectedDistrict = '';
+        include __DIR__ . '/division-location-fields.php';
+        ?>
+
         <div class="field">
             <label class="field__label" for="division_name">Division name</label>
             <input class="input" id="division_name" name="name" type="text" placeholder="e.g. Wellawatte South">
         </div>
 
         <div class="field">
-            <label class="field__label" for="district">District</label>
-            <input class="input" id="district" name="district" type="text" placeholder="Colombo">
+            <label class="field__label" for="postal_code">Postal code</label>
+            <input class="input" id="postal_code" name="postal_code" type="text" inputmode="numeric" placeholder="e.g. 00600">
         </div>
 
         <div class="modal__footer">

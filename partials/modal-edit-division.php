@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 /**
- * Edit division modal — the Admin renames a division or corrects its district.
+ * Edit division modal — the Admin corrects a division's province, district,
+ * name or postal code.
  *
- * @var array $division id, name, district
+ * @var array $division id, province, district, name, postal_code
  */
 
 ?>
@@ -18,16 +19,23 @@ declare(strict_types=1);
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>
         </div>
 
-        <p class="page-intro__meta u-mb-4">Update division name or district information.</p>
+        <p class="page-intro__meta u-mb-4">Update the division's location, name or postal code.</p>
 
-        <div class="field">
+        <?php
+        $fieldPrefix      = 'edit_';
+        $selectedProvince = $division['province'];
+        $selectedDistrict = $division['district'];
+        include __DIR__ . '/division-location-fields.php';
+        ?>
+
+        <div class="field" style="margin-top: var(--space-3);">
             <label class="field__label" for="edit_division_name">Division name</label>
             <input class="input" id="edit_division_name" name="name" type="text" value="<?= e($division['name']) ?>">
         </div>
 
         <div class="field" style="margin-top: var(--space-3);">
-            <label class="field__label" for="edit_district">District</label>
-            <input class="input" id="edit_district" name="district" type="text" value="<?= e($division['district']) ?>">
+            <label class="field__label" for="edit_postal_code">Postal code</label>
+            <input class="input" id="edit_postal_code" name="postal_code" type="text" inputmode="numeric" value="<?= e($division['postal_code']) ?>">
         </div>
 
         <div class="modal__footer" style="margin-top: var(--space-4);">
