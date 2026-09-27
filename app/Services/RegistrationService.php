@@ -194,8 +194,8 @@ final class RegistrationService
         }
 
         $email = trim($input['email']);
-        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            $errors['email'] = 'Enter an email address, or leave this empty to sign in with your mobile number.';
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $errors['email'] = 'Enter your email address, for example you@email.com.';
         }
 
         $divisionId = (int) $input['gn_division_id'];

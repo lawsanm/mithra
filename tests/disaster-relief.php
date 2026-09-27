@@ -86,6 +86,12 @@ $checks++;
 
 // Required text and a positive household count.
 check(isset(refusals(['description' => '   '] + $valid)['description']), 'Blank description must be refused.');
+foreach (['40', '12-5', '100 !!'] as $numbersOnly) {
+    check(isset(refusals(['description' => $numbersOnly] + $valid)['description']), "Description '$numbersOnly' must be refused.");
+}
+foreach (['Rice', '5kg of rice', 'සහල් කිලෝ 10', 'அரிசி 5 கிலோ'] as $words) {
+    check(refusals(['description' => $words] + $valid) === [], "Description '$words' must be accepted.");
+}
 check(isset(refusals(['location' => ''] + $valid)['location']), 'Blank location must be refused.');
 check(isset(refusals(['households_reached' => '0'] + $valid)['households_reached']), 'Zero households must be refused.');
 $checks += 3;

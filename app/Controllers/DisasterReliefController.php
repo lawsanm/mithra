@@ -332,12 +332,14 @@ final class DisasterReliefController extends Controller
             ->maxLength('description', 'What was given', 255)
             ->required('location', 'Location')
             ->maxLength('location', 'Location', 150)
+            ->words('location', 'Location')
             ->required('households_reached', 'Households reached')
             ->integer('households_reached', 'Households reached', 1, 65535)
             ->integer('estimated_value', 'Estimated value', 0, 100000000)
             ->required('distributed_on', 'Date handed out')
             ->integer('sponsor_id', 'Sponsor', 1)
-            ->maxLength('notes', 'Notes', 500);
+            ->maxLength('notes', 'Notes', 500)
+            ->words('notes', 'Notes');
     }
 
     /**

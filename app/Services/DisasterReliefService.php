@@ -257,6 +257,10 @@ final class DisasterReliefService
 
         if ($record['description'] === '') {
             $errors['description'] = 'What was given is required.';
+        } elseif (!Validator::hasLetters($record['description'])) {
+            // "40" alone says nothing about what was handed out; a letter in any
+            // script (Sinhala and Tamil included) means it was described in words.
+            $errors['description'] = 'Describe what was given in words, not only numbers.';
         }
 
         if ($record['location'] === '') {

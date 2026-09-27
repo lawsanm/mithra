@@ -101,7 +101,8 @@ include __DIR__ . '/../../partials/header.php';
             <label class="upload-tile">
                 <span aria-hidden="true">＋</span>
                 <span class="visually-hidden">Add a photo</span>
-                <input class="visually-hidden" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple>
+                <input class="visually-hidden" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple
+                    data-max-files="<?= e((string) ItemService::MAX_PHOTOS) ?>" data-kept-by="keep_photos[]">
             </label>
         </div>
 
@@ -132,7 +133,7 @@ include __DIR__ . '/../../partials/header.php';
 
         <?php include __DIR__ . '/../../partials/item-rates.php'; ?>
 
-        <span class="field__hint">Rates are ignored on a donation.</span>
+        <span class="field__hint">A rental needs a daily rate, a monthly rate, or both. Rates are ignored on a donation.</span>
 
         <?= field_error($errors, 'status') ?>
 
@@ -158,7 +159,8 @@ include __DIR__ . '/../../partials/header.php';
             </form>
         <?php endif; ?>
 
-        <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/archive" novalidate>
+        <form method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/archive"
+            data-confirm="Remove this listing? It will disappear from Browse and My Items, and this cannot be undone." novalidate>
             <?= csrf_field() ?>
             <button class="btn btn--ghost" type="submit">Remove listing</button>
         </form>
@@ -171,5 +173,5 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php endif; ?>
 
-<?php $pageScripts = ['upload-name.js']; ?>
+<?php $pageScripts = ['upload-name.js', 'confirm.js']; ?>
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

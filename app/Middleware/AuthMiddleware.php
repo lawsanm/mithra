@@ -34,7 +34,6 @@ final class AuthMiddleware
         '/logout',
         '/forgot-password',
         '/reset-password',
-        '/reset-password/code',
     ];
 
     /**

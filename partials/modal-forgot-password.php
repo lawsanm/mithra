@@ -11,9 +11,7 @@ declare(strict_types=1);
  * JavaScript an open dialog shows in the page, so the form still works.
  *
  * The answer after submitting is the same whether or not the address has an
- * account, so the dialog cannot be used to find out who is a member. A reset
- * link needs an email address; a member who signed up with a mobile number
- * only gets a one-time code from their moderator instead.
+ * account, so the dialog cannot be used to find out who is a member.
  *
  * @var bool        $forgotOpen   show the dialog open
  * @var array       $forgotErrors per-field messages
@@ -69,11 +67,6 @@ declare(strict_types=1);
                 <?= field_error($forgotErrors, 'email') ?>
             </div>
 
-            <p class="field__hint">
-                Signed up with a mobile number only? Ask your division moderator for a one-time reset
-                code — they will check your NIC first — then
-                <a class="link" href="<?= base_url() ?>/reset-password/code">enter the code here</a>.
-            </p>
 
             <div class="modal__footer">
                 <a class="btn btn--ghost" href="<?= base_url() ?>/login" data-modal-close>Cancel</a>

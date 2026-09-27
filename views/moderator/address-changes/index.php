@@ -63,7 +63,7 @@ include __DIR__ . '/../../../partials/header.php';
 
                     <form class="stack" method="post" action="<?= base_url() ?>/moderator/address-changes/<?= e((string) $change['id']) ?>/reject" novalidate>
                         <?= csrf_field() ?>
-                        <label class="field__label" for="reason-<?= e((string) $change['id']) ?>">Reason, if rejecting</label>
+                        <label class="field__label" for="reason-<?= e((string) $change['id']) ?>">Reason — required if rejecting</label>
                         <input class="input" type="text" id="reason-<?= e((string) $change['id']) ?>" name="reason"
                             <?= $mine && isset($errors['reason']) ? 'aria-invalid="true"' : '' ?>>
                         <?php if ($mine && isset($errors['reason'])): ?>

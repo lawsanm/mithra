@@ -14,6 +14,16 @@ function base_url(): string
     return defined('APP_BASE') ? APP_BASE : '';
 }
 
+// URL of a file under /public, stamped with its last change so a browser
+// fetches the new copy after every edit instead of reusing a stale one.
+function asset_url(string $path): string
+{
+    $file = __DIR__ . '/../public/' . ltrim($path, '/');
+    $stamp = is_file($file) ? '?v=' . filemtime($file) : '';
+
+    return base_url() . '/' . ltrim($path, '/') . $stamp;
+}
+
 // Each session has a random token. Router checks it before a form changes data.
 function csrf_token(): string
 {

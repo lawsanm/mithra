@@ -128,19 +128,10 @@ $checks += 6;
 
 // ── Reset secrets ───────────────────────────────────────────────────────────
 
-$codes = [];
-for ($i = 0; $i < 200; $i++) {
-    $code = PasswordResetService::newCode();
-    check(preg_match('/^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/', $code) === 1, 'Code shape: ' . $code);
-    $codes[$code] = true;
-}
-check(count($codes) === 200, 'Codes must not repeat.');
-expect('code typed loosely', PasswordResetService::normaliseCode(' abcde fghjk '), 'ABCDEFGHJK');
-expect('code with dash', PasswordResetService::normaliseCode('ABCDE-FGHJK'), 'ABCDEFGHJK');
 check(PasswordResetService::looksLikeToken(bin2hex(random_bytes(32))), 'A real token must look like one.');
 check(!PasswordResetService::looksLikeToken('../../etc/passwd'), 'Junk is not a token.');
 check(!PasswordResetService::looksLikeToken(strtoupper(bin2hex(random_bytes(32)))), 'Tokens are lower-case hex.');
-$checks += 206;
+$checks += 3;
 
 // ── Throttle keys ───────────────────────────────────────────────────────────
 // Every spelling of one account shares a counter; scopes never share one.
@@ -151,7 +142,7 @@ foreach (['+94 77 123 4567', '0771234567', '94771234567'] as $spelling) {
     $checks++;
 }
 expect('email case', LoginThrottle::identifierHash('login', ' LawsanM@Gmail.com'), LoginThrottle::identifierHash('login', 'lawsanm@gmail.com'));
-check(LoginThrottle::identifierHash('reset-code', '0771234567') !== $phoneKey, 'Scopes must be separate.');
+check(LoginThrottle::identifierHash('other', '0771234567') !== $phoneKey, 'Scopes must be separate.');
 $checks += 2;
 
 // ── Session rules ───────────────────────────────────────────────────────────
@@ -174,11 +165,33 @@ $checks += 10;
 
 // ── Public pages ────────────────────────────────────────────────────────────
 
-foreach (['/forgot-password', '/reset-password', '/reset-password/code'] as $path) {
+foreach (['/forgot-password', '/reset-password'] as $path) {
     check(AuthMiddleware::isPublic($path), $path . ' must be reachable while signed out.');
     $checks++;
 }
+check(!AuthMiddleware::isPublic('/reset-password/code'), 'The in-person reset code is gone.');
+$checks++;
 check(!AuthMiddleware::isPublic('/account/password'), 'Changing a password needs a session.');
+$checks++;
+
+// Names and free text must be written in words: numbers alone mean nothing.
+foreach (['J. Kavipriya', 'D’Silva', "D'Silva", 'Perera-Fernando', 'T.H.K. Madushan', 'ජයසිංහ', 'கவிப்ரியா'] as $name) {
+    check(Validator::isPersonName($name), "Name '$name' must be accepted.");
+    $checks++;
+}
+foreach (['12345', 'John2', '...', '--'] as $name) {
+    check(!Validator::isPersonName($name), "Name '$name' must be refused.");
+    $checks++;
+}
+foreach (['15 Hill Street', '4K TV', '40 dry-ration packs', 'සහල් කිලෝ 10'] as $text) {
+    check((new Validator(['f' => $text]))->words('f', 'Field')->passes(), "Text '$text' must be accepted.");
+    $checks++;
+}
+foreach (['40', '12-5', '100 !!', '#'] as $text) {
+    check(!(new Validator(['f' => $text]))->words('f', 'Field')->passes(), "Text '$text' must be refused.");
+    $checks++;
+}
+check((new Validator(['f' => '']))->words('f', 'Field')->personName('f', 'Field')->passes(), 'An empty optional field must pass.');
 $checks++;
 
 echo 'Passed: ' . $checks . " identity checks — normalisation, passwords, reset secrets, throttling, sessions and refusals.\n";

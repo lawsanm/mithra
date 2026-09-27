@@ -32,7 +32,6 @@ return [
         '/register/pending'     => ['AuthController', 'registerPending'],
         '/forgot-password'      => ['AuthController', 'forgotForm'],
         '/reset-password'       => ['AuthController', 'resetForm'],
-        '/reset-password/code'  => ['AuthController', 'codeForm'],
         '/account/password'     => ['AccountController', 'passwordForm'],
         '/items'           => ['ItemController', 'index'],
         '/items/browse'    => ['ItemController', 'browse'],
@@ -93,7 +92,6 @@ return [
         '/admin/settings'                 => 'admin/settings/profile',
         '/admin/settings/profile'         => 'admin/settings/profile',
         '/admin/settings/security'        => 'admin/settings/security',
-        '/admin/reset-codes'              => ['AccountSupportController', 'resetCodeForm'],
         '/admin/settings/notifications'   => 'admin/settings/notifications',
     
         // ── Moderator ──
@@ -114,7 +112,6 @@ return [
         '/moderator/disasters/contributions/{id}/confirm' => 'moderator/disasters/contributions/confirm',
         '/moderator/aid-vouching'            => 'moderator/aid-vouching/index',
         '/moderator/address-changes'         => ['AccountSupportController', 'addressChanges'],
-        '/moderator/reset-codes'             => ['AccountSupportController', 'resetCodeForm'],
     
         // ── Sponsor Liaison ──
         '/sponsor-liaison'                       => 'sponsor-liaison/dashboard/index',
@@ -155,7 +152,6 @@ return [
         '/logout'             => ['AuthController', 'logout'],
         '/forgot-password'     => ['AuthController', 'forgot'],
         '/reset-password'      => ['AuthController', 'reset'],
-        '/reset-password/code' => ['AuthController', 'resetWithCode'],
         '/account/password'    => ['AccountController', 'changePassword'],
         '/settings/preferences'   => ['AccountController', 'savePreferences'],
         '/settings/close-account' => ['AccountController', 'closeAccount'],
@@ -163,8 +159,6 @@ return [
         '/profile/address'     => ['ProfileController', 'requestAddressChange'],
         '/moderator/address-changes/{id}/approve' => ['AccountSupportController', 'approveAddress'],
         '/moderator/address-changes/{id}/reject'  => ['AccountSupportController', 'rejectAddress'],
-        '/moderator/reset-codes' => ['AccountSupportController', 'issueResetCode'],
-        '/admin/reset-codes'     => ['AccountSupportController', 'issueResetCode'],
         '/admin/divisions'    => ['AdminController', 'createDivision'],
         '/admin/divisions/{id}'          => ['AdminController', 'updateDivision'],
         '/admin/divisions/{id}/archive'  => ['AdminController', 'archiveDivision'],

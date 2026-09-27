@@ -14,7 +14,6 @@ $memberId = (int) ($_SESSION['user_id'] ?? 0);
 $accountLinks = match ($chrome) {
     'admin' => [
         ['Profile', '/admin/settings/profile'], ['Security', '/admin/settings/security'],
-        ['Reset codes', '/admin/reset-codes'],
         ['Notifications', '/admin/notifications'], ['Notification preferences', '/admin/settings/notifications'],
         ['Cron Jobs', '/admin/cron'], ['Point Policies', '/admin/pools/policies'],
         ['Disaster Mode', '/admin/disaster'],
@@ -34,7 +33,7 @@ $accountLinks = match ($chrome) {
         ['Dashboard', '/moderator/dashboard'], ['Verifications', '/moderator/verifications'],
         ['Approvals', '/moderator/listing-approvals'], ['Cases', '/moderator/cases'],
         ['Aid Vouching', '/moderator/aid-vouching'], ['Disasters', '/moderator/disasters'],
-        ['Address changes', '/moderator/address-changes'], ['Reset codes', '/moderator/reset-codes'],
+        ['Address changes', '/moderator/address-changes'],
         ['Member Profile', '/profile'], ['Settings', '/settings'],
         ['Help', '/help'],
     ],

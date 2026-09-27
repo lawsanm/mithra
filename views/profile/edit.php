@@ -76,13 +76,13 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 
     <div class="field">
-        <label class="field__label" for="email">Email — optional</label>
+        <label class="field__label" for="email">Email</label>
         <input class="input" type="email" id="email" name="email" value="<?= e($draft['email']) ?>" autocomplete="email"
             <?= isset($errors['email']) ? 'aria-invalid="true"' : '' ?>>
         <?php if (isset($errors['email'])): ?>
             <span class="field__error"><?= e($errors['email']) ?></span>
         <?php else: ?>
-            <span class="field__hint">Needed for emailed password-reset links.</span>
+            <span class="field__hint">Password-reset links are sent here.</span>
         <?php endif; ?>
     </div>
 

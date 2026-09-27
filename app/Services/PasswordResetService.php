@@ -6,41 +6,24 @@ declare(strict_types=1);
  * Getting back into an account, and changing a password from inside one
  * (Plan §20.1 module 1.1).
  *
- * Two ways back in, because email is optional at sign-up:
- *   - an emailed link, valid for LINK_TTL_MINUTES, for members with an email;
- *   - a one-time code the division moderator (or the Admin) issues after
- *     checking the person in front of them, valid for CODE_TTL_MINUTES — the
- *     same in-person trust the plan uses for verification (§18.1).
+ * The way back in is an emailed link, valid for LINK_TTL_MINUTES — every
+ * account has an email address.
  *
- * Secrets are random, single-use, stored only as SHA-256 hashes, and a new one
- * or a successful reset retires every older one. Redeeming a code is throttled
- * like sign-in, and every reset ends the account's other sessions (the
- * password_changed_at stamp moves).
+ * Link tokens are random, single-use, stored only as SHA-256 hashes, and a new
+ * one or a successful reset retires every older one. Every reset ends the
+ * account's other sessions (the password_changed_at stamp moves).
  */
 final class PasswordResetService
 {
     public const LINK_TTL_MINUTES = 60;
 
-    public const CODE_TTL_MINUTES = 24 * 60;
-
     /** At most this many reset emails per account per hour. */
     private const MAX_LINKS_PER_HOUR = 3;
-
-    /** Unambiguous characters: no 0/O or 1/I/L to misread aloud. */
-    private const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-
-    private const CODE_LENGTH = 10;
-
-    /** The throttle scope for code redemption. */
-    private const SCOPE = 'reset-code';
 
     public function __construct(
         private PDO $pdo,
         private User $users,
-        private PasswordReset $resets,
-        private GnDivision $divisions,
-        private AuthService $auth,
-        private LoginThrottle $throttle
+        private PasswordReset $resets
     ) {
     }
 
@@ -72,7 +55,7 @@ final class PasswordResetService
 
         $token = bin2hex(random_bytes(32));
 
-        $this->issue($userId, 'email', $token, null, self::LINK_TTL_MINUTES);
+        $this->issue($userId, $token, self::LINK_TTL_MINUTES);
 
         return ['token' => $token, 'name' => (string) $account['full_name'], 'email' => (string) $account['email']];
     }
@@ -95,100 +78,6 @@ final class PasswordResetService
         }
 
         $this->complete($reset, $password, $confirmation);
-    }
-
-    // ── Code issued in person ───────────────────────────────────────────────
-
-    /**
-     * Issue a one-time code for the account a moderator or the Admin has just
-     * identified in person, by NIC or mobile number.
-     *
-     * A moderator may only issue codes for members of their own division, and
-     * never for themselves; the Admin may issue one for any account but their
-     * own (their own password changes from inside the account).
-     *
-     * @throws ValidationException|AccessDeniedException
-     *
-     * @return array{code: string, name: string, expires_hours: int}
-     */
-    public function issueCode(int $issuerId, string $issuerRole, string $nicOrMobile): array
-    {
-        $typed = trim($nicOrMobile);
-        $nic   = RegistrationService::normaliseNic($typed) ?? '';
-        $phone = RegistrationService::normalisePhone($typed);
-        $digits = $phone === null ? '' : RegistrationService::phoneDigits($phone);
-
-        if ($nic === '' && $digits === '') {
-            throw ValidationException::field('lookup', 'Enter the member’s NIC number or mobile number.');
-        }
-
-        $account = $this->users->findForCodeIssue($nic === '' ? '-' : $nic, $digits === '' ? '-' : $digits);
-
-        if ($account === null) {
-            throw ValidationException::field('lookup', 'No account matches that NIC or mobile number.');
-        }
-
-        $targetId = (int) $account['id'];
-
-        if ($targetId === $issuerId) {
-            throw ValidationException::field('lookup', 'Change your own password from your account settings instead.');
-        }
-
-        if ($issuerRole === 'moderator') {
-            $division = $this->divisions->moderatedBy($issuerId);
-
-            if ($division === null
-                || $account['role_code'] !== 'member'
-                || (int) ($account['home_division_id'] ?? 0) !== $division) {
-                throw new AccessDeniedException('Moderators issue codes only for members of their own division.');
-            }
-        } elseif ($issuerRole !== 'admin') {
-            throw new AccessDeniedException('Only a moderator or the Admin can issue reset codes.');
-        }
-
-        if ($account['status'] !== 'active') {
-            throw ValidationException::field('lookup', 'That account is not active, so there is nothing to sign in to.');
-        }
-
-        $code = self::newCode();
-
-        $this->issue($targetId, 'issued_code', self::normaliseCode($code), $issuerId, self::CODE_TTL_MINUTES);
-
-        return ['code' => $code, 'name' => (string) $account['full_name'], 'expires_hours' => intdiv(self::CODE_TTL_MINUTES, 60)];
-    }
-
-    /**
-     * Redeem a code against the email or mobile number the member signs in
-     * with. Throttled like sign-in, and refused with one message whatever was
-     * wrong, so the form reveals nothing.
-     *
-     * @throws ValidationException
-     */
-    public function resetWithCode(string $identifier, string $code, string $password, string $confirmation, string $ip): void
-    {
-        if ($this->throttle->isBlocked(self::SCOPE, $identifier, $ip)) {
-            throw ValidationException::field('form', LoginThrottle::refusal());
-        }
-
-        $policy = PasswordPolicy::errors($password, $confirmation);
-        if ($policy !== []) {
-            throw new ValidationException($policy);
-        }
-
-        $account = $this->auth->lookup($identifier);
-        $reset   = $this->resets->findUsable(self::hash(self::normaliseCode($code)), 'issued_code');
-
-        if ($account === null || $reset === null || (int) $reset['user_id'] !== (int) $account['id']) {
-            $this->throttle->record(self::SCOPE, $identifier, $ip, false);
-
-            throw ValidationException::field(
-                'form',
-                'That code does not match this account, or it has expired. Ask your moderator for a new one.'
-            );
-        }
-
-        $this->complete($reset, $password, $confirmation);
-        $this->throttle->record(self::SCOPE, $identifier, $ip, true);
     }
 
     // ── Signed in ───────────────────────────────────────────────────────────
@@ -236,25 +125,6 @@ final class PasswordResetService
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
-    /** A code in the form it is read aloud: ABCDE-FGHJK. */
-    public static function newCode(): string
-    {
-        $alphabet = self::CODE_ALPHABET;
-        $code     = '';
-
-        for ($i = 0; $i < self::CODE_LENGTH; $i++) {
-            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
-        }
-
-        return substr($code, 0, 5) . '-' . substr($code, 5);
-    }
-
-    /** Case, spaces and dashes do not matter when a code is typed back. */
-    public static function normaliseCode(string $code): string
-    {
-        return strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $code));
-    }
-
     public static function looksLikeToken(string $token): bool
     {
         return preg_match('/^[a-f0-9]{64}$/', $token) === 1;
@@ -265,18 +135,17 @@ final class PasswordResetService
         return hash('sha256', $secret);
     }
 
-    private function issue(int $userId, string $channel, string $secret, ?int $issuerId, int $ttlMinutes): void
+    private function issue(int $userId, string $secret, int $ttlMinutes): void
     {
         $this->pdo->beginTransaction();
 
         try {
-            // Only the newest secret works: an older link or code is retired.
+            // Only the newest link works: an older one is retired.
             $this->resets->revokeFor($userId);
             $this->resets->create([
                 'user_id'     => $userId,
-                'channel'     => $channel,
+                'channel'     => 'email',
                 'secret_hash' => self::hash($secret),
-                'issued_by'   => $issuerId,
                 'ttl_minutes' => $ttlMinutes,
             ]);
             $this->pdo->commit();

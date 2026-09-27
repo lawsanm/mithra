@@ -23,7 +23,7 @@ declare(strict_types=1);
         <?= field_error($errors, 'daily_rate') ?>
     </div>
     <div class="field">
-        <label class="field__label" for="monthly-rate">Monthly rate (pts) — optional</label>
+        <label class="field__label" for="monthly-rate">Monthly rate (pts)</label>
         <input
             class="input input--narrow"
             type="number"

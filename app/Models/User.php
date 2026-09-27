@@ -356,12 +356,12 @@ final class User extends BaseModel
     }
 
     /**
-     * Admin member directory, filtered by status and free-text search on name
-     * or home division.
+     * Admin member directory, filtered by status, role code and free-text
+     * search on name or home division.
      *
      * @return list<array<string, mixed>>
      */
-    public function adminList(string $status, string $search): array
+    public function adminList(string $status, string $role, string $search): array
     {
         $where = '1=1';
         $params = [];
@@ -369,6 +369,11 @@ final class User extends BaseModel
         if ($status !== '' && $status !== 'all') {
             $where .= ' AND u.status = :status';
             $params['status'] = $status;
+        }
+
+        if ($role !== '') {
+            $where .= ' AND r.code = :role';
+            $params['role'] = $role;
         }
 
         if ($search !== '') {
@@ -455,28 +460,6 @@ final class User extends BaseModel
         return $this->selectOne(
             "SELECT id, full_name, email FROM users WHERE email = :email AND status = 'active' LIMIT 1",
             ['email' => $email]
-        );
-    }
-
-    /**
-     * An account found by NIC or by the last nine digits of its mobile — the
-     * two things a moderator can check against the person standing in front
-     * of them when issuing a reset code.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function findForCodeIssue(string $nic, string $phoneDigits): ?array
-    {
-        return $this->selectOne(
-            "SELECT u.id, u.full_name, u.nic, u.phone, u.status, r.code AS role_code,
-                    ud.gn_division_id AS home_division_id
-               FROM users u
-               JOIN roles r ON r.id = u.role_id
-          LEFT JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = 'home'
-              WHERE u.nic = :nic OR u.phone_digits = :digits
-              ORDER BY u.id
-              LIMIT 1",
-            ['nic' => $nic, 'digits' => $phoneDigits]
         );
     }
 

@@ -6,10 +6,12 @@ declare(strict_types=1);
  * User management — admin view of all platform members with search and filters.
  *
  * @var array  $stats   stat cards: total, active, suspended, new this month
- * @var array  $filters status pills: label, slug, active(bool)
- * @var array  $users   user rows: initials, name, division, role, balance, status, status_label, href
- * @var string $status  the active status filter ('' for all)
- * @var string $search  current search term
+ * @var array  $filters     status pills: label, href, active(bool)
+ * @var array  $roleFilters role pills: label, href, active(bool)
+ * @var array  $users       user rows: initials, name, division, role, balance, status, status_label, href
+ * @var string $status      the active status filter ('' for all)
+ * @var string $role        the active role code ('' for all roles)
+ * @var string $search      current search term
  */
 
 $pageTitle = 'Users';
@@ -33,23 +35,26 @@ include __DIR__ . '/../../../partials/header.php';
 
 <form class="field-row" method="get" action="<?= base_url() ?>/admin/users" role="search" novalidate>
     <input type="hidden" name="status" value="<?= e($status) ?>">
+    <input type="hidden" name="role" value="<?= e($role) ?>">
     <div class="field">
         <input class="input" type="search" name="q" placeholder="Search name or division" aria-label="Search name or division" value="<?= e($search) ?>">
     </div>
     <button class="btn btn--ghost" type="submit">Search</button>
 </form>
 
-<ul class="filter-pills">
-    <?php foreach ($filters as $pill): ?>
-        <li>
-            <a
-                class="pill<?= $pill['active'] ? ' pill--active' : '' ?>"
-                href="<?= e(base_url() . '/admin/users?' . http_build_query(array_filter(['status' => $pill['slug'], 'q' => $search]))) ?>"
-                <?= $pill['active'] ? 'aria-current="true"' : '' ?>
-            ><?= e($pill['label']) ?></a>
-        </li>
-    <?php endforeach; ?>
-</ul>
+<?php foreach ([['Filter by status', $filters], ['Filter by role', $roleFilters]] as [$pillLabel, $pills]): ?>
+    <ul class="filter-pills" aria-label="<?= e($pillLabel) ?>">
+        <?php foreach ($pills as $pill): ?>
+            <li>
+                <a
+                    class="pill<?= $pill['active'] ? ' pill--active' : '' ?>"
+                    href="<?= e($pill['href']) ?>"
+                    <?= $pill['active'] ? 'aria-current="true"' : '' ?>
+                ><?= e($pill['label']) ?></a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+<?php endforeach; ?>
 
 <?php if ($users === []): ?>
     <p class="empty-state__body">No accounts match.</p>

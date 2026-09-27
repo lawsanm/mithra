@@ -29,7 +29,6 @@ include __DIR__ . '/../../../partials/header.php';
     <h1 class="page-header__title">Verifications</h1>
     <div class="actions">
         <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/address-changes">Address changes</a>
-        <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/reset-codes">Reset codes</a>
     </div>
 </header>
 

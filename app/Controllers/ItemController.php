@@ -697,8 +697,10 @@ final class ItemController extends Controller
         $validator
             ->required('name', 'Item name')
             ->maxLength('name', 'Item name', ItemService::NAME_MAX)
+            ->words('name', 'Item name')
             ->required('category', 'Category')
-            ->maxLength('description', 'Description', ItemService::DESCRIPTION_MAX);
+            ->maxLength('description', 'Description', ItemService::DESCRIPTION_MAX)
+            ->words('description', 'Description');
     }
 
     private function valueRules(Validator $validator): void

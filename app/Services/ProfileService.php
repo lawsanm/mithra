@@ -51,9 +51,9 @@ final class ProfileService
         }
 
         $email = trim($input['email']);
-        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            $errors['email'] = 'Enter an email address, or leave this empty.';
-        } elseif ($email !== '' && $this->users->emailTakenByOther($email, $userId)) {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $errors['email'] = 'Enter your email address, for example you@email.com.';
+        } elseif ($this->users->emailTakenByOther($email, $userId)) {
             $errors['email'] = 'Another account already uses this email address.';
         }
 
@@ -159,6 +159,10 @@ final class ProfileService
 
         if ($reason !== null && mb_strlen($reason) > self::REASON_MAX) {
             throw ValidationException::field('reason', sprintf('Keep the reason to %d characters.', self::REASON_MAX));
+        }
+
+        if ($reason !== null && !Validator::hasLetters($reason)) {
+            throw ValidationException::field('reason', 'Write the reason in words, so the member knows what to fix.');
         }
 
         $this->pdo->beginTransaction();

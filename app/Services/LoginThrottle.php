@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Slows down password and reset-code guessing (Plan §21.1, §26 "hand-rolled
+ * Slows down password guessing (Plan §21.1, §26 "hand-rolled
  * security holes").
  *
  * Two limits, both over the last WINDOW_MINUTES:
@@ -51,7 +51,7 @@ final class LoginThrottle
 
     /**
      * A stable hash of what was typed: email lower-cased, mobile reduced to
-     * its last nine digits. The scope keeps sign-in and reset-code attempts
+     * its last nine digits. The scope keeps different kinds of attempt
      * apart.
      */
     public static function identifierHash(string $scope, string $identifier): string

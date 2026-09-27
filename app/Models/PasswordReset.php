@@ -11,23 +11,22 @@ declare(strict_types=1);
 final class PasswordReset extends BaseModel
 {
     protected string $table = 'password_resets';
-    protected string $columns = 'id, user_id, channel, issued_by, expires_at, used_at, created_at';
+    protected string $columns = 'id, user_id, channel, expires_at, used_at, created_at';
 
     /**
-     * @param array{user_id:int, channel:string, secret_hash:string, issued_by:?int, ttl_minutes:int} $data
+     * @param array{user_id:int, channel:string, secret_hash:string, ttl_minutes:int} $data
      */
     public function create(array $data): int
     {
         $statement = $this->pdo->prepare(
-            'INSERT INTO password_resets (user_id, channel, secret_hash, issued_by, expires_at)
-             VALUES (:user_id, :channel, :secret_hash, :issued_by, NOW() + INTERVAL :ttl MINUTE)'
+            'INSERT INTO password_resets (user_id, channel, secret_hash, expires_at)
+             VALUES (:user_id, :channel, :secret_hash, NOW() + INTERVAL :ttl MINUTE)'
         );
 
         $statement->execute([
             'user_id'     => $data['user_id'],
             'channel'     => $data['channel'],
             'secret_hash' => $data['secret_hash'],
-            'issued_by'   => $data['issued_by'],
             'ttl'         => $data['ttl_minutes'],
         ]);
 

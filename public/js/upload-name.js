@@ -7,12 +7,17 @@
  *     <input type="file" class="visually-hidden"> </label>
  *       → the prompt text becomes the chosen file names.
  *
- *   <label class="upload-tile"> … <input type="file" class="visually-hidden"> </label>
- *       → a thumbnail of each chosen photo appears before the tile. Picking
- *         again replaces the previews, as the browser replaces the files.
+ *   <label class="upload-tile"> … <input type="file" class="visually-hidden"
+ *       multiple data-max-files="5" [data-kept-by="keep_photos[]"]> </label>
+ *       → each pick is added to the photos already chosen instead of
+ *         replacing them (a browser file picker replaces its selection every
+ *         time), up to data-max-files. Photos the listing already keeps —
+ *         checked boxes named by data-kept-by — count against that limit.
+ *         Every chosen photo shows as a thumbnail with a button to drop it.
  *
  * Without JavaScript the targets still open the file picker; they just don't
- * show the choice until the form is submitted.
+ * show the choice until the form is submitted. The server enforces the limit
+ * either way.
  */
 
 'use strict';
@@ -34,25 +39,90 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.upload-tile input[type="file"]').forEach((input) => {
         const tile = input.closest('.upload-tile');
+        const form = input.closest('form');
+        const max = input.dataset.maxFiles !== undefined
+            ? Number(input.dataset.maxFiles)
+            : (input.multiple ? Infinity : 1);
+        const keptBy = input.dataset.keptBy
+            ? Array.from(form.querySelectorAll(`input[type="checkbox"][name="${input.dataset.keptBy}"]`))
+            : [];
+
+        const notice = document.createElement('p');
+        notice.className = 'field__hint upload-tile__notice';
+        notice.setAttribute('aria-live', 'polite');
+        tile.parentElement.after(notice);
+
+        let chosen = [];
         let previews = [];
 
-        input.addEventListener('change', () => {
-            previews.forEach((img) => {
-                URL.revokeObjectURL(img.src);
-                img.remove();
+        const room = () => max - keptBy.filter((box) => box.checked).length;
+        const sameFile = (a, b) => a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
+
+        const render = () => {
+            // Hand the whole accumulated list back to the input, so all of it submits.
+            const transfer = new DataTransfer();
+            chosen.forEach((file) => transfer.items.add(file));
+            input.files = transfer.files;
+
+            previews.forEach((item) => {
+                URL.revokeObjectURL(item.querySelector('img').src);
+                item.remove();
             });
 
-            previews = Array.from(input.files).map((file) => {
+            previews = chosen.map((file, index) => {
+                const item = document.createElement('span');
+                item.className = 'upload-tile__item';
+
                 const img = document.createElement('img');
                 img.className = 'thumb thumb--sm thumb__img upload-tile__preview';
                 img.src = URL.createObjectURL(file);
                 img.alt = file.name;
                 img.title = file.name + ' (uploads when you submit)';
-                tile.before(img);
-                return img;
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'upload-tile__remove';
+                remove.textContent = '✕';
+                remove.setAttribute('aria-label', 'Remove ' + file.name);
+                remove.addEventListener('click', () => {
+                    chosen.splice(index, 1);
+                    notice.textContent = '';
+                    render();
+                });
+
+                item.append(img, remove);
+                tile.before(item);
+                return item;
             });
 
-            tile.classList.toggle('upload-tile--chosen', previews.length > 0);
+            tile.classList.toggle('upload-tile--chosen', chosen.length > 0);
+            tile.hidden = chosen.length >= room();
+        };
+
+        input.addEventListener('change', () => {
+            const picked = Array.from(input.files).filter((file) => !chosen.some((held) => sameFile(held, file)));
+            const space = Math.max(room() - chosen.length, 0);
+
+            chosen = chosen.concat(picked.slice(0, space));
+            const left = picked.length - space;
+            notice.textContent = left > 0
+                ? `The listing is full (5 photos at most), so ${left} photo${left === 1 ? ' was' : 's were'} not added.`
+                : '';
+            render();
         });
+
+        // Unticking "Keep" on an existing photo frees a place, and ticking it again
+        // takes one back — dropping the newest choice if the listing is over the limit.
+        keptBy.forEach((box) => box.addEventListener('change', () => {
+            if (chosen.length > room()) {
+                chosen = chosen.slice(0, Math.max(room(), 0));
+                notice.textContent = 'The listing is full (5 photos at most), so the newest choice was dropped.';
+            } else {
+                notice.textContent = '';
+            }
+            render();
+        }));
+
+        render();
     });
 });

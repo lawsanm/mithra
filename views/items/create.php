@@ -70,7 +70,8 @@ include __DIR__ . '/../../partials/header.php';
             <label class="upload-tile">
                 <span aria-hidden="true">＋</span>
                 <span class="visually-hidden">Add a photo</span>
-                <input class="visually-hidden" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple>
+                <input class="visually-hidden" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple
+                    data-max-files="<?= e((string) (ItemService::MAX_PHOTOS - count($photos))) ?>">
             </label>
         </div>
 
