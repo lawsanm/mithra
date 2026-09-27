@@ -45,45 +45,45 @@ SET @fernando  = (SELECT id FROM users WHERE nic = '198712345678');
 -- People
 -- ---------------------------------------------------------------------------
 
-INSERT INTO users (role_id, full_name, nic, phone, phone_digits, email, address, password_hash,
+INSERT INTO users (role_id, full_name, nic, phone, email, address, password_hash,
                    trust_score, gift_receive_enabled, status, joined_at, created_at) VALUES
-  (@member, 'S. Tharshini', '199512345681', '+94 77 222 2001', '772222001', 'tharshini@email.com',
+  (@member, 'S. Tharshini', '199512345681', '+94 77 222 2001', 'tharshini@email.com',
       '32 Alfred Place, Colombo 03', @pw, 88, 1, 'active', '2025-05-12 09:00:00', '2025-05-10 10:00:00');
 SET @tharshini = LAST_INSERT_ID();
 
-INSERT INTO users (role_id, full_name, nic, phone, phone_digits, email, address, password_hash,
+INSERT INTO users (role_id, full_name, nic, phone, email, address, password_hash,
                    trust_score, gift_receive_enabled, status, joined_at, created_at) VALUES
-  (@member, 'K. Nimal Perera', '198912345682', '+94 77 222 2002', '772222002', 'nimal@email.com',
+  (@member, 'K. Nimal Perera', '198912345682', '+94 77 222 2002', 'nimal@email.com',
       '9 Walukarama Road, Colombo 03', @pw, 74, 1, 'active', '2025-06-02 09:00:00', '2025-06-01 10:00:00');
 SET @nimal = LAST_INSERT_ID();
 
-INSERT INTO users (role_id, full_name, nic, phone, phone_digits, email, address, password_hash,
+INSERT INTO users (role_id, full_name, nic, phone, email, address, password_hash,
                    trust_score, gift_receive_enabled, status, joined_at, created_at) VALUES
-  (@member, 'R. Dilani', '199412345683', '+94 77 222 2003', '772222003', 'dilani@email.com',
+  (@member, 'R. Dilani', '199412345683', '+94 77 222 2003', 'dilani@email.com',
       '41 Station Road, Dehiwala', @pw, 81, 1, 'active', '2025-07-15 09:00:00', '2025-07-14 10:00:00');
 SET @dilani = LAST_INSERT_ID();
 
-INSERT INTO users (role_id, full_name, nic, phone, phone_digits, email, address, password_hash,
+INSERT INTO users (role_id, full_name, nic, phone, email, address, password_hash,
                    trust_score, gift_receive_enabled, status, joined_at, created_at) VALUES
-  (@member, 'V. Kajan', '199312345684', '+94 77 222 2004', '772222004', 'kajan@email.com',
+  (@member, 'V. Kajan', '199312345684', '+94 77 222 2004', 'kajan@email.com',
       '18 Vaverset Place, Wellawatte', @pw, 90, 1, 'active', '2025-03-20 09:00:00', '2025-03-19 10:00:00');
 SET @kajan = LAST_INSERT_ID();
 
-INSERT INTO users (role_id, full_name, nic, phone, phone_digits, email, address, password_hash,
+INSERT INTO users (role_id, full_name, nic, phone, email, address, password_hash,
                    trust_score, gift_receive_enabled, status, joined_at, created_at) VALUES
-  (@member, 'M. Farhan', '200012345685', '+94 77 222 2005', '772222005', 'farhan@email.com',
+  (@member, 'M. Farhan', '200012345685', '+94 77 222 2005', 'farhan@email.com',
       '5 Clifford Avenue, Colombo 03', @pw, 50, 1, 'pending', NULL, NOW() - INTERVAL 3 DAY);
 SET @farhan = LAST_INSERT_ID();
 
-INSERT INTO users (role_id, full_name, nic, phone, phone_digits, email, address, password_hash,
+INSERT INTO users (role_id, full_name, nic, phone, email, address, password_hash,
                    trust_score, gift_receive_enabled, status, joined_at, created_at) VALUES
-  (@member, 'P. Sanjeewani', '199712345686', '+94 77 222 2006', '772222006', 'sanjeewani@email.com',
+  (@member, 'P. Sanjeewani', '199712345686', '+94 77 222 2006', 'sanjeewani@email.com',
       '27 Charles Drive, Colombo 03', @pw, 50, 1, 'pending', NULL, NOW() - INTERVAL 1 DAY);
 SET @sanjeewani = LAST_INSERT_ID();
 
-INSERT INTO users (role_id, full_name, nic, phone, phone_digits, email, address, password_hash,
+INSERT INTO users (role_id, full_name, nic, phone, email, address, password_hash,
                    trust_score, gift_receive_enabled, status, joined_at, created_at) VALUES
-  (@member, 'A. Rizwan', '199612345687', '+94 77 222 2007', '772222007', 'rizwan@email.com',
+  (@member, 'A. Rizwan', '199612345687', '+94 77 222 2007', 'rizwan@email.com',
       '63 Hill Street, Dehiwala', @pw, 50, 1, 'pending', NULL, NOW() - INTERVAL 2 DAY);
 SET @rizwan = LAST_INSERT_ID();
 
