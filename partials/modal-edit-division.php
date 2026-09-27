@@ -35,7 +35,7 @@ declare(strict_types=1);
 
         <div class="field" style="margin-top: var(--space-3);">
             <label class="field__label" for="edit_postal_code">Postal code</label>
-            <input class="input" id="edit_postal_code" name="postal_code" type="text" inputmode="numeric" maxlength="5" pattern="\d{5}" value="<?= e($division['postal_code']) ?>">
+            <input class="input" id="edit_postal_code" name="postal_code" type="text" inputmode="numeric" value="<?= e($division['postal_code']) ?>">
         </div>
 
         <div class="modal__footer" style="margin-top: var(--space-4);">

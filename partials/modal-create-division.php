@@ -33,7 +33,7 @@ declare(strict_types=1);
 
         <div class="field">
             <label class="field__label" for="postal_code">Postal code</label>
-            <input class="input" id="postal_code" name="postal_code" type="text" inputmode="numeric" maxlength="5" pattern="\d{5}" placeholder="e.g. 00600">
+            <input class="input" id="postal_code" name="postal_code" type="text" inputmode="numeric" placeholder="e.g. 00600">
         </div>
 
         <div class="modal__footer">
