@@ -155,11 +155,11 @@ include __DIR__ . '/../../../partials/header.php';
         After confirmation, the appointment is posted publicly for 7 days. If a resident raises a serious, specific concern, you will review it before the appointment is finalised.
     </div>
 
-    <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
+    <div class="actions" style="margin-top: var(--space-5);">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Back to selection</a>
-        <div class="inline-form" data-demo-form>
-            <p class="demo-note">Preview only. Saving is not available yet.</p>
+        <div class="preview-action" data-demo-form>
             <button class="btn btn--primary" type="button" id="btn-confirm-appointment" disabled>Confirm and start objection window</button>
+            <span class="demo-note">Not available in this demo</span>
         </div>
     </div>
 </div>
@@ -205,13 +205,12 @@ include __DIR__ . '/../../../partials/header.php';
                             <span class="list-row__meta"><?= e($obj['reason']) ?></span>
                             <span class="list-row__meta"><?= e($obj['date']) ?></span>
                         </div>
-                        <div class="inline-form" data-demo-form>
-                            <p class="demo-note">Preview only. Saving is not available yet.</p>
-                            <button class="btn btn--ghost" type="submit" disabled>Dismiss</button>
-                        </div>
-                        <div class="inline-form" data-demo-form>
-                            <p class="demo-note">Preview only. Saving is not available yet.</p>
-                            <button class="btn btn--danger" type="submit" disabled>Uphold</button>
+                        <div class="preview-action" data-demo-form>
+                            <div class="actions">
+                                <button class="btn btn--ghost" type="button" disabled>Dismiss</button>
+                                <button class="btn btn--danger" type="button" disabled>Uphold</button>
+                            </div>
+                            <span class="demo-note">Not available in this demo</span>
                         </div>
                     </li>
                 <?php endforeach; ?>

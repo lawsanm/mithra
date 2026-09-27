@@ -339,6 +339,14 @@ final class User extends BaseModel
         return $statement->fetchAll();
     }
 
+    public function roleCode(int $id): string
+    {
+        return (string) ($this->selectValue(
+            'SELECT r.code FROM roles r JOIN users u ON u.role_id = r.id WHERE u.id = :id',
+            ['id' => $id]
+        ) ?: 'member');
+    }
+
     public function roleName(int $id): string
     {
         return (string) ($this->selectValue(

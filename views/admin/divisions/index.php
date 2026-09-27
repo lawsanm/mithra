@@ -53,5 +53,5 @@ include __DIR__ . '/../../../partials/header.php';
 
 <?php include __DIR__ . '/../../../partials/modal-create-division.php'; ?>
 
-<?php $pageScripts = ['modal.js', 'list-filter.js']; ?>
+<?php $pageScripts = ['modal.js', 'list-filter.js', 'district-select.js']; ?>
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

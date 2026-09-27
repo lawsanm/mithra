@@ -5,7 +5,8 @@ declare(strict_types=1);
 /**
  * User detail — admin view of an individual member.
  *
- * @var array $user       initials, name, division, role, status, status_label, email, phone, joined_at, trust_score, balance
+ * @var array $user       id, initials, name, division, role, status, status_label, email, phone, joined_at,
+ *                        trust_score, balance, is_resident (shows the trust score), can_suspend
  * @var array $activity   the account's latest point movements: icon_type, title, meta
  * @var array $stats      label, value
  */
@@ -54,10 +55,12 @@ include __DIR__ . '/../../../partials/header.php';
                 <span class="line-item__label">Joined</span>
                 <span class="line-item__value"><?= e($user['joined_at']) ?></span>
             </div>
-            <div class="line-item">
-                <span class="line-item__label">Trust score</span>
-                <span class="line-item__value"><strong style="color: var(--color-primary);"><?= e((string) $user['trust_score']) ?></strong> / 100</span>
-            </div>
+            <?php if ($user['is_resident']): ?>
+                <div class="line-item">
+                    <span class="line-item__label">Trust score</span>
+                    <span class="line-item__value"><strong style="color: var(--color-primary);"><?= e((string) $user['trust_score']) ?></strong> / 100</span>
+                </div>
+            <?php endif; ?>
             <div class="line-item">
                 <span class="line-item__label">Points balance</span>
                 <span class="line-item__value"><?= e($user['balance']) ?></span>
@@ -88,7 +91,7 @@ include __DIR__ . '/../../../partials/header.php';
     <div class="user-panel">
         <div class="user-panel__header">
             <span class="avatar" style="width:48px;height:48px;font-size:var(--text-lede);"><?= e($user['initials']) ?></span>
-            <div>
+            <div class="list-row__body">
                 <strong><?= e($user['name']) ?></strong>
                 <span class="list-row__meta"><?= e($user['division']) ?> · <?= e($user['role']) ?></span>
             </div>
@@ -104,6 +107,13 @@ include __DIR__ . '/../../../partials/header.php';
         </div>
 
         <div style="display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4);">
+            <?php if ($user['can_suspend']): ?>
+                <?php // Suspension has no backend yet: the account status never changes from here. ?>
+                <div class="preview-action" data-demo-form style="align-items: stretch;">
+                    <button class="btn btn--danger" type="button" disabled style="width:100%;">Suspend member</button>
+                    <span class="demo-note">Not available in this demo</span>
+                </div>
+            <?php endif; ?>
             <a class="btn btn--ghost" href="<?= base_url() ?>/admin/users" style="width:100%; text-align:center;">Back to users</a>
         </div>
     </div>

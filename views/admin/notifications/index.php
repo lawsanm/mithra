@@ -19,10 +19,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Notifications</h1>
-    <div class="page-header__action" data-demo-form>
-        <p class="demo-note">Preview only. Saving is not available yet.</p>
-        <button class="btn btn--ghost" type="submit" disabled>Mark all read</button>
-    </div>
+    <button class="btn btn--ghost page-header__action" type="button" disabled title="Not available in this demo">Mark all read</button>
 </header>
 
 <ul class="filter-pills">

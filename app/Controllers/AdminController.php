@@ -134,7 +134,12 @@ final class AdminController extends Controller
                 throw new ValidationException($validator->errors());
             }
 
-            $id = $this->divisionService()->create($validator->value('name'), $validator->value('district'));
+            $id = $this->divisionService()->create(
+                $validator->value('province'),
+                $validator->value('district'),
+                $validator->value('name'),
+                $validator->value('postal_code')
+            );
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
             $this->redirect('/admin/divisions');
@@ -158,7 +163,13 @@ final class AdminController extends Controller
                 throw new ValidationException($validator->errors());
             }
 
-            $this->divisionService()->update($id, $validator->value('name'), $validator->value('district'));
+            $this->divisionService()->update(
+                $id,
+                $validator->value('province'),
+                $validator->value('district'),
+                $validator->value('name'),
+                $validator->value('postal_code')
+            );
             $this->flash('Division details saved.');
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
@@ -192,11 +203,22 @@ final class AdminController extends Controller
 
     private function divisionInput(): Validator
     {
-        return (new Validator($_POST))
+        $validator = (new Validator($_POST))
+            ->required('province', 'Province')
+            ->inList('province', 'Province', Province::names())
+            ->required('district', 'District')
             ->required('name', 'Division name')
             ->maxLength('name', 'Division name', 120)
-            ->required('district', 'District')
-            ->maxLength('district', 'District', 100);
+            ->required('postal_code', 'Postal code');
+
+        // Sri Lankan postal codes are five digits (Colombo's keep a leading 00).
+        $postalCode = $validator->value('postal_code');
+
+        if ($postalCode !== '' && preg_match('/^\d{5}$/', $postalCode) !== 1) {
+            $validator->addError('postal_code', 'Postal code must be 5 digits.');
+        }
+
+        return $validator;
     }
 
     private function divisionService(): DivisionService
@@ -244,7 +266,9 @@ final class AdminController extends Controller
                 fn (array $row): array => [
                     'id'             => (int) $row['id'],
                     'name'           => (string) $row['name'],
+                    'province'       => (string) $row['province'],
                     'district'       => (string) $row['district'],
+                    'postal_code'    => (string) ($row['postal_code'] ?? ''),
                     'member_count'   => (int) $row['member_count'],
                     'moderator_name' => $row['moderator_name'],
                     'href'           => base_url() . '/admin/divisions/' . $row['id'],
@@ -270,7 +294,9 @@ final class AdminController extends Controller
             'division' => [
                 'id'              => (int) $row['id'],
                 'name'            => (string) $row['name'],
+                'province'        => (string) $row['province'],
                 'district'        => (string) $row['district'],
+                'postal_code'     => (string) ($row['postal_code'] ?? ''),
                 'archived'        => $row['status'] === 'archived',
                 'moderator_name'  => $row['moderator_name'],
                 'moderator_since' => $row['moderator_since'] === null ? '' : date('j M Y', strtotime((string) $row['moderator_since'])),
@@ -803,9 +829,15 @@ final class AdminController extends Controller
         }
 
         $stats = $users->profileStats($id);
+        // Trust scores and suspension apply to residents only — staff and
+        // sponsor accounts never lend or borrow.
+        $isResident = in_array($users->roleCode($id), ['member', 'moderator'], true);
 
         return [
             'user' => [
+                'id'          => $id,
+                'is_resident' => $isResident,
+                'can_suspend' => $isResident && in_array((string) $row['status'], ['active', 'pending'], true),
                 'initials'    => User::initials((string) $row['full_name']),
                 'name'        => (string) $row['full_name'],
                 'email'       => (string) ($row['email'] ?? '') ?: '—',

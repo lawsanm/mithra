@@ -423,8 +423,8 @@ legend {
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    padding: var(--space-3) 22px;
-    border: none;
+    padding: 11px 20px;
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
     font-size: var(--text-lede);
     font-weight: var(--weight-semibold);
@@ -454,12 +454,13 @@ legend {
 
 .btn--primary:disabled,
 .btn--primary[aria-disabled="true"] {
-    background-color: var(--color-primary-disabled);
+    background-color: var(--color-primary-100);
+    color: var(--color-primary-400);
     cursor: not-allowed;
 }
 
 .btn--ghost {
-    border: 1.5px solid var(--color-primary);
+    border-color: var(--color-primary);
     background-color: transparent;
     color: var(--color-primary);
 }
@@ -476,8 +477,9 @@ legend {
 
 .btn--ghost:disabled,
 .btn--ghost[aria-disabled="true"] {
-    border-color: var(--color-primary-disabled);
-    color: var(--color-text-disabled);
+    border-color: var(--color-border-strong);
+    background-color: var(--color-warm-100);
+    color: var(--color-text-muted);
     cursor: not-allowed;
 }
 
@@ -1092,6 +1094,7 @@ legend {
 .actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
     gap: var(--space-3);
 }
 
@@ -2183,7 +2186,7 @@ legend {
 
 /* Destructive action: error tint, never a solid red fill. */
 .btn--danger {
-    padding: 14px 18px;
+    padding: 11px 18px;
     background-color: var(--color-error-tint);
     color: var(--color-error-text);
     font-size: var(--text-ui-label);
@@ -3389,7 +3392,7 @@ button.link:disabled {
 .demo-note { color: var(--color-text-muted); font-size: var(--text-caption); line-height: 1.4; margin-bottom: var(--space-2); }
 [data-demo-form] { min-width: 0; }
 button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; }
-.btn:disabled { opacity: 0.6; }
+.btn--danger:disabled { opacity: 0.6; }
 .preview-action { display: inline-flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); }
 .preview-action .demo-note { margin: 0; }
 .invariant-panel { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: var(--space-3); }

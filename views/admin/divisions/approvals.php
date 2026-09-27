@@ -53,13 +53,12 @@ include __DIR__ . '/../../../partials/header.php';
                         NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?>
                     </span>
                 </div>
-                <div class="inline-form" data-demo-form>
-                    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                    <button class="btn btn--ghost" type="submit" disabled>Reject</button>
-                </div>
-                <div class="inline-form" data-demo-form>
-                    <p class="demo-note">Preview only. Saving is not available yet.</p>
-                    <button class="btn btn--primary" type="submit" disabled>Approve</button>
+                <div class="preview-action" data-demo-form>
+                    <div class="actions">
+                        <button class="btn btn--ghost" type="button" disabled>Reject</button>
+                        <button class="btn btn--primary" type="button" disabled>Approve</button>
+                    </div>
+                    <span class="demo-note">Not available in this demo</span>
                 </div>
             </li>
         <?php endforeach; ?>

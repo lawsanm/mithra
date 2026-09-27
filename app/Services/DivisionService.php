@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * The Admin's division CRUD (Plan §16.4): create, rename and archive a GN
+ * The Admin's division CRUD (Plan §16.4): create, edit and archive a GN
  * division. Archiving is the delete — members, listings and bookings keep
  * pointing at the row, so it is never removed.
  *
@@ -17,24 +17,27 @@ final class DivisionService
     }
 
     /**
-     * @throws ValidationException when the name is already used in the district
+     * @throws ValidationException when the district is not in the province, or
+     *                             the name is already used in the district
      */
-    public function create(string $name, string $district): int
+    public function create(string $province, string $district, string $name, string $postalCode): int
     {
+        $this->assertDistrictInProvince($province, $district);
         $this->assertNameFree($name, $district);
 
-        return $this->divisions->create($name, $district);
+        return $this->divisions->create($province, $district, $name, $postalCode);
     }
 
     /**
      * @throws RecordNotFoundException|ValidationException
      */
-    public function update(int $id, string $name, string $district): void
+    public function update(int $id, string $province, string $district, string $name, string $postalCode): void
     {
         $this->existing($id);
+        $this->assertDistrictInProvince($province, $district);
         $this->assertNameFree($name, $district, $id);
 
-        $this->divisions->updateDetails($id, $name, $district);
+        $this->divisions->updateDetails($id, $province, $district, $name, $postalCode);
     }
 
     /**
@@ -63,6 +66,19 @@ final class DivisionService
     private function existing(int $id): array
     {
         return $this->divisions->find($id) ?? throw new RecordNotFoundException('No such division.');
+    }
+
+    /**
+     * The district dropdown only offers the chosen province's districts, but a
+     * crafted request could still pair them wrongly.
+     *
+     * @throws ValidationException
+     */
+    private function assertDistrictInProvince(string $province, string $district): void
+    {
+        if (!in_array($district, Province::districtsOf($province), true)) {
+            throw ValidationException::field('district', sprintf('%s is not in %s.', $district, $province));
+        }
     }
 
     /**
