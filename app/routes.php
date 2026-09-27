@@ -127,6 +127,7 @@ return [
         '/sponsor-liaison/purchases/{id}'        => ['SponsorLiaisonController', 'purchase'],
         '/sponsor-liaison/purchases/create'      => 'sponsor-liaison/purchases/create',
         '/sponsor-liaison/points-pool'           => 'sponsor-liaison/points-pool/index',
+        '/sponsor-liaison/points-pool/reserve-topup' => 'sponsor-liaison/points-pool/reserve-topup',
         '/sponsor-liaison/disasters'             => 'sponsor-liaison/disasters/index',
         '/sponsor-liaison/disasters/connection'  => 'sponsor-liaison/disasters/connection',
         '/sponsor-liaison/disasters/contributions'           => 'sponsor-liaison/disasters/contributions/index',

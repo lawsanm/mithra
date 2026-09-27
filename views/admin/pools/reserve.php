@@ -30,6 +30,8 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Reserve Pool &amp; shortfall covers</h1>
+    <?php // Needs the notification module (4.6) to send; shown so the §7.7 hand-off is visible. ?>
+    <span class="preview-action page-header__action"><button type="button" disabled class="btn btn--primary">Notify Sponsor Liaison</button><span class="demo-note">Not available in this demo</span></span>
 </header>
 
 <div class="stat-grid stat-grid--3">

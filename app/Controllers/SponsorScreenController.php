@@ -14,6 +14,7 @@ final class SponsorScreenController extends Controller
             'sponsor/disasters/show' => $this->event((int) ($params['id'] ?? 0)),
             'sponsor-liaison/dashboard/index' => $this->liaisonDashboard(),
             'sponsor-liaison/points-pool/index' => $this->pools(),
+            'sponsor-liaison/points-pool/reserve-topup' => $this->reserveTopUp(),
             'sponsor-liaison/csr-reports/index' => $this->impact(),
             'sponsor-liaison/csr-reports/quarterly' => $this->quarterly(),
             'sponsor-liaison/disasters/index' => $this->disasters(),
@@ -127,6 +128,20 @@ final class SponsorScreenController extends Controller
             'amount' => number_format((int) $row['amount']) . ' pts', 'amount_class' => 'primary',
             'balance_after' => ($row['from_pool_code'] ?? 'Member') . ' → ' . ($row['to_pool_code'] ?? 'Member'),
         ], (new PointLedger($this->pdo))->sponsorPoolActivity())];
+    }
+
+    /** Reserve top-up preview (Plan §7.7): live balances; saving is not built yet. */
+    private function reserveTopUp(): array
+    {
+        $pool = new PointPool($this->pdo);
+        $covers = new ShortfallCover($this->pdo);
+        $year = $covers->yearStats();
+        return ['stats' => [
+            ['label' => 'Sponsor Pool', 'value' => number_format($pool->balance('sponsor')), 'note' => 'Available to move', 'class' => 'primary'],
+            ['label' => 'Reserve Pool', 'value' => number_format($pool->balance('reserve')), 'note' => 'Current safety net', 'class' => 'primary'],
+            ['label' => 'Shortfall covers this year', 'value' => number_format($year['total_pts']) . ' pts', 'note' => $year['covers'] . ' covers paid from the Reserve', 'class' => ''],
+            ['label' => 'Top-ups this year', 'value' => number_format($covers->topUpsThisYear()) . ' pts', 'note' => 'Sponsor Pool → Reserve Pool', 'class' => ''],
+        ]];
     }
 
     private function impact(): array

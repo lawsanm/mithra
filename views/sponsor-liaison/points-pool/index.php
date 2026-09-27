@@ -19,6 +19,7 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Points pool</h1>
+    <a class="btn btn--primary page-header__action" href="<?= base_url() ?>/sponsor-liaison/points-pool/reserve-topup">Top up Reserve</a>
 </header>
 
 <div class="stat-grid">
