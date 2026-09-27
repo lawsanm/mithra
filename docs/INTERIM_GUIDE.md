@@ -60,9 +60,9 @@ Every request runs Auth → RBAC → CSRF before any controller (Plan §21.3). T
 
 Account security (Plan §20.1 module 1.1, §21.1) runs on migration `005_create_account_security.sql`:
 
-- **Sign-in throttling.** Five failed attempts on one email or mobile number (however it is spelled), or thirty from one IP, lock sign-in for 15 minutes. The same limit guards reset-code redemption.
+- **Sign-in throttling.** Five failed attempts on one email or mobile number (however it is spelled), or thirty from one IP, lock sign-in for 15 minutes.
 - **Forgot password.** `/forgot-password` emails a single-use link valid for 60 minutes, and answers the same way whether or not the address has an account. XAMPP has no mail server, so with `app.env = 'local'` in `config/config.php` the link is shown on screen instead; on a real server set `app.env = 'production'`, `app.url`, and `mail.enabled`.
-- **Reset codes.** A member without an email asks their moderator, who checks the NIC in person and issues a one-time code (`/moderator/reset-codes`, valid 24 hours) for a member of their own division. The Admin can issue one for any account (`/admin/reset-codes`). The member redeems it at `/reset-password/code`.
+- **Email is required.** Every account gives an email address at sign-up (and cannot clear it from the profile), so the emailed link is the one way back in. Sign-in still accepts the email or the mobile number.
 - **Sessions.** Every request re-checks the account: a suspended or closed account, a changed role, a password changed elsewhere, or two idle hours ends the session. Changing your own password keeps the current session and signs out the others.
 - **Profile and settings.** Name, mobile and email save at once; a new home address waits with its proof for the moderator at `/moderator/address-changes`. Settings changes the password, the receive-gifts preference, and closes the account — Type A moves the balance to the Retired Pool, Type B to the Aid Pool — once no booking, damage claim or aid grant is open.
 

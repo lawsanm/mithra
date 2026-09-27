@@ -84,7 +84,14 @@ final class SponsorLiaisonController extends Controller
      */
     public function store(): void
     {
-        $validator = $this->sponsorInput();
+        // The login is in the contact person's name and signs in with the contact
+        // email, so onboarding needs both — say so with every other problem at once.
+        $validator = $this->sponsorInput()
+            ->required('contact_person', 'Contact person')
+            ->required('contact_email', 'Contact email')
+            ->required('login_nic', 'NIC number')
+            ->required('login_phone', 'Mobile number')
+            ->required('login_address', 'Company address');
 
         try {
             if (!$validator->passes()) {
@@ -214,16 +221,21 @@ final class SponsorLiaisonController extends Controller
         return (new Validator($_POST))
             ->required('company_name', 'Company name')
             ->maxLength('company_name', 'Company name', 150)
+            ->words('company_name', 'Company name')
             ->maxLength('contact_person', 'Contact person', 100)
+            ->personName('contact_person', 'Contact person')
             ->maxLength('contact_phone', 'Contact phone', 20)
             ->maxLength('contact_email', 'Contact email', 150)
             ->required('agreement_status', 'Agreement status')
             ->inList('agreement_status', 'Agreement status', array_keys(SponsorService::AGREEMENT_STATUSES))
             ->maxLength('agreement_details', 'Agreement details', 255)
+            ->words('agreement_details', 'Agreement details')
             ->maxLength('internal_notes', 'Internal notes', 500)
+            ->words('internal_notes', 'Internal notes')
             ->maxLength('login_nic', 'NIC number', 20)
             ->maxLength('login_phone', 'Mobile number', 20)
-            ->maxLength('login_address', 'Company address', 255);
+            ->maxLength('login_address', 'Company address', 255)
+            ->words('login_address', 'Company address');
     }
 
     /**

@@ -9,7 +9,12 @@ declare(strict_types=1);
  * @var array $draft             current field values
  * @var array $errors            per-field messages
  * @var array $agreementStatuses value => label
+ * @var bool  $contactRequired   true at onboarding, where the sponsor login is
+ *                               in the contact person's name and uses the contact email
  */
+
+$contactRequired = $contactRequired ?? false;
+$contactSuffix   = $contactRequired ? '' : ' — optional';
 
 ?>
 <div class="field">
@@ -27,7 +32,7 @@ declare(strict_types=1);
 </div>
 
 <div class="field">
-    <label class="field__label" for="contact-person">Contact person — optional</label>
+    <label class="field__label" for="contact-person">Contact person<?= e($contactSuffix) ?></label>
     <input
         class="input"
         type="text"
@@ -41,7 +46,7 @@ declare(strict_types=1);
 </div>
 
 <div class="field">
-    <label class="field__label" for="contact-email">Contact email — optional</label>
+    <label class="field__label" for="contact-email">Contact email<?= e($contactSuffix) ?></label>
     <input
         class="input"
         type="email"

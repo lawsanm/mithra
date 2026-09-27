@@ -72,7 +72,8 @@ final class ListingApprovalController extends Controller
         $validator
             ->inList('decision', 'Decision', ListingReviewService::DECISIONS)
             ->integer('declared_value', 'Corrected declared value', 1, ItemService::MAX_DECLARED_VALUE)
-            ->maxLength('reason', 'Reason', 255);
+            ->maxLength('reason', 'Reason', 255)
+            ->words('reason', 'Reason');
 
         if (!$validator->passes()) {
             $this->renderReview($id, $validator->errors());

@@ -133,7 +133,7 @@ include __DIR__ . '/../../partials/header.php';
 
         <?php include __DIR__ . '/../../partials/item-rates.php'; ?>
 
-        <span class="field__hint">Rates are ignored on a donation.</span>
+        <span class="field__hint">A rental needs a daily rate, a monthly rate, or both. Rates are ignored on a donation.</span>
 
         <?= field_error($errors, 'status') ?>
 

@@ -40,7 +40,7 @@ include __DIR__ . '/../../../partials/header.php';
 <form class="form-card" method="post" action="<?= base_url() ?>/sponsor-liaison/sponsors" novalidate>
     <?= csrf_field() ?>
 
-    <?php include __DIR__ . '/../../../partials/sponsor-profile-fields.php'; ?>
+    <?php $contactRequired = true; include __DIR__ . '/../../../partials/sponsor-profile-fields.php'; ?>
 
     <fieldset class="form-card__section">
         <legend class="form-card__legend">Sponsor login</legend>

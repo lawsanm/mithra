@@ -158,13 +158,16 @@ final class AuthController extends Controller
         $validator
             ->required('full_name', 'Full name')
             ->maxLength('full_name', 'Full name', 150)
+            ->personName('full_name', 'Full name')
             ->required('nic', 'NIC number')
             ->maxLength('nic', 'NIC number', 20)
             ->required('phone', 'Mobile number')
             ->maxLength('phone', 'Mobile number', 20)
+            ->required('email', 'Email address')
             ->maxLength('email', 'Email address', 150)
             ->required('address', 'Address')
             ->maxLength('address', 'Address', 255)
+            ->words('address', 'Address')
             ->required('gn_division_id', 'GN division')
             ->integer('gn_division_id', 'GN division', 1);
 
@@ -318,52 +321,6 @@ final class AuthController extends Controller
                 'resetToken'  => $token,
                 'resetValid'  => $this->passwordResets()->linkIsValid($token),
             ]);
-
-            return;
-        }
-
-        $this->flash('Your password has been changed. Sign in with the new one.');
-        $this->redirect('/login');
-    }
-
-    /**
-     * GET /reset-password/code.
-     */
-    public function codeForm(): void
-    {
-        $this->renderAuthPage('reset-code', [], ['identifier' => '']);
-    }
-
-    /**
-     * POST /reset-password/code.
-     */
-    public function resetWithCode(): void
-    {
-        $validator = new Validator($_POST);
-        $validator
-            ->required('identifier', 'Email or mobile number')
-            ->maxLength('identifier', 'Email or mobile number', 150)
-            ->required('code', 'Reset code')
-            ->maxLength('code', 'Reset code', 20);
-
-        $identifier = $validator->value('identifier');
-
-        if (!$validator->passes()) {
-            $this->renderAuthPage('reset-code', $validator->errors(), ['identifier' => $identifier]);
-
-            return;
-        }
-
-        try {
-            $this->passwordResets()->resetWithCode(
-                $identifier,
-                $validator->value('code'),
-                $this->postedPassword('password'),
-                $this->postedPassword('password_confirmation'),
-                $this->clientIp()
-            );
-        } catch (ValidationException $exception) {
-            $this->renderAuthPage('reset-code', $exception->errors(), ['identifier' => $identifier]);
 
             return;
         }

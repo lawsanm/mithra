@@ -90,16 +90,7 @@ abstract class Controller
 
     protected function passwordResets(): PasswordResetService
     {
-        $throttle = new LoginThrottle(new LoginAttempt($this->pdo));
-
-        return new PasswordResetService(
-            $this->pdo,
-            new User($this->pdo),
-            new PasswordReset($this->pdo),
-            new GnDivision($this->pdo),
-            new AuthService(new User($this->pdo), $throttle),
-            $throttle
-        );
+        return new PasswordResetService($this->pdo, new User($this->pdo), new PasswordReset($this->pdo));
     }
 
     protected function profiles(): ProfileService

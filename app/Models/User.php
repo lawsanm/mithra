@@ -463,28 +463,6 @@ final class User extends BaseModel
         );
     }
 
-    /**
-     * An account found by NIC or by the last nine digits of its mobile — the
-     * two things a moderator can check against the person standing in front
-     * of them when issuing a reset code.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function findForCodeIssue(string $nic, string $phoneDigits): ?array
-    {
-        return $this->selectOne(
-            "SELECT u.id, u.full_name, u.nic, u.phone, u.status, r.code AS role_code,
-                    ud.gn_division_id AS home_division_id
-               FROM users u
-               JOIN roles r ON r.id = u.role_id
-          LEFT JOIN user_divisions ud ON ud.user_id = u.id AND ud.membership_type = 'home'
-              WHERE u.nic = :nic OR u.phone_digits = :digits
-              ORDER BY u.id
-              LIMIT 1",
-            ['nic' => $nic, 'digits' => $phoneDigits]
-        );
-    }
-
     /** Store a new password hash and stamp the change, which ends older sessions. */
     public function updatePassword(int $id, string $passwordHash): void
     {

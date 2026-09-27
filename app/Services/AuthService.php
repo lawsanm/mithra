@@ -94,12 +94,11 @@ final class AuthService
 
     /**
      * An identifier holding '@' is an email address; anything else is treated
-     * as a mobile number and reduced to digits. Public because a reset code is
-     * redeemed against the same identifier the member signs in with.
+     * as a mobile number and reduced to digits.
      *
      * @return array<string, mixed>|null
      */
-    public function lookup(string $identifier): ?array
+    private function lookup(string $identifier): ?array
     {
         if (str_contains($identifier, '@')) {
             return $this->users->findForLoginByEmail($identifier);

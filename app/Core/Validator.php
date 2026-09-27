@@ -72,6 +72,54 @@ final class Validator
     }
 
     /**
+     * Free text that must say something in words: at least one letter, in any
+     * script, so Sinhala and Tamil count. "15 Hill Street" passes; "40" or
+     * "12-5" does not. An empty value passes — combine with required().
+     */
+    public function words(string $field, string $label): self
+    {
+        if ($this->skip($field) || $this->value($field) === '') {
+            return $this;
+        }
+
+        if (!self::hasLetters($this->value($field))) {
+            $this->errors[$field] = $label . ' must be written in words, not only numbers or symbols.';
+        }
+
+        return $this;
+    }
+
+    /**
+     * A person's name: letters in any script, with spaces, dots, apostrophes
+     * and hyphens ("J. Kavipriya", "D'Silva", "Perera-Fernando"). No digits.
+     * An empty value passes — combine with required().
+     */
+    public function personName(string $field, string $label): self
+    {
+        if ($this->skip($field) || $this->value($field) === '') {
+            return $this;
+        }
+
+        if (!self::isPersonName($this->value($field))) {
+            $this->errors[$field] = $label . ' can only contain letters, spaces, dots, apostrophes and hyphens.';
+        }
+
+        return $this;
+    }
+
+    /** Does the text contain at least one letter, in any script? */
+    public static function hasLetters(string $value): bool
+    {
+        return preg_match('/\p{L}/u', $value) === 1;
+    }
+
+    /** Letters (and combining marks) with spaces, dots, apostrophes and hyphens only. */
+    public static function isPersonName(string $value): bool
+    {
+        return self::hasLetters($value) && preg_match("/^[\\p{L}\\p{M} .'’\\-]+$/u", $value) === 1;
+    }
+
+    /**
      * Whole number within an inclusive range. An empty value passes — combine
      * with required() when the field is mandatory.
      */

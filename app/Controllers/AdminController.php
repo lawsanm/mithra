@@ -218,6 +218,7 @@ final class AdminController extends Controller
             ->required('district', 'District')
             ->required('name', 'Division name')
             ->maxLength('name', 'Division name', 120)
+            ->words('name', 'Division name')
             ->required('postal_code', 'Postal code');
 
         // Sri Lankan postal codes are five digits (Colombo's keep a leading 00).

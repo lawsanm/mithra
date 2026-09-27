@@ -151,7 +151,7 @@ include __DIR__ . '/../../partials/wizard-steps.php';
         </div>
 
         <div class="field">
-            <label class="field__label" for="register-email">Email address — optional</label>
+            <label class="field__label" for="register-email">Email address</label>
             <input
                 class="input"
                 type="email"
@@ -167,7 +167,7 @@ include __DIR__ . '/../../partials/wizard-steps.php';
             <?php if (isset($errors['email'])): ?>
                 <?= field_error($errors, 'email') ?>
             <?php else: ?>
-                <span class="field__hint">Leave this empty to sign in with your mobile number.</span>
+                <span class="field__hint">Password-reset links are sent here. You can sign in with it or your mobile number.</span>
             <?php endif; ?>
         </div>
 

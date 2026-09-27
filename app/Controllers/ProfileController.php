@@ -26,8 +26,10 @@ final class ProfileController extends Controller
         $validator
             ->required('full_name', 'Name')
             ->maxLength('full_name', 'Name', 150)
+            ->personName('full_name', 'Name')
             ->required('phone', 'Mobile number')
             ->maxLength('phone', 'Mobile number', 20)
+            ->required('email', 'Email')
             ->maxLength('email', 'Email', 150);
 
         $input = $validator->values() + ['full_name' => '', 'phone' => '', 'email' => ''];
@@ -60,7 +62,7 @@ final class ProfileController extends Controller
     public function requestAddressChange(): void
     {
         $validator = new Validator($_POST);
-        $validator->required('address', 'New address')->maxLength('address', 'New address', 255);
+        $validator->required('address', 'New address')->maxLength('address', 'New address', 255)->words('address', 'New address');
 
         try {
             if (!$validator->passes()) {

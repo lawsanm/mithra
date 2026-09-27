@@ -3,16 +3,11 @@
 declare(strict_types=1);
 
 /**
- * Helping members with their accounts in person (Plan §16.3, §18.1):
+ * Helping members with their accounts (Plan §16.3): the moderator reviews
+ * address changes in their division, with the proof.
  *
- *   - the moderator reviews address changes in their division, with the proof;
- *   - the moderator (for members of their division) or the Admin (for any
- *     account) issues a one-time password-reset code after checking the
- *     person's NIC face to face.
- *
- * HTTP plumbing only; the rules live in ProfileService and
- * PasswordResetService. RbacMiddleware has already limited each path to its
- * role.
+ * HTTP plumbing only; the rules live in ProfileService. RbacMiddleware has
+ * already limited each path to its role.
  */
 final class AccountSupportController extends Controller
 {
@@ -40,56 +35,6 @@ final class AccountSupportController extends Controller
     public function rejectAddress(int $id): void
     {
         $this->decideAddress($id, false);
-    }
-
-    // ── Reset codes (moderator, admin) ──────────────────────────────────────
-
-    /**
-     * GET /moderator/reset-codes, GET /admin/reset-codes.
-     */
-    public function resetCodeForm(): void
-    {
-        $this->render('moderator/reset-codes/index', ['errors' => [], 'lookup' => '', 'issued' => null]);
-    }
-
-    /**
-     * POST /moderator/reset-codes, POST /admin/reset-codes.
-     *
-     * The code is shown on this response only — never stored in the session
-     * or a flash, and never retrievable again.
-     */
-    public function issueResetCode(): void
-    {
-        $validator = new Validator($_POST);
-        $validator->required('lookup', 'NIC or mobile number')->maxLength('lookup', 'NIC or mobile number', 20);
-        $lookup = $validator->value('lookup');
-
-        if (!$validator->passes()) {
-            $this->render('moderator/reset-codes/index', ['errors' => $validator->errors(), 'lookup' => $lookup, 'issued' => null]);
-
-            return;
-        }
-
-        try {
-            $issued = $this->passwordResets()->issueCode($this->userId(), $this->role(), $lookup);
-        } catch (ValidationException $exception) {
-            http_response_code(422);
-            $this->render('moderator/reset-codes/index', ['errors' => $exception->errors(), 'lookup' => $lookup, 'issued' => null]);
-
-            return;
-        } catch (AccessDeniedException $exception) {
-            http_response_code(403);
-            $this->render('moderator/reset-codes/index', [
-                'errors' => ['lookup' => 'That account is not a member of the division you moderate.'],
-                'lookup' => $lookup,
-                'issued' => null,
-            ]);
-
-            return;
-        }
-
-        header('Cache-Control: no-store');
-        $this->render('moderator/reset-codes/index', ['errors' => [], 'lookup' => '', 'issued' => $issued]);
     }
 
     // ── Plumbing ────────────────────────────────────────────────────────────
@@ -140,18 +85,5 @@ final class AccountSupportController extends Controller
                 'proof'    => photo_url((string) $row['proof_file_path']),
             ], $rows),
         ]);
-    }
-
-    /**
-     * Moderator and Admin share these screens, each in its own navigation.
-     *
-     * @param array<string, mixed> $data
-     */
-    protected function render(string $view, array $data = []): void
-    {
-        $data['chrome']   = chrome_for($this->role());
-        $data['basePath'] = base_url() . ($this->role() === 'admin' ? '/admin/reset-codes' : '/moderator/reset-codes');
-
-        parent::render($view, $data);
     }
 }
