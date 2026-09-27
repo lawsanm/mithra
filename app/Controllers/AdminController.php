@@ -213,7 +213,7 @@ final class AdminController extends Controller
         $bookings  = new Booking($this->pdo);
         $disputes  = new Dispute($this->pdo);
         $cronRuns  = new CronRun($this->pdo);
-        $members   = $users->countByRole('member');
+        $members   = $users->countVerifiedMembers();
         $invariant = $cronRuns->lastInvariantResult();
         $admin     = (string) ($users->find($this->userId())['full_name'] ?? '');
 

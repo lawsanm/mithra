@@ -281,14 +281,6 @@ final class User extends BaseModel
         return end($parts) ?: $fullName;
     }
 
-    public function countByRole(string $roleCode): int
-    {
-        return (int) $this->selectValue(
-            'SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.code = :code',
-            ['code' => $roleCode]
-        );
-    }
-
     public function countNewMembersThisMonth(): int
     {
         return (int) $this->selectValue(
