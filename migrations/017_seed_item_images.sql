@@ -1,6 +1,10 @@
 -- AI-generated catalog photos for the existing demo listings only.
 -- Preserve member uploads; do not alter value proofs or handover/damage evidence.
 
+USE mithra;
+
+SET NAMES utf8mb4;
+
 UPDATE items SET photos = JSON_ARRAY('item-photos/demo/cordless-drill.jpg')
  WHERE title = 'Bosch Cordless Drill GSB 120' AND (photos IS NULL OR JSON_LENGTH(photos) = 0);
 
