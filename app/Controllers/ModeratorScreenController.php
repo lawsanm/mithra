@@ -47,6 +47,7 @@ final class ModeratorScreenController extends Controller
                 'title' => $row['full_name'], 'meta' => $row['division_name'] . ' · ' . date('j M Y', strtotime($row['created_at'])),
                 'status' => 'warning', 'status_label' => 'Pending', 'href' => base_url() . '/moderator/verifications/' . $row['id']], $verifications),
             'approvals' => array_map(static fn (array $row): array => ['title' => $row['title'],
+                'photo' => empty($row['photo']) ? null : photo_url((string) $row['photo']),
                 'meta' => 'Listed by ' . $row['owner_name'] . ' · ' . date('j M Y', strtotime($row['created_at'])),
                 'status' => 'warning', 'status_label' => 'Pending approval', 'href' => base_url() . '/moderator/listing-approvals/' . $row['id']], $approvals),
             'cases' => $open,
@@ -59,6 +60,7 @@ final class ModeratorScreenController extends Controller
         return array_map(static function (array $row): array {
             $state = match ($row['status']) { 'resolved', 'closed' => 'resolved', 'escalated' => 'escalated', default => 'open' };
             return ['id' => (int) $row['id'], 'state' => $state, 'title' => 'Case #' . $row['id'] . ' — ' . $row['item_title'],
+                'photo' => empty($row['photo']) ? null : photo_url((string) $row['photo']),
                 'meta' => $row['lender_name'] . ' ↔ ' . $row['borrower_name'] . ' · ' . $row['severity'],
                 'status' => $state === 'resolved' ? 'success' : 'warning',
                 'status_label' => ucfirst(str_replace('_', ' ', $row['status'])),

@@ -137,6 +137,7 @@ final class ListingApprovalController extends Controller
             'listing' => [
                 'id'           => (int) $listing['id'],
                 'title'        => (string) $listing['title'],
+                'photo'        => empty($photos[0]) ? null : photo_url((string) $photos[0]),
                 'status'       => $this->badgeFor($listing),
                 'status_label' => $this->labelFor($listing),
                 'meta'         => sprintf(
@@ -231,6 +232,7 @@ final class ListingApprovalController extends Controller
 
         return [
             'title'        => (string) $row['title'],
+            'photo'        => empty($row['photo']) ? null : photo_url((string) $row['photo']),
             'meta'         => sprintf(
                 '%s  ·  %s  ·  declared %s pts  ·  %s  ·  %s',
                 (string) $row['owner_name'],

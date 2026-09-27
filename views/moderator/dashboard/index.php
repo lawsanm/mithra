@@ -76,7 +76,7 @@ include __DIR__ . '/../../../partials/header.php';
     <ul class="row-list">
         <?php foreach ($approvals as $approval): ?>
             <li class="list-row">
-                <span class="thumb thumb--sm">Photo</span>
+                <?php $photoUrl = $approval['photo']; $photoTitle = $approval['title']; $photoClass = 'thumb--sm'; include __DIR__ . '/../../../partials/item-photo.php'; ?>
                 <div class="list-row__body">
                     <span class="list-row__title"><?= e($approval['title']) ?></span>
                     <span class="list-row__meta"><?= e($approval['meta']) ?></span>
@@ -98,7 +98,7 @@ include __DIR__ . '/../../../partials/header.php';
     <ul class="row-list">
         <?php foreach ($cases as $case): ?>
             <li class="list-row">
-                <span class="thumb thumb--sm">Photo</span>
+                <?php $photoUrl = $case['photo']; $photoTitle = $case['title']; $photoClass = 'thumb--sm'; include __DIR__ . '/../../../partials/item-photo.php'; ?>
                 <div class="list-row__body">
                     <span class="list-row__title"><?= e($case['title']) ?></span>
                     <span class="list-row__meta"><?= e($case['meta']) ?></span>

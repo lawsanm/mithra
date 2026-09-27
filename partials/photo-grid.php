@@ -13,7 +13,7 @@ declare(strict_types=1);
 <div class="photo-grid">
     <?php foreach ($gridPhotos as $gridPhoto): ?>
         <a class="link" href="<?= e($gridPhoto['url']) ?>">
-            <img class="thumb thumb--photo thumb__img" src="<?= e($gridPhoto['url']) ?>" alt="<?= e($gridPhoto['label']) ?>">
+            <img class="thumb thumb--photo thumb__img thumb--item" src="<?= e($gridPhoto['url']) ?>" alt="<?= e($gridPhoto['label']) ?>" loading="lazy" decoding="async">
             <?= e($gridPhoto['label']) ?>
         </a>
     <?php endforeach; ?>

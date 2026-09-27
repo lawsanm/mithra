@@ -65,7 +65,7 @@ include __DIR__ . '/../../partials/header.php';
 
         <div class="field-row">
             <?php foreach ($photos as $photo): ?>
-                <img class="thumb thumb--sm thumb__img" src="<?= e($photo) ?>" alt="">
+                <img class="thumb thumb--sm thumb__img thumb--item" src="<?= e($photo) ?>" alt="Item photo" decoding="async">
             <?php endforeach; ?>
             <label class="upload-tile">
                 <span aria-hidden="true">＋</span>

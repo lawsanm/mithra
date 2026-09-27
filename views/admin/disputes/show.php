@@ -47,11 +47,7 @@ include __DIR__ . '/../../../partials/header.php';
 
         <div class="form-card form-card--wide">
             <h2 class="form-card__legend" style="font-size:var(--text-lede);color:var(--color-primary);">Evidence - handover vs return</h2>
-            <div class="thumb-grid">
-                <?php for ($i = 0; $i < 4; $i++): ?>
-                    <div class="thumb-grid__img"></div>
-                <?php endfor; ?>
-            </div>
+            <p class="panel__note">No handover or return evidence photos are available for this record.</p>
         </div>
     </div>
 

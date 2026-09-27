@@ -54,7 +54,7 @@ include __DIR__ . '/../../partials/header.php';
         <ul class="row-list">
             <?php foreach ($activeBorrowings as $borrowing): ?>
                 <li class="list-row">
-                    <span class="thumb thumb--row">Photo</span>
+                    <?php $photoUrl = $borrowing['photo']; $photoTitle = $borrowing['title']; $photoClass = 'thumb--row'; include __DIR__ . '/../../partials/item-photo.php'; ?>
                     <div class="list-row__body">
                         <span class="list-row__title"><?= e($borrowing['title']) ?></span>
                         <span class="list-row__meta"><?= e($borrowing['meta']) ?></span>
@@ -80,7 +80,7 @@ include __DIR__ . '/../../partials/header.php';
         <ul class="card-grid">
             <?php foreach ($listings as $listing): ?>
                 <li class="item-card">
-                    <span class="thumb thumb--card thumb--card-tall">Photo</span>
+                    <?php $photoUrl = $listing['photo']; $photoTitle = $listing['title']; $photoClass = 'thumb--card thumb--card-tall'; include __DIR__ . '/../../partials/item-photo.php'; ?>
                     <div class="item-card__body">
                         <a class="item-card__title" href="<?= e($listing['href']) ?>"><?= e($listing['title']) ?></a>
                         <span class="item-card__rate"><?= e($listing['rate']) ?></span>

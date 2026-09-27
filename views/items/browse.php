@@ -17,6 +17,7 @@ declare(strict_types=1);
  */
 
 $query       = $query ?? '';
+$typeSlug    = $typeSlug ?? '';
 $categories  = $categories ?? [];
 $results     = $results ?? [];
 $resultCount = $resultCount ?? '';
@@ -31,12 +32,12 @@ foreach ($categories as $category) {
     }
 }
 
-$pageQuery = static function (int $target) use ($query, $activeSlug): string {
-    return base_url() . '/items/browse?' . http_build_query(array_filter([
+$browseUrl = static function (array $changes = []) use ($query, $activeSlug, $typeSlug): string {
+    return base_url() . '/items/browse?' . http_build_query(array_filter(array_replace([
         'q'        => $query,
         'category' => $activeSlug,
-        'page'     => $target > 1 ? $target : '',
-    ]));
+        'type'     => $typeSlug,
+    ], $changes), static fn ($value): bool => $value !== ''));
 };
 
 $pageTitle = 'Browse items';
@@ -53,6 +54,16 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php include __DIR__ . '/../../partials/flash.php'; ?>
 
+<ul class="filter-pills" aria-label="Listing type">
+    <?php foreach (['' => 'All items', 'rentals' => 'Rentals', 'donations' => 'Donations'] as $slug => $label): ?>
+        <li>
+            <a class="pill<?= $typeSlug === $slug ? ' pill--active' : '' ?>"
+                href="<?= e($browseUrl(['type' => $slug])) ?>"
+                <?= $typeSlug === $slug ? 'aria-current="true"' : '' ?>><?= e($label) ?></a>
+        </li>
+    <?php endforeach; ?>
+</ul>
+
 <?php // Search is a read-only GET: no CSRF token, so it never lands in the URL. ?>
 <form class="search-bar" method="get" action="<?= base_url() ?>/items/browse" role="search" novalidate>
     <label class="visually-hidden" for="item-search">Search items</label>
@@ -65,15 +76,16 @@ include __DIR__ . '/../../partials/header.php';
         placeholder="Search drills, tents, cookers…"
     >
     <input type="hidden" name="category" value="<?= e($activeSlug) ?>">
+    <input type="hidden" name="type" value="<?= e($typeSlug) ?>">
     <button class="btn btn--primary" type="submit">Search</button>
 </form>
 
-<ul class="filter-pills">
+<ul class="filter-pills" aria-label="Item category">
     <?php foreach ($categories as $category): ?>
         <li>
             <a
                 class="pill<?= !empty($category['active']) ? ' pill--active' : '' ?>"
-                href="<?= base_url() ?>/items/browse?category=<?= e(rawurlencode($category['slug'])) ?>"
+                href="<?= e($browseUrl(['category' => $category['slug']])) ?>"
                 <?= !empty($category['active']) ? 'aria-current="true"' : '' ?>
             ><?= e($category['label']) ?></a>
         </li>
@@ -86,10 +98,9 @@ include __DIR__ . '/../../partials/header.php';
             <svg class="icon icon--lg" aria-hidden="true"><use href="#icon-search"></use></svg>
         </span>
         <?php if ($query === ''): ?>
-            <p class="empty-state__title">Nothing listed here yet</p>
+            <p class="empty-state__title">No items match these filters</p>
             <p class="empty-state__body">
-                No approved listings in your community right now. Be the first — list something
-                you rarely use and your neighbours can borrow it.
+                Try another category or listing type, or list something for your neighbours to borrow or receive as a donation.
             </p>
             <a class="btn btn--primary" href="<?= base_url() ?>/items/create">List an item</a>
         <?php else: ?>
@@ -106,7 +117,7 @@ include __DIR__ . '/../../partials/header.php';
         <?php foreach ($results as $card): ?>
             <li class="item-card">
                 <?php if ($card['photo'] !== null): ?>
-                    <img class="thumb thumb--card thumb__img" src="<?= e($card['photo']) ?>" alt="">
+                    <img class="thumb thumb--card thumb__img thumb--item" src="<?= e($card['photo']) ?>" alt="<?= e($card['title']) ?>" loading="lazy" decoding="async">
                 <?php else: ?>
                     <span class="thumb thumb--card">No photo</span>
                 <?php endif; ?>
@@ -126,10 +137,10 @@ include __DIR__ . '/../../partials/header.php';
     <?php if ($page > 1 || $hasNextPage): ?>
         <div class="actions">
             <?php if ($page > 1): ?>
-                <a class="btn btn--ghost" href="<?= e($pageQuery($page - 1)) ?>">Previous</a>
+                <a class="btn btn--ghost" href="<?= e($browseUrl(['page' => $page - 1])) ?>">Previous</a>
             <?php endif; ?>
             <?php if ($hasNextPage): ?>
-                <a class="btn btn--ghost" href="<?= e($pageQuery($page + 1)) ?>">Next</a>
+                <a class="btn btn--ghost" href="<?= e($browseUrl(['page' => $page + 1])) ?>">Next</a>
             <?php endif; ?>
         </div>
     <?php endif; ?>

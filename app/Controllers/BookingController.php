@@ -62,6 +62,7 @@ final class BookingController extends Controller
 
         return [
             'title'        => (string) $row['item_title'],
+            'photo'        => empty($row['photo']) ? null : photo_url((string) $row['photo']),
             'meta'         => sprintf(
                 '%s · %s – %s · %s pts rental charge',
                 $row['counterparty'],

@@ -10,12 +10,12 @@ declare(strict_types=1);
  * the page is /forgot-password or the form comes back with an answer. Without
  * JavaScript an open dialog shows in the page, so the form still works.
  *
- * The answer after submitting is the same whether or not the address has an
- * account, so the dialog cannot be used to find out who is a member.
+ * An address with no active account is refused with a field error, so the
+ * member can fix a typo instead of waiting for an email that never comes.
  *
  * @var bool        $forgotOpen   show the dialog open
  * @var array       $forgotErrors per-field messages
- * @var string      $forgotEmail  as typed, after a validation failure
+ * @var string      $forgotEmail  as typed, or the address the link was sent to
  * @var bool        $forgotSent   whether a request was just made
  * @var string|null $devLink      the link itself, shown only on a local install
  */
@@ -31,7 +31,7 @@ declare(strict_types=1);
 
     <?php if ($forgotSent): ?>
         <p class="notice notice--success" role="status">
-            If an active account uses that email address, a reset link is on its way. It works
+            A reset link is on its way to <?= e($forgotEmail) ?>. It works
             for <?= e((string) PasswordResetService::LINK_TTL_MINUTES) ?> minutes, once.
         </p>
         <?php if ($devLink !== null): ?>

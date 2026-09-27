@@ -64,7 +64,7 @@ include __DIR__ . '/../../partials/header.php';
         <?php foreach ($items as $listing): ?>
             <li class="list-row">
                 <?php if ($listing['photo'] !== null): ?>
-                    <img class="thumb thumb--sm thumb__img" src="<?= e($listing['photo']) ?>" alt="">
+                    <img class="thumb thumb--sm thumb__img thumb--item" src="<?= e($listing['photo']) ?>" alt="<?= e($listing['title']) ?>" loading="lazy" decoding="async">
                 <?php else: ?>
                     <span class="thumb thumb--sm"></span>
                 <?php endif; ?>

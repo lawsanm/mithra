@@ -13,6 +13,7 @@ final class DamageClaim extends BaseModel
             'SELECT c.id, c.severity, c.description, c.status, c.created_at,
                     b.borrower_id, b.lender_id, b.moderator_involved,
                     i.title AS item_title, lender.full_name AS lender_name, borrower.full_name AS borrower_name,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, \'$[0]\')) AS photo,
                     r.notes, r.met_at, r.lender_signoff_at, r.borrower_signoff_at, r.closed_at,
                     m.full_name AS moderator_name
                FROM damage_claims c JOIN bookings b ON b.id = c.booking_id

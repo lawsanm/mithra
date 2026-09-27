@@ -258,32 +258,46 @@ final class AuthController extends Controller
             return;
         }
 
-        $request = $this->passwordResets()->requestLink($validator->value('email'));
-        $devLink = null;
+        try {
+            $request = $this->passwordResets()->requestLink($validator->value('email'));
+        } catch (ValidationException $exception) {
+            http_response_code(422);
+            $this->renderLogin([
+                'dialog'       => 'forgot',
+                'forgotErrors' => $exception->errors(),
+                'forgotEmail'  => $validator->value('email'),
+            ]);
 
-        if ($request !== null) {
-            $url = $this->resetUrl($request['token']);
-            $mailer = Mailer::fromConfig();
-            $sent = $url !== null && $mailer->send(
-                $request['email'],
-                'Reset your Mithra password',
-                "Hello {$request['name']},\n\nSomeone asked to reset the password for your Mithra account. "
-                . "If it was you, open this link within " . PasswordResetService::LINK_TTL_MINUTES . " minutes:\n\n{$url}\n\n"
-                . "If it was not you, ignore this email — your password has not changed.\n"
-            );
-
-            if ($url === null) {
-                error_log('Password reset: app.url is not configured, so no link could be sent.');
-            }
-
-            // A local install has no mail server; show the link instead so the
-            // flow can be tested. Never in production.
-            if (!$sent && Config::get('app.env', 'production') === 'local') {
-                $devLink = $url;
-            }
+            return;
         }
 
-        $this->renderLogin(['dialog' => 'forgot', 'forgotSent' => true, 'devLink' => $devLink]);
+        $devLink = null;
+        $url     = $this->resetUrl($request['token']);
+        $mailer  = Mailer::fromConfig();
+        $sent    = $url !== null && $mailer->send(
+            $request['email'],
+            'Reset your Mithra password',
+            "Hello {$request['name']},\n\nSomeone asked to reset the password for your Mithra account. "
+            . "If it was you, open this link within " . PasswordResetService::LINK_TTL_MINUTES . " minutes:\n\n{$url}\n\n"
+            . "If it was not you, ignore this email — your password has not changed.\n"
+        );
+
+        if ($url === null) {
+            error_log('Password reset: app.url is not configured, so no link could be sent.');
+        }
+
+        // A local install has no mail server; show the link instead so the
+        // flow can be tested. Never in production.
+        if (!$sent && Config::get('app.env', 'production') === 'local') {
+            $devLink = $url;
+        }
+
+        $this->renderLogin([
+            'dialog'      => 'forgot',
+            'forgotSent'  => true,
+            'forgotEmail' => $request['email'],
+            'devLink'     => $devLink,
+        ]);
     }
 
     /**

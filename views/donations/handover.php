@@ -22,7 +22,7 @@ include __DIR__ . '/../../partials/header.php';
 <div class="panel panel--wide" data-demo-form>
     <p class="demo-note">Preview only. Saving is not available yet.</p>
     <div class="media">
-        <span class="thumb thumb--sm"></span>
+        <?php $photoUrl = $donation['photo']; $photoTitle = $donation['item']; $photoClass = 'thumb--sm'; include __DIR__ . '/../../partials/item-photo.php'; ?>
         <span class="media__body">
             <span class="media__title"><?= e($donation['item']) ?></span>
             <span class="media__meta"><?= e($donation['meta']) ?></span>

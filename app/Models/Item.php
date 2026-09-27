@@ -21,11 +21,11 @@ final class Item extends BaseModel
      *
      * @return list<array<string, mixed>>
      */
-    public function browse(int $divisionId, int $excludeOwnerId, ?int $categoryId, string $query, int $page = 1): array
+    public function browse(int $divisionId, int $excludeOwnerId, ?int $categoryId, string $query, int $page = 1, ?string $type = null): array
     {
         // JSON_UNQUOTE(JSON_EXTRACT(...)) rather than the ->> shorthand: the
         // shorthand is MySQL-only and the team's XAMPP boxes run MariaDB.
-        $sql = "SELECT i.id, i.title, i.daily_rate, i.monthly_rate, i.status,
+        $sql = "SELECT i.id, i.title, i.listing_type, i.daily_rate, i.monthly_rate, i.status,
                        JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo,
                        u.full_name AS owner_name, u.trust_score,
                        (SELECT MIN(b.end_date) FROM bookings b
@@ -34,10 +34,15 @@ final class Item extends BaseModel
                   JOIN users u ON u.id = i.owner_id
                  WHERE i.gn_division_id = :division
                    AND i.owner_id <> :owner
-                   AND i.listing_type = 'rental'
-                   AND i.status IN ('active','borrowed')";
+                   AND ((i.listing_type = 'rental' AND i.status IN ('active','borrowed'))
+                     OR (i.listing_type = 'donation' AND i.status = 'active'))";
 
         $params = ['division' => $divisionId, 'owner' => $excludeOwnerId];
+
+        if ($type !== null) {
+            $sql .= ' AND i.listing_type = :type';
+            $params['type'] = $type;
+        }
 
         if ($categoryId !== null) {
             $sql .= ' AND i.category_id = :category';
@@ -68,16 +73,21 @@ final class Item extends BaseModel
     /**
      * Total rows behind the current browse filters, for the result count.
      */
-    public function countBrowse(int $divisionId, int $excludeOwnerId, ?int $categoryId, string $query): int
+    public function countBrowse(int $divisionId, int $excludeOwnerId, ?int $categoryId, string $query, ?string $type = null): int
     {
         $sql = "SELECT COUNT(*)
                   FROM items i
                  WHERE i.gn_division_id = :division
                    AND i.owner_id <> :owner
-                   AND i.listing_type = 'rental'
-                   AND i.status IN ('active','borrowed')";
+                   AND ((i.listing_type = 'rental' AND i.status IN ('active','borrowed'))
+                     OR (i.listing_type = 'donation' AND i.status = 'active'))";
 
         $params = ['division' => $divisionId, 'owner' => $excludeOwnerId];
+
+        if ($type !== null) {
+            $sql .= ' AND i.listing_type = :type';
+            $params['type'] = $type;
+        }
 
         if ($categoryId !== null) {
             $sql .= ' AND i.category_id = :category';
@@ -199,6 +209,7 @@ final class Item extends BaseModel
     {
         $statement = $this->pdo->prepare(
             "SELECT i.id, i.title, i.daily_rate, i.status,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo,
                     (SELECT CONCAT(u.full_name, '|', b.end_date) FROM bookings b
                        JOIN users u ON u.id = b.borrower_id
                       WHERE b.item_id = i.id AND b.status IN ('in_progress','awaiting_return')

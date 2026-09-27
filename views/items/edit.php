@@ -91,7 +91,7 @@ include __DIR__ . '/../../partials/header.php';
         <div class="field-row">
             <?php foreach ($photos as $photo): ?>
                 <div class="field">
-                    <img class="thumb thumb--sm thumb__img" src="<?= e($photo['url']) ?>" alt="">
+                    <img class="thumb thumb--sm thumb__img thumb--item" src="<?= e($photo['url']) ?>" alt="Item photo" loading="lazy" decoding="async">
                     <label class="field__hint">
                         <input type="checkbox" name="keep_photos[]" value="<?= e($photo['path']) ?>" checked>
                         Keep

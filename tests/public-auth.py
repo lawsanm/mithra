@@ -68,9 +68,9 @@ for field in ['register-name', 'register-nic', 'register-phone', 'register-addre
           'Expected field error: ' + field)
 division = re.search(r'<option\s+value="([1-9][0-9]*)"', html)
 check(division is not None, 'Test requires a seeded active division')
-details = {'csrf_token': csrf, 'step': '1', 'full_name': 'HTTP Check <Visitor>',
+details = {'csrf_token': csrf, 'step': '1', 'full_name': 'HTTP Check Visitor',
            'nic': '200198765V', 'phone': '0779876543', 'email': 'pr14-check@example.test',
-           'address': 'Test address', 'gn_division_id': division.group(1)}
+           'address': 'Test <Visitor> Lane', 'gn_division_id': division.group(1)}
 status, url, html = fetch('/register', details)
 check(status == 200 and url.endswith('/register?step=2'), 'Valid details must advance to step 2')
 check('name="step" value="2"' in html and 'name="nic_photo"' in html
@@ -82,7 +82,7 @@ check(status == 422 and 'name="step" value="2"' in html,
       'Missing documents and invalid password must keep the applicant on step 2')
 check('value="x"' not in html and 'value="y"' not in html, 'Passwords must never be echoed')
 status, _, html = fetch('/register')
-check('HTTP Check &lt;Visitor&gt;' in html, 'Back navigation must retain and escape the draft')
+check('Test &lt;Visitor&gt; Lane' in html, 'Back navigation must retain and escape the draft')
 status, url, _ = fetch('/register/pending')
 check(url.endswith('/register'), 'Pending page requires a completed application')
 

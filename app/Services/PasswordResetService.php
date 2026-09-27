@@ -32,25 +32,29 @@ final class PasswordResetService
     /**
      * Create a link token for the active account using this email address.
      *
-     * Returns null — silently — when there is no such account or it has asked
-     * too often: the caller shows the same message either way, so the form
-     * cannot be used to find out who has an account.
+     * An address with no active account is refused with a message, so the
+     * member knows to check the spelling instead of waiting for an email.
      *
-     * @return array{token: string, name: string, email: string}|null
+     * @throws ValidationException
+     *
+     * @return array{token: string, name: string, email: string}
      */
-    public function requestLink(string $email): ?array
+    public function requestLink(string $email): array
     {
         $email   = trim($email);
         $account = $email === '' ? null : $this->users->findActiveByEmail($email);
 
         if ($account === null) {
-            return null;
+            throw ValidationException::field('email', 'No active Mithra account uses this email address. Check the spelling.');
         }
 
         $userId = (int) $account['id'];
 
         if ($this->resets->countRecent($userId, 'email', 60) >= self::MAX_LINKS_PER_HOUR) {
-            return null;
+            throw ValidationException::field('email', sprintf(
+                'A reset link was already sent %d times in the last hour. Use the newest one, or try again later.',
+                self::MAX_LINKS_PER_HOUR
+            ));
         }
 
         $token = bin2hex(random_bytes(32));

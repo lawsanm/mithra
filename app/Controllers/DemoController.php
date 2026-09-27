@@ -110,6 +110,7 @@ final class DemoController extends Controller
 
                     return [
                         'title'        => (string) $booking['item_title'],
+                        'photo'        => empty($booking['photo']) ? null : photo_url((string) $booking['photo']),
                         'meta'         => sprintf(
                             'From %s  ·  borrowed %s  ·  due %s',
                             $booking['lender_name'],
@@ -130,6 +131,7 @@ final class DemoController extends Controller
 
                     return [
                         'title' => (string) $item['title'],
+                        'photo' => empty($item['photo']) ? null : photo_url((string) $item['photo']),
                         'rate'  => $item['daily_rate'] . ' pts / day',
                         'meta'  => $who === ''
                             ? ($item['status'] === 'active' ? 'Available' : ucfirst(str_replace('_', ' ', $item['status'])))
@@ -304,6 +306,7 @@ final class DemoController extends Controller
         }
         $requests = $model->requests($id, $this->userId());
         return ['donation' => ['id' => $id, 'item' => $row['title'],
+                'photo' => empty($row['photo']) ? null : photo_url((string) $row['photo']),
                 'meta' => ucfirst($row['status']), 'request_count' => count($requests) . ' requests',
                 'first_come' => $row['selection_mode'] === 'first_come'],
             'requests' => array_map(static fn (array $request): array => [

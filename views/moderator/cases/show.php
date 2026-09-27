@@ -21,6 +21,9 @@ declare(strict_types=1);
  * @var array  $signoffs rows: name, status, status_label
  */
 
+$severityLegend = 'Severity reference:  Minor = cosmetic  ·  Moderate = works, needs repair  ·  '
+                . 'Major = unusable, repairable  ·  Total loss = beyond repair';
+
 // A conflict of interest is flagged on the badge and is the only thing that
 // lets this moderator hand the case to an Admin.
 if ($case['escalated']) {

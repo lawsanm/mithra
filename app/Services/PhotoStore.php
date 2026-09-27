@@ -76,11 +76,17 @@ final class PhotoStore
      */
     public function absolutePath(string $relativePath): ?string
     {
-        if (preg_match('#^[a-z0-9-]+/[a-f0-9]{32}\.jpg$#', $relativePath) !== 1) {
+        $upload = preg_match('#^[a-z0-9-]+/[a-f0-9]{32}\.jpg$#D', $relativePath) === 1;
+        $catalog = preg_match('#^item-photos/demo/[a-z0-9-]+\.jpg$#D', $relativePath) === 1;
+
+        if (!$upload && !$catalog) {
             return null;
         }
 
-        $absolute = $this->root . '/' . $relativePath;
+        // Bundled catalog images are versioned assets, separate from private uploads.
+        $absolute = $catalog
+            ? dirname($this->root) . '/demo/item-photos/' . basename($relativePath)
+            : $this->root . '/' . $relativePath;
 
         return is_file($absolute) ? $absolute : null;
     }
@@ -91,6 +97,11 @@ final class PhotoStore
      */
     public function delete(string $relativePath): void
     {
+        // Bundled demo assets may be shared by records and belong to the project.
+        if (str_starts_with($relativePath, 'item-photos/demo/')) {
+            return;
+        }
+
         $absolute = $this->absolutePath($relativePath);
 
         if ($absolute !== null) {
