@@ -3603,6 +3603,17 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
     color: var(--color-text);
 }
 
+.upload-tile--chosen {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* A chosen photo not yet submitted: outlined so it reads as pending. */
+.upload-tile__preview {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+}
+
 /* ==========================================================================
    Layout helpers — the small adjustments several pages repeat, named once
    instead of written as inline style="" attributes.

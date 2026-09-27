@@ -171,4 +171,5 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php endif; ?>
 
+<?php $pageScripts = ['upload-name.js']; ?>
 <?php include __DIR__ . '/../../partials/footer.php'; ?>
