@@ -90,7 +90,9 @@ include __DIR__ . '/../../partials/header.php';
         </div>
         <span class="landing-hero__tag">No money changes hands — only points</span>
     </div>
-    <div class="landing-hero__photo" aria-hidden="true"></div>
+    <div class="landing-hero__photo" aria-hidden="true">
+        <img class="landing-hero__img" src="<?= base_url() ?>/img/landing-hero.svg" alt="">
+    </div>
 </section>
 
 <section class="section">
