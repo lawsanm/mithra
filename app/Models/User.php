@@ -356,12 +356,12 @@ final class User extends BaseModel
     }
 
     /**
-     * Admin member directory, filtered by status and free-text search on name
-     * or home division.
+     * Admin member directory, filtered by status, role code and free-text
+     * search on name or home division.
      *
      * @return list<array<string, mixed>>
      */
-    public function adminList(string $status, string $search): array
+    public function adminList(string $status, string $role, string $search): array
     {
         $where = '1=1';
         $params = [];
@@ -369,6 +369,11 @@ final class User extends BaseModel
         if ($status !== '' && $status !== 'all') {
             $where .= ' AND u.status = :status';
             $params['status'] = $status;
+        }
+
+        if ($role !== '') {
+            $where .= ' AND r.code = :role';
+            $params['role'] = $role;
         }
 
         if ($search !== '') {

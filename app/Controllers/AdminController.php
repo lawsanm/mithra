@@ -35,6 +35,15 @@ final class AdminController extends Controller
     ];
 
     /** Account status => badge class. */
+    /** Role filter on the user list: role code => pill label. */
+    private const USER_ROLES = [
+        'member'          => 'Members',
+        'moderator'       => 'Moderators',
+        'sponsor_liaison' => 'Sponsor Liaison',
+        'sponsor'         => 'Sponsors',
+        'admin'           => 'Admins',
+    ];
+
     private const USER_BADGES = [
         'active'          => 'success',
         'pending'         => 'warning',
@@ -789,11 +798,24 @@ final class AdminController extends Controller
         $users  = new User($this->pdo);
         $status = (string) ($_GET['status'] ?? '');
         $status = array_key_exists($status, self::USER_BADGES) ? $status : '';
+        $role   = (string) ($_GET['role'] ?? '');
+        $role   = array_key_exists($role, self::USER_ROLES) ? $role : '';
         $search = trim((string) ($_GET['q'] ?? ''));
+
+        // Each pill keeps the other filter and the search term.
+        $pillHref = static fn (array $query): string => base_url() . '/admin/users'
+            . (($query = http_build_query(array_filter($query))) === '' ? '' : '?' . $query);
 
         $filters = [];
         foreach (['' => 'All', 'active' => 'Active', 'pending' => 'Pending', 'suspended' => 'Suspended'] as $slug => $label) {
-            $filters[] = ['label' => $label, 'slug' => $slug, 'active' => $status === $slug];
+            $filters[] = ['label' => $label, 'active' => $status === $slug,
+                          'href' => $pillHref(['status' => $slug, 'role' => $role, 'q' => $search])];
+        }
+
+        $roleFilters = [];
+        foreach (['' => 'All roles'] + self::USER_ROLES as $code => $label) {
+            $roleFilters[] = ['label' => $label, 'active' => $role === $code,
+                              'href' => $pillHref(['status' => $status, 'role' => $code, 'q' => $search])];
         }
 
         return [
@@ -803,9 +825,11 @@ final class AdminController extends Controller
                 ['label' => 'Suspended',      'value' => number_format($users->countByStatus('suspended'))],
                 ['label' => 'New this month', 'value' => number_format($users->countJoinedThisMonth())],
             ],
-            'filters' => $filters,
-            'status'  => $status,
-            'search'  => $search,
+            'filters'     => $filters,
+            'roleFilters' => $roleFilters,
+            'status'      => $status,
+            'role'        => $role,
+            'search'      => $search,
             'users'   => array_map(fn (array $row): array => [
                 'initials' => User::initials((string) $row['full_name']),
                 'name'     => (string) $row['full_name'],
@@ -813,7 +837,7 @@ final class AdminController extends Controller
                 'role'     => (string) $row['role_name'],
                 'balance'  => number_format((int) $row['balance']) . ' pts',
                 'href'     => base_url() . '/admin/users/' . $row['id'],
-            ] + $this->userBadge((string) $row['status']), $users->adminList($status, $search)),
+            ] + $this->userBadge((string) $row['status']), $users->adminList($status, $role, $search)),
         ];
     }
 
