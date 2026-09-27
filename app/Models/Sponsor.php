@@ -115,42 +115,6 @@ final class Sponsor extends BaseModel
     }
 
     /**
-     * Sponsor login accounts a company may be linked to: active accounts with
-     * the sponsor role that no company uses yet, plus the one already linked
-     * to the company being edited.
-     *
-     * @return list<array<string, mixed>> rows: id, full_name, email
-     */
-    public function availableAccounts(int $keepUserId = 0): array
-    {
-        return $this->select(
-            "SELECT u.id, u.full_name, u.email
-               FROM users u
-               JOIN roles r ON r.id = u.role_id AND r.code = 'sponsor'
-               LEFT JOIN sponsors s ON s.user_id = u.id
-              WHERE u.status = 'active' AND (s.id IS NULL OR u.id = :keep)
-              ORDER BY u.full_name, u.id",
-            ['keep' => $keepUserId]
-        );
-    }
-
-    /**
-     * May this account be linked to the given company? It must be an active
-     * sponsor-role account that no other company is linked to.
-     */
-    public function accountAvailable(int $userId, int $exceptSponsorId = 0): bool
-    {
-        return (int) $this->selectValue(
-            "SELECT COUNT(*)
-               FROM users u
-               JOIN roles r ON r.id = u.role_id AND r.code = 'sponsor'
-              WHERE u.id = :user AND u.status = 'active'
-                AND NOT EXISTS (SELECT 1 FROM sponsors s WHERE s.user_id = u.id AND s.id <> :sponsor)",
-            ['user' => $userId, 'sponsor' => $exceptSponsorId]
-        ) === 1;
-    }
-
-    /**
      * Is another sponsor already on file under this company name? Compared
      * case-insensitively by the collation.
      */

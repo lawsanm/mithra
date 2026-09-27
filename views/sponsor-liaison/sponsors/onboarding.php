@@ -5,13 +5,12 @@ declare(strict_types=1);
 /**
  * Onboard a sponsor. Figma "Sponsor — Onboarding" (377:155).
  *
- * The Sponsor login section is optional: switched on, the Liaison creates the
- * company's login in the same step, already active.
+ * The Liaison creates the company's login in the same step, already active.
+ * Sponsors never sign up themselves, so there is no existing login to link.
  *
  * @var array $draft             values entered so far
  * @var array $errors            per-field messages from the Validator
  * @var array $agreementStatuses value => label
- * @var array $accounts          sponsor login accounts that may be linked
  */
 
 $draft             = $draft ?? [];
@@ -46,23 +45,9 @@ include __DIR__ . '/../../../partials/header.php';
     <fieldset class="form-card__section">
         <legend class="form-card__legend">Sponsor login</legend>
 
-        <div class="toggle-field">
-            <input
-                class="toggle"
-                type="checkbox"
-                id="create-login"
-                name="create_login"
-                value="1"
-                <?= $draft['create_login'] === '1' ? 'checked' : '' ?>
-            >
-            <label class="toggle-field__label" for="create-login">
-                Create a login so the company can sign in to its sponsor dashboard
-            </label>
-        </div>
         <p class="field__hint">
-            The login is in the contact person's name and signs in with the contact email above,
-            so both are required when this is on. Leave the existing account selection empty to
-            create a new login. Leave this off to link the existing sponsor account selected above.
+            The company signs in to its sponsor dashboard with this login. It is in the contact
+            person's name and signs in with the contact email above, so both are required.
         </p>
 
         <div class="field">

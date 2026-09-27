@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 /**
- * The Sponsor Liaison's sponsor CRUD (Plan §20.4 module 4.2): onboard a
- * sponsor company by linking it to an existing sponsor login account, keep
- * its contact and agreement details current, and deactivate it when the
- * relationship ends.
+ * The Sponsor Liaison's sponsor CRUD (Plan §20.4 module 4.2): keep a sponsor
+ * company's contact and agreement details current, and deactivate it when the
+ * relationship ends. Onboarding, which creates the company together with its
+ * login, is SponsorAccountService.
  *
  * Deactivating is the delete. Contributions and the point ledger keep pointing
  * at the row — every point must stay traceable to the sponsor that funded it
@@ -31,18 +31,6 @@ final class SponsorService
     /**
      * @param array<string, string> $input validated form values
      *
-     * @throws ValidationException when a format is wrong or the name is taken
-     */
-    public function create(array $input): int
-    {
-        $profile = $this->validProfile($input, null, 0);
-
-        return $this->sponsors->create($profile);
-    }
-
-    /**
-     * @param array<string, string> $input validated form values
-     *
      * @throws RecordNotFoundException|ValidationException
      */
     public function update(int $id, array $input): void
@@ -56,14 +44,9 @@ final class SponsorService
     }
 
     /**
-     * The profile to store, with the sponsor login account it is linked to.
+     * The profile to store, keeping the company's current login link: the
+     * login is created with the company at onboarding and never changes.
      * Every refused field is reported together, one message per field.
-     *
-     * Every new company is linked to an existing sponsor account that no other
-     * company uses. Once linked, a company can move to another available
-     * account but is never left without one. Leaving the choice empty keeps
-     * the current link; only a company onboarded before linking existed may
-     * stay unlinked.
      *
      * @param array<string, string> $input
      *
@@ -84,15 +67,6 @@ final class SponsorService
             $errors = $exception->errors();
         }
 
-        $chosen = (int) ($input['user_id'] ?? 0);
-        $userId = $chosen > 0 ? $chosen : $currentUserId;
-
-        if ($userId === null && $sponsorId === 0) {
-            $errors['user_id'] = 'Choose the sponsor login account for this company.';
-        } elseif ($chosen > 0 && $chosen !== $currentUserId && !$this->sponsors->accountAvailable($chosen, $sponsorId)) {
-            $errors['user_id'] = 'Choose an active sponsor account that is not linked to another company.';
-        }
-
         $name = trim((string) ($input['company_name'] ?? ''));
 
         if (!isset($errors['company_name']) && $name !== '' && $this->sponsors->nameTaken($name, $sponsorId)) {
@@ -103,7 +77,7 @@ final class SponsorService
             throw new ValidationException($errors);
         }
 
-        return ['user_id' => $userId] + $profile;
+        return ['user_id' => $currentUserId] + $profile;
     }
 
     /**
