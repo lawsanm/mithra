@@ -91,7 +91,7 @@ include __DIR__ . '/../../partials/header.php';
 
         <label class="upload-drop">
             <span class="upload-drop__glyph" aria-hidden="true">＋</span>
-            <span>
+            <span data-upload-name>
                 <?= $draft['value_proof_path'] !== null ? 'Proof uploaded — choose another to replace it' : 'Upload a photo of the receipt, warranty card or price reference' ?>
             </span>
             <input class="visually-hidden" type="file" name="value_proof" accept="image/jpeg,image/png,image/webp">
@@ -187,4 +187,5 @@ include __DIR__ . '/../../partials/header.php';
     <?php endif; ?>
 </form>
 
+<?php $pageScripts = ['upload-name.js']; ?>
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

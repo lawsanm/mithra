@@ -3459,6 +3459,14 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
     height: 340px;
     border-radius: var(--radius-2xl);
     background-color: var(--color-warm-100);
+    overflow: hidden;
+}
+
+.landing-hero__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .section-title {
@@ -3601,6 +3609,17 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
     border-style: solid;
     border-color: var(--color-primary);
     color: var(--color-text);
+}
+
+.upload-tile--chosen {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* A chosen photo not yet submitted: outlined so it reads as pending. */
+.upload-tile__preview {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
 }
 
 /* ==========================================================================
