@@ -5,11 +5,10 @@ declare(strict_types=1);
 /**
  * Edit a sponsor's profile.
  *
- * @var array $sponsor           id, name, active, linked
+ * @var array $sponsor           id, name, active
  * @var array $draft             current field values
  * @var array $errors            per-field messages
  * @var array $agreementStatuses value => label
- * @var array $accounts          sponsor login accounts that may be linked
  */
 
 $draft             = $draft ?? [];

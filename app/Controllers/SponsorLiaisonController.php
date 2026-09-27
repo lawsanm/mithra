@@ -91,14 +91,11 @@ final class SponsorLiaisonController extends Controller
                 throw new ValidationException($validator->errors());
             }
 
-            $withLogin = $validator->value('create_login') === '1';
-            $id = $withLogin
-                ? $this->accounts()->onboardWithLogin(
-                    $validator->values(),
-                    $this->postedPassword('password'),
-                    $this->postedPassword('password_confirmation')
-                )
-                : $this->sponsorService()->create($validator->values());
+            $id = $this->accounts()->onboardWithLogin(
+                $validator->values(),
+                $this->postedPassword('password'),
+                $this->postedPassword('password_confirmation')
+            );
         } catch (ValidationException $exception) {
             $this->renderSponsorForm('sponsor-liaison/sponsors/onboarding', $exception->errors(), $validator->values());
 
@@ -106,7 +103,7 @@ final class SponsorLiaisonController extends Controller
         }
 
         $this->flash($validator->value('company_name') . ' onboarded as a sponsor.'
-            . ($withLogin ? ' Their login is open: share the starting password with ' . $validator->value('contact_email') . '.' : ''));
+            . ' Their login is open: share the starting password with ' . $validator->value('contact_email') . '.');
         $this->redirect('/sponsor-liaison/sponsors/' . $id);
     }
 
@@ -217,7 +214,6 @@ final class SponsorLiaisonController extends Controller
         return (new Validator($_POST))
             ->required('company_name', 'Company name')
             ->maxLength('company_name', 'Company name', 150)
-            ->integer('user_id', 'Sponsor account', 1)
             ->maxLength('contact_person', 'Contact person', 100)
             ->maxLength('contact_phone', 'Contact phone', 20)
             ->maxLength('contact_email', 'Contact email', 150)
@@ -237,20 +233,18 @@ final class SponsorLiaisonController extends Controller
      */
     private function renderSponsorForm(string $view, array $errors, array $input, ?array $row = null): void
     {
-        $fields = ['user_id', 'company_name', 'contact_person', 'contact_phone', 'contact_email',
+        $fields = ['company_name', 'contact_person', 'contact_phone', 'contact_email',
             'agreement_status', 'agreement_details', 'internal_notes',
-            'create_login', 'login_nic', 'login_phone', 'login_address'];
+            'login_nic', 'login_phone', 'login_address'];
 
         $this->render($view, [
             'draft'             => array_map(static fn (string $field): string => (string) ($input[$field] ?? ''), array_combine($fields, $fields)),
             'errors'            => $errors,
             'agreementStatuses' => SponsorService::AGREEMENT_STATUSES,
-            'accounts'          => $this->sponsorModel()->availableAccounts((int) ($row['user_id'] ?? 0)),
             'sponsor'           => $row === null ? null : [
                 'id'     => (int) $row['id'],
                 'name'   => (string) $row['company_name'],
                 'active' => (int) $row['active'] === 1,
-                'linked' => $row['user_id'] !== null,
             ],
         ]);
     }
@@ -265,7 +259,6 @@ final class SponsorLiaisonController extends Controller
     private function sponsorAsInput(array $row): array
     {
         return [
-            'user_id'           => (string) ($row['user_id'] ?? ''),
             'company_name'      => (string) $row['company_name'],
             'contact_person'    => (string) ($row['contact_name'] ?? ''),
             'contact_phone'     => (string) ($row['contact_phone'] ?? ''),
