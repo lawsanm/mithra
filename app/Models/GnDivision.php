@@ -111,9 +111,9 @@ final class GnDivision extends BaseModel
     public function activeNames(): array
     {
         return $this->select(
-            "SELECT id, name, district FROM gn_divisions
+            "SELECT id, province, district, name, postal_code FROM gn_divisions
               WHERE status = 'active'
-              ORDER BY district, name"
+              ORDER BY province, district, name"
         );
     }
 

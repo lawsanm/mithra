@@ -19,7 +19,8 @@ declare(strict_types=1);
  * @var array  $errors       per-field messages, plus 'form' for a refusal that
  *                           belongs to the attempt rather than to one field
  * @var array  $input        step 1's values, keyed by field name
- * @var array  $divisions    id, name and district of every joinable division
+ * @var array  $divisions    id, province, district, name and postal code of
+ *                           every joinable division, ordered by province
  * @var string $divisionName the chosen division, on step 2
  * @var array|null $flash
  */
@@ -29,6 +30,12 @@ $errors       = $errors ?? [];
 $input        = $input ?? [];
 $divisions    = $divisions ?? [];
 $divisionName = $divisionName ?? '';
+
+// One <optgroup> per province, so a newcomer can find their division in a long list.
+$divisionsByProvince = [];
+foreach ($divisions as $division) {
+    $divisionsByProvince[(string) $division['province']][] = $division;
+}
 
 $old = static fn (string $field): string => (string) ($input[$field] ?? '');
 
@@ -120,11 +127,15 @@ include __DIR__ . '/../../partials/wizard-steps.php';
                 <?= isset($errors['gn_division_id']) ? 'aria-invalid="true"' : '' ?>
             >
                 <option value="">Select your division</option>
-                <?php foreach ($divisions as $division): ?>
-                    <option
-                        value="<?= e((string) $division['id']) ?>"
-                        <?= $old('gn_division_id') === (string) $division['id'] ? 'selected' : '' ?>
-                    ><?= e((string) $division['name']) ?> · <?= e((string) $division['district']) ?></option>
+                <?php foreach ($divisionsByProvince as $province => $provinceDivisions): ?>
+                    <optgroup label="<?= e((string) $province) ?>">
+                        <?php foreach ($provinceDivisions as $division): ?>
+                            <option
+                                value="<?= e((string) $division['id']) ?>"
+                                <?= $old('gn_division_id') === (string) $division['id'] ? 'selected' : '' ?>
+                            ><?= e((string) $division['name']) ?> · <?= e((string) $division['district']) ?><?= (string) ($division['postal_code'] ?? '') === '' ? '' : ' · ' . e((string) $division['postal_code']) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
                 <?php endforeach; ?>
             </select>
             <?php if (isset($errors['gn_division_id'])): ?>
