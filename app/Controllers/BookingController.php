@@ -143,6 +143,10 @@ final class BookingController extends Controller
                 'simple_cap'     => DamageClaimService::simpleCap((int) $booking['declared_value']),
             ],
             'claimOpen' => ($_GET['claim'] ?? '') === '1',
+            'rateHref'  => in_array($state, ['completed', 'cancelled', 'auto_cancelled'], true)
+                && (new Rating($this->pdo))->byRater($me, 'booking', $id) === null
+                ? base_url() . '/ratings?rate=booking-' . $id . '#rate-review'
+                : null,
         ]);
     }
 

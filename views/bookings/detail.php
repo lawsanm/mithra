@@ -17,6 +17,7 @@ declare(strict_types=1);
  * @var array|null $claim    the damage claim on this booking and what this member can do
  * @var array      $claimItem the claim modal's header and limits
  * @var bool       $claimOpen render the claim dialog open
+ * @var string|null $rateHref where to rate the other member, while not yet rated
  * @var array|null $flash
  */
 
@@ -60,6 +61,13 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php if ($endedBy !== ''): ?>
     <p class="notice notice--info notice--full"><?= e($endedBy) ?></p>
+<?php endif; ?>
+
+<?php if ($rateHref !== null): ?>
+    <div class="help-cta">
+        <p class="help-cta__text">How did it go? Rate <?= e($role === 'borrower' ? $booking['lender_name'] : $booking['borrower_name']) ?> — it feeds their trust score.</p>
+        <a class="btn btn--primary" href="<?= e($rateHref) ?>">Rate this <?= $booking['status'] === 'completed' ? 'booking' : 'cancellation' ?></a>
+    </div>
 <?php endif; ?>
 
 <section class="panel">

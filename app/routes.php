@@ -52,7 +52,7 @@ return [
         '/settings'                => ['AccountController', 'settings'],
         '/settings/close-account'  => ['AccountController', 'settings'],
         '/transparency'            => 'transparency/index',
-        '/ratings'                 => 'ratings/index',
+        '/ratings'                 => ['RatingController', 'index'],
         '/trust'                   => ['TrustController', 'show'],
         '/profile'                 => ['ProfileController', 'editForm'],
         '/members/{id}'            => ['ProfileController', 'show'],
@@ -208,5 +208,8 @@ return [
         '/damage-claims/{id}/contest'        => ['DamageClaimController', 'contest'],
         '/damage-claims/{id}/sign-off'       => ['DamageClaimController', 'signOff'],
         '/damage-claims/{id}/withdraw'       => ['DamageClaimController', 'withdraw'],
+        '/ratings'                           => ['RatingController', 'store'],
+        '/ratings/{id}'                      => ['RatingController', 'update'],
+        '/ratings/{id}/delete'               => ['RatingController', 'destroy'],
     ],
 ];

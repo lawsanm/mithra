@@ -35,7 +35,6 @@ final class DemoController extends Controller
             'dashboard/index' => $this->dashboard(),
             'gifts/index'     => $this->gifts(),
             'wallet/index' => $this->wallet(),
-            'ratings/index' => $this->ratings(),
             'notifications/index', 'sponsor/notifications/index' => $this->notifications(),
             'transparency/index' => $this->transparency(),
             'aid-grants/show' => $this->aidGrant($id),
@@ -198,22 +197,6 @@ final class DemoController extends Controller
                     'tone' => $incoming ? 'in' : 'out', 'date' => date('j M Y', strtotime($row['created_at']))];
             }, $wallet->activity($me)),
         ] + $this->gifts();
-    }
-
-    private function ratings(): array
-    {
-        $ratings = new Rating($this->pdo);
-        $box = ($_GET['box'] ?? '') === 'given' ? 'given' : 'received';
-        $tabs = [];
-        foreach (['received', 'given'] as $direction) {
-            $tabs[] = ['label' => ucfirst($direction) . ' (' . $ratings->countForMember($this->userId(), $direction) . ')',
-                'box' => $direction, 'active' => $box === $direction];
-        }
-        return ['tabs' => $tabs, 'reviews' => array_map(static fn (array $row): array => [
-            'initials' => User::initials($row['counterparty']), 'author' => $row['counterparty'],
-            'rating' => (int) $row['stars'], 'text' => (string) $row['comment'],
-            'meta' => date('j M Y', strtotime($row['created_at'])) . ' · ' . ($row['item_title'] ?? 'Review'),
-        ], $ratings->forMember($this->userId(), $box))];
     }
 
     private function notifications(): array
