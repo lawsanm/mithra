@@ -9,6 +9,16 @@ declare(strict_types=1);
  */
 final class ProfileController extends Controller
 {
+    /** user_divisions.status → badge text and tone. */
+    private const MEMBERSHIP_STATUS = [
+        'active'      => ['Active', 'success'],
+        'pending'     => ['Pending verification', 'warning'],
+        'paused'      => ['Paused', 'warning'],
+        'expired'     => ['Expired', 'neutral'],
+        'rejected'    => ['Rejected', 'error'],
+        'deactivated' => ['Ended', 'neutral'],
+    ];
+
     /**
      * GET /profile.
      */
@@ -128,6 +138,7 @@ final class ProfileController extends Controller
             ];
             $data['currentAddress'] = (string) $row['address'];
             $data['addressChange']  = (new AddressChange($this->pdo))->latestFor($id);
+            $data['communities']    = $this->communities($row, (new UserDivision($this->pdo))->temporaryForUser($id));
             $data['errors']         = $errors;
         } else {
             $data['stats'] = [
@@ -149,6 +160,42 @@ final class ProfileController extends Controller
         }
 
         $this->render($view, $data);
+    }
+
+    /**
+     * The member's home community and, if they hold one, their temporary one
+     * (Plan §6.5), as rows for the "My communities" panel.
+     *
+     * @param array<string, mixed>      $home      the findWithDivision() row
+     * @param array<string, mixed>|null $temporary the temporaryForUser() row
+     *
+     * @return list<array{label:string, name:string, status:string, tone:string, note:string}>
+     */
+    private function communities(array $home, ?array $temporary): array
+    {
+        $rows = [[
+            'label'  => 'Home',
+            'name'   => $home['division_name'] . ' GN Division',
+            'status' => self::MEMBERSHIP_STATUS[$home['membership_status']][0] ?? ucfirst((string) $home['membership_status']),
+            'tone'   => self::MEMBERSHIP_STATUS[$home['membership_status']][1] ?? 'neutral',
+            'note'   => $home['verified_at'] === null
+                ? 'Waiting for your moderator to verify'
+                : 'Verified ' . date('j M Y', strtotime((string) $home['verified_at'])),
+        ]];
+
+        if ($temporary !== null) {
+            $rows[] = [
+                'label'  => 'Temporary',
+                'name'   => $temporary['name'] . ' GN Division',
+                'status' => self::MEMBERSHIP_STATUS[$temporary['status']][0] ?? ucfirst((string) $temporary['status']),
+                'tone'   => self::MEMBERSHIP_STATUS[$temporary['status']][1] ?? 'neutral',
+                'note'   => $temporary['expires_at'] === null
+                    ? 'Requested ' . date('j M Y', strtotime((string) $temporary['created_at']))
+                    : 'Expires ' . date('j M Y', strtotime((string) $temporary['expires_at'])),
+            ];
+        }
+
+        return $rows;
     }
 
     /**

@@ -43,7 +43,7 @@ $faqs ??= [
     ],
     [
         'question' => 'Can I use Mithra outside my home GN division?',
-        'answer'   => 'Yes — request a temporary community from Settings. With proof of stay and '
+        'answer'   => 'Yes — request a temporary community from My profile. With proof of stay and '
                     . 'verification by that division’s moderator you can lend and borrow there for '
                     . 'six months, while keeping your home membership.',
         'open'     => false,
