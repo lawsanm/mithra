@@ -30,7 +30,6 @@ final class GiftService
         private Gift $gifts,
         private User $users,
         private UserDivision $memberships,
-        private Wallet $wallets,
         private Booking $bookings,
         private DamageClaim $claims,
         private Dispute $disputes,

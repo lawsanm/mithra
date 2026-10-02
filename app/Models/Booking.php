@@ -16,28 +16,6 @@ final class Booking extends BaseModel
     /** Statuses where the borrower physically holds the item. */
     private const HOLDING_STATES = "('awaiting_handover','in_progress','awaiting_return')";
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function forMember(int $memberId, string $role): array
-    {
-        // Whitelisted, never interpolated from request input.
-        $column = $role === 'lender' ? 'b.lender_id' : 'b.borrower_id';
-        $other  = $role === 'lender' ? 'b.borrower_id' : 'b.lender_id';
-
-        return $this->select(
-            "SELECT b.id, b.start_date, b.end_date, b.rental_charge, b.status,
-                    i.title AS item_title, o.full_name AS counterparty,
-                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo
-               FROM bookings b
-               JOIN items i ON i.id = b.item_id
-               JOIN users o ON o.id = {$other}
-              WHERE {$column} = :member AND b.status IN " . self::OPEN_STATES . '
-              ORDER BY b.end_date',
-            ['member' => $memberId]
-        );
-    }
-
     public function countForMember(int $memberId, string $role): int
     {
         $column = $role === 'lender' ? 'lender_id' : 'borrower_id';

@@ -31,24 +31,15 @@ final class DemoController extends Controller
             return;
         }
         $data = match ($view) {
-            'dashboard/index' => $this->dashboard(),
-            'wallet/index' => $this->wallet(),
+            'dashboard/index'    => $this->dashboard(),
+            'wallet/index'       => $this->wallet(),
             'transparency/index' => $this->transparency(),
-            'help/index' => $this->help(),
-            default           => [],
+            'help/index'         => $this->help(),
+            default              => [],
         };
-
-        if ($data === null) {
-            $this->notice(404, 'Record not found', 'This record is not available to your account.');
-            return;
-        }
 
         if (in_array($view, self::SHARED_VIEWS, true)) {
             $data['chrome'] = chrome_for($this->role());
-        }
-
-        if (isset($params['id'])) {
-            $data['id'] = (int) $params['id'];
         }
 
         $this->render($view, $data);

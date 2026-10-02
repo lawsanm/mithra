@@ -2769,21 +2769,6 @@ button.notification {
     font-size: var(--text-ui-body);
 }
 
-/* Thumb grid for evidence photos */
-.thumb-grid {
-    display: flex;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-}
-
-.thumb-grid__img {
-    width: 120px;
-    height: 90px;
-    border-radius: var(--radius-sm);
-    background-color: var(--color-warm-100);
-    object-fit: cover;
-}
-
 /* Policy grid (point policies page) */
 .policy-grid {
     display: grid;
@@ -3123,11 +3108,6 @@ button.notification {
     font-size: var(--text-ui-body);
 }
 
-/* Two-figure stat row (disaster mode). */
-.stat-grid--2 {
-    grid-template-columns: repeat(2, 1fr);
-}
-
 /* Panel heading with its actions trailing right, and its supporting copy. */
 .panel__head {
     display: flex;
@@ -3241,44 +3221,8 @@ button.notification {
 
 /* The signed-out page shell centres its one card; the home page's sections
    span the full width instead. */
-.hero,
 .home-section {
     align-self: stretch;
-}
-
-.hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-16) var(--space-12);
-    text-align: center;
-    border-radius: var(--radius-xl);
-    background-color: var(--color-primary-50);
-}
-
-.hero__eyebrow {
-    color: var(--color-primary-700);
-    font-size: var(--text-ui-label);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.hero__title {
-    max-width: 760px;
-    color: var(--color-text);
-    font-size: var(--text-display);
-    font-weight: var(--weight-bold);
-    line-height: 1.15;
-}
-
-.hero__lede {
-    max-width: 640px;
-    margin-bottom: var(--space-2);
-    color: var(--color-text-muted);
-    font-size: var(--text-body);
-    line-height: 1.6;
 }
 
 .feature-grid {
@@ -3342,11 +3286,6 @@ button.notification {
 
 @media (max-width: 1000px) {
     .feature-grid { grid-template-columns: minmax(0, 1fr); }
-    .hero { padding: var(--space-8) var(--space-6); }
-}
-
-@media (max-width: 600px) {
-    .hero__title { font-size: var(--text-h1); }
 }
 
 /* --------------------------------------------------------------------------
@@ -3708,7 +3647,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .form-card--wide { width: 100%; max-width: 100%; }
 .form-card__legend--lg { font-size: var(--text-lede); }
 .stat-card__label--caps { text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-ui-caption); }
-.inline-form { display: inline; }
 .scroll-x { overflow-x: auto; }
 .cluster { display: flex; align-items: center; gap: var(--space-3); }
 .disclosure > summary { list-style: none; width: fit-content; }

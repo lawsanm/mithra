@@ -104,7 +104,8 @@ and which section of this checklist fixes it.
 - [x] **I6 · A rejected aid grant counts as active.** `AidGrant::activeForMember()`
   (`app/Models/AidGrant.php:67`) only skips `closed` and `expired`. Account closure
   filters again, so it is safe there, but the one-active-grant rule must not reuse it as
-  is. *Fix:* Aid grant › Create.
+  is. *Fix:* Aid grant › Create. The method is now removed: closure and the request
+  both use `AidGrant::countLiveFor()`.
 - [x] **I7 · Public profiles open for pending and closed accounts.** `/members/{id}`
   (`app/Controllers/ProfileController.php:112`) loads any account with a home membership,
   whatever its status. *Fix:* Phase 5 › Public member profile.

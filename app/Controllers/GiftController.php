@@ -11,19 +11,16 @@ final class GiftController extends Controller
 {
     public static function service(PDO $pdo): GiftService
     {
-        $wallets = new Wallet($pdo);
-
         return new GiftService(
             $pdo,
             new Gift($pdo),
             new User($pdo),
             new UserDivision($pdo),
-            $wallets,
             new Booking($pdo),
             new DamageClaim($pdo),
             new Dispute($pdo),
             new GnDivision($pdo),
-            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), $wallets),
+            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), new Wallet($pdo)),
             new Notification($pdo)
         );
     }

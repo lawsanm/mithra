@@ -18,25 +18,6 @@ final class Gift extends BaseModel
     public const DAILY_CAP  = 200;
     public const ANNUAL_CAP = 2000;
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function forMember(int $memberId, string $box): array
-    {
-        // Whitelisted, never interpolated from request input.
-        $column = $box === 'received' ? 'g.recipient_id' : 'g.sender_id';
-        $other  = $box === 'received' ? 'g.sender_id'    : 'g.recipient_id';
-
-        return $this->select(
-            "SELECT g.id, g.amount, g.reason, g.sent_at, u.full_name AS counterparty
-               FROM gifts g
-               JOIN users u ON u.id = {$other}
-              WHERE {$column} = :member
-              ORDER BY g.sent_at DESC",
-            ['member' => $memberId]
-        );
-    }
-
     public function countForMember(int $memberId, string $box): int
     {
         $column = $box === 'received' ? 'recipient_id' : 'sender_id';

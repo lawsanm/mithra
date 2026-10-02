@@ -50,28 +50,6 @@ final class AidGrant extends BaseModel
     ];
 
     /**
-     * The member's current (non-closed) grant, if any.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function activeForMember(int $memberId): ?array
-    {
-        return $this->selectOne(
-            "SELECT g.id, g.requested_amount, g.approved_amount, g.purpose, g.status,
-                    g.created_at, g.moderator_vouch, g.vouched_at,
-                    d.name AS division_name,
-                    m.full_name AS moderator_name
-               FROM aid_grants g
-               JOIN gn_divisions d ON d.id = g.gn_division_id
-          LEFT JOIN users m        ON m.id = g.moderator_id
-              WHERE g.member_id = :member AND g.status NOT IN ('closed','expired')
-              ORDER BY g.created_at DESC
-              LIMIT 1",
-            ['member' => $memberId]
-        );
-    }
-
-    /**
      * Who may see aid evidence: the member who sent it and their division's
      * moderator (the Sponsor Liaison and the Admin are checked by role).
      * Null when no grant carries the path.

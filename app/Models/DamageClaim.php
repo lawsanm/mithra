@@ -187,15 +187,6 @@ final class DamageClaim extends BaseModel
         $statement->execute(['id' => $resolutionId]);
     }
 
-    /** Claims on this booking still being decided. */
-    public function countOpenForBooking(int $bookingId): int
-    {
-        return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM damage_claims WHERE booking_id = :booking AND status NOT IN ('resolved','closed')",
-            ['booking' => $bookingId]
-        );
-    }
-
     /**
      * Unsettled claims against this member as borrower — gifting waits for
      * them (§11.1).

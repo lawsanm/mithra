@@ -217,14 +217,6 @@ final class Notification extends BaseModel
     }
 
     /**
-     * @return list<string>
-     */
-    public static function groups(): array
-    {
-        return array_keys(self::GROUPS);
-    }
-
-    /**
      * Whether this kind of notice, about this subject key (the payload's
      * "pair"), already went to this account within the last few days — so a
      * daily job does not repeat itself.

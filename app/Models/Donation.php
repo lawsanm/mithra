@@ -170,14 +170,6 @@ final class Donation extends BaseModel
         return array_map(static fn (array $row): int => (int) $row['requester_id'], $rows);
     }
 
-    public function countPendingRequests(int $donationId): int
-    {
-        return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM donation_requests WHERE donation_id = :donation AND status = 'pending'",
-            ['donation' => $donationId]
-        );
-    }
-
     /**
      * The oldest pending request — who first-come mode hands the item to.
      *

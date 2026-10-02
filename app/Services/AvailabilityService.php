@@ -7,9 +7,9 @@ declare(strict_types=1);
  * item, and borrowers cannot request those dates.
  *
  * A block may not cover dates already promised to a borrower: an accepted or
- * running booking holds its dates. The overlap rule here is the one booking
- * requests use too, so a block and a booking can never disagree about what
- * "the same day" means.
+ * running booking holds its dates. Blocks and bookings share one overlap rule
+ * — both ends inclusive, in their models' countOverlapping() — so the two can
+ * never disagree about what "the same day" means.
  */
 final class AvailabilityService
 {
@@ -21,15 +21,6 @@ final class AvailabilityService
         private ItemAvailabilityBlock $blocks,
         private Booking $bookings
     ) {
-    }
-
-    /**
-     * Do two inclusive date ranges share at least one day? Dates are Y-m-d,
-     * which compare correctly as strings.
-     */
-    public static function overlaps(string $aStart, string $aEnd, string $bStart, string $bEnd): bool
-    {
-        return $aStart <= $bEnd && $bStart <= $aEnd;
     }
 
     /**
@@ -57,14 +48,6 @@ final class AvailabilityService
         }
 
         return [];
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function upcoming(int $itemId): array
-    {
-        return $this->blocks->upcomingForItem($itemId);
     }
 
     /**
