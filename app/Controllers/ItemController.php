@@ -114,6 +114,7 @@ final class ItemController extends Controller
             'page'        => $page,
             'hasNextPage' => $page * Item::PER_PAGE < $total,
             'community'   => $community,
+            'savedSearches' => (new SavedSearchService(new SavedSearch($this->pdo)))->forMember($me),
             'communities' => $temporary === null ? [] : [
                 'home'      => $homeName,
                 'temporary' => (string) $temporary['division_name'],

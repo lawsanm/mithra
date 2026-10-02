@@ -185,5 +185,8 @@ return [
         '/items/{id}/availability'           => ['AvailabilityController', 'store'],
         '/availability-blocks/{id}'          => ['AvailabilityController', 'update'],
         '/availability-blocks/{id}/delete'   => ['AvailabilityController', 'destroy'],
+        '/saved-searches'                    => ['SavedSearchController', 'store'],
+        '/saved-searches/{id}'               => ['SavedSearchController', 'update'],
+        '/saved-searches/{id}/delete'        => ['SavedSearchController', 'destroy'],
     ],
 ];
