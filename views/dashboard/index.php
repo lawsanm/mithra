@@ -11,6 +11,7 @@ declare(strict_types=1);
  * @var array $stats             four figures for the stat row
  * @var array $activeBorrowings  rows: title, meta, status, status_label, href
  * @var array $listings          cards: title, rate, meta, href
+ * @var array $actions           steps waiting on the member: label, href
  */
 
 $pageTitle = 'Dashboard';
@@ -30,6 +31,24 @@ include __DIR__ . '/../../partials/header.php';
         <?php $statTone = !empty($stat['primary']) ? 'primary' : ''; include __DIR__ . '/../../partials/stat-card.php'; ?>
     <?php endforeach; ?>
 </div>
+
+<?php if ($actions !== []): ?>
+    <section class="section">
+        <div class="section__head">
+            <h2 class="section__title">Needs your action</h2>
+        </div>
+        <ul class="row-list">
+            <?php foreach ($actions as $action): ?>
+                <li class="list-row">
+                    <div class="list-row__body">
+                        <span class="list-row__title"><?= e($action['label']) ?></span>
+                    </div>
+                    <a class="btn btn--primary" href="<?= e($action['href']) ?>">Open</a>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+<?php endif; ?>
 
 <section class="section">
     <div class="section__head">

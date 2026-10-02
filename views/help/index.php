@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @var array  $moderator name and contact line for the division moderator
  */
 
-// Sample view data — replaced by the controller once HelpController lands.
+// The questions are the help page's own content; the moderator comes from the controller.
 $query ??= '';
 
 $faqs ??= [
@@ -36,7 +36,7 @@ $faqs ??= [
     ],
     [
         'question' => 'What are the gifting caps and why do they exist?',
-        'answer'   => 'Gifts are capped at 35 pts per day and 500 pts per year. The caps keep '
+        'answer'   => 'Gifts are capped at ' . Gift::DAILY_CAP . ' pts per day and ' . number_format(Gift::ANNUAL_CAP) . ' pts per year. The caps keep '
                     . 'points circulating as thanks between neighbours rather than being pooled '
                     . 'into a single account.',
         'open'     => false,
@@ -50,12 +50,7 @@ $faqs ??= [
     ],
 ];
 
-// Visitors and staff have no division moderator, so the line stays generic for them.
-$moderatorName = (string) ($viewer['moderator'] ?? '');
-$moderator ??= [
-    'line' => ($moderatorName !== '' ? 'Your moderator, ' . $moderatorName . ',' : 'Your GN division moderator')
-            . ' can help with verification, disputes and anything division-specific.',
-];
+$moderator ??= ['line' => 'Your GN division moderator can help with verification, disputes and anything division-specific.', 'phone' => '', 'name' => ''];
 
 $pageTitle = 'Help & FAQ';
 $navActive = '';
@@ -92,7 +87,9 @@ include __DIR__ . '/../../partials/header.php';
     <h2 class="panel__title">Still stuck?</h2>
     <div class="help-cta">
         <p class="help-cta__text"><?= e($moderator['line']) ?></p>
-        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Contact moderator</button><span class="demo-note">Not available in this demo</span></span>
+        <?php if ($moderator['phone'] !== ''): ?>
+            <a class="btn btn--ghost" href="tel:<?= e(preg_replace('/[^0-9+]/', '', $moderator['phone'])) ?>">Call <?= e($moderator['name']) ?> · <?= e($moderator['phone']) ?></a>
+        <?php endif; ?>
     </div>
 </section>
 

@@ -29,6 +29,8 @@ final class AccountClosureService
         private Item $items,
         private Booking $bookings,
         private AidGrant $grants,
+        private Dispute $disputes,
+        private Donation $donations,
         private Wallet $wallets,
         private PasswordReset $resets,
         private LedgerService $ledger
@@ -66,6 +68,14 @@ final class AccountClosureService
         $grant = $this->grants->activeForMember($userId);
         if ($grant !== null && in_array($grant['status'], self::OPEN_GRANT_STATES, true)) {
             $blockers[] = 'You have an open aid grant.';
+        }
+
+        if ($this->disputes->countOpenFor($userId) > 0) {
+            $blockers[] = 'You are part of a dispute the Admin has not ruled on yet.';
+        }
+
+        if ($this->donations->countUnfinishedFor($userId) > 0) {
+            $blockers[] = 'A donation you are giving or receiving is waiting for its handover.';
         }
 
         return $blockers;

@@ -165,6 +165,8 @@ final class AccountController extends Controller
             new Item($this->pdo),
             new Booking($this->pdo),
             new AidGrant($this->pdo),
+            new Dispute($this->pdo),
+            new Donation($this->pdo),
             new Wallet($this->pdo),
             new PasswordReset($this->pdo),
             new LedgerService($this->pdo, new PointLedger($this->pdo), new PointPool($this->pdo), new Wallet($this->pdo))

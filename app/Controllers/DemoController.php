@@ -34,6 +34,7 @@ final class DemoController extends Controller
             'dashboard/index' => $this->dashboard(),
             'wallet/index' => $this->wallet(),
             'transparency/index' => $this->transparency(),
+            'help/index' => $this->help(),
             default           => [],
         };
 
@@ -117,6 +118,7 @@ final class DemoController extends Controller
                 },
                 $bookings->activeBorrowings($me)
             ),
+            'actions' => $this->actionItems($me),
             'listings' => array_map(
                 function (array $item): array {
                     [$who, $due] = array_pad(explode('|', (string) ($item['lent_to'] ?? '')), 2, '');
@@ -136,11 +138,44 @@ final class DemoController extends Controller
         ];
     }
 
+    /**
+     * The dashboard's "Needs your action" panel: every step waiting on this
+     * member, each linking to where it is done.
+     *
+     * @return list<array{label: string, href: string}>
+     */
+    private function actionItems(int $me): array
+    {
+        $items = array_map(static fn (array $row): array => match ($row['kind']) {
+            'answer_request'   => ['label' => 'Answer the request to borrow ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id']],
+            'accept_handover'  => ['label' => 'Photograph and accept the handover of ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#handover'],
+            'check_return'     => ['label' => 'Check the return of ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#return'],
+            'answer_claim'     => ['label' => 'Answer the damage claim on ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#claim'],
+            'sign_resolution'  => ['label' => 'Sign the moderator’s resolution for ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#claim'],
+            'confirm_donation' => ['label' => 'Confirm the handover of ' . $row['title'], 'href' => base_url() . '/donations/' . $row['record_id'] . '/handover'],
+            default            => ['label' => 'Choose who receives ' . $row['title'], 'href' => base_url() . '/donations/' . $row['record_id']],
+        }, (new Booking($this->pdo))->needsAction($me));
+
+        $toRate = count((new Rating($this->pdo))->waitingFor($me));
+
+        if ($toRate > 0) {
+            $items[] = ['label' => 'Rate ' . $toRate . ' finished booking' . ($toRate === 1 ? '' : 's') . ' or donation' . ($toRate === 1 ? '' : 's'), 'href' => base_url() . '/ratings'];
+        }
+
+        return $items;
+    }
+
     private function wallet(): array
     {
         $wallet = new Wallet($this->pdo);
         $me = $this->userId();
+        $group = is_string($_GET['filter'] ?? null) && isset(PointLedger::GROUPS[$_GET['filter']]) ? $_GET['filter'] : '';
+        $page = max(1, (int) ($_GET['page'] ?? 1));
         return [
+            'filter' => $group,
+            'page' => $page,
+            'hasNextPage' => $page * Wallet::PER_PAGE < $wallet->countActivity($me, $group),
+            'filters' => array_merge([''], array_keys(PointLedger::GROUPS)),
             'balances' => [
                 ['label' => 'Available balance', 'value' => number_format($wallet->balance($me)) . ' pts',
                  'note' => $wallet->earnedThisMonth($me) . ' pts earned this month', 'dark' => true],
@@ -156,8 +191,26 @@ final class DemoController extends Controller
                     'note' => implode(' · ', array_filter([$other, $row['gift_reason']])),
                     'amount' => ($incoming ? '+' : '−') . number_format((int) $row['amount']) . ' pts',
                     'tone' => $incoming ? 'in' : 'out', 'date' => date('j M Y', strtotime($row['created_at']))];
-            }, $wallet->activity($me)),
+            }, $wallet->activity($me, $page, $group)),
         ] + GiftController::modalData($this->pdo, $me);
+    }
+
+    /**
+     * Help: who to contact. A member reaches their own division's moderator
+     * (I23); staff and visitors get the general line.
+     *
+     * @return array<string, mixed>
+     */
+    private function help(): array
+    {
+        $moderator = $this->userId() > 0 ? (new User($this->pdo))->homeModerator($this->userId()) : null;
+
+        return ['moderator' => [
+            'line'  => ($moderator === null ? 'Your GN division moderator' : 'Your moderator, ' . $moderator['name'] . ',')
+                . ' can help with verification, disputes and anything division-specific.',
+            'phone' => $moderator['phone'] ?? '',
+            'name'  => $moderator['name'] ?? '',
+        ]];
     }
 
     private function transparency(): array

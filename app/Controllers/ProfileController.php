@@ -99,6 +99,15 @@ final class ProfileController extends Controller
      */
     public function show(int $id): void
     {
+        $row = (new User($this->pdo))->findWithDivision($id);
+
+        // Only active members have a public profile (I7); you always see your own.
+        if ($id !== $this->userId() && ($row === null || $row['status'] !== 'active' || $row['membership_status'] !== 'active')) {
+            $this->notice(404, 'Member not found', 'This member profile is not available.');
+
+            return;
+        }
+
         $this->profile($id, 'profile/show');
     }
 
@@ -119,7 +128,7 @@ final class ProfileController extends Controller
 
         $counts = $users->profileStats($id);
         $data   = [
-            'member' => $this->summary($row, $counts),
+            'member' => $this->summary($row, $counts) + ['context' => $this->trustContext($id, $row)],
             // My profile is an account page, so a moderator keeps their own
             // navigation there; public profiles belong to the member area.
             'chrome' => $view === 'profile/edit' ? chrome_for($this->role()) : 'member',
@@ -205,6 +214,29 @@ final class ProfileController extends Controller
     }
 
     /**
+     * "★ 78 overall · 12 completed in Kollupitiya · 3 in Dehiwala" — where a
+     * member's record was earned (Plan §6.3.5).
+     *
+     * @param array<string, mixed> $row the findWithDivision() row
+     */
+    private function trustContext(int $id, array $row): string
+    {
+        $users = new User($this->pdo);
+        $parts = [
+            '★ ' . $row['trust_score'] . ' overall',
+            $users->completedInDivision($id, (int) $row['division_id']) . ' completed in ' . $row['division_name'],
+        ];
+
+        $temporary = (new UserDivision($this->pdo))->activeTemporary($id);
+
+        if ($temporary !== null) {
+            $parts[] = $users->completedInDivision($id, (int) $temporary['gn_division_id']) . ' in ' . $temporary['division_name'] . ' (temporary)';
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
      * @param array<string, mixed> $row
      * @param array<string, int>   $counts
      *
@@ -222,6 +254,7 @@ final class ProfileController extends Controller
             'verified'    => $row['verified_at'] !== null && $row['membership_status'] === 'active',
             'meta'        => $row['division_name'] . ' GN Division | ' . $joined,
             'donor'       => $counts['donations'] . ' items given',
+            'is_donor'    => $counts['donations'] > 0,
             'score'       => (string) $row['trust_score'],
             'score_note'  => 'out of 100 | ' . $counts['completed'] . ' completed transactions',
             'public_href' => base_url() . '/members/' . $row['id'],

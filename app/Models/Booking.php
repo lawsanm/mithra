@@ -519,4 +519,61 @@ final class Booking extends BaseModel
             ['member' => $memberId]
         );
     }
+
+    /**
+     * What is waiting on this member across bookings, claims and donations —
+     * the dashboard's "Needs your action" panel.
+     *
+     * @return list<array{kind: string, record_id: int, title: string}>
+     */
+    public function needsAction(int $memberId): array
+    {
+        // Native prepares forbid reusing a placeholder, so each use binds its own.
+        $params = [];
+        foreach (range(1, 10) as $n) {
+            $params['m' . $n] = $memberId;
+        }
+
+        return $this->select(
+            "SELECT 'answer_request' AS kind, b.id AS record_id, i.title
+               FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE b.lender_id = :m1 AND b.status = 'requested'
+             UNION ALL
+             SELECT 'accept_handover', b.id, i.title
+               FROM bookings b JOIN items i ON i.id = b.item_id
+          LEFT JOIN handover_records h ON h.booking_id = b.id
+              WHERE b.status = 'awaiting_handover'
+                AND ((b.lender_id = :m2 AND h.lender_accepted_at IS NULL)
+                  OR (b.borrower_id = :m3 AND h.borrower_accepted_at IS NULL))
+             UNION ALL
+             SELECT 'check_return', b.id, i.title
+               FROM bookings b JOIN items i ON i.id = b.item_id
+               JOIN return_records r ON r.booking_id = b.id
+              WHERE b.lender_id = :m4 AND b.status = 'awaiting_return' AND r.lender_decision IS NULL
+             UNION ALL
+             SELECT 'answer_claim', b.id, i.title
+               FROM damage_claims c JOIN bookings b ON b.id = c.booking_id JOIN items i ON i.id = b.item_id
+              WHERE b.borrower_id = :m5 AND c.status = 'awaiting_borrower'
+             UNION ALL
+             SELECT 'sign_resolution', b.id, i.title
+               FROM damage_claims c JOIN bookings b ON b.id = c.booking_id JOIN items i ON i.id = b.item_id
+               JOIN moderator_resolutions m ON m.damage_claim_id = c.id
+              WHERE c.status = 'pending_moderator' AND m.met_at IS NOT NULL AND m.closed_at IS NULL
+                AND ((b.lender_id = :m6 AND m.lender_signoff_at IS NULL)
+                  OR (b.borrower_id = :m7 AND m.borrower_signoff_at IS NULL))
+             UNION ALL
+             SELECT 'confirm_donation', d.id, i.title
+               FROM donations d JOIN items i ON i.id = d.item_id
+              WHERE d.status = 'recipient_selected'
+                AND ((d.donor_id = :m8 AND d.donor_confirmed_at IS NULL)
+                  OR (d.recipient_id = :m9 AND d.recipient_confirmed_at IS NULL))
+             UNION ALL
+             SELECT 'choose_recipient', d.id, i.title
+               FROM donations d JOIN items i ON i.id = d.item_id
+              WHERE d.donor_id = :m10 AND d.status = 'open'
+                AND EXISTS (SELECT 1 FROM donation_requests r WHERE r.donation_id = d.id AND r.status = 'pending')
+              LIMIT 20",
+            $params
+        );
+    }
 }

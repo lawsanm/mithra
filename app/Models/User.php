@@ -583,4 +583,38 @@ final class User extends BaseModel
 
         return array_map(static fn (array $row): int => (int) $row['id'], $rows);
     }
+
+    /**
+     * The moderator of a member's home division with a phone number to reach
+     * them on, or null when there is none.
+     *
+     * @return array{name: string, phone: string}|null
+     */
+    public function homeModerator(int $userId): ?array
+    {
+        $row = $this->selectOne(
+            "SELECT m.full_name, m.phone
+               FROM user_divisions ud
+               JOIN gn_divisions d ON d.id = ud.gn_division_id
+               JOIN users m        ON m.id = d.moderator_id
+              WHERE ud.user_id = :id AND ud.membership_type = 'home'",
+            ['id' => $userId]
+        );
+
+        return $row === null ? null : ['name' => (string) $row['full_name'], 'phone' => (string) $row['phone']];
+    }
+
+    /**
+     * Completed bookings this member took part in on items listed in one
+     * division — the trust score's context line on profiles (§6.3.5).
+     */
+    public function completedInDivision(int $userId, int $divisionId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE (b.borrower_id = :a OR b.lender_id = :b) AND b.status = 'completed'
+                AND i.gn_division_id = :division",
+            ['a' => $userId, 'b' => $userId, 'division' => $divisionId]
+        );
+    }
 }

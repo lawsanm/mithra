@@ -66,13 +66,19 @@ final class Wallet extends BaseModel
         );
     }
 
+    /** Activity rows per page (Rules/CONVENTIONS.md §9). */
+    public const PER_PAGE = 20;
+
     /**
-     * Wallet activity: every ledger row touching this member, newest first.
+     * Wallet activity: ledger rows touching this member, newest first, one
+     * page at a time, optionally limited to one PointLedger::GROUPS filter.
      *
      * @return list<array<string, mixed>>
      */
-    public function activity(int $memberId, int $limit = 20): array
+    public function activity(int $memberId, int $page = 1, string $group = ''): array
     {
+        [$filter, $reasons] = self::reasonFilter($group);
+
         $statement = $this->pdo->prepare(
             "SELECT l.id, l.amount, l.reason, l.created_at, l.booking_id,
                     (l.to_user_id = :to_id) AS incoming,
@@ -86,17 +92,52 @@ final class Wallet extends BaseModel
           LEFT JOIN gifts g          ON g.id = l.gift_id
           LEFT JOIN users sender     ON sender.id = l.from_user_id
           LEFT JOIN users recipient  ON recipient.id = l.to_user_id
-              WHERE l.from_user_id = :from_id OR l.to_user_id = :to_id2
-              ORDER BY l.created_at DESC
-              LIMIT :limit"
+              WHERE (l.from_user_id = :from_id OR l.to_user_id = :to_id2)" . $filter . "
+              ORDER BY l.created_at DESC, l.id DESC
+              LIMIT :take OFFSET :skip"
         );
         $statement->bindValue(':to_id', $memberId, PDO::PARAM_INT);
         $statement->bindValue(':from_id', $memberId, PDO::PARAM_INT);
         $statement->bindValue(':to_id2', $memberId, PDO::PARAM_INT);
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+        foreach ($reasons as $name => $reason) {
+            $statement->bindValue(':' . $name, $reason);
+        }
+        $statement->bindValue(':take', self::PER_PAGE, PDO::PARAM_INT);
+        $statement->bindValue(':skip', (max(1, $page) - 1) * self::PER_PAGE, PDO::PARAM_INT);
         $statement->execute();
 
         return $statement->fetchAll();
+    }
+
+    public function countActivity(int $memberId, string $group = ''): int
+    {
+        [$filter, $reasons] = self::reasonFilter($group);
+
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM point_ledger l WHERE (l.from_user_id = :a OR l.to_user_id = :b)' . $filter,
+            ['a' => $memberId, 'b' => $memberId] + $reasons
+        );
+    }
+
+    /**
+     * A fixed set of placeholders for one filter's ledger reasons.
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private static function reasonFilter(string $group): array
+    {
+        if (!isset(PointLedger::GROUPS[$group])) {
+            return ['', []];
+        }
+
+        $names   = [];
+        $reasons = [];
+        foreach (PointLedger::GROUPS[$group] as $index => $reason) {
+            $names[]                    = ':reason' . $index;
+            $reasons['reason' . $index] = $reason;
+        }
+
+        return [' AND l.reason IN (' . implode(', ', $names) . ')', $reasons];
     }
 
     /**
