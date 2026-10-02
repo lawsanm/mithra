@@ -40,7 +40,6 @@ final class DemoController extends Controller
             'notifications/index', 'sponsor/notifications/index' => $this->notifications(),
             'transparency/index' => $this->transparency(),
             'aid-grants/show' => $this->aidGrant($id),
-            'donations/index', 'donations/handover' => $this->donation($id, $view),
             default           => [],
         };
 
@@ -294,29 +293,6 @@ final class DemoController extends Controller
                 'line' => empty($row['vouched_at']) ? 'Awaiting moderator vouch' : 'Vouched by ' . $row['moderator_name'] . ' · ' . date('j M Y', strtotime($row['vouched_at'])),
                 'quote' => (string) ($row['moderator_vouch'] ?? ''),
                 'badge' => empty($row['vouched_at']) ? 'Pending' : 'Vouch recorded'], 'cooling' => ''];
-    }
-
-    private function donation(int $id, string $view): ?array
-    {
-        $model = new Donation($this->pdo);
-        $row = $model->forParticipant($id, $this->userId());
-        if ($row === null || ($view === 'donations/index' && (int) $row['donor_id'] !== $this->userId())) {
-            return null;
-        }
-        $requests = $model->requests($id, $this->userId());
-        return ['donation' => ['id' => $id, 'item' => $row['title'],
-                'photo' => empty($row['photo']) ? null : photo_url((string) $row['photo']),
-                'meta' => ucfirst($row['status']), 'request_count' => count($requests) . ' requests',
-                'first_come' => $row['selection_mode'] === 'first_come'],
-            'requests' => array_map(static fn (array $request): array => [
-                'initials' => User::initials($request['full_name']), 'name' => $request['full_name'],
-                'meta' => 'Trust ' . $request['trust_score'] . ' · ' . ($request['division_name'] ?? '') . ' · ' . $request['status'],
-                'message' => $request['message'], 'profile_href' => base_url() . '/members/' . $request['requester_id'],
-            ], $requests),
-            'recipient' => ['initials' => User::initials((string) ($row['recipient_name'] ?? '')),
-                'name' => $row['recipient_name'] ?? 'No recipient selected',
-                'meta' => $row['recipient_name'] === null ? '' : 'Trust ' . $row['trust_score']],
-            'badge' => 'Donation status: ' . $row['status']];
     }
 
     private function dueNote(int $dueTomorrow): string

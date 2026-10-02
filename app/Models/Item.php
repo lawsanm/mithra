@@ -158,7 +158,8 @@ final class Item extends BaseModel
                          WHERE b.item_id = i.id AND b.status IN ('in_progress','awaiting_return')) AS due_back,
                        (SELECT COUNT(*) FROM donation_requests dr
                           JOIN donations d ON d.id = dr.donation_id
-                         WHERE d.item_id = i.id AND dr.status = 'pending') AS request_count
+                         WHERE d.item_id = i.id AND dr.status = 'pending') AS request_count,
+                       (SELECT MAX(d.id) FROM donations d WHERE d.item_id = i.id) AS donation_id
                   FROM items i
                  WHERE i.owner_id = :owner AND i.status <> 'archived'";
 

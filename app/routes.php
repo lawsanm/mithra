@@ -58,8 +58,8 @@ return [
         '/aid-grants'              => 'aid-grants/show',
         '/aid-grants/create'       => 'aid-grants/create',
         '/aid-grants/{id}'         => 'aid-grants/show',
-        '/donations/{id}'          => 'donations/index',
-        '/donations/{id}/handover' => 'donations/handover',
+        '/donations/{id}'          => ['DonationController', 'show'],
+        '/donations/{id}/handover' => ['DonationController', 'handover'],
         '/community/temporary'     => ['CommunityController', 'createForm'],
     
         // ── Admin ──
@@ -188,5 +188,11 @@ return [
         '/saved-searches'                    => ['SavedSearchController', 'store'],
         '/saved-searches/{id}'               => ['SavedSearchController', 'update'],
         '/saved-searches/{id}/delete'        => ['SavedSearchController', 'destroy'],
+        '/donations/{id}/requests'           => ['DonationController', 'request'],
+        '/donations/{id}/mode'               => ['DonationController', 'mode'],
+        '/donations/{id}/select'             => ['DonationController', 'select'],
+        '/donations/{id}/confirm'            => ['DonationController', 'confirm'],
+        '/donations/{id}/cancel'             => ['DonationController', 'cancel'],
+        '/donation-requests/{id}/withdraw'   => ['DonationController', 'withdraw'],
     ],
 ];

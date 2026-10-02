@@ -149,14 +149,35 @@ include __DIR__ . '/../../partials/header.php';
                         <button class="btn btn--primary" type="button" data-modal-open="request-borrow">Request to Borrow</button>
                     </div>
                 </div>
-            <?php elseif ($item['listing_type'] === 'donation'): ?>
-                <div class="stack" data-demo-form>
-                    <p class="demo-note">Donation requests are not available in this demo.</p>
-                    <?= csrf_field() ?>
+            <?php elseif ($item['listing_type'] === 'donation' && ($donation ?? null) !== null): ?>
+                <?php if ($donation['request'] !== null): ?>
+                    <p class="notice notice--info"><?= e($donation['request']['label']) ?></p>
                     <div class="actions">
-                        <button class="btn btn--primary" type="button" disabled>Request this donation</button>
+                        <?php if ($donation['handover']): ?>
+                            <a class="btn btn--primary" href="<?= base_url() ?>/donations/<?= e((string) $donation['id']) ?>/handover">Go to handover</a>
+                        <?php endif; ?>
+                        <?php if (in_array($donation['request']['status'], ['pending', 'selected'], true)): ?>
+                            <form method="post" action="<?= base_url() ?>/donation-requests/<?= e((string) $donation['request']['id']) ?>/withdraw"
+                                data-confirm="Withdraw your request? You can ask again while the donation is open." novalidate>
+                                <?= csrf_field() ?>
+                                <button class="btn btn--ghost" type="submit">Withdraw request</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
-                </div>
+                <?php elseif ($donation['open']): ?>
+                    <form class="stack" method="post" action="<?= base_url() ?>/donations/<?= e((string) $donation['id']) ?>/requests" novalidate>
+                        <?= csrf_field() ?>
+                        <div class="field">
+                            <label class="field__label" for="donation-message">Message to <?= e($owner['name']) ?> (optional)</label>
+                            <input class="input" type="text" id="donation-message" name="message" placeholder="Why it would help, and when you can collect…">
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn--primary" type="submit">Request this donation</button>
+                        </div>
+                    </form>
+                <?php else: ?>
+                    <p class="notice notice--warning">This donation is no longer taking requests.</p>
+                <?php endif; ?>
             <?php else: ?>
                 <p class="notice notice--warning">This item is not available to borrow right now.</p>
             <?php endif; ?>
@@ -176,6 +197,6 @@ include __DIR__ . '/../../partials/header.php';
 <?php endif; ?>
 
 <?php
-$pageScripts = ['modal.js'];
+$pageScripts = ['modal.js', 'confirm.js'];
 include __DIR__ . '/../../partials/footer.php';
 ?>

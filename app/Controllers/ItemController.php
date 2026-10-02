@@ -178,6 +178,7 @@ final class ItemController extends Controller
                 'href'     => base_url() . '/members/' . $row['owner_id'],
             ],
             'isOwner' => $isOwner,
+            'donation' => $row['listing_type'] === 'donation' ? $this->donationPanel((int) $row['id'], $me) : null,
             'calendar' => $row['listing_type'] === 'rental' ? $this->calendar((int) $row['id']) : [],
             'quote'   => ['from' => '', 'to' => '', 'days_label' => 'Select dates  ·  Total', 'total' => '—'],
             'pricing' => array_values(array_filter([
@@ -502,6 +503,7 @@ final class ItemController extends Controller
             'status_label' => $label,
             'href'         => base_url() . '/items/' . $row['id'],
             'edit_href'    => base_url() . '/items/' . $row['id'] . '/edit',
+            'requests_href' => empty($row['donation_id']) ? null : base_url() . '/donations/' . $row['donation_id'],
         ];
     }
 
@@ -551,6 +553,40 @@ final class ItemController extends Controller
             'archived'         => ['neutral', '—', 'Removed'],
             default            => ['neutral', '—', ucfirst($status)],
         };
+    }
+
+    /**
+     * What the item page offers on a donation: the request form, or the
+     * member's own request and its status (Plan §13.1).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function donationPanel(int $itemId, int $me): ?array
+    {
+        $donations = new Donation($this->pdo);
+        $donation  = $donations->latestForItem($itemId);
+
+        if ($donation === null) {
+            return null;
+        }
+
+        $mine = $donations->requestBy((int) $donation['id'], $me);
+
+        return [
+            'id'          => (int) $donation['id'],
+            'open'        => $donation['status'] === 'open',
+            'is_donor'    => (int) $donation['donor_id'] === $me,
+            'request'     => $mine === null || $mine['status'] === 'withdrawn' ? null : [
+                'id'     => (int) $mine['id'],
+                'status' => (string) $mine['status'],
+                'label'  => match ((string) $mine['status']) {
+                    'pending'  => 'Your request is waiting for the donor.',
+                    'selected' => 'You were chosen to receive it.',
+                    default    => 'Another member was chosen.',
+                },
+            ],
+            'handover'    => $donation['status'] === 'recipient_selected' && (int) ($donation['recipient_id'] ?? 0) === $me,
+        ];
     }
 
     /**

@@ -25,7 +25,8 @@ final class ListingApprovalController extends Controller
             new Item($pdo),
             new ItemValueReview($pdo),
             new GnDivision($pdo),
-            new Notification($pdo)
+            new Notification($pdo),
+            new Donation($pdo)
         );
     }
 

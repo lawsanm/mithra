@@ -32,7 +32,8 @@ final class ListingReviewService
         private Item $items,
         private ItemValueReview $reviews,
         private GnDivision $divisions,
-        private Notification $notifications
+        private Notification $notifications,
+        private Donation $donations
     ) {
     }
 
@@ -122,6 +123,12 @@ final class ListingReviewService
                 'new_value'      => $newValue,
                 'reason'         => $reason,
             ]);
+
+            // An approved donation listing opens for requests at once (Plan §13.1).
+            if ($status === 'active' && $listing['listing_type'] === 'donation'
+                && !$this->donations->hasLiveForItem($id)) {
+                $this->donations->openFor($id, (int) $listing['owner_id']);
+            }
 
             $this->notifications->push((int) $listing['owner_id'], 'listing_' . $logged, $this->notice(
                 (string) $listing['title'],
