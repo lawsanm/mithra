@@ -87,6 +87,9 @@ for path in paths:
     if path in ['/admin/disputes/1', '/moderator/cases/1', '/moderator/disasters/contributions/1/confirm', '/sponsor-liaison/disasters/contributions/1', '/sponsor-liaison/disasters/contributions/1/edit'] and status == 404:
         continue  # The seed has no disputes; a database with one serves it.
     check(status == 200, f'{path}: HTTP {status}')
+    if path.endswith(('/handover-status', '/unread-count')):
+        check(body.lstrip().startswith('{') and '<html' not in body, f'{path}: must answer JSON')
+        continue
     if path.endswith('/export'):
         check('Grant ID' in body and 'Awaiting approval' not in body, 'Grant export must contain only approved records')
         continue
@@ -97,7 +100,7 @@ for path in paths:
     pages[path] = body
     ids = [a['id'] for _, a in page.tags if 'id' in a]
     check(len(ids) == len(set(ids)), f'{path}: duplicate element IDs')
-    check(any(a.get('href') == '/mithra/css/main.css' for a in page.tagged('link')), f'{path}: missing mounted stylesheet')
+    check(any(a.get('href', '').split('?')[0] == '/mithra/css/main.css' for a in page.tagged('link')), f'{path}: missing mounted stylesheet')
     check(any(a.get('class', '').find('nav__logo') >= 0 and a.get('width') == '21' and a.get('height') == '28'
               for a in page.tagged('img')), f'{path}: logo dimensions missing')
     for tag, attrs in page.tags:
@@ -123,6 +126,26 @@ for role in ['borrower', 'lender']:
         check(code == 200 and ('Booking #' + href.rsplit('/', 1)[1]) in detail, 'Wrong booking record')
         check('As ' + role.capitalize() in detail, 'Wrong booking party role')
 check(fetch('/bookings/999999')[0] == 404, 'Unknown booking must not display a sample record')
+
+# The member portal's working screens: real forms, no preview markers.
+for path, marker in [
+    ('/dashboard', 'Needs your action'),
+    ('/items/browse', 'Save this search'),
+    ('/community/temporary', '/community/temporary'),
+    ('/gifts', 'name="recipient"'),
+    ('/ratings', 'Ratings'),
+    ('/trust', 'How your score is built'),
+    ('/notifications', '/notifications/'),
+    ('/wallet', 'filter=escrow'),
+    ('/aid-grants', 'Aid grant'),
+    ('/help', 'Help'),
+]:
+    status, body = fetch(path)
+    check(status == 200 and marker in body, f'{path}: expected "{marker}"')
+    check('data-demo-form' not in body and 'preview-action' not in body, f'{path}: still carries a preview marker')
+status, body = fetch('/notifications/unread-count')
+check(status == 200 and '"unread"' in body, 'Unread count must answer JSON')
+check(fetch('/members/999999')[0] == 404, 'Unknown member must not display a profile')
 
 use(MODERATOR)
 for group in ['verifications', 'listing-approvals', 'cases']:

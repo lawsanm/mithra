@@ -19,6 +19,19 @@ function verify(bool $condition, string $message): void
     if (!$condition) { throw new RuntimeException($message); }
 }
 
+/** Screens that have their own controller now, rendered the way the router does. */
+const CONTROLLER_SCREENS = [
+    'ratings/index'               => ['RatingController', 'index'],
+    'trust/index'                 => ['TrustController', 'show'],
+    'notifications/index'         => ['NotificationController', 'index'],
+    'sponsor/notifications/index' => ['NotificationController', 'index'],
+    'gifts/index'                 => ['GiftController', 'index'],
+    'aid-grants/show'             => ['AidGrantController', 'show'],
+    'donations/index'             => ['DonationController', 'show'],
+    'donations/handover'          => ['DonationController', 'handover'],
+    'community/create'            => ['CommunityController', 'createForm'],
+];
+
 function screen(PDO $pdo, int $userId, string $role, string $view, array $params = [], array $query = []): string
 {
     $_SESSION = ['user_id' => $userId, 'role' => $role, 'csrf_token' => str_repeat('a', 64)];
@@ -26,7 +39,13 @@ function screen(PDO $pdo, int $userId, string $role, string $view, array $params
     http_response_code(200);
     ob_start();
     try {
-        (new DemoController($pdo))->show($view, $params);
+        if (isset(CONTROLLER_SCREENS[$view])) {
+            [$class, $action] = CONTROLLER_SCREENS[$view];
+            $controller = new $class($pdo);
+            isset($params['id']) ? $controller->$action((int) $params['id']) : $controller->$action();
+        } else {
+            (new DemoController($pdo))->show($view, $params);
+        }
         return (string) ob_get_contents();
     } finally {
         ob_end_clean();
@@ -64,7 +83,7 @@ try {
         [4, 'member', 'dashboard/index', [], ['DynamicMember', 'Dynamic Division', 'Dynamic Drill', '4,321 pts']],
         [4, 'member', 'wallet/index', [], ['4,321 pts', 'Dynamic Drill', 'Dynamic Neighbour']],
         [4, 'member', 'ratings/index', [], [e('Dynamic Lender & <Name>'), 'Dynamic Neighbour']],
-        [4, 'member', 'trust/index', [], ['Dynamic Division', '80']],
+        [4, 'member', 'trust/index', [], ['Dynamic Division', 'How your score is built']],
         [4, 'member', 'notifications/index', [], [e('Dynamic Lender & <Name>'), 'Dynamic Drill', 'Dynamic Neighbour', 'DynamicModerator']],
         [4, 'member', 'gifts/index', [], ['Dynamic Neighbour']],
         [4, 'member', 'aid-grants/show', ['id' => '1042'], ['321 pts', 'Dynamic purpose', 'DynamicModerator', 'Dynamic Division']],

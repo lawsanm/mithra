@@ -41,14 +41,14 @@ For an edit, the browser submits a POST. Router first checks the CSRF token. The
 
 | Area | Current state |
 | --- | --- |
-| Items | Database-backed reads and create/edit/archive/pause/resume actions; photo processing and ownership checks |
-| Member dashboard and gifts list | Read database data; sending gifts is not implemented |
-| Bookings | Database-backed borrower/lender lists and record-specific details; lifecycle actions remain pending |
+| Items | Database-backed reads and create/edit/archive/pause/resume actions; photo processing and ownership checks; availability calendar (block, change, unblock dates) and saved searches on Browse |
+| Member portal | Every member action of Plan §6.1 works end to end: temporary community (apply, moderator review, extend, promote, leave, expiry), donations (request, choose or first-come, both-side handover), the booking lifecycle (request, accept into escrow, decline, cancel with refund, stamped handover photos, return with late fees and Reserve cover, simple and moderator-path damage claims, disputes), ratings, gifting within the caps, aid-grant requests, notifications with an unread count, the trust score with its breakdown, and a "Needs your action" dashboard panel. Checklist: `docs/MEMBER_PORTAL_CHECKLIST.md` |
+| Scheduled jobs | Seven CLI jobs in `scripts/` (see the README), each logging a `cron_runs` row and safe to run twice |
 | Admin | Division CRUD works (create, edit, archive, with validation and a duplicate-name check). Every other admin screen reads live data or shows a clearly empty state; a missing record is a 404. Approvals, rulings and settings saves remain pending |
 | Other member, moderator, sponsor and liaison screens | Demonstration templates; many contain sample data |
 | Shared interface | Consistent navigation, account menus, local Inter font, responsive rules and Figma logo/bell assets; browser visual verification remains pending |
 | Identity | Complete: registration with NIC photo and proof of address, login with throttling, logout, moderator verification with the welcome bonus, password reset (emailed link or a moderator-issued code), password change, profile edits, re-verified address changes, the receive-gifts preference and Type A / Type B account closure; every screen is behind the sign-in, role and session checks |
-| Points transfers, booking lifecycle and scheduled jobs | Do not present these as completed end-to-end features |
+| Other portals | The moderator's aid vouching and damage-case outcome, the Sponsor Liaison's aid decision and the Admin's dispute rulings are still previews in those portals, so an aid grant cannot be approved and a moderator-path claim cannot be settled from the member side alone |
 
 Seeded accounts have the development password `password`, and `/login` authenticates them by email or mobile number: signing in stores the member id and role in the session and lands each role on its own home screen. Only `active` accounts are admitted; pending, rejected, suspended and closed accounts are refused with the reason.
 
