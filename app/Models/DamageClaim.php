@@ -48,4 +48,29 @@ final class DamageClaim extends BaseModel
 
         return $row === null ? null : Booking::ids($row);
     }
+
+    /**
+     * Open a claim on a booking. Callers pass an already-checked set.
+     *
+     * @param array{booking_id:int, raised_by:int, severity:string, description:?string,
+     *              proposed_penalty:int, track:string, status:string} $data
+     */
+    public function open(array $data): int
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO damage_claims (booking_id, raised_by, severity, description, proposed_penalty, track, status)
+             VALUES (:booking_id, :raised_by, :severity, :description, :proposed_penalty, :track, :status)'
+        );
+        $statement->execute([
+            'booking_id'       => $data['booking_id'],
+            'raised_by'        => $data['raised_by'],
+            'severity'         => $data['severity'],
+            'description'      => $data['description'],
+            'proposed_penalty' => $data['proposed_penalty'],
+            'track'            => $data['track'],
+            'status'           => $data['status'],
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
 }

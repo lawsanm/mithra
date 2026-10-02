@@ -501,4 +501,11 @@ final class Item extends BaseModel
     {
         $this->selectValue('SELECT id FROM items WHERE id = :id FOR UPDATE', ['id' => $id]);
     }
+
+    /** The item is back from a completed loan and on the shelf again. */
+    public function returnToShelf(int $id): void
+    {
+        $statement = $this->pdo->prepare("UPDATE items SET status = 'active' WHERE id = :id AND status = 'borrowed'");
+        $statement->execute(['id' => $id]);
+    }
 }

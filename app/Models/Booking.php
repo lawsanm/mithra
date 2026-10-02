@@ -477,4 +477,36 @@ final class Booking extends BaseModel
 
         return $statement->fetchAll();
     }
+
+    /**
+     * Bookings still out (nothing returned) more than this many hours after
+     * the end of their end date.
+     *
+     * @param bool $unflaggedOnly only those the moderator has not been told about
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function unreturnedPast(int $hours, bool $unflaggedOnly): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT b.id, b.borrower_id, b.lender_id, i.title AS item_title, i.gn_division_id
+               FROM bookings b
+               JOIN items i ON i.id = b.item_id
+          LEFT JOIN return_records r ON r.booking_id = b.id
+              WHERE b.status = 'in_progress' AND r.return_at IS NULL
+                AND TIMESTAMP(b.end_date + INTERVAL 1 DAY) < NOW() - INTERVAL :hours HOUR"
+            . ($unflaggedOnly ? ' AND b.overdue_flagged_at IS NULL' : '') . '
+              ORDER BY b.id LIMIT 500'
+        );
+        $statement->bindValue(':hours', $hours, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    public function markOverdueFlagged(int $id): void
+    {
+        $statement = $this->pdo->prepare('UPDATE bookings SET overdue_flagged_at = NOW() WHERE id = :id');
+        $statement->execute(['id' => $id]);
+    }
 }

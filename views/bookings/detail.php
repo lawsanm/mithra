@@ -13,6 +13,7 @@ declare(strict_types=1);
  * @var string $answerBy when an unanswered request auto-cancels
  * @var string $endedBy  why a booking that did not run ended
  * @var array|null $handover me, sides (label, photos, note, accepted), locked, at, can_edit, can_accept, waiting
+ * @var array|null $return   me, sides (label, photos, note), returned, decision, can_edit, can_accept
  * @var array|null $flash
  */
 
@@ -158,6 +159,67 @@ include __DIR__ . '/../../partials/header.php';
                     <button class="btn btn--primary" type="submit">Accept handover</button>
                 </form>
             <?php endif; ?>
+        <?php endif; ?>
+    </section>
+<?php endif; ?>
+
+<?php if ($return !== null): ?>
+    <section class="panel" id="return">
+        <h2 class="panel__title">Return</h2>
+        <?php if ($return['decision'] !== ''): ?>
+            <p class="notice notice--info"><?= e($return['decision']) ?> Returned <?= e($return['returned']) ?>.</p>
+        <?php elseif ($return['returned'] !== ''): ?>
+            <p class="record-meta">Return started <?= e($return['returned']) ?>. Compare it with the handover photos above.</p>
+        <?php else: ?>
+            <p class="record-meta">
+                When the item comes back, each of you photographs it (1–5 photos). The lender then accepts the
+                condition or raises a damage claim. Returned by the end of <?= e(date('j M Y', strtotime($booking['end_date']))) ?>,
+                the <?= e((string) $booking['late_buffer']) ?>-point buffer goes back to the borrower.
+            </p>
+        <?php endif; ?>
+
+        <div class="two-col">
+            <?php foreach ($return['sides'] as $side): ?>
+                <div class="stack">
+                    <p class="field__label"><?= e($side['label']) ?></p>
+                    <?php if ($side['photos'] === []): ?>
+                        <p class="record-meta">No photos yet.</p>
+                    <?php else: ?>
+                        <?php $gridPhotos = $side['photos']; include __DIR__ . '/../../partials/photo-grid.php'; ?>
+                    <?php endif; ?>
+                    <?php if ($side['note'] !== ''): ?>
+                        <p class="panel__note"><?= e($side['note']) ?></p>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if ($return['can_edit']): ?>
+            <form class="stack" method="post" action="<?= base_url() ?>/bookings/<?= e($id) ?>/return/photos" enctype="multipart/form-data" novalidate>
+                <?= csrf_field() ?>
+                <label class="upload-drop">
+                    <span class="upload-drop__glyph" aria-hidden="true">＋</span>
+                    <span data-upload-name><?= $return['sides'][$return['me']]['photos'] === [] ? 'Add 1–5 return photos' : 'Replace your return photos (1–5)' ?></span>
+                    <input class="visually-hidden" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple>
+                </label>
+                <div class="field">
+                    <label class="field__label" for="return-note">Condition note</label>
+                    <input class="input" type="text" id="return-note" name="note" value="<?= e($return['sides'][$return['me']]['note']) ?>">
+                </div>
+                <div class="actions">
+                    <button class="btn btn--ghost" type="submit">Save return photos</button>
+                </div>
+            </form>
+        <?php endif; ?>
+
+        <?php if ($return['can_accept']): ?>
+            <div class="actions">
+                <form method="post" action="<?= base_url() ?>/bookings/<?= e($id) ?>/return/accept"
+                    data-confirm="Accept the item’s condition? The booking completes and the buffer is settled. You cannot raise a claim afterwards." novalidate>
+                    <?= csrf_field() ?>
+                    <button class="btn btn--primary" type="submit">Accept return</button>
+                </form>
+            </div>
         <?php endif; ?>
     </section>
 <?php endif; ?>

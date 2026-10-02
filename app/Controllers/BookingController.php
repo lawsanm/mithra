@@ -51,6 +51,23 @@ final class BookingController extends Controller
         );
     }
 
+    public static function returns(PDO $pdo, PhotoStore $photos): ReturnService
+    {
+        $wallets = new Wallet($pdo);
+
+        return new ReturnService(
+            $pdo,
+            new Booking($pdo),
+            new ReturnRecord($pdo),
+            new Item($pdo),
+            new DamageClaim($pdo),
+            new GnDivision($pdo),
+            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), $wallets),
+            $photos,
+            new Notification($pdo)
+        );
+    }
+
     /**
      * GET /bookings — current bookings by role, or past ones with ?state=past.
      */
@@ -114,7 +131,87 @@ final class BookingController extends Controller
                 : '',
             'endedBy'  => $this->endedBy($booking, $me),
             'handover' => $this->handoverView($id, $isLender ? 'lender' : 'borrower', $state),
+            'return'   => $this->returnView($id, $isLender ? 'lender' : 'borrower', $state),
         ]);
+    }
+
+    /**
+     * POST /bookings/{id}/return/photos — this side's return photos and note.
+     */
+    public function returnPhotos(int $id): void
+    {
+        $this->act($id, fn (): mixed => self::returns($this->pdo, $this->uploads())->savePhotos(
+            $id,
+            $this->userId(),
+            uploaded_files('photos'),
+            (string) ($_POST['note'] ?? '')
+        ), 'Return photos saved.');
+    }
+
+    /**
+     * POST /bookings/{id}/return/accept — the lender accepts the condition.
+     */
+    public function returnAccept(int $id): void
+    {
+        try {
+            $outcome = self::returns($this->pdo, $this->uploads())->accept($id, $this->userId());
+            $this->flash($outcome['hours_late'] === 0
+                ? 'Return accepted. The booking is complete and the buffer went back to the borrower.'
+                : sprintf('Return accepted. It came back %d hours late, so the late fee went to you.', $outcome['hours_late']));
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
+            $this->notice(404, 'Booking not found', 'Choose one of your bookings from My Bookings.');
+
+            return;
+        }
+
+        $this->redirect('/bookings/' . $id . '#return');
+    }
+
+    /**
+     * The return photos beside the handover baseline, for the booking page.
+     *
+     * @return array<string, mixed>|null null until the item is out
+     */
+    private function returnView(int $id, string $me, string $state): ?array
+    {
+        if (!in_array($state, ['in_progress', 'awaiting_return', 'pending_moderator', 'escalated', 'completed'], true)) {
+            return null;
+        }
+
+        $record = (new ReturnRecord($this->pdo))->forBooking($id);
+
+        if ($record === null && !in_array($state, ['in_progress', 'awaiting_return'], true)) {
+            return null;
+        }
+
+        $sides = [];
+
+        foreach (HandoverRecord::SIDES as $side) {
+            $paths = HandoverService::decode($record[$side . '_photos'] ?? null);
+
+            $sides[$side] = [
+                'label'  => $side === $me ? 'Your return photos' : ucfirst($side) . '’s return photos',
+                'photos' => array_map(static fn (string $path, int $index): array => [
+                    'url'   => photo_url($path),
+                    'label' => 'Return ' . ($index + 1),
+                ], $paths, array_keys($paths)),
+                'note'   => (string) ($record[$side . '_notes'] ?? ''),
+            ];
+        }
+
+        $open     = ReturnService::photosOpen($record, $state);
+        $decision = $record['lender_decision'] ?? null;
+
+        return [
+            'me'         => $me,
+            'sides'      => $sides,
+            'returned'   => empty($record['return_at']) ? '' : date('j M Y, H:i', strtotime((string) $record['return_at'])),
+            'decision'   => $decision === null ? '' : ($decision === 'accepted' ? 'The lender accepted the item’s condition.' : 'The lender raised a damage claim.'),
+            'can_edit'   => $open,
+            'can_accept' => $open && $me === 'lender' && $state === 'awaiting_return' && $sides['lender']['photos'] !== [],
+        ];
     }
 
     /**

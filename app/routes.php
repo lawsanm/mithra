@@ -201,5 +201,7 @@ return [
         '/bookings/{id}/cancel'              => ['BookingController', 'cancel'],
         '/bookings/{id}/handover/photos'     => ['BookingController', 'handoverPhotos'],
         '/bookings/{id}/handover/accept'     => ['BookingController', 'handoverAccept'],
+        '/bookings/{id}/return/photos'       => ['BookingController', 'returnPhotos'],
+        '/bookings/{id}/return/accept'       => ['BookingController', 'returnAccept'],
     ],
 ];

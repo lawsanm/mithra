@@ -112,4 +112,40 @@ bookingCheck(!HandoverService::sideOpen($locked, 'borrower', 'in_progress'), 'On
 bookingCheck(!HandoverService::sideOpen($open, 'borrower', 'requested'), 'No handover before the request is accepted.');
 $checks += 5;
 
-echo 'Passed: ' . $checks . " booking checks — quotes, buffer, dates, who may act, transitions, handover.\n";
+// ── Return and late fees (Plan 3.3, §7.6) ──────────────────────────────────
+
+$at = static fn (string $when): DateTimeImmutable => new DateTimeImmutable($when);
+
+bookingCheck(ReturnService::hoursLate('2026-03-05', $at('2026-03-05 23:59:00')) === 0, 'Returned on the end date is on time.');
+bookingCheck(ReturnService::hoursLate('2026-03-05', $at('2026-03-06 00:00:00')) === 0, 'Midnight at the end of the end date is still on time.');
+bookingCheck(ReturnService::hoursLate('2026-03-05', $at('2026-03-06 00:30:00')) === 1, 'Half an hour late counts as one hour.');
+bookingCheck(ReturnService::hoursLate('2026-03-05', $at('2026-03-03 10:00:00')) === 0, 'An early return is on time.');
+$checks += 4;
+
+foreach ([
+    'on time'   => [0, 'borrower', 0],
+    '1 hour'    => [1, 'lender', 0],
+    '24 hours'  => [24, 'lender', 0],
+    '25 hours'  => [25, 'lender', 40],
+    '48 hours'  => [48, 'lender', 40],
+    '49 hours'  => [49, 'lender', 80],
+    '72 hours'  => [72, 'lender', 80],
+    '100 hours' => [100, 'lender', 80],
+] as $label => [$hours, $bufferTo, $extra]) {
+    $charges = ReturnService::lateCharges($hours, 40);
+    bookingCheck($charges['buffer_to'] === $bufferTo && $charges['extra'] === $extra, 'Late fee wrong at ' . $label . '.');
+    $checks++;
+}
+
+// The shortfall split: the borrower pays what they have, the Reserve the rest.
+bookingCheck(LedgerService::shortfallSplit(80, 100) === ['paid' => 80, 'covered' => 0], 'Enough points: no cover.');
+bookingCheck(LedgerService::shortfallSplit(80, 30) === ['paid' => 30, 'covered' => 50], 'Short: the Reserve covers 50.');
+bookingCheck(LedgerService::shortfallSplit(80, 0) === ['paid' => 0, 'covered' => 80], 'Empty wallet: the Reserve covers all.');
+$checks += 3;
+
+bookingCheck(ReturnService::photosOpen(null, 'in_progress'), 'Return photos open while the item is out.');
+bookingCheck(!ReturnService::photosOpen(['lender_decision' => 'accepted'], 'awaiting_return'), 'Locked once the lender decides.');
+bookingCheck(!ReturnService::photosOpen(null, 'awaiting_handover'), 'No return before the handover.');
+$checks += 3;
+
+echo 'Passed: ' . $checks . " booking checks — quotes, buffer, dates, who may act, transitions, handover, late fees.\n";
