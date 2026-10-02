@@ -12,36 +12,29 @@ declare(strict_types=1);
  * MySQL, under the sender's wallet lock.
  */
 
-require_once __DIR__ . '/../app/autoload.php';
+require_once __DIR__ . '/common.php';
 
 $checks = 0;
 
-function giftCheck(bool $condition, string $message): void
-{
-    if (!$condition) {
-        throw new RuntimeException($message);
-    }
-}
-
-giftCheck(GiftService::amountErrors(50, 0, 0) === [], 'A small gift passes.');
-giftCheck(GiftService::amountErrors(200, 0, 0) === [], 'Exactly the daily cap passes.');
-giftCheck(isset(GiftService::amountErrors(201, 0, 0)['amount']), 'One over the daily cap is refused.');
-giftCheck(isset(GiftService::amountErrors(60, 150, 150)['amount']), '150 sent today plus 60 is over the cap.');
-giftCheck(GiftService::amountErrors(50, 150, 150) === [], '150 plus 50 is exactly the cap.');
+check(GiftService::amountErrors(50, 0, 0) === [], 'A small gift passes.');
+check(GiftService::amountErrors(200, 0, 0) === [], 'Exactly the daily cap passes.');
+check(isset(GiftService::amountErrors(201, 0, 0)['amount']), 'One over the daily cap is refused.');
+check(isset(GiftService::amountErrors(60, 150, 150)['amount']), '150 sent today plus 60 is over the cap.');
+check(GiftService::amountErrors(50, 150, 150) === [], '150 plus 50 is exactly the cap.');
 $checks += 5;
 
-giftCheck(GiftService::amountErrors(100, 0, 1900) === [], 'Exactly the yearly cap passes.');
-giftCheck(isset(GiftService::amountErrors(101, 0, 1900)['amount']), 'One over the yearly cap is refused.');
-giftCheck(isset(GiftService::amountErrors(0, 0, 0)['amount']), 'A gift of nothing is refused.');
+check(GiftService::amountErrors(100, 0, 1900) === [], 'Exactly the yearly cap passes.');
+check(isset(GiftService::amountErrors(101, 0, 1900)['amount']), 'One over the yearly cap is refused.');
+check(isset(GiftService::amountErrors(0, 0, 0)['amount']), 'A gift of nothing is refused.');
 $checks += 3;
 
-giftCheck(GiftService::reasonErrors('For the birthday') === [], 'A short reason passes.');
-giftCheck(isset(GiftService::reasonErrors('')['reason']), 'A gift needs a reason.');
-giftCheck(GiftService::reasonErrors(str_repeat('r', 100)) === [], '100 characters is fine.');
-giftCheck(isset(GiftService::reasonErrors(str_repeat('r', 101))['reason']), '101 characters is too long.');
+check(GiftService::reasonErrors('For the birthday') === [], 'A short reason passes.');
+check(isset(GiftService::reasonErrors('')['reason']), 'A gift needs a reason.');
+check(GiftService::reasonErrors(str_repeat('r', 100)) === [], '100 characters is fine.');
+check(isset(GiftService::reasonErrors(str_repeat('r', 101))['reason']), '101 characters is too long.');
 $checks += 4;
 
-giftCheck(Gift::DAILY_CAP === 200 && Gift::ANNUAL_CAP === 2000, 'Caps match Plan §11.1.');
+check(Gift::DAILY_CAP === 200 && Gift::ANNUAL_CAP === 2000, 'Caps match Plan §11.1.');
 $checks++;
 
 echo 'Passed: ' . $checks . " gift checks — daily and yearly caps, reason length.\n";

@@ -13,16 +13,9 @@ declare(strict_types=1);
  * local database, not from here.
  */
 
-require_once __DIR__ . '/../app/autoload.php';
+require_once __DIR__ . '/common.php';
 
 $checks = 0;
-
-function check(bool $condition, string $message): void
-{
-    if (!$condition) {
-        throw new RuntimeException($message);
-    }
-}
 
 function expect(string $label, mixed $actual, mixed $expected): void
 {

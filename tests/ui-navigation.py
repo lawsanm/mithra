@@ -2,6 +2,7 @@
 from pathlib import Path
 from html.parser import HTMLParser
 import http.cookiejar
+import os
 import re
 import urllib.error
 import urllib.parse
@@ -52,8 +53,9 @@ def sign_in(email, password):
             raise SystemExit('Could not sign in as ' + email + '. Is the demo data loaded?')
 
 # One seeded account per role; whoever is signed in is swapped as the run moves
-# between areas.
-MEMBER = ('lawsanm@gmail.com', 'password')
+# between areas. A local database where the demo member changed their password
+# passes the new one in MITHRA_MEMBER_PASSWORD.
+MEMBER = ('lawsanm@gmail.com', os.environ.get('MITHRA_MEMBER_PASSWORD', 'password'))
 MODERATOR = ('kavipriya@email.com', 'password')
 ADMIN = ('madushan@email.com', 'password')
 LIAISON = ('akalvily@email.com', 'password')

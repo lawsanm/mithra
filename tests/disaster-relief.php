@@ -12,16 +12,9 @@ declare(strict_types=1);
  * ends read from MySQL and are exercised against a running local database.
  */
 
-require_once __DIR__ . '/../app/autoload.php';
+require_once __DIR__ . '/common.php';
 
 $checks = 0;
-
-function check(bool $condition, string $message): void
-{
-    if (!$condition) {
-        throw new RuntimeException($message);
-    }
-}
 
 const TODAY = '2026-07-20';
 const START = '2026-07-12';

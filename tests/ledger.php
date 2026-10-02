@@ -19,16 +19,9 @@ declare(strict_types=1);
  * rather than absolute figures.
  */
 
-require_once __DIR__ . '/../app/autoload.php';
+require_once __DIR__ . '/common.php';
 
 $checks = 0;
-
-function ledgerCheck(bool $condition, string $message): void
-{
-    if (!$condition) {
-        throw new RuntimeException($message);
-    }
-}
 
 $pdo     = Database::connection();
 $pools   = new PointPool($pdo);
@@ -66,8 +59,8 @@ try {
         $move();
         $end = $snapshot();
 
-        ledgerCheck($end['total'] === $start['total'], $label . ' changed the total of all pools.');
-        ledgerCheck(
+        check($end['total'] === $start['total'], $label . ' changed the total of all pools.');
+        check(
             $end['mirror'] - $start['mirror'] === $end['wallets'] - $start['wallets'],
             $label . ' let the member_wallets pool drift from the wallets.'
         );
@@ -78,23 +71,23 @@ try {
     $linked = (int) $pdo->query(
         "SELECT COUNT(*) FROM point_ledger WHERE reason = 'rental_charge' AND booking_id = 1 AND from_user_id = 2"
     )->fetchColumn();
-    ledgerCheck($linked >= 1, 'A booking movement must carry its booking_id (I1).');
+    check($linked >= 1, 'A booking movement must carry its booking_id (I1).');
     $checks++;
 
     // A wallet never goes below zero: the shortfall split took only what was there.
-    ledgerCheck($wallets->lockBalance($b) === 0, 'A charge bigger than the wallet must empty it, not overdraw it.');
+    check($wallets->lockBalance($b) === 0, 'A charge bigger than the wallet must empty it, not overdraw it.');
     $checks++;
 
     // Refusals happen before anything is written.
     try {
         $ledger->memberToMember($a, $b, 100000000, 'gift');
-        ledgerCheck(false, 'An overdraft must be refused.');
+        check(false, 'An overdraft must be refused.');
     } catch (InsufficientPointsException $expected) {
         $checks++;
     }
 
     $after = $snapshot();
-    ledgerCheck($after['total'] === $before['total'], 'The run as a whole must not create or destroy points.');
+    check($after['total'] === $before['total'], 'The run as a whole must not create or destroy points.');
     $checks++;
 } finally {
     $pdo->rollBack();
@@ -103,7 +96,7 @@ try {
 // Outside a transaction nothing may move at all.
 try {
     $ledger->poolToMember('sponsor', $a, 1, 'community_reward');
-    ledgerCheck(false, 'A movement outside a transaction must be refused.');
+    check(false, 'A movement outside a transaction must be refused.');
 } catch (LogicException $expected) {
     $checks++;
 }

@@ -3,8 +3,7 @@
 declare(strict_types=1);
 
 /** Integration checks against the migrated local database; all writes roll back. */
-require_once __DIR__ . '/../app/autoload.php';
-require_once __DIR__ . '/../app/helpers.php';
+require_once __DIR__ . '/common.php';
 
 session_start();
 $pdo = Database::connection();
@@ -13,11 +12,6 @@ set_error_handler(static function (int $severity, string $message, string $file,
     if (!(error_reporting() & $severity)) { return false; }
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
-
-function verify(bool $condition, string $message): void
-{
-    if (!$condition) { throw new RuntimeException($message); }
-}
 
 /** Screens that have their own controller now, rendered the way the router does. */
 const CONTROLLER_SCREENS = [
@@ -101,31 +95,31 @@ try {
     ];
     foreach ($cases as [$userId, $role, $view, $params, $expected]) {
         $body = screen($pdo, $userId, $role, $view, $params);
-        verify(http_response_code() === 200, $view . ': failed to render');
+        check(http_response_code() === 200, $view . ': failed to render');
         foreach ($expected as $text) {
-            verify(str_contains($body, $text), $view . ': missing current data ' . $text);
+            check(str_contains($body, $text), $view . ': missing current data ' . $text);
             $checks++;
         }
-        verify(!str_contains($body, 'Northwind Co'), $view . ': sample sponsor leaked');
+        check(!str_contains($body, 'Northwind Co'), $view . ': sample sponsor leaked');
     }
     $detail = liaison($pdo, 'grant', 1042);
-    verify(str_contains($detail, '321 pts') && str_contains($detail, 'Dynamic purpose') && str_contains($detail, 'DynamicMember'), 'Liaison must read the same grant');
+    check(str_contains($detail, '321 pts') && str_contains($detail, 'Dynamic purpose') && str_contains($detail, 'DynamicMember'), 'Liaison must read the same grant');
     $checks++;
     $purchase = liaison($pdo, 'purchase', 1);
-    verify(str_contains($purchase, 'Dynamic Sponsor') && str_contains($purchase, 'DynamicLiaison'), 'Contribution must join sponsor and recorder');
+    check(str_contains($purchase, 'Dynamic Sponsor') && str_contains($purchase, 'DynamicLiaison'), 'Contribution must join sponsor and recorder');
     $checks++;
 
     // Private member records may not be opened merely by guessing their IDs.
     foreach (['aid-grants/show' => 1042, 'donations/index' => 1, 'donations/handover' => 1] as $view => $id) {
         $body = screen($pdo, 2, 'member', $view, ['id' => (string) $id]);
-        verify(http_response_code() === 404 && !str_contains($body, 'Dynamic purpose'), $view . ': ownership failure');
+        check(http_response_code() === 404 && !str_contains($body, 'Dynamic purpose'), $view . ': ownership failure');
         $checks++;
     }
     $empty = screen($pdo, 2, 'member', 'aid-grants/show');
-    verify(str_contains($empty, 'No active aid grant') && !str_contains($empty, '#A-1042'), 'Null grant must remain empty');
+    check(str_contains($empty, 'No active aid grant') && !str_contains($empty, '#A-1042'), 'Null grant must remain empty');
     $checks++;
     $notifications = screen($pdo, 7, 'sponsor', 'sponsor/notifications/index');
-    verify(!str_contains($notifications, 'Dynamic Drill'), 'Another member notification leaked into sponsor account');
+    check(!str_contains($notifications, 'Dynamic Drill'), 'Another member notification leaked into sponsor account');
     $checks++;
 
     // Newly persisted contribution IDs must work on both sides of the same event.
@@ -137,13 +131,13 @@ try {
               [5, 'sponsor_liaison', 'sponsor-liaison/disasters/contributions/edit'],
               [1, 'moderator', 'moderator/disasters/contributions/confirm']] as [$userId, $role, $view]) {
         $body = screen($pdo, $userId, $role, $view, ['id' => $id]);
-        verify(http_response_code() === 200 && str_contains($body, 'Dynamic relief contribution') && str_contains($body, 'Dynamic Sponsor'), $view . ': wrong contribution');
+        check(http_response_code() === 200 && str_contains($body, 'Dynamic relief contribution') && str_contains($body, 'Dynamic Sponsor'), $view . ': wrong contribution');
         $checks++;
     }
     // Sponsor isolation: only its linked company's contributions count.
     $pdo->prepare('UPDATE sponsor_contributions SET cash_amount = 9999, general_points = 9999, aid_points = 0 WHERE sponsor_id = 2')->execute();
     $body = screen($pdo, 7, 'sponsor', 'sponsor/csr-reports/index');
-    verify(!str_contains($body, '9,999') && str_contains($body, '10,000'), 'Sponsor totals included another sponsor');
+    check(!str_contains($body, '9,999') && str_contains($body, '10,000'), 'Sponsor totals included another sponsor');
     $checks++;
 } finally {
     $pdo->rollBack();

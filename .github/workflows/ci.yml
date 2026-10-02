@@ -60,6 +60,7 @@ jobs:
           php tests/identity.php
           php tests/items.php
           php tests/sponsors.php
+          php tests/disaster-relief.php
           php tests/community.php
           php tests/availability.php
           php tests/saved-searches.php

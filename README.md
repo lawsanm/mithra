@@ -115,6 +115,8 @@ C:\xampp\php\php.exe .github\scripts\conventions-check.php
 
 The member-portal checks (community to notifications) cover the pure rules of each module: quotes, late fees, claim tracks, caps, windows, the trust-score formula and every allowed status change. With the local database running, `C:\xampp\php\php.exe tests\ledger.php` also proves that every kind of point movement leaves the total of all pools unchanged; it rolls back everything it writes.
 
+Every PHP test file starts with `tests/common.php`, which loads the application and defines the single `check()` assertion they share; a failed check stops the file with its message and a non-zero exit code.
+
 These test files run without MySQL. The router checks cover every route's target, numeric IDs, exact-route priority, unsupported methods, invalid form tokens and which paths a signed-out visitor may reach. The identity checks cover mobile and NIC normalisation, password handling and the refusals behind sign-in. The listing checks cover the declared-value proof tiers, and the sponsor checks cover how an onboarding or edit form is stored and which contact details are refused. The disaster relief checks cover how a relief form is stored and which types, household counts and dates are refused.
 
 With the local application and database running at `http://localhost/mithra/`, run these read-only HTTP checks (Python required):
@@ -124,6 +126,8 @@ python tests/ui-navigation.py
 python tests/public-auth.py
 C:\xampp\php\php.exe tests\dynamic-data.php
 ```
+
+`ui-navigation.py` signs in with the seeded passwords. If you changed the demo member's password locally, set `MITHRA_MEMBER_PASSWORD` to the new one first (for example `set MITHRA_MEMBER_PASSWORD=...` in `cmd`).
 
 The public-auth check uses a fresh visitor session to check public pages, registration steps, CSRF rejection and password-reset dialogs. It creates no accounts, uploads no documents and sends no email.
 
