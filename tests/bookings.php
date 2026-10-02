@@ -95,4 +95,21 @@ foreach ([
     $checks++;
 }
 
-echo 'Passed: ' . $checks . " booking checks — quotes, buffer, dates, who may act, transitions.\n";
+// ── Handover (Plan 3.2) ─────────────────────────────────────────────────────
+
+bookingCheck(isset(HandoverService::photoCountErrors(0)['photos']), 'A handover needs at least one photo.');
+bookingCheck(HandoverService::photoCountErrors(1) === [] && HandoverService::photoCountErrors(5) === [], '1 to 5 photos are fine.');
+bookingCheck(isset(HandoverService::photoCountErrors(6)['photos']), 'Six photos are too many.');
+$checks += 3;
+
+$open   = ['lender_accepted_at' => null, 'borrower_accepted_at' => null];
+$half   = ['lender_accepted_at' => '2026-03-01 10:00:00', 'borrower_accepted_at' => null];
+$locked = ['lender_accepted_at' => '2026-03-01 10:00:00', 'borrower_accepted_at' => '2026-03-01 10:05:00'];
+bookingCheck(HandoverService::sideOpen(null, 'lender', 'awaiting_handover'), 'Before any upload, both sides are open.');
+bookingCheck(!HandoverService::sideOpen($half, 'lender', 'awaiting_handover'), 'A side that accepted cannot edit.');
+bookingCheck(HandoverService::sideOpen($half, 'borrower', 'awaiting_handover'), 'The other side still can.');
+bookingCheck(!HandoverService::sideOpen($locked, 'borrower', 'in_progress'), 'Once both accepted, nothing can change.');
+bookingCheck(!HandoverService::sideOpen($open, 'borrower', 'requested'), 'No handover before the request is accepted.');
+$checks += 5;
+
+echo 'Passed: ' . $checks . " booking checks — quotes, buffer, dates, who may act, transitions, handover.\n";

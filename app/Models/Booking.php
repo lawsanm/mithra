@@ -457,4 +457,24 @@ final class Booking extends BaseModel
 
     /** Statuses a booking ends in. */
     private const PAST_STATES = "('completed','rejected','cancelled','auto_cancelled')";
+
+    /**
+     * Accepted bookings whose handover is still unfinished this many hours
+     * after the start date.
+     *
+     * @return list<array{id: int}>
+     */
+    public function staleHandovers(int $hours): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id FROM bookings
+              WHERE status = 'awaiting_handover'
+                AND TIMESTAMP(start_date) < NOW() - INTERVAL :hours HOUR
+              ORDER BY id LIMIT 500"
+        );
+        $statement->bindValue(':hours', $hours, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
 }

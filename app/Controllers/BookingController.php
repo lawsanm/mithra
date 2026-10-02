@@ -35,6 +35,22 @@ final class BookingController extends Controller
         );
     }
 
+    public static function handovers(PDO $pdo, PhotoStore $photos): HandoverService
+    {
+        $wallets = new Wallet($pdo);
+
+        return new HandoverService(
+            $pdo,
+            new Booking($pdo),
+            new HandoverRecord($pdo),
+            new Item($pdo),
+            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), $wallets),
+            self::service($pdo),
+            $photos,
+            new Notification($pdo)
+        );
+    }
+
     /**
      * GET /bookings — current bookings by role, or past ones with ?state=past.
      */
@@ -97,7 +113,107 @@ final class BookingController extends Controller
                 ? date('j M Y, H:i', strtotime((string) $booking['requested_at']) + BookingService::ANSWER_HOURS * 3600)
                 : '',
             'endedBy'  => $this->endedBy($booking, $me),
+            'handover' => $this->handoverView($id, $isLender ? 'lender' : 'borrower', $state),
         ]);
+    }
+
+    /**
+     * POST /bookings/{id}/handover/photos — this side's photos and note.
+     */
+    public function handoverPhotos(int $id): void
+    {
+        $this->act($id, fn (): mixed => self::handovers($this->pdo, $this->uploads())->savePhotos(
+            $id,
+            $this->userId(),
+            uploaded_files('photos'),
+            (string) ($_POST['note'] ?? '')
+        ), 'Photos saved. Accept the handover when you are happy with the item’s condition.');
+    }
+
+    /**
+     * POST /bookings/{id}/handover/accept.
+     */
+    public function handoverAccept(int $id): void
+    {
+        try {
+            $completed = self::handovers($this->pdo, $this->uploads())->accept($id, $this->userId());
+            $this->flash($completed
+                ? 'Handover complete. The condition photos are now the baseline for the return.'
+                : 'You accepted. Waiting for the other side to accept too.');
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
+            $this->notice(404, 'Booking not found', 'Choose one of your bookings from My Bookings.');
+
+            return;
+        }
+
+        $this->redirect('/bookings/' . $id . '#handover');
+    }
+
+    /**
+     * GET /bookings/{id}/handover-status — JSON for public/js/polling.js, so
+     * each side sees the other accept without reloading (§21.1).
+     */
+    public function handoverStatus(int $id): void
+    {
+        header('Content-Type: application/json');
+        header('Cache-Control: no-store');
+
+        try {
+            $status = self::handovers($this->pdo, $this->uploads())->status($id, $this->userId());
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
+            http_response_code(404);
+            $status = ['error' => 'not_found'];
+        }
+
+        print json_encode($status, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Both sides' photos, notes and acceptance, for the booking page.
+     *
+     * @return array<string, mixed>|null null before the booking is accepted
+     */
+    private function handoverView(int $id, string $me, string $state): ?array
+    {
+        if (in_array($state, ['requested', 'rejected'], true)) {
+            return null;
+        }
+
+        $record = (new HandoverRecord($this->pdo))->forBooking($id);
+
+        if ($record === null && $state !== 'awaiting_handover') {
+            return null;
+        }
+
+        $sides = [];
+
+        foreach (HandoverRecord::SIDES as $side) {
+            $paths = HandoverService::decode($record[$side . '_photos'] ?? null);
+
+            $sides[$side] = [
+                'label'    => $side === $me ? 'Your photos' : ucfirst($side) . '’s photos',
+                'photos'   => array_map(static fn (string $path, int $index): array => [
+                    'url'   => photo_url($path),
+                    'label' => 'Photo ' . ($index + 1),
+                ], $paths, array_keys($paths)),
+                'note'     => (string) ($record[$side . '_notes'] ?? ''),
+                'accepted' => ($record[$side . '_accepted_at'] ?? null) !== null,
+            ];
+        }
+
+        $open = HandoverService::sideOpen($record, $me, $state);
+
+        return [
+            'me'        => $me,
+            'sides'     => $sides,
+            'locked'    => ($record['handover_at'] ?? null) !== null,
+            'at'        => empty($record['handover_at']) ? '' : date('j M Y, H:i', strtotime((string) $record['handover_at'])),
+            'can_edit'  => $open,
+            'can_accept' => $open && $sides[$me]['photos'] !== [],
+            'waiting'   => $state === 'awaiting_handover',
+        ];
     }
 
     /**
@@ -172,7 +288,7 @@ final class BookingController extends Controller
     }
 
     /**
-     * @param callable(BookingService): mixed $action
+     * @param callable(BookingService): mixed $action receives the booking rules
      */
     private function act(int $id, callable $action, string $message): void
     {

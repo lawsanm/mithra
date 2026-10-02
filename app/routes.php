@@ -43,6 +43,7 @@ return [
         '/dashboard'               => 'dashboard/index',
         '/bookings'                => ['BookingController', 'index'],
         '/bookings/{id}'           => ['BookingController', 'show'],
+        '/bookings/{id}/handover-status' => ['BookingController', 'handoverStatus'],
         '/wallet'                  => 'wallet/index',
         '/gifts'                   => 'gifts/index',
         '/gifts/new'               => 'gifts/index',
@@ -198,5 +199,7 @@ return [
         '/bookings/{id}/accept'              => ['BookingController', 'accept'],
         '/bookings/{id}/decline'             => ['BookingController', 'decline'],
         '/bookings/{id}/cancel'              => ['BookingController', 'cancel'],
+        '/bookings/{id}/handover/photos'     => ['BookingController', 'handoverPhotos'],
+        '/bookings/{id}/handover/accept'     => ['BookingController', 'handoverAccept'],
     ],
 ];

@@ -12,6 +12,7 @@ declare(strict_types=1);
  * @var array  $actions  accept, decline, cancel — what this member may do now
  * @var string $answerBy when an unanswered request auto-cancels
  * @var string $endedBy  why a booking that did not run ended
+ * @var array|null $handover me, sides (label, photos, note, accepted), locked, at, can_edit, can_accept, waiting
  * @var array|null $flash
  */
 
@@ -103,18 +104,69 @@ include __DIR__ . '/../../partials/header.php';
     </section>
 <?php endif; ?>
 
-<section class="panel">
-    <h2 class="panel__title">Handover record</h2>
-    <p class="panel__note"><?= e($booking['lender_notes'] ?: 'No lender condition notes recorded.') ?></p>
-    <p class="panel__note"><?= e($booking['borrower_notes'] ?: 'No borrower condition notes recorded.') ?></p>
-    <p class="panel__note"><?= e((string) $booking['lender_photo_count']) ?> lender photos · <?= e((string) $booking['borrower_photo_count']) ?> borrower photos on record.</p>
-</section>
+<?php if ($handover !== null): ?>
+    <section class="panel" id="handover"<?= $handover['waiting'] ? ' data-handover-poll="' . e(base_url() . '/bookings/' . $id . '/handover-status') . '"' : '' ?>>
+        <h2 class="panel__title">Handover</h2>
+        <?php if ($handover['locked']): ?>
+            <p class="notice notice--success">Both sides accepted on <?= e($handover['at']) ?>. These photos are the baseline the return is compared against.</p>
+        <?php elseif ($handover['waiting']): ?>
+            <p class="record-meta">
+                Each of you photographs the item (1–5 photos) and notes its condition, then accepts.
+                When both have accepted, the rental charge goes to the lender and the loan starts.
+            </p>
+        <?php endif; ?>
+
+        <div class="two-col">
+            <?php foreach ($handover['sides'] as $side): ?>
+                <div class="stack">
+                    <p class="line-item">
+                        <span class="line-item__label"><?= e($side['label']) ?></span>
+                        <span class="badge badge--<?= $side['accepted'] ? 'success' : 'neutral' ?>"><?= $side['accepted'] ? 'Accepted' : 'Not accepted yet' ?></span>
+                    </p>
+                    <?php if ($side['photos'] === []): ?>
+                        <p class="record-meta">No photos yet.</p>
+                    <?php else: ?>
+                        <?php $gridPhotos = $side['photos']; include __DIR__ . '/../../partials/photo-grid.php'; ?>
+                    <?php endif; ?>
+                    <?php if ($side['note'] !== ''): ?>
+                        <p class="panel__note"><?= e($side['note']) ?></p>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if ($handover['can_edit']): ?>
+            <form class="stack" method="post" action="<?= base_url() ?>/bookings/<?= e($id) ?>/handover/photos" enctype="multipart/form-data" novalidate>
+                <?= csrf_field() ?>
+                <label class="upload-drop">
+                    <span class="upload-drop__glyph" aria-hidden="true">＋</span>
+                    <span data-upload-name><?= $handover['sides'][$handover['me']]['photos'] === [] ? 'Add 1–5 photos of the item' : 'Replace your photos (1–5)' ?></span>
+                    <input class="visually-hidden" type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple>
+                </label>
+                <div class="field">
+                    <label class="field__label" for="handover-note">Condition note</label>
+                    <input class="input" type="text" id="handover-note" name="note" value="<?= e($handover['sides'][$handover['me']]['note']) ?>" placeholder="Small scratch on the left side; battery fully charged…">
+                </div>
+                <div class="actions">
+                    <button class="btn btn--ghost" type="submit">Save photos</button>
+                </div>
+            </form>
+            <?php if ($handover['can_accept']): ?>
+                <form method="post" action="<?= base_url() ?>/bookings/<?= e($id) ?>/handover/accept"
+                    data-confirm="Accept the handover? Your photos and note are locked once you accept." novalidate>
+                    <?= csrf_field() ?>
+                    <button class="btn btn--primary" type="submit">Accept handover</button>
+                </form>
+            <?php endif; ?>
+        <?php endif; ?>
+    </section>
+<?php endif; ?>
 
 <div class="actions">
     <a class="btn btn--ghost" href="<?= base_url() ?>/bookings?role=<?= e($role) ?>">Back to My Bookings</a>
     <a class="btn btn--ghost" href="<?= base_url() ?>/members/<?= e((string) ($role === 'borrower' ? $booking['lender_id'] : $booking['borrower_id'])) ?>">View <?= e($role === 'borrower' ? 'lender' : 'borrower') ?> profile</a>
 </div>
 <?php
-$pageScripts = ['confirm.js'];
+$pageScripts = ['confirm.js', 'upload-name.js', 'polling.js'];
 include __DIR__ . '/../../partials/footer.php';
 ?>
