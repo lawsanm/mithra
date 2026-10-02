@@ -18,6 +18,7 @@ declare(strict_types=1);
  * @var array      $claimItem the claim modal's header and limits
  * @var bool       $claimOpen render the claim dialog open
  * @var string|null $rateHref where to rate the other member, while not yet rated
+ * @var array|null  $dispute  can_raise, route, record (the latest dispute)
  * @var array|null $flash
  */
 
@@ -298,6 +299,52 @@ include __DIR__ . '/../../partials/header.php';
                 </form>
             <?php endif; ?>
         </div>
+    </section>
+<?php endif; ?>
+
+<?php if ($dispute !== null): ?>
+    <section class="panel" id="dispute">
+        <h2 class="panel__title">Dispute</h2>
+        <?php if ($dispute['record'] !== null): ?>
+            <?php $record = $dispute['record']; ?>
+            <dl class="facts">
+                <div class="fact"><dt class="fact__label">Raised by</dt><dd class="fact__value"><?= e($record['raised_by']) ?></dd></div>
+                <div class="fact"><dt class="fact__label">Status</dt><dd class="fact__value"><?= e($record['status']) ?></dd></div>
+            </dl>
+            <p class="record-card__quote">“<?= e($record['reason']) ?>”</p>
+            <?php if ($record['ruling'] !== ''): ?>
+                <p class="notice notice--info"><?= e($record['ruling']) ?></p>
+            <?php endif; ?>
+            <?php if ($record['editable']): ?>
+                <form class="field-row" method="post" action="<?= base_url() ?>/disputes/<?= e((string) $record['id']) ?>" novalidate>
+                    <?= csrf_field() ?>
+                    <label class="visually-hidden" for="dispute-edit">Reason</label>
+                    <input class="input" type="text" id="dispute-edit" name="reason" value="<?= e($record['reason']) ?>">
+                    <button class="btn btn--ghost" type="submit">Save reason</button>
+                </form>
+            <?php endif; ?>
+            <?php if ($record['mine'] && $record['open']): ?>
+                <form method="post" action="<?= base_url() ?>/disputes/<?= e((string) $record['id']) ?>/withdraw"
+                    data-confirm="Withdraw the dispute? <?= $dispute['route'] === 'resolution' || $booking['status'] === 'escalated' ? 'The moderator’s resolution comes back for both signatures.' : 'The claim stands as accepted.' ?>" novalidate>
+                    <?= csrf_field() ?>
+                    <button class="btn btn--ghost" type="submit">Withdraw dispute</button>
+                </form>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if ($dispute['can_raise']): ?>
+            <p class="record-meta">
+                <?= $dispute['route'] === 'resolution'
+                    ? 'Do not agree with the moderator’s resolution? Raise a dispute instead of signing; the Admin rules on it.'
+                    : 'You accepted this claim. For 7 days afterwards you can still ask the Admin to review it.' ?>
+            </p>
+            <form class="field-row" method="post" action="<?= base_url() ?>/bookings/<?= e($id) ?>/disputes" novalidate>
+                <?= csrf_field() ?>
+                <label class="visually-hidden" for="dispute-reason">Why do you disagree?</label>
+                <input class="input" type="text" id="dispute-reason" name="reason" placeholder="Why do you disagree?">
+                <button class="btn btn--ghost" type="submit">Raise a dispute</button>
+            </form>
+        <?php endif; ?>
     </section>
 <?php endif; ?>
 

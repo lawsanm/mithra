@@ -143,11 +143,51 @@ final class BookingController extends Controller
                 'simple_cap'     => DamageClaimService::simpleCap((int) $booking['declared_value']),
             ],
             'claimOpen' => ($_GET['claim'] ?? '') === '1',
+            'dispute'   => $this->disputeView($id, $me),
             'rateHref'  => in_array($state, ['completed', 'cancelled', 'auto_cancelled'], true)
                 && (new Rating($this->pdo))->byRater($me, 'booking', $id) === null
                 ? base_url() . '/ratings?rate=booking-' . $id . '#rate-review'
                 : null,
         ]);
+    }
+
+    /**
+     * The dispute on this booking, or whether one can be raised now.
+     *
+     * @return array<string, mixed>|null null when there is nothing to show
+     */
+    private function disputeView(int $bookingId, int $me): ?array
+    {
+        $dispute = (new Dispute($this->pdo))->latestForBooking($bookingId);
+        $claim   = (new DamageClaim($this->pdo))->latestForBooking($bookingId);
+        $route   = DisputeService::route(
+            $claim,
+            $claim === null ? 0 : (new Dispute($this->pdo))->countOpenForClaim((int) $claim['id']),
+            new DateTimeImmutable()
+        );
+
+        if ($dispute === null && !in_array($route, ['accepted', 'resolution'], true)) {
+            return null;
+        }
+
+        return [
+            'can_raise' => in_array($route, ['accepted', 'resolution'], true),
+            'route'     => $route,
+            'record'    => $dispute === null ? null : [
+                'id'        => (int) $dispute['id'],
+                'reason'    => (string) $dispute['reason'],
+                'status'    => match ((string) $dispute['status']) {
+                    'open'  => $dispute['admin_id'] === null ? 'Waiting for the Admin' : 'The Admin is reviewing it',
+                    'ruled' => 'Ruled ' . date('j M Y', strtotime((string) $dispute['ruling_at'])),
+                    default => 'Closed',
+                },
+                'ruling'    => (string) ($dispute['resolution'] ?? ''),
+                'raised_by' => (string) $dispute['raised_by_name'],
+                'mine'      => (int) $dispute['raised_by'] === $me,
+                'editable'  => (int) $dispute['raised_by'] === $me && $dispute['status'] === 'open' && $dispute['admin_id'] === null,
+                'open'      => $dispute['status'] === 'open',
+            ],
+        ];
     }
 
     /**

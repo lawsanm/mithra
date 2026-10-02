@@ -564,4 +564,20 @@ final class User extends BaseModel
 
         return array_map(static fn (array $row): int => (int) $row['id'], $rows);
     }
+
+    /**
+     * Active accounts in one role, e.g. every Admin to tell about a new dispute.
+     *
+     * @return list<int>
+     */
+    public function idsInRole(string $roleCode): array
+    {
+        $rows = $this->select(
+            "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+              WHERE r.code = :code AND u.status = 'active' ORDER BY u.id",
+            ['code' => $roleCode]
+        );
+
+        return array_map(static fn (array $row): int => (int) $row['id'], $rows);
+    }
 }

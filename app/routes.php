@@ -211,5 +211,8 @@ return [
         '/ratings'                           => ['RatingController', 'store'],
         '/ratings/{id}'                      => ['RatingController', 'update'],
         '/ratings/{id}/delete'               => ['RatingController', 'destroy'],
+        '/bookings/{id}/disputes'            => ['DisputeController', 'store'],
+        '/disputes/{id}'                     => ['DisputeController', 'update'],
+        '/disputes/{id}/withdraw'            => ['DisputeController', 'withdraw'],
     ],
 ];

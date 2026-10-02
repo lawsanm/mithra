@@ -106,4 +106,78 @@ final class Dispute extends BaseModel
             ['id' => $id]
         );
     }
+
+    /**
+     * The latest dispute on a booking, for the booking page.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function latestForBooking(int $bookingId): ?array
+    {
+        return $this->selectOne(
+            'SELECT dp.id, dp.booking_id, dp.damage_claim_id, dp.raised_by, dp.admin_id, dp.reason, dp.status,
+                    dp.resolution, dp.ruling_at, dp.created_at, u.full_name AS raised_by_name
+               FROM disputes dp JOIN users u ON u.id = dp.raised_by
+              WHERE dp.booking_id = :booking
+              ORDER BY dp.id DESC LIMIT 1',
+            ['booking' => $bookingId]
+        );
+    }
+
+    /** Open disputes on one claim — at most one is allowed (§19). */
+    public function countOpenForClaim(int $claimId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM disputes WHERE damage_claim_id = :claim AND status = 'open'",
+            ['claim' => $claimId]
+        );
+    }
+
+    /**
+     * One dispute, row-locked, for its raiser's edit or withdrawal.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lockForUpdate(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT id, booking_id, damage_claim_id, raised_by, admin_id, reason, status
+               FROM disputes WHERE id = :id FOR UPDATE',
+            ['id' => $id]
+        );
+    }
+
+    /** Change the reason while no Admin has picked the dispute up. */
+    public function updateReason(int $id, string $reason): bool
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE disputes SET reason = :reason WHERE id = :id AND status = 'open' AND admin_id IS NULL"
+        );
+        $statement->execute(['reason' => $reason, 'id' => $id]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /** The raiser withdraws it. */
+    public function withdraw(int $id): bool
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE disputes SET status = 'closed', resolution = 'Withdrawn by the member who raised it.'
+              WHERE id = :id AND status = 'open'"
+        );
+        $statement->execute(['id' => $id]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /** Open disputes this member raised or is party to — account closure waits for them (Plan §17). */
+    public function countOpenFor(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM disputes dp LEFT JOIN bookings b ON b.id = dp.booking_id
+              WHERE dp.status = 'open'
+                AND (dp.raised_by = :raiser OR b.borrower_id = :borrower OR b.lender_id = :lender)",
+            ['raiser' => $memberId, 'borrower' => $memberId, 'lender' => $memberId]
+        );
+    }
 }

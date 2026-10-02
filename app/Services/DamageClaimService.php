@@ -39,7 +39,7 @@ final class DamageClaimService
     public const TRANSITIONS = [
         'awaiting_borrower' => ['pending_moderator', 'closed', 'escalated'],
         'pending_moderator' => ['resolved', 'escalated'],
-        'escalated'         => ['resolved', 'closed'],
+        'escalated'         => ['resolved', 'closed', 'pending_moderator'],
     ];
 
     public function __construct(

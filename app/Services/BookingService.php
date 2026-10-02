@@ -38,7 +38,7 @@ final class BookingService
         'in_progress'       => ['awaiting_return', 'pending_moderator'],
         'awaiting_return'   => ['completed', 'pending_moderator', 'escalated'],
         'pending_moderator' => ['completed', 'escalated'],
-        'escalated'         => ['completed'],
+        'escalated'         => ['completed', 'pending_moderator'],
     ];
 
     public function __construct(
