@@ -25,7 +25,8 @@ final class ListingApprovalController extends Controller
             new Item($pdo),
             new ItemValueReview($pdo),
             new GnDivision($pdo),
-            new Notification($pdo)
+            new Notification($pdo),
+            new Donation($pdo)
         );
     }
 
@@ -34,7 +35,7 @@ final class ListingApprovalController extends Controller
      */
     public function index(): void
     {
-        $filter = (string) ($_GET['status'] ?? '');
+        $filter = $this->queryValue('status');
         $filter = in_array($filter, ListingReviewService::FILTERS, true) ? $filter : '';
 
         try {
@@ -96,7 +97,7 @@ final class ListingApprovalController extends Controller
             $this->renderReview($id, $exception->errors());
 
             return;
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -120,7 +121,7 @@ final class ListingApprovalController extends Controller
     {
         try {
             $record = $this->reviews->review($id, $this->userId(), $this->role());
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -162,9 +163,9 @@ final class ListingApprovalController extends Controller
             'trail'   => array_map(fn (array $row): array => $this->trailRow($row), $record['trail']),
             'errors'  => $errors,
             'old'     => [
-                'decision'       => (string) ($_POST['decision'] ?? ''),
-                'declared_value' => (string) ($_POST['declared_value'] ?? ''),
-                'reason'         => (string) ($_POST['reason'] ?? ''),
+                'decision'       => $this->posted('decision'),
+                'declared_value' => $this->posted('declared_value'),
+                'reason'         => $this->posted('reason'),
             ],
         ]);
     }
@@ -330,7 +331,7 @@ final class ListingApprovalController extends Controller
         parent::render($view, $data);
     }
 
-    private function renderException(RuntimeException $exception): void
+    private function renderException(RecordNotFoundException|AccessDeniedException $exception): void
     {
         if ($exception instanceof AccessDeniedException) {
             $this->notice(403, 'Not yours to review', 'This listing is reviewed by its own division moderator, or by the Admin when the lister is a moderator.');

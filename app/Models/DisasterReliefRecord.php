@@ -23,7 +23,7 @@ final class DisasterReliefRecord extends BaseModel
      */
     public function forDivision(int $divisionId, int $page = 1): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             'SELECT r.id, r.disaster_event_id, r.relief_type, r.description, r.location,
                     r.households_reached, r.estimated_value, r.distributed_on,
                     s.company_name AS sponsor_name, de.reason AS disaster_reason,
@@ -32,17 +32,11 @@ final class DisasterReliefRecord extends BaseModel
                JOIN disaster_events de ON de.id = r.disaster_event_id
                LEFT JOIN sponsors s    ON s.id = r.sponsor_id
               WHERE de.gn_division_id = :division
-              ORDER BY r.distributed_on DESC, r.id DESC
-              LIMIT :take OFFSET :skip'
+              ORDER BY r.distributed_on DESC, r.id DESC',
+            ['division' => $divisionId],
+            $page,
+            self::PER_PAGE
         );
-
-        // LIMIT/OFFSET must bind as integers, which execute($params) cannot do.
-        $statement->bindValue(':division', $divisionId, PDO::PARAM_INT);
-        $statement->bindValue(':take', self::PER_PAGE, PDO::PARAM_INT);
-        $statement->bindValue(':skip', (max(1, $page) - 1) * self::PER_PAGE, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /**
@@ -128,16 +122,14 @@ final class DisasterReliefRecord extends BaseModel
      */
     public function create(int $eventId, int $moderatorId, array $record): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             'INSERT INTO disaster_relief_records
                     (disaster_event_id, moderator_id, sponsor_id, relief_type, description, location,
                      households_reached, estimated_value, distributed_on, notes)
              VALUES (:event, :moderator, :sponsor_id, :relief_type, :description, :location,
-                     :households_reached, :estimated_value, :distributed_on, :notes)'
+                     :households_reached, :estimated_value, :distributed_on, :notes)',
+            $record + ['event' => $eventId, 'moderator' => $moderatorId]
         );
-        $statement->execute($record + ['event' => $eventId, 'moderator' => $moderatorId]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -147,19 +139,18 @@ final class DisasterReliefRecord extends BaseModel
      */
     public function updateRecord(int $id, array $record): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             'UPDATE disaster_relief_records
                 SET sponsor_id = :sponsor_id, relief_type = :relief_type, description = :description,
                     location = :location, households_reached = :households_reached,
                     estimated_value = :estimated_value, distributed_on = :distributed_on, notes = :notes
-              WHERE id = :id'
+              WHERE id = :id',
+            $record + ['id' => $id]
         );
-        $statement->execute($record + ['id' => $id]);
     }
 
     public function delete(int $id): void
     {
-        $statement = $this->pdo->prepare('DELETE FROM disaster_relief_records WHERE id = :id');
-        $statement->execute(['id' => $id]);
+        $this->execute('DELETE FROM disaster_relief_records WHERE id = :id', ['id' => $id]);
     }
 }

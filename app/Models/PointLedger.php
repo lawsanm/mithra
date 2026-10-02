@@ -27,7 +27,7 @@ final class PointLedger extends BaseModel
 
     /** Filter pill => the ledger reasons it covers (Plan §7.3). */
     public const GROUPS = [
-        'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout'],
+        'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout', 'booking_refund'],
         'gifts'   => ['gift'],
         'aid'     => ['aid_grant', 'aid_return', 'parting_gift'],
         'fees'    => ['late_fee', 'damage_penalty'],
@@ -43,13 +43,7 @@ final class PointLedger extends BaseModel
         $params = [];
 
         if (isset(self::GROUPS[$filter])) {
-            // A fixed set of placeholders — the values stay bound.
-            $names = [];
-            foreach (self::GROUPS[$filter] as $index => $reason) {
-                $names[]                    = ':reason' . $index;
-                $params['reason' . $index] = $reason;
-            }
-            $where .= ' AND pl.reason IN (' . implode(', ', $names) . ')';
+            $where .= ' AND pl.reason IN ' . self::inList('reason', self::GROUPS[$filter], $params);
         }
 
         if ($search !== '') {
@@ -67,9 +61,7 @@ final class PointLedger extends BaseModel
             $params
         );
 
-        $offset = ($page - 1) * self::PER_PAGE;
-
-        $rows = $this->select(
+        $rows = $this->selectPage(
             "SELECT pl.id, pl.from_pool_code, pl.from_user_id, pl.to_pool_code, pl.to_user_id,
                     pl.amount, pl.reason, pl.booking_id, pl.gift_id, pl.aid_grant_id,
                     pl.contribution_id, pl.created_at,
@@ -79,9 +71,10 @@ final class PointLedger extends BaseModel
                LEFT JOIN users fu ON fu.id = pl.from_user_id
                LEFT JOIN users tu ON tu.id = pl.to_user_id
               WHERE {$where}
-              ORDER BY pl.created_at DESC
-              LIMIT " . self::PER_PAGE . " OFFSET {$offset}",
-            $params
+              ORDER BY pl.created_at DESC",
+            $params,
+            $page,
+            self::PER_PAGE
         );
 
         return [
@@ -96,30 +89,25 @@ final class PointLedger extends BaseModel
      * Append one movement. The ledger is INSERT-only (Plan §15.5): there is no
      * update or delete method on this model, and there never will be.
      *
-     * Each side is a pool code or a member id, never both.
+     * Each side is a pool code or a member id, never both. The optional links
+     * tie the movement to the booking, gift or aid grant behind it, so the
+     * wallet's escrow figure and activity lines can find their record.
      *
      * @param array{from_pool_code:?string, from_user_id:?int, to_pool_code:?string,
-     *              to_user_id:?int, amount:int, reason:string} $entry
+     *              to_user_id:?int, amount:int, reason:string, booking_id?:?int,
+     *              gift_id?:?int, aid_grant_id?:?int} $entry
      */
     public function record(array $entry): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             'INSERT INTO point_ledger
-                 (from_pool_code, from_user_id, to_pool_code, to_user_id, amount, reason)
+                 (from_pool_code, from_user_id, to_pool_code, to_user_id, amount, reason,
+                  booking_id, gift_id, aid_grant_id)
              VALUES
-                 (:from_pool_code, :from_user_id, :to_pool_code, :to_user_id, :amount, :reason)'
+                 (:from_pool_code, :from_user_id, :to_pool_code, :to_user_id, :amount, :reason,
+                  :booking_id, :gift_id, :aid_grant_id)',
+            $entry + ['booking_id' => null, 'gift_id' => null, 'aid_grant_id' => null]
         );
-
-        $statement->execute([
-            'from_pool_code' => $entry['from_pool_code'],
-            'from_user_id'   => $entry['from_user_id'],
-            'to_pool_code'   => $entry['to_pool_code'],
-            'to_user_id'     => $entry['to_user_id'],
-            'amount'         => $entry['amount'],
-            'reason'         => $entry['reason'],
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /** Whether this member has ever received a movement of this kind. */

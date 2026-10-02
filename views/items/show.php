@@ -9,14 +9,21 @@ declare(strict_types=1);
  *                       description, listing_type, photos, status, status_glyph,
  *                       status_label, can_borrow
  * @var array $owner     initials, name, verified, meta, href
- * @var array $quote     from, to, days_label, total
+ * @var array|null $quote  BookingService::quote() plus from/to, for the dates asked about
+ * @var string $quoteError why those dates have no quote
+ * @var array $quoteInput the dates and basis as typed
+ * @var bool  $modalOpen  render the request dialog open (the no-JavaScript path)
+ * @var array $pricing    rate options with totals
  * @var bool  $isOwner   the member is looking at their own listing
+ * @var array $calendar  dates a borrower cannot have: kind (Unavailable / Booked), label
  * @var array|null $flash
  */
 
 $item    = $item ?? [];
 $owner   = $owner ?? [];
-$quote   = $quote ?? ['from' => '', 'to' => '', 'days_label' => '', 'total' => ''];
+$quote      = $quote ?? null;
+$quoteError = $quoteError ?? '';
+$quoteInput = $quoteInput ?? ['from' => '', 'to' => '', 'basis' => ''];
 $isOwner = $isOwner ?? false;
 
 $pageTitle = $item['title'];
@@ -77,6 +84,20 @@ include __DIR__ . '/../../partials/header.php';
             <p class="detail__prose"><?= e($item['description']) ?></p>
         <?php endif; ?>
 
+        <?php if (($calendar ?? []) !== []): ?>
+            <section class="stack" aria-label="Dates not available">
+                <p class="field__label">Dates not available</p>
+                <ul class="row-list">
+                    <?php foreach ($calendar as $range): ?>
+                        <li class="line-item">
+                            <span class="line-item__label"><?= e($range['label']) ?></span>
+                            <span class="badge badge--<?= $range['kind'] === 'Booked' ? 'info' : 'neutral' ?>"><?= e($range['kind']) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
+
         <hr class="divider detail__divider">
 
         <?php if ($isOwner): ?>
@@ -108,40 +129,70 @@ include __DIR__ . '/../../partials/header.php';
             </div>
 
             <?php if ($item['can_borrow']): ?>
-                <div class="stack" data-demo-form>
-                    <p class="demo-note">Borrowing requests are not available in this demo.</p>
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="item_id" value="<?= e((string) $item['id']) ?>">
-
+                <?php // Checking a price is a read-only GET, so it carries no token. ?>
+                <form class="stack" method="get" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>" novalidate>
                     <div class="field-row">
                         <div class="field">
-                            <label class="visually-hidden" for="borrow-from">From date</label>
-                            <input class="input input--date" type="date" disabled id="borrow-from" name="from_date" value="<?= e($quote['from']) ?>">
+                            <label class="field__label" for="borrow-from">From</label>
+                            <input class="input input--date" type="date" id="borrow-from" name="from" value="<?= e($quoteInput['from']) ?>">
                         </div>
                         <div class="field">
-                            <label class="visually-hidden" for="borrow-to">To date</label>
-                            <input class="input input--date" type="date" disabled id="borrow-to" name="to_date" value="<?= e($quote['to']) ?>">
+                            <label class="field__label" for="borrow-to">To</label>
+                            <input class="input input--date" type="date" id="borrow-to" name="to" value="<?= e($quoteInput['to']) ?>">
                         </div>
                     </div>
+                    <?php if ($quoteError !== ''): ?>
+                        <span class="field__error"><?= e($quoteError) ?></span>
+                    <?php endif; ?>
 
-                    <p class="total-row">
-                        <span class="total-row__label"><?= e($quote['days_label']) ?></span>
-                        <strong class="total-row__value"><?= e($quote['total']) ?></strong>
-                    </p>
+                    <?php if ($quote !== null): ?>
+                        <p class="total-row">
+                            <span class="total-row__label"><?= e($quote['days'] . ' day' . ($quote['days'] === 1 ? '' : 's') . ' · ' . $quote['basis'] . ' rate · plus ' . $quote['buffer'] . ' pts late buffer') ?></span>
+                            <strong class="total-row__value"><?= e(number_format($quote['total'])) ?> pts</strong>
+                        </p>
+                        <?php if ($quote['nudge']): ?>
+                            <p class="notice notice--amber">Over <?= e((string) BookingService::MONTHLY_NUDGE_DAYS) ?> days — the monthly rate is usually better value.</p>
+                        <?php endif; ?>
+                    <?php endif; ?>
 
                     <div class="actions">
-                        <noscript><p class="demo-note">Enable JavaScript to open the borrowing preview.</p></noscript>
-                        <button class="btn btn--primary" type="button" data-modal-open="request-borrow">Request to Borrow</button>
+                        <button class="btn btn--ghost" type="submit">Check price</button>
+                        <?php if ($quote !== null): ?>
+                            <a class="btn btn--primary"
+                               href="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>?<?= e(http_build_query(['from' => $quote['from'], 'to' => $quote['to'], 'basis' => $quote['basis'], 'request' => '1'])) ?>"
+                               data-modal-open="request-borrow">Request to Borrow</a>
+                        <?php endif; ?>
                     </div>
-                </div>
-            <?php elseif ($item['listing_type'] === 'donation'): ?>
-                <div class="stack" data-demo-form>
-                    <p class="demo-note">Donation requests are not available in this demo.</p>
-                    <?= csrf_field() ?>
+                </form>
+            <?php elseif ($item['listing_type'] === 'donation' && ($donation ?? null) !== null): ?>
+                <?php if ($donation['request'] !== null): ?>
+                    <p class="notice notice--info"><?= e($donation['request']['label']) ?></p>
                     <div class="actions">
-                        <button class="btn btn--primary" type="button" disabled>Request this donation</button>
+                        <?php if ($donation['handover']): ?>
+                            <a class="btn btn--primary" href="<?= base_url() ?>/donations/<?= e((string) $donation['id']) ?>/handover">Go to handover</a>
+                        <?php endif; ?>
+                        <?php if (in_array($donation['request']['status'], ['pending', 'selected'], true)): ?>
+                            <form method="post" action="<?= base_url() ?>/donation-requests/<?= e((string) $donation['request']['id']) ?>/withdraw"
+                                data-confirm="Withdraw your request? You can ask again while the donation is open." novalidate>
+                                <?= csrf_field() ?>
+                                <button class="btn btn--ghost" type="submit">Withdraw request</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
-                </div>
+                <?php elseif ($donation['open']): ?>
+                    <form class="stack" method="post" action="<?= base_url() ?>/donations/<?= e((string) $donation['id']) ?>/requests" novalidate>
+                        <?= csrf_field() ?>
+                        <div class="field">
+                            <label class="field__label" for="donation-message">Message to <?= e($owner['name']) ?> (optional)</label>
+                            <input class="input" type="text" id="donation-message" name="message" placeholder="Why it would help, and when you can collect…">
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn--primary" type="submit">Request this donation</button>
+                        </div>
+                    </form>
+                <?php else: ?>
+                    <p class="notice notice--warning">This donation is no longer taking requests.</p>
+                <?php endif; ?>
             <?php else: ?>
                 <p class="notice notice--warning">This item is not available to borrow right now.</p>
             <?php endif; ?>
@@ -156,11 +207,11 @@ include __DIR__ . '/../../partials/header.php';
     </div>
 </div>
 
-<?php if (!$isOwner && $item['can_borrow']): ?>
+<?php if (!$isOwner && $item['can_borrow'] && $quote !== null): ?>
     <?php include __DIR__ . '/../../partials/modal-request-borrow.php'; ?>
 <?php endif; ?>
 
 <?php
-$pageScripts = ['modal.js'];
+$pageScripts = ['modal.js', 'confirm.js'];
 include __DIR__ . '/../../partials/footer.php';
 ?>

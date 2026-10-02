@@ -23,7 +23,7 @@ final class DisasterReliefController extends Controller
      */
     public function index(): void
     {
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $page = $this->page();
 
         try {
             $division = $this->service()->divisionFor($this->userId());

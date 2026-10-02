@@ -99,16 +99,10 @@ include __DIR__ . '/../../../partials/header.php';
         <?php endforeach; ?>
     </ul>
 
-    <?php if ($page > 1 || $hasNextPage): ?>
-        <div class="actions">
-            <?php if ($page > 1): ?>
-                <a class="btn btn--ghost" href="<?= e($pageQuery($page - 1)) ?>">Previous</a>
-            <?php endif; ?>
-            <?php if ($hasNextPage): ?>
-                <a class="btn btn--ghost" href="<?= e($pageQuery($page + 1)) ?>">Next</a>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
+    <?php
+    $pageUrl = $pageQuery;
+    include __DIR__ . '/../../../partials/pager.php';
+    ?>
 <?php endif; ?>
 
 <?php $pageScripts = ['filter-select.js']; ?>

@@ -19,7 +19,6 @@ session_set_cookie_params([
 ]);
 
 session_start();
-date_default_timezone_set('Asia/Colombo');
 
 $router = new Router(require __DIR__ . '/../app/routes.php');
 

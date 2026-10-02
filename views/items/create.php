@@ -16,6 +16,7 @@ declare(strict_types=1);
  * @var array  $photos     proxy URLs of the photos already uploaded
  * @var array  $errors     per-field messages from the Validator
  * @var string $summary    one-line recap shown on the last step
+ * @var string|null $temporaryCommunity the member's active temporary community, if any
  * @var array  $proofTypes value => label for the proof-of-value kinds (Plan §9.1)
  */
 
@@ -173,6 +174,19 @@ include __DIR__ . '/../../partials/header.php';
                 borrowers whichever works out cheaper.
             </p>
 
+        <?php endif; ?>
+
+        <?php if (!empty($temporaryCommunity)): ?>
+            <div class="field">
+                <label class="field__label" for="listing-community">List it in</label>
+                <select class="input" id="listing-community" name="community">
+                    <option value="home"<?= ($draft['community'] ?? 'home') !== 'temporary' ? ' selected' : '' ?>>My home community</option>
+                    <option value="temporary"<?= ($draft['community'] ?? '') === 'temporary' ? ' selected' : '' ?>>
+                        My temporary community · <?= e($temporaryCommunity) ?>
+                    </option>
+                </select>
+                <?= field_error($errors, 'community') ?>
+            </div>
         <?php endif; ?>
 
         <p class="summary">

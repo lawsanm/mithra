@@ -7,8 +7,7 @@ declare(strict_types=1);
  *
  * Sending is off unless config sets mail.enabled, because a stock XAMPP box has
  * no mail server and mail() would only fail slowly. Callers treat a false
- * return as "not delivered" and never tell the visitor whether an account
- * exists.
+ * return as "not delivered".
  */
 final class Mailer
 {

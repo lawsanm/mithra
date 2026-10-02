@@ -7,10 +7,10 @@ declare(strict_types=1);
  * JavaScript. Included by partials/nav.php.
  *
  * @var string     $chrome member, moderator, admin, sponsor-liaison or sponsor
- * @var array|null $viewer initials of the signed-in account
+ * @var array|null $viewer the signed-in account: id, initials
  */
 
-$memberId = (int) ($_SESSION['user_id'] ?? 0);
+$memberId = (int) ($viewer['id'] ?? 0);
 $accountLinks = match ($chrome) {
     'admin' => [
         ['Profile', '/admin/settings/profile'], ['Security', '/admin/settings/security'],

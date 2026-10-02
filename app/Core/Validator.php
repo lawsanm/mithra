@@ -141,7 +141,17 @@ final class Validator
             return $this;
         }
 
-        $number = (int) $value;
+        // Casting an oversized number silently clamps it to PHP_INT_MAX/MIN.
+        // Validate the range before casting, while preserving decimal leading zeros.
+        $digits = ltrim(ltrim($value, '-'), '0');
+        $normalized = $digits === '' ? '0' : (str_starts_with($value, '-') ? '-' : '') . $digits;
+        $number = filter_var($normalized, FILTER_VALIDATE_INT);
+
+        if ($number === false) {
+            $this->errors[$field] = $label . ' is outside the supported whole-number range.';
+
+            return $this;
+        }
 
         if ($number < $min) {
             $this->errors[$field] = sprintf('%s must be at least %d.', $label, $min);
@@ -154,6 +164,45 @@ final class Validator
         }
 
         return $this;
+    }
+
+    /**
+     * A real calendar date written as YYYY-MM-DD, the format a date input
+     * posts. "2026-02-30" is refused. Range rules (not in the past, end after
+     * start) belong to the service that knows what the dates are for. An
+     * empty value passes — combine with required().
+     */
+    public function date(string $field, string $label): self
+    {
+        if ($this->skip($field) || $this->value($field) === '') {
+            return $this;
+        }
+
+        if (!self::isDate($this->value($field))) {
+            $this->errors[$field] = $label . ' must be a real date.';
+        }
+
+        return $this;
+    }
+
+    /**
+     * An optional field as it is stored: trimmed, or null when left empty.
+     *
+     * @param array<string, mixed> $input
+     */
+    public static function optional(array $input, string $field): ?string
+    {
+        $value = is_scalar($input[$field] ?? null) ? trim((string) $input[$field]) : '';
+
+        return $value === '' ? null : $value;
+    }
+
+    public static function isDate(string $value): bool
+    {
+        // Check the shape first: DateTime throws on embedded null bytes and
+        // accepts year zero, which cannot be stored as a valid database date.
+        return preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $value) === 1
+            && checkdate((int) substr($value, 5, 2), (int) substr($value, 8, 2), (int) substr($value, 0, 4));
     }
 
     /**

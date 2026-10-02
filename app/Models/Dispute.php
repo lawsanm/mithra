@@ -7,6 +7,18 @@ final class Dispute extends BaseModel
     protected string $table = 'disputes';
     protected string $columns = 'id, booking_id, damage_claim_id, raised_by, admin_id, reason, status, resolution, ruling_at, created_at';
 
+    /**
+     * Open a dispute for the Admin. Callers have checked who may raise it.
+     */
+    public function open(?int $bookingId, ?int $claimId, int $raisedBy, string $reason): int
+    {
+        return $this->insert(
+            "INSERT INTO disputes (booking_id, damage_claim_id, raised_by, reason, status)
+             VALUES (:booking, :claim, :raised_by, :reason, 'open')",
+            ['booking' => $bookingId, 'claim' => $claimId, 'raised_by' => $raisedBy, 'reason' => $reason]
+        );
+    }
+
     public function countOpen(): int
     {
         return (int) $this->selectValue(
@@ -39,8 +51,7 @@ final class Dispute extends BaseModel
                LEFT JOIN items i ON i.id = b.item_id
                LEFT JOIN users borrower ON borrower.id = b.borrower_id
                LEFT JOIN users lender ON lender.id = b.lender_id
-               LEFT JOIN items i2 ON i2.id = b.item_id
-               LEFT JOIN gn_divisions d ON d.id = i2.gn_division_id
+               LEFT JOIN gn_divisions d ON d.id = i.gn_division_id
               WHERE dp.status = \'open\'
               ORDER BY dp.created_at ASC'
         );
@@ -53,7 +64,7 @@ final class Dispute extends BaseModel
      */
     public function recentOpen(int $limit = 10): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             "SELECT dp.id, dp.reason, dp.status, dp.created_at,
                     borrower.full_name AS borrower_name, lender.full_name AS lender_name
                FROM disputes dp
@@ -61,13 +72,11 @@ final class Dispute extends BaseModel
                LEFT JOIN users borrower ON borrower.id = b.borrower_id
                LEFT JOIN users lender ON lender.id = b.lender_id
               WHERE dp.status = 'open'
-              ORDER BY dp.created_at DESC
-              LIMIT :limit"
+              ORDER BY dp.created_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /** @return array<string, mixed>|null */
@@ -90,6 +99,76 @@ final class Dispute extends BaseModel
                LEFT JOIN users mod_user ON mod_user.id = d.moderator_id
               WHERE dp.id = :id',
             ['id' => $id]
+        );
+    }
+
+    /**
+     * The latest dispute on a booking, for the booking page.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function latestForBooking(int $bookingId): ?array
+    {
+        return $this->selectOne(
+            'SELECT dp.id, dp.booking_id, dp.damage_claim_id, dp.raised_by, dp.admin_id, dp.reason, dp.status,
+                    dp.resolution, dp.ruling_at, dp.created_at, u.full_name AS raised_by_name
+               FROM disputes dp JOIN users u ON u.id = dp.raised_by
+              WHERE dp.booking_id = :booking
+              ORDER BY dp.id DESC LIMIT 1',
+            ['booking' => $bookingId]
+        );
+    }
+
+    /** Open disputes on one claim — at most one is allowed (§19). */
+    public function countOpenForClaim(int $claimId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM disputes WHERE damage_claim_id = :claim AND status = 'open'",
+            ['claim' => $claimId]
+        );
+    }
+
+    /**
+     * One dispute, row-locked, for its raiser's edit or withdrawal.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lockForUpdate(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT id, booking_id, damage_claim_id, raised_by, admin_id, reason, status
+               FROM disputes WHERE id = :id FOR UPDATE',
+            ['id' => $id]
+        );
+    }
+
+    /** Change the reason while no Admin has picked the dispute up. */
+    public function updateReason(int $id, string $reason): bool
+    {
+        return $this->execute(
+            "UPDATE disputes SET reason = :reason WHERE id = :id AND status = 'open' AND admin_id IS NULL",
+            ['reason' => $reason, 'id' => $id]
+        ) === 1;
+    }
+
+    /** The raiser withdraws it. */
+    public function withdraw(int $id): bool
+    {
+        return $this->execute(
+            "UPDATE disputes SET status = 'closed', resolution = 'Withdrawn by the member who raised it.'
+              WHERE id = :id AND status = 'open'",
+            ['id' => $id]
+        ) === 1;
+    }
+
+    /** Open disputes this member raised or is party to — account closure waits for them (Plan §17). */
+    public function countOpenFor(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM disputes dp LEFT JOIN bookings b ON b.id = dp.booking_id
+              WHERE dp.status = 'open'
+                AND (dp.raised_by = :raiser OR b.borrower_id = :borrower OR b.lender_id = :lender)",
+            ['raiser' => $memberId, 'borrower' => $memberId, 'lender' => $memberId]
         );
     }
 }

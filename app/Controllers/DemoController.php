@@ -10,7 +10,7 @@ declare(strict_types=1);
 final class DemoController extends Controller
 {
     /** Pages every role can open; each role sees them in its own navigation. */
-    private const SHARED_VIEWS = ['help/index', 'notifications/index', 'transparency/index'];
+    private const SHARED_VIEWS = ['help/index', 'transparency/index'];
 
     /**
      * @param array{id?: string} $params the {id} from the URL, when the route has one
@@ -26,36 +26,20 @@ final class DemoController extends Controller
             return;
         }
         if ((str_starts_with($view, 'sponsor/') || str_starts_with($view, 'sponsor-liaison/'))
-            && !in_array($view, ['sponsor/notifications/index', 'sponsor/purchase-points/create'], true)) {
+            && $view !== 'sponsor/purchase-points/create') {
             (new SponsorScreenController($this->pdo))->show($view, $params);
             return;
         }
-        $id = (int) ($params['id'] ?? 0);
         $data = match ($view) {
-            'dashboard/index' => $this->dashboard(),
-            'gifts/index'     => $this->gifts(),
-            'wallet/index' => $this->wallet(),
-            'ratings/index' => $this->ratings(),
-            'trust/index' => $this->trust(),
-            'notifications/index', 'sponsor/notifications/index' => $this->notifications(),
+            'dashboard/index'    => $this->dashboard(),
+            'wallet/index'       => $this->wallet(),
             'transparency/index' => $this->transparency(),
-            'aid-grants/show' => $this->aidGrant($id),
-            'donations/index', 'donations/handover' => $this->donation($id, $view),
-            'community/create' => $this->community(),
-            default           => [],
+            'help/index'         => $this->help(),
+            default              => [],
         };
-
-        if ($data === null) {
-            $this->notice(404, 'Record not found', 'This record is not available to your account.');
-            return;
-        }
 
         if (in_array($view, self::SHARED_VIEWS, true)) {
             $data['chrome'] = chrome_for($this->role());
-        }
-
-        if (isset($params['id'])) {
-            $data['id'] = (int) $params['id'];
         }
 
         $this->render($view, $data);
@@ -125,6 +109,7 @@ final class DemoController extends Controller
                 },
                 $bookings->activeBorrowings($me)
             ),
+            'actions' => $this->actionItems($me),
             'listings' => array_map(
                 function (array $item): array {
                     [$who, $due] = array_pad(explode('|', (string) ($item['lent_to'] ?? '')), 2, '');
@@ -132,7 +117,7 @@ final class DemoController extends Controller
                     return [
                         'title' => (string) $item['title'],
                         'photo' => empty($item['photo']) ? null : photo_url((string) $item['photo']),
-                        'rate'  => $item['daily_rate'] . ' pts / day',
+                        'rate'  => rate_label($item['daily_rate'], $item['monthly_rate']),
                         'meta'  => $who === ''
                             ? ($item['status'] === 'active' ? 'Available' : ucfirst(str_replace('_', ' ', $item['status'])))
                             : sprintf('Lent to %s  ·  due %s', User::shortName($who), date('j M', strtotime($due))),
@@ -144,46 +129,44 @@ final class DemoController extends Controller
         ];
     }
 
-    /** @return array<string, mixed> */
-    private function gifts(): array
+    /**
+     * The dashboard's "Needs your action" panel: every step waiting on this
+     * member, each linking to where it is done.
+     *
+     * @return list<array{label: string, href: string}>
+     */
+    private function actionItems(int $me): array
     {
-        $me        = $this->userId();
-        $gifts     = new Gift($this->pdo);
-        $box       = ($_GET['box'] ?? 'sent') === 'received' ? 'received' : 'sent';
-        $sentToday = $gifts->sentToday($me);
+        $items = array_map(static fn (array $row): array => match ($row['kind']) {
+            'answer_request'   => ['label' => 'Answer the request to borrow ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id']],
+            'accept_handover'  => ['label' => 'Photograph and accept the handover of ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#handover'],
+            'check_return'     => ['label' => 'Check the return of ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#return'],
+            'answer_claim'     => ['label' => 'Answer the damage claim on ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#claim'],
+            'sign_resolution'  => ['label' => 'Sign the moderator’s resolution for ' . $row['title'], 'href' => base_url() . '/bookings/' . $row['record_id'] . '#claim'],
+            'confirm_donation' => ['label' => 'Confirm the handover of ' . $row['title'], 'href' => base_url() . '/donations/' . $row['record_id'] . '/handover'],
+            default            => ['label' => 'Choose who receives ' . $row['title'], 'href' => base_url() . '/donations/' . $row['record_id']],
+        }, (new Booking($this->pdo))->needsAction($me));
 
-        return [
-            'tabs' => [
-                ['label' => 'Sent (' . $gifts->countForMember($me, 'sent') . ')',         'box' => 'sent',     'active' => $box === 'sent'],
-                ['label' => 'Received (' . $gifts->countForMember($me, 'received') . ')', 'box' => 'received', 'active' => $box === 'received'],
-            ],
-            'caps' => [
-                ['label' => 'Sent today',     'value' => $sentToday . ' / ' . Gift::DAILY_CAP . ' pts daily cap'],
-                ['label' => 'Sent this year', 'value' => $gifts->sentThisYear($me) . ' / ' . Gift::ANNUAL_CAP . ' pts annual cap'],
-            ],
-            'gifts' => array_map(
-                fn (array $gift): array => [
-                    'initials'  => User::initials((string) $gift['counterparty']),
-                    'name'      => (string) $gift['counterparty'],
-                    'note'      => '“' . $gift['reason'] . '”',
-                    'amount'    => ($box === 'sent' ? '−' : '+') . $gift['amount'] . ' pts',
-                    'direction' => $box === 'sent' ? 'out' : 'in',
-                    'date'      => date('j M Y', strtotime((string) $gift['sent_at'])),
-                ],
-                $gifts->forMember($me, $box)
-            ),
-            // Feeds the Send a gift modal that this page includes.
-            'recipients'    => (new User($this->pdo))->giftableExcept($me),
-            'giftSentToday' => $sentToday,
-            'giftRemaining' => max(0, Gift::DAILY_CAP - $sentToday),
-        ];
+        $toRate = count((new Rating($this->pdo))->waitingFor($me));
+
+        if ($toRate > 0) {
+            $items[] = ['label' => 'Rate ' . $toRate . ' finished booking' . ($toRate === 1 ? '' : 's') . ' or donation' . ($toRate === 1 ? '' : 's'), 'href' => base_url() . '/ratings'];
+        }
+
+        return $items;
     }
 
     private function wallet(): array
     {
         $wallet = new Wallet($this->pdo);
         $me = $this->userId();
+        $group = isset(PointLedger::GROUPS[$this->queryValue('filter')]) ? $this->queryValue('filter') : '';
+        $page = $this->page();
         return [
+            'filter' => $group,
+            'page' => $page,
+            'hasNextPage' => $page * Wallet::PER_PAGE < $wallet->countActivity($me, $group),
+            'filters' => array_merge([''], array_keys(PointLedger::GROUPS)),
             'balances' => [
                 ['label' => 'Available balance', 'value' => number_format($wallet->balance($me)) . ' pts',
                  'note' => $wallet->earnedThisMonth($me) . ' pts earned this month', 'dark' => true],
@@ -199,50 +182,26 @@ final class DemoController extends Controller
                     'note' => implode(' · ', array_filter([$other, $row['gift_reason']])),
                     'amount' => ($incoming ? '+' : '−') . number_format((int) $row['amount']) . ' pts',
                     'tone' => $incoming ? 'in' : 'out', 'date' => date('j M Y', strtotime($row['created_at']))];
-            }, $wallet->activity($me)),
-        ] + $this->gifts();
+            }, $wallet->activity($me, $page, $group)),
+        ] + GiftController::modalData($this->pdo, $me);
     }
 
-    private function ratings(): array
+    /**
+     * Help: who to contact. A member reaches their own division's moderator
+     * (I23); staff and visitors get the general line.
+     *
+     * @return array<string, mixed>
+     */
+    private function help(): array
     {
-        $ratings = new Rating($this->pdo);
-        $box = ($_GET['box'] ?? '') === 'given' ? 'given' : 'received';
-        $tabs = [];
-        foreach (['received', 'given'] as $direction) {
-            $tabs[] = ['label' => ucfirst($direction) . ' (' . $ratings->countForMember($this->userId(), $direction) . ')',
-                'box' => $direction, 'active' => $box === $direction];
-        }
-        return ['tabs' => $tabs, 'reviews' => array_map(static fn (array $row): array => [
-            'initials' => User::initials($row['counterparty']), 'author' => $row['counterparty'],
-            'rating' => (int) $row['stars'], 'text' => (string) $row['comment'],
-            'meta' => date('j M Y', strtotime($row['created_at'])) . ' · ' . ($row['item_title'] ?? 'Review'),
-        ], $ratings->forMember($this->userId(), $box))];
-    }
+        $moderator = $this->userId() > 0 ? (new User($this->pdo))->homeModerator($this->userId()) : null;
 
-    private function trust(): array
-    {
-        $users = new User($this->pdo);
-        $member = $users->findWithDivision($this->userId()) ?? [];
-        $stats = $users->profileStats($this->userId());
-        return ['score' => ['value' => (string) ($member['trust_score'] ?? 0),
-            'badge' => ['info', 'i', 'Current trust score'],
-            'meta' => 'Out of 100 · ' . $stats['completed'] . ' completed transactions · ' . ($member['division_name'] ?? '')],
-            'factors' => [], 'trustFacts' => [
-                'Completed transactions' => (string) $stats['completed'],
-                'Completed donations' => (string) $stats['donations'],
-                'Member since' => empty($member['joined_at']) ? 'Not yet verified' : date('j M Y', strtotime($member['joined_at'])),
-            ]];
-    }
-
-    private function notifications(): array
-    {
-        $group = is_string($_GET['type'] ?? null) ? $_GET['type'] : '';
-        $filters = [];
-        foreach (['' => 'All', 'bookings' => 'Bookings', 'gifts-aid' => 'Gifts & aid', 'system' => 'System'] as $slug => $label) {
-            $filters[] = ['label' => $label, 'slug' => $slug, 'active' => $group === $slug];
-        }
-        return ['filters' => $filters,
-            'notifications' => (new Notification($this->pdo))->displayForMember($this->userId(), $group)];
+        return ['query' => $this->queryValue('q'), 'moderator' => [
+            'line'  => ($moderator === null ? 'Your GN division moderator' : 'Your moderator, ' . $moderator['name'] . ',')
+                . ' can help with verification, disputes and anything division-specific.',
+            'phone' => $moderator['phone'] ?? '',
+            'name'  => $moderator['name'] ?? '',
+        ]];
     }
 
     private function transparency(): array
@@ -262,80 +221,6 @@ final class DemoController extends Controller
             ], (new Sponsor($this->pdo))->recentContributions())];
     }
 
-    private function aidGrant(int $id): ?array
-    {
-        $records = (new AidGrant($this->pdo))->records($this->userId());
-        if ($id > 0 && $this->role() === 'moderator') {
-            $division = (new GnDivision($this->pdo))->moderatedBy($this->userId());
-            $records = $division === null ? $records : (new AidGrant($this->pdo))->records(null, $division);
-        }
-        $row = null;
-        foreach ($records as $record) {
-            if (($id > 0 && (int) $record['id'] === $id)
-                || ($id === 0 && !in_array($record['status'], ['closed', 'expired'], true))) {
-                $row = $record;
-                break;
-            }
-        }
-        if ($id > 0 && $row === null) {
-            return null;
-        }
-        return ['grant' => $row === null ? null : [
-                'reference' => 'Aid grant #A-' . $row['id'], 'stage' => AidGrant::stage($row['status']),
-                'badge' => ['info', 'i', ucfirst(str_replace('_', ' ', $row['status']))],
-                'facts' => [
-                    ['label' => 'Member', 'value' => $row['member_name']],
-                    ['label' => 'Purpose', 'value' => $row['purpose']],
-                    ['label' => 'Amount requested', 'value' => number_format((int) $row['requested_amount']) . ' pts'],
-                    ['label' => 'Amount approved', 'value' => $row['approved_amount'] === null ? 'Not approved' : $row['approved_amount'] . ' pts'],
-                    ['label' => 'Requested', 'value' => date('j M Y', strtotime($row['created_at']))],
-                    ['label' => 'Division', 'value' => $row['division_name']],
-                ], 'notice' => 'Status: ' . ucfirst(str_replace('_', ' ', $row['status'])),
-            ], 'vouch' => ['initials' => User::initials((string) ($row['moderator_name'] ?? '')),
-                'line' => empty($row['vouched_at']) ? 'Awaiting moderator vouch' : 'Vouched by ' . $row['moderator_name'] . ' · ' . date('j M Y', strtotime($row['vouched_at'])),
-                'quote' => (string) ($row['moderator_vouch'] ?? ''),
-                'badge' => empty($row['vouched_at']) ? 'Pending' : 'Vouch recorded'], 'cooling' => ''];
-    }
-
-    private function donation(int $id, string $view): ?array
-    {
-        $model = new Donation($this->pdo);
-        $row = $model->forParticipant($id, $this->userId());
-        if ($row === null || ($view === 'donations/index' && (int) $row['donor_id'] !== $this->userId())) {
-            return null;
-        }
-        $requests = $model->requests($id, $this->userId());
-        return ['donation' => ['id' => $id, 'item' => $row['title'],
-                'photo' => empty($row['photo']) ? null : photo_url((string) $row['photo']),
-                'meta' => ucfirst($row['status']), 'request_count' => count($requests) . ' requests',
-                'first_come' => $row['selection_mode'] === 'first_come'],
-            'requests' => array_map(static fn (array $request): array => [
-                'initials' => User::initials($request['full_name']), 'name' => $request['full_name'],
-                'meta' => 'Trust ' . $request['trust_score'] . ' · ' . ($request['division_name'] ?? '') . ' · ' . $request['status'],
-                'message' => $request['message'], 'profile_href' => base_url() . '/members/' . $request['requester_id'],
-            ], $requests),
-            'recipient' => ['initials' => User::initials((string) ($row['recipient_name'] ?? '')),
-                'name' => $row['recipient_name'] ?? 'No recipient selected',
-                'meta' => $row['recipient_name'] === null ? '' : 'Trust ' . $row['trust_score']],
-            'badge' => 'Donation status: ' . $row['status']];
-    }
-
-    private function community(): array
-    {
-        $home = (new User($this->pdo))->findWithDivision($this->userId());
-        $temporary = (new UserDivision($this->pdo))->temporaryForUser($this->userId());
-        return ['homeCommunity' => $home['division_name'] ?? 'No home division',
-            'promotion' => ['temporary_name' => $temporary['name'] ?? 'No temporary community selected',
-                'home_line' => $home['division_name'] ?? 'No home division',
-                'temporary_line' => $temporary === null ? 'No temporary membership recorded'
-                    : $temporary['name'] . ' · ' . $temporary['status']
-                        . ($temporary['expires_at'] === null ? '' : ' · Expires ' . date('j M Y', strtotime($temporary['expires_at'])))],
-            'divisions' => array_column(array_filter((new GnDivision($this->pdo))->activeNames(),
-                static fn (array $row): bool => (int) $row['id'] !== (int) ($home['division_id'] ?? 0)), 'name'),
-            'draft' => ['temporary_community' => ''], 'errors' => []];
-    }
-
-
     private function dueNote(int $dueTomorrow): string
     {
         return $dueTomorrow === 0 ? 'Nothing due back' : $dueTomorrow . ' due back tomorrow';
@@ -349,7 +234,7 @@ final class DemoController extends Controller
         $days = (int) floor((strtotime($endDate) - strtotime('today')) / 86400);
 
         if ($days < 0) {
-            return ['error', '✕', abs($days) . ' days overdue'];
+            return ['error', '✕', abs($days) . (abs($days) === 1 ? ' day' : ' days') . ' overdue'];
         }
 
         if ($days <= 1) {

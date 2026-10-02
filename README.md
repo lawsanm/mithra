@@ -43,6 +43,7 @@ Working modules:
 - **Items** — listing, browsing, a four-step create wizard, editing, pausing, resuming and archiving, with the moderator's declared-value review.
 - **Divisions (Admin)** — create, edit and archive GN divisions.
 - **Sponsors (Sponsor Liaison)** — list, search, sort and filter sponsors; onboard, view, edit, deactivate and reactivate them.
+- **Member portal** — temporary communities, availability calendar, saved searches, donations, the full booking lifecycle (request, handover, return, late fees, damage claims, disputes), ratings, gifting, aid-grant requests, notifications and the trust score. See `docs/MEMBER_PORTAL_CHECKLIST.md`.
 
 Record displays across the member, moderator, admin, sponsor and liaison areas read the database populated by the migrations. Names, amounts, counts, dates and links follow the related records; missing records return an empty state or 404. Notifications store record IDs so names remain current after profile edits. Forms for unfinished workflows still have visibly disabled actions. Every route outside the sign-in pages needs a session, and each path is limited to the roles declared in `app/routes.php`. This is an interim demonstration, not a finished deployment.
 
@@ -72,6 +73,24 @@ Record displays across the member, moderator, admin, sponsor and liaison areas r
 | `config/config.php` | Local database credentials; excluded from Git |
 | `migrations/` | Database schema and sample data |
 
+## Scheduled jobs
+
+Each script logs one row to `cron_runs`, only touches records still waiting for it (so running it twice changes nothing) and exits non-zero on failure. Run one by hand, or schedule it in Windows Task Scheduler:
+
+```cmd
+C:\xampp\php\php.exe scripts\expire_booking_requests.php
+```
+
+| Script | Schedule | What it does |
+| --- | --- | --- |
+| `expire_booking_requests.php` | hourly | Auto-cancels requests the lender has not answered in 24 hours |
+| `auto_cancel_handovers.php` | hourly | Auto-cancels and refunds bookings whose handover is unfinished 48 hours after the start date |
+| `flag_overdue_returns.php` | hourly | Tells the moderator about items 72 hours overdue; opens a total-loss claim at 7 days |
+| `escalate_unanswered_claims.php` | hourly | Sends simple-path claims the borrower has not answered in 48 hours to the moderator |
+| `expire_temporary_memberships.php` | daily | Reminds 14 days before a temporary membership expires, pauses it at expiry, ends it after the 14-day grace |
+| `detect_gift_patterns.php` | daily | Reports pairs who trade gifts back and forth three times in 30 days |
+| `refresh_trust_scores.php` | nightly | Recalculates every member's trust score |
+
 ## Checks
 
 ```cmd
@@ -80,8 +99,23 @@ C:\xampp\php\php.exe tests\identity.php
 C:\xampp\php\php.exe tests\items.php
 C:\xampp\php\php.exe tests\sponsors.php
 C:\xampp\php\php.exe tests\disaster-relief.php
+C:\xampp\php\php.exe tests\community.php
+C:\xampp\php\php.exe tests\availability.php
+C:\xampp\php\php.exe tests\saved-searches.php
+C:\xampp\php\php.exe tests\donations.php
+C:\xampp\php\php.exe tests\bookings.php
+C:\xampp\php\php.exe tests\trust.php
+C:\xampp\php\php.exe tests\ratings.php
+C:\xampp\php\php.exe tests\disputes.php
+C:\xampp\php\php.exe tests\gifts.php
+C:\xampp\php\php.exe tests\aid-grants.php
+C:\xampp\php\php.exe tests\notifications.php
 C:\xampp\php\php.exe .github\scripts\conventions-check.php
 ```
+
+The member-portal checks (community to notifications) cover the pure rules of each module: quotes, late fees, claim tracks, caps, windows, the trust-score formula and every allowed status change. With the local database running, `C:\xampp\php\php.exe tests\ledger.php` also proves that every kind of point movement leaves the total of all pools unchanged; it rolls back everything it writes.
+
+Every PHP test file starts with `tests/common.php`, which loads the application and defines the single `check()` assertion they share; a failed check stops the file with its message and a non-zero exit code.
 
 These test files run without MySQL. The router checks cover every route's target, numeric IDs, exact-route priority, unsupported methods, invalid form tokens and which paths a signed-out visitor may reach. The identity checks cover mobile and NIC normalisation, password handling and the refusals behind sign-in. The listing checks cover the declared-value proof tiers, and the sponsor checks cover how an onboarding or edit form is stored and which contact details are refused. The disaster relief checks cover how a relief form is stored and which types, household counts and dates are refused.
 
@@ -92,6 +126,8 @@ python tests/ui-navigation.py
 python tests/public-auth.py
 C:\xampp\php\php.exe tests\dynamic-data.php
 ```
+
+`ui-navigation.py` signs in with the seeded passwords. If you changed the demo member's password locally, set `MITHRA_MEMBER_PASSWORD` to the new one first (for example `set MITHRA_MEMBER_PASSWORD=...` in `cmd`).
 
 The public-auth check uses a fresh visitor session to check public pages, registration steps, CSRF rejection and password-reset dialogs. It creates no accounts, uploads no documents and sends no email.
 

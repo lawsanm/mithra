@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Services and models receive a PDO through their constructor
  * (Rules/CONVENTIONS.md §6, DIP) — they never call Database::connection()
- * themselves. Only the bootstrap does, so tests can inject their own handle.
+ * themselves; the entry points do.
  */
 final class Database
 {
@@ -42,6 +42,47 @@ final class Database
     }
 
     /**
+     * Run $work as one transaction: commit when it returns, roll back and
+     * rethrow when anything throws (Rules/CONVENTIONS.md §8). Called while a
+     * transaction is already open, $work joins it and the opener decides.
+     * $undo reverses what the database cannot — files stored for the change.
+     *
+     * @template T
+     *
+     * @param callable(): T $work
+     *
+     * @return T
+     */
+    public static function transaction(PDO $pdo, callable $work, ?callable $undo = null): mixed
+    {
+        $owner = !$pdo->inTransaction();
+
+        if ($owner) {
+            $pdo->beginTransaction();
+        }
+
+        try {
+            $result = $work();
+
+            if ($owner) {
+                $pdo->commit();
+            }
+
+            return $result;
+        } catch (Throwable $exception) {
+            if ($owner) {
+                $pdo->rollBack();
+            }
+
+            if ($undo !== null) {
+                $undo();
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
      * A separate handle with no database selected, for setup tooling that
      * creates the schema itself (scripts/migrate.php). Emulated prepares stay
      * on because multi-statement .sql files need the emulated driver path;
@@ -63,13 +104,5 @@ final class Database
                 PDO::ATTR_EMULATE_PREPARES => true,
             ]
         );
-    }
-
-    /**
-     * Replace the handle — used by tests to point at a throwaway database.
-     */
-    public static function swap(?PDO $connection): void
-    {
-        self::$connection = $connection;
     }
 }

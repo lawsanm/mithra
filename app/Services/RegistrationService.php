@@ -40,24 +40,13 @@ final class RegistrationService
     /** How the proof of address is labelled on the membership row. */
     private const ADDRESS_PROOF = 'address';
 
-    private PDO $pdo;
-    private User $users;
-    private UserDivision $memberships;
-    private GnDivision $divisions;
-    private PhotoStore $documents;
-
     public function __construct(
-        PDO $pdo,
-        User $users,
-        UserDivision $memberships,
-        GnDivision $divisions,
-        PhotoStore $documents
+        private PDO $pdo,
+        private User $users,
+        private UserDivision $memberships,
+        private GnDivision $divisions,
+        private PhotoStore $documents
     ) {
-        $this->pdo         = $pdo;
-        $this->users       = $users;
-        $this->memberships = $memberships;
-        $this->divisions   = $divisions;
-        $this->documents   = $documents;
     }
 
     /**
@@ -224,12 +213,7 @@ final class RegistrationService
         ];
 
         foreach ($labels as $field => $message) {
-            $files = array_values(array_filter(
-                $uploads[$field] ?? [],
-                static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE
-            ));
-
-            if (count($files) !== 1) {
+            if (count(PhotoStore::chosen($uploads[$field] ?? [])) !== 1) {
                 $errors[$field] = $message;
             }
         }
@@ -246,23 +230,11 @@ final class RegistrationService
     private function storeDocument(array $upload, string $field, array $discardOnFailure = []): string
     {
         try {
-            $stored = $this->documents->storeMany($upload, self::DOCUMENT_FOLDER, $field, 1);
+            return $this->documents->storeMany($upload, self::DOCUMENT_FOLDER, $field, 1)[0];
         } catch (ValidationException $exception) {
-            $this->discard($discardOnFailure);
+            $this->documents->delete(...$discardOnFailure);
 
             throw $exception;
-        }
-
-        return $stored[0];
-    }
-
-    /**
-     * @param list<string> $paths
-     */
-    private function discard(array $paths): void
-    {
-        foreach ($paths as $path) {
-            $this->documents->delete($path);
         }
     }
 
@@ -302,32 +274,19 @@ final class RegistrationService
      */
     private function insert(array $account, int $divisionId, string $addressProof): int
     {
-        $this->pdo->beginTransaction();
-
         try {
-            $userId = $this->users->create($account);
-            $this->memberships->createHome($userId, $divisionId, self::ADDRESS_PROOF, $addressProof);
+            return Database::transaction($this->pdo, function () use ($account, $divisionId, $addressProof): int {
+                $userId = $this->users->create($account);
+                $this->memberships->createHome($userId, $divisionId, self::ADDRESS_PROOF, $addressProof);
 
-            $this->pdo->commit();
+                return $userId;
+            }, fn () => $this->documents->delete($account['nic_photo_path'], $addressProof));
         } catch (PDOException $exception) {
-            $this->pdo->rollBack();
-            $this->discard([$account['nic_photo_path'], $addressProof]);
-
-            if ($exception->getCode() === '23000') {
-                throw ValidationException::field(
-                    'form',
-                    'Those details were registered a moment ago. Try signing in, or check the NIC and mobile number.'
-                );
+            if ($exception->getCode() !== '23000') {
+                throw $exception;
             }
 
-            throw $exception;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-            $this->discard([$account['nic_photo_path'], $addressProof]);
-
-            throw $exception;
+            throw ValidationException::field('form', 'Those details were registered a moment ago. Try signing in, or check the NIC and mobile number.');
         }
-
-        return $userId;
     }
 }

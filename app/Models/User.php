@@ -131,25 +131,13 @@ final class User extends BaseModel
      */
     public function create(array $data): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             "INSERT INTO users
                  (role_id, full_name, nic, nic_photo_path, phone, email, address, password_hash, status)
              VALUES
-                 (:role_id, :full_name, :nic, :nic_photo_path, :phone, :email, :address, :password_hash, 'pending')"
+                 (:role_id, :full_name, :nic, :nic_photo_path, :phone, :email, :address, :password_hash, 'pending')",
+            $data
         );
-
-        $statement->execute([
-            'role_id'        => $data['role_id'],
-            'full_name'      => $data['full_name'],
-            'nic'            => $data['nic'],
-            'nic_photo_path' => $data['nic_photo_path'],
-            'phone'         => $data['phone'],
-            'email'         => $data['email'],
-            'address'       => $data['address'],
-            'password_hash' => $data['password_hash'],
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -159,13 +147,10 @@ final class User extends BaseModel
      */
     public function markActive(int $id): void
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE users
-                SET status = 'active', joined_at = COALESCE(joined_at, NOW())
-              WHERE id = :id AND status = 'pending'"
+        $this->execute(
+            "UPDATE users SET status = 'active', joined_at = COALESCE(joined_at, NOW()) WHERE id = :id AND status = 'pending'",
+            ['id' => $id]
         );
-
-        $statement->execute(['id' => $id]);
     }
 
     public function roleIdFor(string $code): ?int
@@ -213,45 +198,32 @@ final class User extends BaseModel
     }
 
     /**
-     * Members this person may send a gift to.
-     *
-     * Only the member role is giftable — moderators, the sponsor liaison and
-     * admins hold staff accounts and are never gift recipients.
+     * Members this person may send a gift to: active members who accept
+     * gifts and share an active division with them (§11.1). A moderator is a
+     * verified member (§16.3) and can receive gifts too; the Sponsor Liaison,
+     * admins and sponsors cannot.
      *
      * @return list<array<string, mixed>>
      */
     public function giftableExcept(int $id): array
     {
         return $this->select(
-            "SELECT u.id, u.full_name
+            "SELECT DISTINCT u.id, u.full_name
                FROM users u
-               JOIN roles r ON r.id = u.role_id
+               JOIN roles r            ON r.id = u.role_id
+               JOIN user_divisions them ON them.user_id = u.id AND them.status = 'active'
+               JOIN user_divisions mine ON mine.user_id = :me AND mine.status = 'active'
+                                       AND mine.gn_division_id = them.gn_division_id
               WHERE u.id <> :id
-                AND r.code = 'member'
+                AND r.code IN ('member', 'moderator')
                 AND u.status = 'active'
                 AND u.gift_receive_enabled = 1
               ORDER BY u.full_name",
-            ['id' => $id]
+            ['me' => $id, 'id' => $id]
         );
     }
 
-    /**
-     * The moderator of a member's home division, or null when the account has
-     * no home division or the division has no moderator.
-     */
-    public function homeModeratorName(int $userId): ?string
-    {
-        $name = $this->selectValue(
-            "SELECT m.full_name
-               FROM user_divisions ud
-               JOIN gn_divisions d ON d.id = ud.gn_division_id
-               JOIN users m        ON m.id = d.moderator_id
-              WHERE ud.user_id = :id AND ud.membership_type = 'home'",
-            ['id' => $userId]
-        );
 
-        return $name === false ? null : (string) $name;
-    }
 
     /**
      * The longest-standing active account in a role, e.g. the Sponsor Liaison.
@@ -327,16 +299,12 @@ final class User extends BaseModel
      */
     public function recentlySuspended(int $limit = 5): array
     {
-        $statement = $this->pdo->prepare(
-            "SELECT id, full_name, updated_at FROM users
-              WHERE status = 'suspended'
-              ORDER BY updated_at DESC
-              LIMIT :limit"
+        return $this->selectPage(
+            "SELECT id, full_name, updated_at FROM users WHERE status = 'suspended' ORDER BY updated_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     public function roleCode(int $id): string
@@ -466,37 +434,31 @@ final class User extends BaseModel
     /** Store a new password hash and stamp the change, which ends older sessions. */
     public function updatePassword(int $id, string $passwordHash): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE users SET password_hash = :hash, password_changed_at = NOW() WHERE id = :id'
-        );
-        $statement->execute(['hash' => $passwordHash, 'id' => $id]);
+        $this->execute('UPDATE users SET password_hash = :hash, password_changed_at = NOW() WHERE id = :id', ['hash' => $passwordHash, 'id' => $id]);
     }
 
     /** Upgrade a hash to the current cost without counting as a password change. */
     public function rehashPassword(int $id, string $passwordHash): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET password_hash = :hash WHERE id = :id');
-        $statement->execute(['hash' => $passwordHash, 'id' => $id]);
+        $this->execute('UPDATE users SET password_hash = :hash WHERE id = :id', ['hash' => $passwordHash, 'id' => $id]);
     }
 
     public function updateContact(int $id, string $fullName, string $phone, ?string $email): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE users SET full_name = :name, phone = :phone, email = :email WHERE id = :id'
+        $this->execute(
+            'UPDATE users SET full_name = :name, phone = :phone, email = :email WHERE id = :id',
+            ['name' => $fullName, 'phone' => $phone, 'email' => $email, 'id' => $id]
         );
-        $statement->execute(['name' => $fullName, 'phone' => $phone, 'email' => $email, 'id' => $id]);
     }
 
     public function updateAddress(int $id, string $address): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET address = :address WHERE id = :id');
-        $statement->execute(['address' => $address, 'id' => $id]);
+        $this->execute('UPDATE users SET address = :address WHERE id = :id', ['address' => $address, 'id' => $id]);
     }
 
     public function setGiftReceive(int $id, bool $enabled): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET gift_receive_enabled = :on WHERE id = :id');
-        $statement->execute(['on' => $enabled ? 1 : 0, 'id' => $id]);
+        $this->execute('UPDATE users SET gift_receive_enabled = :on WHERE id = :id', ['on' => $enabled ? 1 : 0, 'id' => $id]);
     }
 
     public function emailTakenByOther(string $email, int $id): bool
@@ -524,12 +486,86 @@ final class User extends BaseModel
      */
     public function close(int $id, string $status): bool
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE users SET status = :status, closed_at = NOW(), gift_receive_enabled = 0
-              WHERE id = :id AND status = 'active'"
-        );
-        $statement->execute(['status' => $status, 'id' => $id]);
+        return $this->execute(
+            "UPDATE users SET status = :status, closed_at = NOW(), gift_receive_enabled = 0 WHERE id = :id AND status = 'active'",
+            ['status' => $status, 'id' => $id]
+        ) === 1;
+    }
 
-        return $statement->rowCount() === 1;
+    /** Store a freshly computed trust score (Plan §6.3) — the cached column every page reads. */
+    public function setTrustScore(int $id, int $score): void
+    {
+        $this->execute('UPDATE users SET trust_score = :score WHERE id = :id', ['score' => max(0, min(100, $score)), 'id' => $id]);
+    }
+
+    /** When membership began — the trust score's tenure factor. */
+    public function joinedAt(int $id): ?string
+    {
+        $value = $this->selectValue('SELECT joined_at FROM users WHERE id = :id', ['id' => $id]);
+
+        return $value === false || $value === null ? null : (string) $value;
+    }
+
+    /**
+     * Every verified member and moderator still taking part — the nightly
+     * trust-score refresh walks these.
+     *
+     * @return list<int>
+     */
+    public function activeMemberIds(): array
+    {
+        return $this->selectIds(
+            "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+              WHERE r.code IN ('member','moderator') AND u.status = 'active'
+              ORDER BY u.id"
+        );
+    }
+
+    /**
+     * Active accounts in one role, e.g. every Admin to tell about a new dispute.
+     *
+     * @return list<int>
+     */
+    public function idsInRole(string $roleCode): array
+    {
+        return $this->selectIds(
+            "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+              WHERE r.code = :code AND u.status = 'active' ORDER BY u.id",
+            ['code' => $roleCode]
+        );
+    }
+
+    /**
+     * The moderator of a member's home division with a phone number to reach
+     * them on, or null when there is none.
+     *
+     * @return array{name: string, phone: string}|null
+     */
+    public function homeModerator(int $userId): ?array
+    {
+        $row = $this->selectOne(
+            "SELECT m.full_name, m.phone
+               FROM user_divisions ud
+               JOIN gn_divisions d ON d.id = ud.gn_division_id
+               JOIN users m        ON m.id = d.moderator_id
+              WHERE ud.user_id = :id AND ud.membership_type = 'home'",
+            ['id' => $userId]
+        );
+
+        return $row === null ? null : ['name' => (string) $row['full_name'], 'phone' => (string) $row['phone']];
+    }
+
+    /**
+     * Completed bookings this member took part in on items listed in one
+     * division — the trust score's context line on profiles (§6.3.5).
+     */
+    public function completedInDivision(int $userId, int $divisionId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE (b.borrower_id = :a OR b.lender_id = :b) AND b.status = 'completed'
+                AND i.gn_division_id = :division",
+            ['a' => $userId, 'b' => $userId, 'division' => $divisionId]
+        );
     }
 }

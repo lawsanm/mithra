@@ -10,9 +10,9 @@ declare(strict_types=1);
  * view or redirects. Which applications this moderator may see and decide is a
  * business rule, so it lives in VerificationService, not here (§6).
  *
- * Only member verification is wired. Temporary-community proofs, the review
- * checklist and "request more info" share this screen in Figma but have no
- * backend yet, and stay visibly unavailable rather than pretending to save.
+ * Home applications, temporary-community applications and their extension
+ * requests share the queue (Plan §6.5). "Request more info" is in Figma but
+ * has no state to record, so it stays visibly unavailable.
  */
 final class ModerationController extends Controller
 {
@@ -28,7 +28,8 @@ final class ModerationController extends Controller
             new UserDivision($pdo),
             new GnDivision($pdo),
             new Wallet($pdo),
-            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), new Wallet($pdo))
+            self::ledgerService($pdo),
+            new Notification($pdo)
         );
     }
 
@@ -37,7 +38,7 @@ final class ModerationController extends Controller
      */
     public function index(): void
     {
-        $filter = $this->filter((string) ($_GET['status'] ?? ''));
+        $filter = $this->filter($this->queryValue('status'));
 
         try {
             $rows    = $this->verifications->queue($this->userId(), $filter);
@@ -62,23 +63,24 @@ final class ModerationController extends Controller
     {
         try {
             $application = $this->verifications->review($id, $this->userId());
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
         }
 
         $this->render('moderator/verifications/show', [
+            'kind'      => $this->kindOf($application),
             'applicant' => [
                 'initials'     => User::initials((string) $application['full_name']),
                 'name'         => (string) $application['full_name'],
-                'status'       => $this->badgeFor((string) $application['status']),
-                'status_label' => $this->labelFor((string) $application['status']),
+                'status'       => $this->badgeFor($this->stateOf($application)),
+                'status_label' => $this->labelFor($this->stateOf($application)),
                 'submitted'    => $this->submittedLine($application),
             ],
             'facts'     => $this->facts($application),
             'documents' => $this->documents($application),
-            'decided'  => $application['status'] !== 'pending',
+            'decided'  => $this->stateOf($application) !== 'pending',
             'recordId' => (int) $application['id'],
         ]);
     }
@@ -88,10 +90,22 @@ final class ModerationController extends Controller
      */
     public function approve(int $id): void
     {
+        try {
+            $kind = $this->kindOf($this->verifications->review($id, $this->userId()));
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
+            $this->renderException($exception);
+
+            return;
+        }
+
         $this->decide(
             $id,
             fn (int $moderatorId): string => $this->verifications->approve($id, $moderatorId),
-            '%s is now a verified member and can sign in.'
+            match ($kind) {
+                'Temporary community' => '%s can now take part here as a temporary member.',
+                'Temporary extension' => "%s's temporary membership was extended.",
+                default               => '%s is now a verified member and can sign in.',
+            }
         );
     }
 
@@ -100,10 +114,12 @@ final class ModerationController extends Controller
      */
     public function reject(int $id): void
     {
+        $reason = is_string($_POST['reason'] ?? null) ? $_POST['reason'] : null;
+
         $this->decide(
             $id,
-            fn (int $moderatorId): string => $this->verifications->reject($id, $moderatorId),
-            "%s's application was rejected."
+            fn (int $moderatorId): string => $this->verifications->reject($id, $moderatorId, $reason),
+            "%s's request was rejected."
         );
     }
 
@@ -122,7 +138,10 @@ final class ModerationController extends Controller
             $this->flash(sprintf($message, $decision($this->userId())));
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RuntimeException $exception) {
+            $this->redirect('/moderator/verifications/' . $id);
+
+            return;
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -141,13 +160,14 @@ final class ModerationController extends Controller
         return [
             'name'         => (string) $row['full_name'],
             'meta'         => sprintf(
-                'NIC %s  ·  %s  ·  applied %s',
+                '%s  ·  NIC %s  ·  %s  ·  applied %s',
+                $this->kindOf($row),
                 (string) $row['nic'],
                 (string) $row['division_name'],
                 date('j M Y', strtotime((string) $row['created_at']))
             ),
-            'status'       => $this->badgeFor((string) $row['status']),
-            'status_label' => $this->labelFor((string) $row['status']),
+            'status'       => $this->badgeFor($this->stateOf($row)),
+            'status_label' => $this->labelFor($this->stateOf($row)),
             'href'         => base_url() . '/moderator/verifications/' . (string) $row['id'],
         ];
     }
@@ -161,7 +181,9 @@ final class ModerationController extends Controller
     {
         return [
             ['label' => 'GN division',     'value' => (string) $application['division_name']],
-            ['label' => 'Membership type', 'value' => 'Home community'],
+            ['label' => 'Membership type', 'value' => $this->kindOf($application)],
+            ['label' => 'Proof of stay',   'value' => (string) (CommunityService::PROOF_TYPES[$application['proof_type'] ?? ''] ?? ($application['membership_type'] === 'home' ? 'Proof of address' : '—'))],
+            ['label' => 'Expires',         'value' => empty($application['expires_at']) ? '—' : date('j M Y', strtotime((string) $application['expires_at']))],
             ['label' => 'NIC',             'value' => (string) $application['nic']],
             ['label' => 'Address',         'value' => (string) $application['address']],
             ['label' => 'Mobile',          'value' => (string) $application['phone']],
@@ -181,7 +203,9 @@ final class ModerationController extends Controller
     {
         $documents = [];
 
-        foreach (['nic_photo_path' => 'NIC photograph', 'proof_file_path' => 'Proof of address'] as $column => $label) {
+        $proofLabel = $application['membership_type'] === 'home' ? 'Proof of address' : 'Proof of stay';
+
+        foreach (['nic_photo_path' => 'NIC photograph', 'proof_file_path' => $proofLabel, 'renewal_proof_path' => 'Fresh proof for the extension'] as $column => $label) {
             if (($application[$column] ?? null) !== null) {
                 $documents[] = [
                     'label' => $label,
@@ -198,10 +222,10 @@ final class ModerationController extends Controller
      */
     private function submittedLine(array $application): string
     {
-        $applied = 'Home membership application  ·  applied '
+        $applied = $this->kindOf($application) . ' application  ·  applied '
             . date('j M Y', strtotime((string) $application['created_at']));
 
-        if ($application['status'] === 'pending' || $application['verified_at'] === null) {
+        if ($this->stateOf($application) === 'pending' || $application['verified_at'] === null) {
             return $applied;
         }
 
@@ -214,7 +238,7 @@ final class ModerationController extends Controller
      */
     private function filterPills(string $active): array
     {
-        $labels = ['' => 'All', 'pending' => 'Pending', 'active' => 'Approved', 'rejected' => 'Rejected'];
+        $labels = ['' => 'All', 'pending' => 'Pending', 'temporary' => 'Temporary', 'active' => 'Approved', 'rejected' => 'Rejected'];
         $pills  = [];
 
         foreach ($labels as $state => $label) {
@@ -227,6 +251,33 @@ final class ModerationController extends Controller
     private function filter(string $requested): string
     {
         return in_array($requested, VerificationService::FILTERS, true) ? $requested : '';
+    }
+
+    /**
+     * What the moderator is deciding: a home application, a temporary one, or
+     * an extension of a temporary one.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function kindOf(array $row): string
+    {
+        if (($row['membership_type'] ?? 'home') === 'home') {
+            return 'Home community';
+        }
+
+        return $row['status'] !== 'pending' && ($row['renewal_requested_at'] ?? null) !== null
+            ? 'Temporary extension'
+            : 'Temporary community';
+    }
+
+    /**
+     * An extension request waits on a live row, so it reads as pending.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function stateOf(array $row): string
+    {
+        return ($row['renewal_requested_at'] ?? null) !== null ? 'pending' : (string) $row['status'];
     }
 
     private function badgeFor(string $status): string
@@ -249,7 +300,7 @@ final class ModerationController extends Controller
         };
     }
 
-    private function renderException(RuntimeException $exception): void
+    private function renderException(RecordNotFoundException|AccessDeniedException $exception): void
     {
         if ($exception instanceof AccessDeniedException) {
             $this->notice(403, 'Not your division', 'You can only review applications from the division you moderate.');

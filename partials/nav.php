@@ -121,8 +121,12 @@ $bar = $bars[$chrome] ?? null;
 
     <div class="nav__actions">
         <?php if ($bar['bell'] !== null): ?>
-            <a class="nav__bell" href="<?= e(base_url() . $bar['bell']) ?>" aria-label="Notifications">
+            <?php $unread = (int) ($viewer['unread'] ?? 0); ?>
+            <a class="nav__bell" href="<?= e(base_url() . $bar['bell']) ?>" aria-label="Notifications<?= $unread > 0 ? ', ' . e((string) $unread) . ' unread' : '' ?>">
                 <img class="nav__bell-icon" width="24" height="24" src="<?= base_url() ?>/img/nav-bell.svg" alt="">
+                <?php if ($bar['bell'] === '/notifications'): ?>
+                    <span class="nav__bell-count" data-unread-poll="<?= e(base_url() . '/notifications/unread-count') ?>"<?= $unread === 0 ? ' hidden' : '' ?>><?= e($unread > 99 ? '99+' : (string) $unread) ?></span>
+                <?php endif; ?>
             </a>
         <?php endif; ?>
         <?php if ($viewer !== null && $chrome === 'member'): ?>

@@ -19,9 +19,6 @@ final class AccountClosureService
 {
     public const TYPES = ['standard', 'parting_gift'];
 
-    /** Aid grant states that still need the member's account. */
-    private const OPEN_GRANT_STATES = ['requested', 'vouched', 'info_requested', 'approved', 'disbursed'];
-
     public function __construct(
         private PDO $pdo,
         private User $users,
@@ -29,6 +26,8 @@ final class AccountClosureService
         private Item $items,
         private Booking $bookings,
         private AidGrant $grants,
+        private Dispute $disputes,
+        private Donation $donations,
         private Wallet $wallets,
         private PasswordReset $resets,
         private LedgerService $ledger
@@ -63,9 +62,16 @@ final class AccountClosureService
             $blockers[] = 'You are part of a damage claim that is not settled yet.';
         }
 
-        $grant = $this->grants->activeForMember($userId);
-        if ($grant !== null && in_array($grant['status'], self::OPEN_GRANT_STATES, true)) {
+        if ($this->grants->countLiveFor($userId) > 0) {
             $blockers[] = 'You have an open aid grant.';
+        }
+
+        if ($this->disputes->countOpenFor($userId) > 0) {
+            $blockers[] = 'You are part of a dispute the Admin has not ruled on yet.';
+        }
+
+        if ($this->donations->countUnfinishedFor($userId) > 0) {
+            $blockers[] = 'A donation you are giving or receiving is waiting for its handover.';
         }
 
         return $blockers;
@@ -93,19 +99,18 @@ final class AccountClosureService
             throw ValidationException::field('close_password', 'Enter your current password to confirm.');
         }
 
-        $blockers = $this->blockers($userId);
-        if ($blockers !== []) {
-            throw ValidationException::field('form', implode(' ', $blockers));
-        }
-
         [$pool, $reason, $status] = $type === 'parting_gift'
             ? ['aid', 'parting_gift', 'closed_donation']
             : ['retired', 'account_closure', 'closed_standard'];
 
-        $this->pdo->beginTransaction();
+        return Database::transaction($this->pdo, function () use ($userId, $pool, $reason, $status): int {
+            // Locked first, so what blocks closing cannot change underneath it.
+            $balance  = $this->ledger->lockMemberBalances([$userId], [$pool])[$userId] ?? 0;
+            $blockers = $this->blockers($userId);
 
-        try {
-            $balance = $this->wallets->lockBalance($userId) ?? 0;
+            if ($blockers !== []) {
+                throw ValidationException::field('form', implode(' ', $blockers));
+            }
 
             if ($balance > 0) {
                 $this->ledger->memberToPool($userId, $pool, $balance, $reason);
@@ -119,13 +124,7 @@ final class AccountClosureService
             $this->memberships->deactivateAllFor($userId);
             $this->resets->revokeFor($userId);
 
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
-
-        return $balance;
+            return $balance;
+        });
     }
 }

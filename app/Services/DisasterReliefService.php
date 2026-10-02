@@ -46,8 +46,7 @@ final class DisasterReliefService
      */
     public function divisionFor(int $moderatorId): int
     {
-        return $this->divisions->moderatedBy($moderatorId)
-            ?? throw new AccessDeniedException('This account does not moderate a division.');
+        return $this->divisions->moderatedByOrFail($moderatorId);
     }
 
     /**
@@ -229,14 +228,8 @@ final class DisasterReliefService
      */
     public static function record(array $input, string $today, string $disasterStart): array
     {
-        $optional = static function (string $field) use ($input): ?string {
-            $value = trim((string) ($input[$field] ?? ''));
-
-            return $value === '' ? null : $value;
-        };
-
-        $sponsor = $optional('sponsor_id');
-        $value   = $optional('estimated_value');
+        $sponsor = Validator::optional($input, 'sponsor_id');
+        $value   = Validator::optional($input, 'estimated_value');
 
         $record = [
             'sponsor_id'         => $sponsor === null ? null : (int) $sponsor,
@@ -246,7 +239,7 @@ final class DisasterReliefService
             'households_reached' => (int) ($input['households_reached'] ?? 0),
             'estimated_value'    => $value === null ? null : (int) $value,
             'distributed_on'     => trim((string) ($input['distributed_on'] ?? '')),
-            'notes'              => $optional('notes'),
+            'notes'              => Validator::optional($input, 'notes'),
         ];
 
         $errors = [];
@@ -271,9 +264,7 @@ final class DisasterReliefService
             $errors['households_reached'] = 'Households reached must be at least 1.';
         }
 
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $record['distributed_on']);
-
-        if ($date === false || $date->format('Y-m-d') !== $record['distributed_on']) {
+        if (!Validator::isDate($record['distributed_on'])) {
             $errors['distributed_on'] = 'Enter the date the relief was handed out.';
         } elseif ($record['distributed_on'] > $today) {
             $errors['distributed_on'] = 'The date cannot be in the future.';

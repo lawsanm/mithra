@@ -3,53 +3,29 @@
 declare(strict_types=1);
 
 /**
- * "Send a gift" modal, shown here in its cap-exceeded validation state.
- * Figma: "Send a Gift — Modal (validation)" (75:101).
+ * "Send a gift" modal. Figma: "Send a Gift — Modal" and its validation state
+ * (75:101), which renders when the server refused the amount.
  *
  * Open with a trigger carrying data-modal-open="send-gift"; the host page must
- * also load /js/modal.js.
+ * also load /js/modal.js. Without JavaScript the trigger links to
+ * /gifts?to=… and the dialog renders open.
  *
- * @var array $recipients selectable members
- * @var array $giftDraft  recipient, amount, reason
- * @var array $giftErrors per-field messages from the Validator
+ * @var array $recipients    members who may receive: id, full_name
+ * @var array $giftDraft     recipient, amount, reason as typed
+ * @var array $giftErrors    per-field messages from the Validator or GiftService
+ * @var int   $giftRemaining points still allowed today
+ * @var bool  $giftOpen      render it open
  */
 
 $recipients = $recipients ?? [];
-
-$giftDraft = ($giftDraft ?? []) + [
-    'recipient' => (string) ($recipients[0]['id'] ?? ''),
-    'amount'    => '',
-    'reason'    => '',
-];
-
-// Remaining daily allowance, so the cap line and any error reflect real usage
-// rather than being written into the template.
-$giftRemaining = $giftRemaining ?? Gift::DAILY_CAP;
-$giftSentToday = $giftSentToday ?? 0;
-
-/**
- * Per-field messages from the Validator. The Figma "validation" frame is this
- * modal with an amount over the cap — it renders when the amount really is
- * over, not as the default state.
- */
 $giftErrors = $giftErrors ?? [];
 
-if ($giftErrors === [] && (int) $giftDraft['amount'] > $giftRemaining) {
-    $giftErrors['amount'] = sprintf(
-        'Daily gift cap exceeded — you’ve sent %d of %d pts today. You can send up to %d pts more.',
-        $giftSentToday,
-        Gift::DAILY_CAP,
-        $giftRemaining
-    );
-}
+$giftDraft = ($giftDraft ?? []) + ['recipient' => '', 'amount' => '', 'reason' => ''];
 
-$giftReasonCount = sprintf(
-    'Max 100 characters  ·  %d/100',
-    mb_strlen((string) $giftDraft['reason'])
-);
+$giftRemaining = $giftRemaining ?? Gift::DAILY_CAP;
 
 ?>
-<dialog class="modal modal--sm" id="send-gift" aria-labelledby="send-gift-title">
+<dialog class="modal modal--sm" id="send-gift" aria-labelledby="send-gift-title"<?= !empty($giftOpen) ? ' open' : '' ?>>
     <div class="modal__head">
         <h2 class="modal__title" id="send-gift-title">Send a gift</h2>
         <button class="modal__close" type="button" data-modal-close aria-label="Close">
@@ -57,64 +33,51 @@ $giftReasonCount = sprintf(
         </button>
     </div>
 
-    <div class="stack" data-demo-form>
-        <p class="demo-note">Preview only. Saving is not available yet.</p>
+    <form class="stack" method="post" action="<?= base_url() ?>/gifts" novalidate>
+        <?= csrf_field() ?>
+        <?= field_error($giftErrors, 'form') ?>
+
         <div class="field">
             <label class="field__label" for="gift-recipient">Recipient</label>
-            <select class="input" id="gift-recipient" name="recipient" disabled>
-                <?php if ($giftDraft['recipient'] === ''): ?>
-                    <option value="">Choose a member…</option>
-                <?php endif; ?>
+            <select class="input" id="gift-recipient" name="recipient">
+                <option value="">Choose a member…</option>
                 <?php foreach ($recipients as $recipient): ?>
-                    <option value="<?= e((string) $recipient['id']) ?>"
-                        <?= $giftDraft['recipient'] === (string) $recipient['id'] ? ' selected' : '' ?>>
+                    <option value="<?= e((string) $recipient['id']) ?>"<?= (string) $giftDraft['recipient'] === (string) $recipient['id'] ? ' selected' : '' ?>>
                         <?= e($recipient['full_name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
+            <?= field_error($giftErrors, 'recipient') ?>
         </div>
 
         <div class="field">
             <label class="field__label" for="gift-amount">Amount (pts)</label>
-            <input
-                class="input"
-                type="number"
-                id="gift-amount"
-                name="amount"
-                value="<?= e($giftDraft['amount']) ?>"
-                <?php if (isset($giftErrors['amount'])): ?>
-                    aria-invalid="true" aria-describedby="gift-amount-error"
-                <?php endif; ?>
-             disabled>
+            <input class="input" type="number" id="gift-amount" name="amount" value="<?= e((string) $giftDraft['amount']) ?>"
+                <?= isset($giftErrors['amount']) ? 'aria-invalid="true" aria-describedby="gift-amount-error"' : '' ?>>
             <?php if (isset($giftErrors['amount'])): ?>
                 <span class="field__error" id="gift-amount-error"><?= e($giftErrors['amount']) ?></span>
+            <?php else: ?>
+                <span class="field__hint">You can send up to <?= e((string) $giftRemaining) ?> pts more today.</span>
             <?php endif; ?>
         </div>
 
         <div class="field">
             <label class="field__label" for="gift-reason">Reason</label>
-            <input
-                class="input"
-                type="text"
-                id="gift-reason"
-                name="reason"
-                value="<?= e($giftDraft['reason']) ?>"
-             disabled>
-            <span class="field__hint"><?= e($giftReasonCount) ?></span>
+            <input class="input" type="text" id="gift-reason" name="reason" value="<?= e((string) $giftDraft['reason']) ?>">
+            <?= field_error($giftErrors, 'reason') ?>
+            <span class="field__hint">Up to <?= e((string) GiftService::REASON_MAX) ?> characters.</span>
         </div>
 
         <p class="notice notice--info">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
-            Gifts are capped at 200 pts per sender per day and 2,000 pts per sender per
-            year, and are blocked while you have a pending damage claim. Recipients can
-            disable gifts in their settings.
+            Gifts are capped at <?= e((string) Gift::DAILY_CAP) ?> pts a day and <?= e(number_format(Gift::ANNUAL_CAP)) ?> pts a year,
+            go only to members of your GN division, and cannot be undone. They are paused while you
+            have a pending damage claim, an open dispute or an overdue return.
         </p>
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--primary" type="submit" <?= $giftErrors !== [] ? 'disabled' : '' ?>>
-                Send gift
-            </button>
+            <button class="btn btn--primary" type="submit">Send gift</button>
         </div>
-    </div>
+    </form>
 </dialog>

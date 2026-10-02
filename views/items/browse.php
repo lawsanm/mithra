@@ -13,6 +13,9 @@ declare(strict_types=1);
  *                          status_glyph, status_label, href
  * @var int    $page        1-based page number
  * @var bool   $hasNextPage
+ * @var string $community   'home' or 'temporary' — which division is shown
+ * @var array  $communities home and temporary names; empty without a temporary community
+ * @var array  $savedSearches the member's saved searches: id, name, query
  * @var array|null $flash
  */
 
@@ -23,6 +26,9 @@ $results     = $results ?? [];
 $resultCount = $resultCount ?? '';
 $page        = $page ?? 1;
 $hasNextPage = $hasNextPage ?? false;
+$community   = $community ?? 'home';
+$communities = $communities ?? [];
+$savedSearches = $savedSearches ?? [];
 
 $activeSlug = '';
 
@@ -32,11 +38,12 @@ foreach ($categories as $category) {
     }
 }
 
-$browseUrl = static function (array $changes = []) use ($query, $activeSlug, $typeSlug): string {
+$browseUrl = static function (array $changes = []) use ($query, $activeSlug, $typeSlug, $community): string {
     return base_url() . '/items/browse?' . http_build_query(array_filter(array_replace([
-        'q'        => $query,
-        'category' => $activeSlug,
-        'type'     => $typeSlug,
+        'q'         => $query,
+        'category'  => $activeSlug,
+        'type'      => $typeSlug,
+        'community' => $community === 'temporary' ? 'temporary' : '',
     ], $changes), static fn ($value): bool => $value !== ''));
 };
 
@@ -53,6 +60,19 @@ include __DIR__ . '/../../partials/header.php';
 </header>
 
 <?php include __DIR__ . '/../../partials/flash.php'; ?>
+
+<?php if ($communities !== []): ?>
+    <ul class="filter-pills" aria-label="Community">
+        <?php foreach (['' => 'Home · ' . $communities['home'], 'temporary' => 'Temporary · ' . $communities['temporary']] as $slug => $label): ?>
+            <?php $isActive = ($slug === 'temporary') === ($community === 'temporary'); ?>
+            <li>
+                <a class="pill<?= $isActive ? ' pill--active' : '' ?>"
+                    href="<?= e($browseUrl(['community' => $slug, 'page' => ''])) ?>"
+                    <?= $isActive ? 'aria-current="true"' : '' ?>><?= e($label) ?></a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+<?php endif; ?>
 
 <ul class="filter-pills" aria-label="Listing type">
     <?php foreach (['' => 'All items', 'rentals' => 'Rentals', 'donations' => 'Donations'] as $slug => $label): ?>
@@ -77,6 +97,9 @@ include __DIR__ . '/../../partials/header.php';
     >
     <input type="hidden" name="category" value="<?= e($activeSlug) ?>">
     <input type="hidden" name="type" value="<?= e($typeSlug) ?>">
+    <?php if ($community === 'temporary'): ?>
+        <input type="hidden" name="community" value="temporary">
+    <?php endif; ?>
     <button class="btn btn--primary" type="submit">Search</button>
 </form>
 
@@ -91,6 +114,49 @@ include __DIR__ . '/../../partials/header.php';
         </li>
     <?php endforeach; ?>
 </ul>
+
+<section class="panel panel--wide" id="saved-searches" aria-label="Saved searches">
+    <?php if ($savedSearches !== []): ?>
+        <ul class="filter-pills" aria-label="Your saved searches">
+            <?php foreach ($savedSearches as $saved): ?>
+                <li>
+                    <a class="pill" href="<?= base_url() ?>/items/browse<?= $saved['query'] === '' ? '' : '?' . e($saved['query']) ?>"><?= e($saved['name']) ?></a>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <details>
+            <summary class="link">Rename or delete saved searches</summary>
+            <ul class="row-list">
+                <?php foreach ($savedSearches as $saved): ?>
+                    <li class="list-row">
+                        <form class="field-row" method="post" action="<?= base_url() ?>/saved-searches/<?= e((string) $saved['id']) ?>" novalidate>
+                            <?= csrf_field() ?>
+                            <label class="visually-hidden" for="saved-name-<?= e((string) $saved['id']) ?>">Name</label>
+                            <input class="input" type="text" id="saved-name-<?= e((string) $saved['id']) ?>" name="name" value="<?= e($saved['name']) ?>">
+                            <button class="btn btn--ghost" type="submit">Rename</button>
+                        </form>
+                        <form method="post" action="<?= base_url() ?>/saved-searches/<?= e((string) $saved['id']) ?>/delete"
+                            data-confirm="Delete the saved search “<?= e($saved['name']) ?>”?" novalidate>
+                            <?= csrf_field() ?>
+                            <button class="btn btn--ghost" type="submit">Delete</button>
+                        </form>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </details>
+    <?php endif; ?>
+
+    <form class="field-row" method="post" action="<?= base_url() ?>/saved-searches" novalidate>
+        <?= csrf_field() ?>
+        <input type="hidden" name="q" value="<?= e($query) ?>">
+        <input type="hidden" name="category" value="<?= e($activeSlug) ?>">
+        <input type="hidden" name="type" value="<?= e($typeSlug) ?>">
+        <input type="hidden" name="community" value="<?= e($community === 'temporary' ? 'temporary' : '') ?>">
+        <label class="visually-hidden" for="saved-search-name">Name for this search</label>
+        <input class="input" type="text" id="saved-search-name" name="name" placeholder="Name this search, e.g. Tools near me">
+        <button class="btn btn--ghost" type="submit">Save this search</button>
+    </form>
+</section>
 
 <?php if ($results === []): ?>
     <div class="empty-state">
@@ -134,16 +200,11 @@ include __DIR__ . '/../../partials/header.php';
         <?php endforeach; ?>
     </ul>
 
-    <?php if ($page > 1 || $hasNextPage): ?>
-        <div class="actions">
-            <?php if ($page > 1): ?>
-                <a class="btn btn--ghost" href="<?= e($browseUrl(['page' => $page - 1])) ?>">Previous</a>
-            <?php endif; ?>
-            <?php if ($hasNextPage): ?>
-                <a class="btn btn--ghost" href="<?= e($browseUrl(['page' => $page + 1])) ?>">Next</a>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
+    <?php
+    $pageUrl = static fn (int $target): string => $browseUrl(['page' => $target]);
+    include __DIR__ . '/../../partials/pager.php';
+    ?>
 <?php endif; ?>
 
+<?php $pageScripts = ['confirm.js']; ?>
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

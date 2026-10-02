@@ -4,38 +4,44 @@ declare(strict_types=1);
 
 /**
  * bookings — My Bookings, Booking Detail and the dashboard's borrowing rows.
+ *
+ * Every status change goes through move() or close(), which refuse any change
+ * TRANSITIONS does not list — so adding a state is one line here
+ * (Rules/DESIGN_PRINCIPLES.md).
  */
 final class Booking extends BaseModel
 {
     protected string $table = 'bookings';
     protected string $columns = 'id, item_id, borrower_id, lender_id, start_date, end_date, rental_charge, status';
 
+    /** from => the statuses a booking may move to next. */
+    public const TRANSITIONS = [
+        'requested'         => ['awaiting_handover', 'rejected', 'cancelled', 'auto_cancelled'],
+        'awaiting_handover' => ['in_progress', 'cancelled', 'auto_cancelled'],
+        'in_progress'       => ['awaiting_return', 'pending_moderator', 'escalated'],
+        'awaiting_return'   => ['completed', 'pending_moderator', 'escalated'],
+        'pending_moderator' => ['completed', 'escalated'],
+        'escalated'         => ['completed', 'pending_moderator'],
+    ];
+
+    /** Statuses in which a booking holds its dates against every other use of the item. */
+    public const DATE_HOLDING_STATES = ['accepted', 'awaiting_handover', 'in_progress', 'awaiting_return', 'pending_moderator', 'escalated'];
+
+    /** Bookings per page on My Bookings (Rules/CONVENTIONS.md §9). */
+    public const PER_PAGE = 20;
+
     /** Statuses that count as a live booking, for both roles. */
-    private const OPEN_STATES = "('requested','accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator')";
+    private const OPEN_STATES = "('requested','accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator','escalated')";
 
     /** Statuses where the borrower physically holds the item. */
     private const HOLDING_STATES = "('awaiting_handover','in_progress','awaiting_return')";
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function forMember(int $memberId, string $role): array
-    {
-        // Whitelisted, never interpolated from request input.
-        $column = $role === 'lender' ? 'b.lender_id' : 'b.borrower_id';
-        $other  = $role === 'lender' ? 'b.borrower_id' : 'b.lender_id';
+    /** Statuses a booking ends in. */
+    private const PAST_STATES = "('completed','rejected','cancelled','auto_cancelled')";
 
-        return $this->select(
-            "SELECT b.id, b.start_date, b.end_date, b.rental_charge, b.status,
-                    i.title AS item_title, o.full_name AS counterparty,
-                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo
-               FROM bookings b
-               JOIN items i ON i.id = b.item_id
-               JOIN users o ON o.id = {$other}
-              WHERE {$column} = :member AND b.status IN " . self::OPEN_STATES . '
-              ORDER BY b.end_date',
-            ['member' => $memberId]
-        );
+    public static function canMove(string $from, string $to): bool
+    {
+        return in_array($to, self::TRANSITIONS[$from] ?? [], true);
     }
 
     public function countForMember(int $memberId, string $role): int
@@ -71,8 +77,7 @@ final class Booking extends BaseModel
     public function countActiveBorrowings(int $memberId): int
     {
         return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM bookings
-              WHERE borrower_id = :member AND status IN " . self::HOLDING_STATES,
+            'SELECT COUNT(*) FROM bookings WHERE borrower_id = :member AND status IN ' . self::HOLDING_STATES,
             ['member' => $memberId]
         );
     }
@@ -80,26 +85,20 @@ final class Booking extends BaseModel
     /** Bookings currently live anywhere in the platform (admin dashboard stat). */
     public function countActive(): int
     {
-        return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM bookings WHERE status IN ('in_progress', 'awaiting_return', 'awaiting_handover')"
-        );
+        return (int) $this->selectValue('SELECT COUNT(*) FROM bookings WHERE status IN ' . self::HOLDING_STATES);
     }
 
     /** Rental charge held in escrow across all currently active bookings. */
     public function activeEscrowPoints(): int
     {
-        return (int) $this->selectValue(
-            "SELECT COALESCE(SUM(rental_charge), 0) FROM bookings
-              WHERE status IN ('in_progress', 'awaiting_return', 'awaiting_handover')"
-        );
+        return (int) $this->selectValue('SELECT COALESCE(SUM(rental_charge), 0) FROM bookings WHERE status IN ' . self::HOLDING_STATES);
     }
 
     public function countDueTomorrow(int $memberId): int
     {
         return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM bookings
-              WHERE borrower_id = :member
-                AND status IN " . self::HOLDING_STATES . '
+            'SELECT COUNT(*) FROM bookings
+              WHERE borrower_id = :member AND status IN ' . self::HOLDING_STATES . '
                 AND end_date = CURDATE() + INTERVAL 1 DAY',
             ['member' => $memberId]
         );
@@ -125,11 +124,13 @@ final class Booking extends BaseModel
     public function findForDetail(int $id): ?array
     {
         return $this->selectOne(
-            "SELECT b.id, b.start_date, b.end_date, b.rate_basis, b.agreed_rate, b.rental_charge,
-                    b.late_buffer, b.status, b.requested_at, b.accepted_at,
+            "SELECT b.id, b.item_id, b.start_date, b.end_date, b.rate_basis, b.agreed_rate, b.rental_charge,
+                    b.late_buffer, b.status, b.requested_at, b.accepted_at, b.closed_at,
+                    b.message, b.decline_reason, b.cancelled_by, b.moderator_involved,
                     DATEDIFF(b.end_date, b.start_date) + 1 AS days,
                     GREATEST(DATEDIFF(CURDATE(), b.end_date), 0) AS days_overdue,
                     i.title AS item_title, i.declared_value,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS item_photo,
                     b.borrower_id, borrower.full_name AS borrower_name,
                     l.id AS lender_id, l.full_name AS lender_name, l.trust_score AS lender_trust,
                     l.status AS lender_status,
@@ -155,10 +156,8 @@ final class Booking extends BaseModel
     public function countOpenForMember(int $memberId): int
     {
         return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM bookings
-              WHERE (borrower_id = :borrower OR lender_id = :lender)
-                AND status IN ('requested','accepted','awaiting_handover','in_progress',
-                               'awaiting_return','pending_moderator','escalated')",
+            'SELECT COUNT(*) FROM bookings
+              WHERE (borrower_id = :borrower OR lender_id = :lender) AND status IN ' . self::OPEN_STATES,
             ['borrower' => $memberId, 'lender' => $memberId]
         );
     }
@@ -173,5 +172,359 @@ final class Booking extends BaseModel
                 AND dc.status NOT IN ('resolved','closed')",
             ['borrower' => $memberId, 'lender' => $memberId]
         );
+    }
+
+    /**
+     * Who may see a handover or return photo: the booking's two parties and
+     * the moderator of the item's division (Plan §10.1). Null when no booking
+     * carries this path, so the proxy refuses it (§7.5).
+     *
+     * @return list<int>|null
+     */
+    public function conditionPhotoViewers(string $path): ?array
+    {
+        $row = $this->selectOne(
+            "SELECT b.lender_id, b.borrower_id, d.moderator_id
+               FROM bookings b
+               JOIN items i        ON i.id = b.item_id
+               JOIN gn_divisions d ON d.id = i.gn_division_id
+          LEFT JOIN handover_records h ON h.booking_id = b.id
+          LEFT JOIN return_records r   ON r.booking_id = b.id
+              WHERE JSON_CONTAINS(COALESCE(h.lender_photos, '[]'), JSON_QUOTE(:p1))
+                 OR JSON_CONTAINS(COALESCE(h.borrower_photos, '[]'), JSON_QUOTE(:p2))
+                 OR JSON_CONTAINS(COALESCE(r.lender_photos, '[]'), JSON_QUOTE(:p3))
+                 OR JSON_CONTAINS(COALESCE(r.borrower_photos, '[]'), JSON_QUOTE(:p4))
+              LIMIT 1",
+            ['p1' => $path, 'p2' => $path, 'p3' => $path, 'p4' => $path]
+        );
+
+        return $row === null ? null : self::ids($row);
+    }
+
+    /**
+     * Open bookings this member is party to on items listed in one division —
+     * leaving that community, or moving home out of it, waits for them.
+     */
+    public function countOpenInDivisionFor(int $memberId, int $divisionId): int
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE i.gn_division_id = :division
+                AND (b.borrower_id = :borrower OR b.lender_id = :lender)
+                AND b.status IN ' . self::OPEN_STATES,
+            ['division' => $divisionId, 'borrower' => $memberId, 'lender' => $memberId]
+        );
+    }
+
+    /**
+     * Bookings on this item sharing at least one day with the range, in the
+     * given statuses. Both ends are inclusive.
+     *
+     * @param list<string> $states
+     */
+    public function countOverlapping(int $itemId, string $start, string $end, array $states, int $exceptId = 0): int
+    {
+        $params = ['item' => $itemId, 'start' => $start, 'end' => $end, 'except' => $exceptId];
+
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM bookings
+              WHERE item_id = :item AND id <> :except
+                AND start_date <= :end AND end_date >= :start
+                AND status IN ' . self::inList('state', $states, $params),
+            $params
+        );
+    }
+
+    /**
+     * The date ranges an item is already booked for, from today on — the
+     * item page shows them as "Booked".
+     *
+     * @return list<array{start_date: string, end_date: string}>
+     */
+    public function bookedRanges(int $itemId): array
+    {
+        $params = ['item' => $itemId];
+
+        return $this->select(
+            'SELECT start_date, end_date FROM bookings
+              WHERE item_id = :item AND end_date >= CURDATE()
+                AND status IN ' . self::inList('state', self::DATE_HOLDING_STATES, $params) . '
+              ORDER BY start_date
+              LIMIT 50',
+            $params
+        );
+    }
+
+    /**
+     * Insert a new request. Callers pass an already-checked set.
+     *
+     * @param array{item_id:int, borrower_id:int, lender_id:int, start_date:string, end_date:string,
+     *              rate_basis:string, agreed_rate:int, rental_charge:int, late_buffer:int,
+     *              moderator_involved:bool, message:?string} $data
+     */
+    public function create(array $data): int
+    {
+        return $this->insert(
+            "INSERT INTO bookings
+                 (item_id, borrower_id, lender_id, start_date, end_date, rate_basis, agreed_rate,
+                  rental_charge, late_buffer, moderator_involved, message, status)
+             VALUES
+                 (:item_id, :borrower_id, :lender_id, :start_date, :end_date, :rate_basis, :agreed_rate,
+                  :rental_charge, :late_buffer, :moderator_involved, :message, 'requested')",
+            ['moderator_involved' => $data['moderator_involved'] ? 1 : 0] + $data
+        );
+    }
+
+    /**
+     * One booking with what every state change needs, row-locked until the
+     * surrounding transaction ends (Rules/CONVENTIONS.md §8).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lockForUpdate(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT b.id, b.item_id, b.borrower_id, b.lender_id, b.start_date, b.end_date, b.rate_basis,
+                    b.agreed_rate, b.rental_charge, b.late_buffer, b.moderator_involved, b.status,
+                    b.requested_at, b.accepted_at, b.closed_at, b.overdue_flagged_at,
+                    i.title AS item_title, i.declared_value, i.daily_rate, i.monthly_rate, i.gn_division_id,
+                    i.status AS item_status, i.listing_type
+               FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE b.id = :id
+              FOR UPDATE',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * Move a booking on, guarded by the status it is expected to be in, so a
+     * concurrent change makes this a no-op instead of a double move.
+     */
+    public function move(int $id, string $from, string $to): bool
+    {
+        self::assertMove($from, $to);
+
+        return $this->execute(
+            "UPDATE bookings
+                SET status = :to,
+                    accepted_at = IF(:to2 = 'awaiting_handover', NOW(), accepted_at),
+                    closed_at = IF(:to3 = 'completed', NOW(), closed_at)
+              WHERE id = :id AND status = :from",
+            ['to' => $to, 'to2' => $to, 'to3' => $to, 'id' => $id, 'from' => $from]
+        ) === 1;
+    }
+
+    /** The lender says no; the status guard keeps it to waiting requests. */
+    public function decline(int $id, ?string $reason): void
+    {
+        $this->execute(
+            "UPDATE bookings SET status = 'rejected', decline_reason = :reason, closed_at = NOW()
+              WHERE id = :id AND status = 'requested'",
+            ['reason' => $reason, 'id' => $id]
+        );
+    }
+
+    /** Close in a cancelled state, recording who cancelled (null for the system). */
+    public function close(int $id, string $from, string $to, ?int $cancelledBy): bool
+    {
+        self::assertMove($from, $to);
+
+        return $this->execute(
+            'UPDATE bookings SET status = :to, cancelled_by = :by, closed_at = NOW() WHERE id = :id AND status = :from',
+            ['to' => $to, 'by' => $cancelledBy, 'id' => $id, 'from' => $from]
+        ) === 1;
+    }
+
+    /**
+     * Other waiting requests on the same item whose dates overlap this one —
+     * declined when this one is accepted.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function overlappingRequests(int $bookingId): array
+    {
+        return $this->select(
+            "SELECT o.id, o.borrower_id
+               FROM bookings b
+               JOIN bookings o ON o.item_id = b.item_id AND o.id <> b.id
+              WHERE b.id = :id AND o.status = 'requested'
+                AND o.start_date <= b.end_date AND o.end_date >= b.start_date",
+            ['id' => $bookingId]
+        );
+    }
+
+    /**
+     * Requests nobody answered within the window.
+     *
+     * @return list<array{id: int}>
+     */
+    public function staleRequests(int $hours): array
+    {
+        return $this->select(
+            "SELECT id FROM bookings
+              WHERE status = 'requested' AND requested_at < NOW() - INTERVAL :hours HOUR
+              ORDER BY id LIMIT 500",
+            ['hours' => $hours]
+        );
+    }
+
+    /**
+     * My Bookings, one page: current bookings, or past ones (finished,
+     * declined or cancelled) with ?state=past.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function pageForMember(int $memberId, string $role, bool $past, int $page): array
+    {
+        // Whitelisted, never interpolated from request input.
+        $column = $role === 'lender' ? 'b.lender_id' : 'b.borrower_id';
+        $other  = $role === 'lender' ? 'b.borrower_id' : 'b.lender_id';
+        $states = $past ? self::PAST_STATES : self::OPEN_STATES;
+        $order  = $past ? 'COALESCE(b.closed_at, b.requested_at) DESC' : 'b.start_date';
+
+        return $this->selectPage(
+            "SELECT b.id, b.start_date, b.end_date, b.rental_charge, b.status,
+                    i.title AS item_title, o.full_name AS counterparty,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo
+               FROM bookings b
+               JOIN items i ON i.id = b.item_id
+               JOIN users o ON o.id = {$other}
+              WHERE {$column} = :member AND b.status IN {$states}
+              ORDER BY {$order}, b.id DESC",
+            ['member' => $memberId],
+            $page,
+            self::PER_PAGE
+        );
+    }
+
+    public function countPastForMember(int $memberId, string $role): int
+    {
+        $column = $role === 'lender' ? 'lender_id' : 'borrower_id';
+
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings WHERE {$column} = :member AND status IN " . self::PAST_STATES,
+            ['member' => $memberId]
+        );
+    }
+
+    /**
+     * Accepted bookings whose handover is still unfinished this many hours
+     * after the start date.
+     *
+     * @return list<array{id: int}>
+     */
+    public function staleHandovers(int $hours): array
+    {
+        return $this->select(
+            "SELECT id FROM bookings
+              WHERE status = 'awaiting_handover'
+                AND TIMESTAMP(start_date) < NOW() - INTERVAL :hours HOUR
+              ORDER BY id LIMIT 500",
+            ['hours' => $hours]
+        );
+    }
+
+    /**
+     * Bookings still out (nothing returned) more than this many hours after
+     * the end of their end date.
+     *
+     * @param bool $unflaggedOnly only those the moderator has not been told about
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function unreturnedPast(int $hours, bool $unflaggedOnly): array
+    {
+        return $this->select(
+            "SELECT b.id, b.borrower_id, b.lender_id, i.title AS item_title, i.gn_division_id
+               FROM bookings b
+               JOIN items i ON i.id = b.item_id
+          LEFT JOIN return_records r ON r.booking_id = b.id
+              WHERE b.status = 'in_progress' AND r.return_at IS NULL
+                AND TIMESTAMP(b.end_date + INTERVAL 1 DAY) < NOW() - INTERVAL :hours HOUR"
+            . ($unflaggedOnly ? ' AND b.overdue_flagged_at IS NULL' : '') . '
+              ORDER BY b.id LIMIT 500',
+            ['hours' => $hours]
+        );
+    }
+
+    public function markOverdueFlagged(int $id): bool
+    {
+        return $this->execute(
+            "UPDATE bookings SET overdue_flagged_at = NOW()
+              WHERE id = :id AND status = 'in_progress' AND overdue_flagged_at IS NULL",
+            ['id' => $id]
+        ) === 1;
+    }
+
+    /** Items this member borrowed that are past their return date and not back yet. */
+    public function countOverdueBorrowings(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings
+              WHERE borrower_id = :member AND status = 'in_progress' AND end_date < CURDATE()",
+            ['member' => $memberId]
+        );
+    }
+
+    /**
+     * What is waiting on this member across bookings, claims and donations —
+     * the dashboard's "Needs your action" panel.
+     *
+     * @return list<array{kind: string, record_id: int, title: string}>
+     */
+    public function needsAction(int $memberId): array
+    {
+        // Native prepares forbid reusing a placeholder, so each use binds its own.
+        $params = array_fill_keys(['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10'], $memberId);
+
+        return $this->select(
+            "SELECT 'answer_request' AS kind, b.id AS record_id, i.title
+               FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE b.lender_id = :m1 AND b.status = 'requested'
+             UNION ALL
+             SELECT 'accept_handover', b.id, i.title
+               FROM bookings b JOIN items i ON i.id = b.item_id
+          LEFT JOIN handover_records h ON h.booking_id = b.id
+              WHERE b.status = 'awaiting_handover'
+                AND ((b.lender_id = :m2 AND h.lender_accepted_at IS NULL)
+                  OR (b.borrower_id = :m3 AND h.borrower_accepted_at IS NULL))
+             UNION ALL
+             SELECT 'check_return', b.id, i.title
+               FROM bookings b JOIN items i ON i.id = b.item_id
+               JOIN return_records r ON r.booking_id = b.id
+              WHERE b.lender_id = :m4 AND b.status = 'awaiting_return' AND r.lender_decision IS NULL
+             UNION ALL
+             SELECT 'answer_claim', b.id, i.title
+               FROM damage_claims c JOIN bookings b ON b.id = c.booking_id JOIN items i ON i.id = b.item_id
+              WHERE b.borrower_id = :m5 AND c.status = 'awaiting_borrower'
+             UNION ALL
+             SELECT 'sign_resolution', b.id, i.title
+               FROM damage_claims c JOIN bookings b ON b.id = c.booking_id JOIN items i ON i.id = b.item_id
+               JOIN moderator_resolutions m ON m.damage_claim_id = c.id
+              WHERE c.status = 'pending_moderator' AND m.met_at IS NOT NULL AND m.closed_at IS NULL
+                AND ((b.lender_id = :m6 AND m.lender_signoff_at IS NULL)
+                  OR (b.borrower_id = :m7 AND m.borrower_signoff_at IS NULL))
+             UNION ALL
+             SELECT 'confirm_donation', d.id, i.title
+               FROM donations d JOIN items i ON i.id = d.item_id
+              WHERE d.status = 'recipient_selected'
+                AND ((d.donor_id = :m8 AND d.donor_confirmed_at IS NULL)
+                  OR (d.recipient_id = :m9 AND d.recipient_confirmed_at IS NULL))
+             UNION ALL
+             SELECT 'choose_recipient', d.id, i.title
+               FROM donations d JOIN items i ON i.id = d.item_id
+              WHERE d.donor_id = :m10 AND d.status = 'open'
+                AND EXISTS (SELECT 1 FROM donation_requests r WHERE r.donation_id = d.id AND r.status = 'pending')
+              LIMIT 20",
+            $params
+        );
+    }
+
+    /** Fail closed: a status change TRANSITIONS does not list is a bug, never a write. */
+    private static function assertMove(string $from, string $to): void
+    {
+        if (!self::canMove($from, $to)) {
+            throw new LogicException(sprintf('A booking cannot move from %s to %s.', $from, $to));
+        }
     }
 }

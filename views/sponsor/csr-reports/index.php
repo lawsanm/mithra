@@ -49,4 +49,4 @@ include __DIR__ . '/../../../partials/header.php';
 
 <p class="page-intro__meta"><?= e($reconcileNote) ?></p>
 
-<?php $pageScripts = ['reports.js']; include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php $pageScripts = ['print.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

@@ -38,7 +38,7 @@ final class DisasterContributionController extends Controller
 
     private function indexData(array $rows): array
     {
-        $selected = is_string($_GET['status'] ?? null) ? $_GET['status'] : '';
+        $selected = $this->queryValue('status');
         $filters = [];
         foreach (['' => 'All'] + self::LABELS as $state => $label) {
             $filters[] = ['state' => $state, 'label' => $label, 'active' => $selected === $state];

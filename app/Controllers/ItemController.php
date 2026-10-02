@@ -29,7 +29,7 @@ final class ItemController extends Controller
 
         $this->items      = new Item($pdo);
         $this->categories = new ItemCategory($pdo);
-        $this->service    = new ItemService($this->items, $this->categories, new Booking($pdo), $this->uploads());
+        $this->service    = new ItemService($this->items, $this->categories, new Booking($pdo), PhotoStore::uploads());
     }
 
     // ── Read ────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ final class ItemController extends Controller
     public function index(): void
     {
         $me   = $this->userId();
-        $type = $this->listingTypeFilter((string) ($_GET['type'] ?? ''));
+        $type = $this->listingTypeFilter($this->queryValue('type'));
 
         $rows   = $this->items->ownedBy($me, $type);
         $counts = $this->items->ownedCounts($me);
@@ -57,19 +57,30 @@ final class ItemController extends Controller
     }
 
     /**
-     * GET /items/browse — everyone else's listings in the member's division.
+     * GET /items/browse — everyone else's listings in the member's division,
+     * or in their active temporary community with ?community=temporary
+     * (Plan §6.5).
      */
     public function browse(): void
     {
-        $me       = $this->userId();
-        $member   = (new User($this->pdo))->findWithDivision($me) ?? [];
+        $me        = $this->userId();
+        $member    = (new User($this->pdo))->findWithDivision($me) ?? [];
+        $temporary = (new UserDivision($this->pdo))->activeTemporary($me);
+        $community = $this->queryValue('community') === 'temporary' && $temporary !== null ? 'temporary' : 'home';
+        $homeName  = (string) ($member['division_name'] ?? 'Home');
+
+        if ($community === 'temporary') {
+            $member['division_id']   = $temporary['gn_division_id'];
+            $member['division_name'] = $temporary['division_name'];
+        }
+
         $division = (int) ($member['division_id'] ?? 0);
-        $query    = trim((string) ($_GET['q'] ?? ''));
-        $page     = max(1, (int) ($_GET['page'] ?? 1));
-        $type     = $this->listingTypeFilter((string) ($_GET['type'] ?? ''));
+        $query    = $this->queryValue('q');
+        $page     = $this->page();
+        $type     = $this->listingTypeFilter($this->queryValue('type'));
 
         $allCategories = $this->categories->allActive();
-        $categoryId    = $this->categoryIdFromSlug((string) ($_GET['category'] ?? ''), $allCategories);
+        $categoryId    = $this->categoryIdFromSlug($this->queryValue('category'), $allCategories);
 
         $rows  = $this->items->browse($division, $me, $categoryId, $query, $page, $type);
         $total = $this->items->countBrowse($division, $me, $categoryId, $query, $type);
@@ -102,6 +113,12 @@ final class ItemController extends Controller
             'resultCount' => $resultCount,
             'page'        => $page,
             'hasNextPage' => $page * Item::PER_PAGE < $total,
+            'community'   => $community,
+            'savedSearches' => (new SavedSearchService(new SavedSearch($this->pdo)))->forMember($me),
+            'communities' => $temporary === null ? [] : [
+                'home'      => $homeName,
+                'temporary' => (string) $temporary['division_name'],
+            ],
         ]);
     }
 
@@ -128,7 +145,13 @@ final class ItemController extends Controller
             return;
         }
 
-        [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], $row['due_back'] ?? null);
+        [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], $row['due_back']);
+
+        // Borrowing is for active members of the item's division only (§6.5, I5).
+        $canBorrow = !$isOwner && $row['status'] === 'active' && $row['listing_type'] === 'rental'
+            && in_array((int) $row['gn_division_id'], (new UserDivision($this->pdo))->activeDivisionIds($me), true);
+
+        [$quote, $quoteError] = $canBorrow ? $this->quoteFromQuery($row) : [null, ''];
 
         $this->render('items/show', [
             'item' => [
@@ -142,11 +165,11 @@ final class ItemController extends Controller
                 'declared_value' => 'Declared value: ' . number_format((int) $row['declared_value']) . ' pts',
                 'description'    => (string) ($row['description'] ?? ''),
                 'listing_type'   => (string) $row['listing_type'],
-                'photos'         => $this->photoUrls($this->service->decodePhotos($row)),
+                'photos'         => array_map(photo_url(...), PhotoStore::paths($row['photos'])),
                 'status'         => $badge,
                 'status_glyph'   => $glyph,
                 'status_label'   => $label,
-                'can_borrow'     => !$isOwner && $row['status'] === 'active' && $row['listing_type'] === 'rental',
+                'can_borrow'     => $canBorrow,
             ],
             'owner' => [
                 'initials' => User::initials((string) $row['owner_name']),
@@ -161,13 +184,17 @@ final class ItemController extends Controller
                 'href'     => base_url() . '/members/' . $row['owner_id'],
             ],
             'isOwner' => $isOwner,
-            'quote'   => ['from' => '', 'to' => '', 'days_label' => 'Select dates  ·  Total', 'total' => '—'],
-            'pricing' => array_values(array_filter([
-                $row['daily_rate'] === null ? null : ['value' => 'daily', 'title' => 'Daily rate',
-                    'total' => number_format((int) $row['daily_rate']) . ' pts / day', 'selected' => false],
-                $row['monthly_rate'] === null ? null : ['value' => 'monthly', 'title' => 'Monthly rate',
-                    'total' => number_format((int) $row['monthly_rate']) . ' pts / month', 'selected' => false],
-            ])),
+            'donation' => $row['listing_type'] === 'donation' ? $this->donationPanel((int) $row['id'], $me) : null,
+            'calendar' => $row['listing_type'] === 'rental' ? $this->calendar((int) $row['id']) : [],
+            'quote'      => $quote,
+            'quoteError' => $quoteError,
+            'quoteInput' => [
+                'from'  => $this->queryValue('from'),
+                'to'    => $this->queryValue('to'),
+                'basis' => $quote['basis'] ?? '',
+            ],
+            'modalOpen'  => $quote !== null && $this->queryValue('request') === '1',
+            'pricing'    => $this->pricing($row, $quote),
         ]);
     }
 
@@ -179,7 +206,7 @@ final class ItemController extends Controller
     public function createForm(): void
     {
         $draft = $this->draft();
-        $step  = min($this->clampStep((int) ($_GET['step'] ?? 1)), (int) $draft['step']);
+        $step  = min($this->clampStep((int) $this->queryValue('step')), (int) $draft['step']);
 
         $this->renderWizard($step, $draft, []);
     }
@@ -190,7 +217,7 @@ final class ItemController extends Controller
     public function store(): void
     {
         $draft = $this->draft();
-        $step  = min($this->clampStep((int) ($_POST['step'] ?? 1)), (int) $draft['step']);
+        $step  = min($this->clampStep((int) $this->posted('step')), (int) $draft['step']);
 
         $validator = new Validator($_POST);
 
@@ -242,7 +269,7 @@ final class ItemController extends Controller
 
                     if ($proof !== null) {
                         if ($draft['value_proof_path'] !== null) {
-                            $this->service->discardPhotos([(string) $draft['value_proof_path']]);
+                            PhotoStore::uploads()->delete((string) $draft['value_proof_path']);
                         }
 
                         $draft['value_proof_path'] = $proof;
@@ -290,9 +317,11 @@ final class ItemController extends Controller
 
                     $draft['daily_rate']   = $validator->value('daily_rate');
                     $draft['monthly_rate'] = $validator->value('monthly_rate');
+                    $draft['community']    = $validator->value('community', 'home');
 
-                    $member = (new User($this->pdo))->findWithDivision($this->userId()) ?? [];
-                    $this->service->create($this->userId(), (int) ($member['division_id'] ?? 0), $draft, $draft['photos']);
+                    $division = CommunityController::service($this->pdo)
+                        ->listingDivision($this->userId(), (string) $draft['community']);
+                    $this->service->create($this->userId(), $division, $draft, $draft['photos']);
 
                     unset($_SESSION[self::DRAFT_KEY]);
                     $this->flash('Listing submitted. Your moderator reviews it before it goes live.');
@@ -360,7 +389,7 @@ final class ItemController extends Controller
         // Only paths already on the row can be kept — the checkbox values are
         // client input and are never trusted as file names (§8).
         $kept = array_values(array_intersect(
-            $this->service->decodePhotos($row),
+            PhotoStore::paths($row['photos']),
             array_map('strval', (array) ($_POST['keep_photos'] ?? []))
         ));
 
@@ -465,23 +494,22 @@ final class ItemController extends Controller
         }
 
         if ((int) $row['request_count'] > 0) {
-            $meta[] = $row['request_count'] . ' request' . ((int) $row['request_count'] === 1 ? '' : 's');
+            $meta[] = plural((int) $row['request_count'], 'request');
         } else {
             $meta[] = 'listed ' . date('j M Y', strtotime((string) $row['created_at']));
         }
-
-        $photos = $this->photoUrls(array_filter([$row['photo'] ?? null]));
 
         return [
             'id'           => (int) $row['id'],
             'title'        => (string) $row['title'],
             'meta'         => implode('  ·  ', $meta),
-            'photo'        => $photos[0] ?? null,
+            'photo'        => empty($row['photo']) ? null : photo_url((string) $row['photo']),
             'status'       => $badge,
             'status_glyph' => $glyph,
             'status_label' => $label,
             'href'         => base_url() . '/items/' . $row['id'],
             'edit_href'    => base_url() . '/items/' . $row['id'] . '/edit',
+            'requests_href' => empty($row['donation_id']) ? null : base_url() . '/donations/' . $row['donation_id'],
         ];
     }
 
@@ -493,12 +521,11 @@ final class ItemController extends Controller
     private function browseCard(array $row): array
     {
         [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], $row['back_on'] ?? null);
-        $photos = $this->photoUrls(array_filter([$row['photo'] ?? null]));
 
         return [
             'title'        => (string) $row['title'],
             'rate'         => $this->rateLabel($row),
-            'photo'        => $photos[0] ?? null,
+            'photo'        => empty($row['photo']) ? null : photo_url((string) $row['photo']),
             'owner_meta'   => sprintf('%s  ·  Trust %d', $row['owner_name'], (int) $row['trust_score']),
             'status'       => $badge,
             'status_glyph' => $glyph,
@@ -534,43 +561,149 @@ final class ItemController extends Controller
     }
 
     /**
+     * The quote for the dates in the query string, worked out on the server
+     * so the page needs no JavaScript (Plan §8.4).
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array{0: array<string, mixed>|null, 1: string} the quote, or why there is none
+     */
+    private function quoteFromQuery(array $row): array
+    {
+        $from  = $this->queryValue('from');
+        $to    = $this->queryValue('to');
+        $basis = $this->queryValue('basis');
+
+        if ($from === '' && $to === '') {
+            return [null, ''];
+        }
+
+        $errors = BookingService::datesErrors($from, $to, date('Y-m-d'));
+
+        if ($errors !== []) {
+            return [null, implode(' ', $errors)];
+        }
+
+        $quote = BookingService::quote(
+            $from,
+            $to,
+            $row['daily_rate'] === null ? null : (int) $row['daily_rate'],
+            $row['monthly_rate'] === null ? null : (int) $row['monthly_rate'],
+            $basis
+        );
+
+        return [$quote + ['from' => $from, 'to' => $to], ''];
+    }
+
+    /**
+     * The rate options, with this quote's totals when there is one.
+     *
+     * @param array<string, mixed>      $row
+     * @param array<string, mixed>|null $quote
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function pricing(array $row, ?array $quote): array
+    {
+        $options = [];
+
+        foreach (['daily' => 'Daily rate', 'monthly' => 'Monthly rate'] as $basis => $title) {
+            $rate = $row[$basis . '_rate'];
+
+            if ($rate === null) {
+                continue;
+            }
+
+            $total = $quote === null ? null : $quote[$basis . '_total'];
+
+            $options[] = [
+                'value'       => $basis,
+                'title'       => $title . ' · ' . number_format((int) $rate) . ' pts / ' . ($basis === 'daily' ? 'day' : 'month'),
+                'total'       => $total === null ? 'Choose dates for a total' : number_format((int) $total) . ' pts for ' . $quote['days'] . ' day' . ($quote['days'] === 1 ? '' : 's'),
+                'selected'    => $quote !== null && $quote['basis'] === $basis,
+                'recommended' => $quote !== null && $quote['cheaper'] === $basis && $quote['daily_total'] !== null && $quote['monthly_total'] !== null
+                    ? 'Cheaper'
+                    : null,
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * What the item page offers on a donation: the request form, or the
+     * member's own request and its status (Plan §13.1).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function donationPanel(int $itemId, int $me): ?array
+    {
+        $donations = new Donation($this->pdo);
+        $donation  = $donations->latestForItem($itemId);
+
+        if ($donation === null) {
+            return null;
+        }
+
+        $mine = $donations->requestBy((int) $donation['id'], $me);
+
+        return [
+            'id'          => (int) $donation['id'],
+            'open'        => $donation['status'] === 'open',
+            'is_donor'    => (int) $donation['donor_id'] === $me,
+            'request'     => $mine === null || $mine['status'] === 'withdrawn' ? null : [
+                'id'     => (int) $mine['id'],
+                'status' => (string) $mine['status'],
+                'label'  => match ((string) $mine['status']) {
+                    'pending'  => 'Your request is waiting for the donor.',
+                    'selected' => 'You were chosen to receive it.',
+                    default    => 'Another member was chosen.',
+                },
+            ],
+            'handover'    => $donation['status'] === 'recipient_selected' && (int) ($donation['recipient_id'] ?? 0) === $me,
+        ];
+    }
+
+    /**
+     * The dates a borrower cannot have: the lender's blocks and the bookings
+     * already holding the item, in date order.
+     *
+     * @return list<array{kind: string, label: string}>
+     */
+    private function calendar(int $itemId): array
+    {
+        $ranges = [];
+
+        foreach ((new ItemAvailabilityBlock($this->pdo))->upcomingForItem($itemId) as $block) {
+            $ranges[] = ['start' => (string) $block['start_date'], 'kind' => 'Unavailable',
+                'label' => $this->rangeLabel((string) $block['start_date'], (string) $block['end_date'])];
+        }
+
+        foreach ((new Booking($this->pdo))->bookedRanges($itemId) as $booking) {
+            $ranges[] = ['start' => (string) $booking['start_date'], 'kind' => 'Booked',
+                'label' => $this->rangeLabel((string) $booking['start_date'], (string) $booking['end_date'])];
+        }
+
+        usort($ranges, static fn (array $a, array $b): int => strcmp($a['start'], $b['start']));
+
+        return array_map(static fn (array $range): array => ['kind' => $range['kind'], 'label' => $range['label']], $ranges);
+    }
+
+    private function rangeLabel(string $start, string $end): string
+    {
+        return $start === $end
+            ? date('j M Y', strtotime($start))
+            : date('j M', strtotime($start)) . ' – ' . date('j M Y', strtotime($end));
+    }
+
+    /**
      * @param array<string, mixed> $row
      */
     private function rateLabel(array $row): string
     {
-        if (($row['listing_type'] ?? 'rental') === 'donation') {
-            return 'Free — donation';
-        }
-
-        $parts = [];
-
-        if (!empty($row['daily_rate'])) {
-            $parts[] = $row['daily_rate'] . ' pts / day';
-        }
-
-        if (!empty($row['monthly_rate'])) {
-            $parts[] = $row['monthly_rate'] . ' pts / month';
-        }
-
-        return $parts === [] ? 'Rate not set' : implode('  ·  ', $parts);
-    }
-
-    /**
-     * Stored paths become proxy URLs — storage is outside the web root, so a
-     * file is only ever reachable through public/photo.php (§7.5).
-     *
-     * @param  iterable<string> $paths
-     * @return list<string>
-     */
-    private function photoUrls(iterable $paths): array
-    {
-        $urls = [];
-
-        foreach ($paths as $path) {
-            $urls[] = photo_url((string) $path);
-        }
-
-        return $urls;
+        return ($row['listing_type'] ?? 'rental') === 'donation'
+            ? 'Free — donation'
+            : rate_label($row['daily_rate'] ?? null, $row['monthly_rate'] ?? null);
     }
 
     // ── Rendering ───────────────────────────────────────────────────────────
@@ -588,7 +721,7 @@ final class ItemController extends Controller
 
         // Only the text fields come back from a failed post; photos and the
         // step counter stay under the draft's control.
-        $textFields = ['name', 'category', 'description', 'declared_value', 'value_proof_type', 'listing_type', 'daily_rate', 'monthly_rate'];
+        $textFields = ['name', 'category', 'description', 'declared_value', 'value_proof_type', 'listing_type', 'daily_rate', 'monthly_rate', 'community'];
 
         $merged = array_merge($draft, array_intersect_key($submitted, array_flip($textFields)));
 
@@ -596,10 +729,11 @@ final class ItemController extends Controller
             'step'       => $step,
             'categories' => $this->categories->allActive(),
             'draft'      => $merged,
-            'photos'     => $this->photoUrls($draft['photos']),
+            'photos'     => array_map(photo_url(...), $draft['photos']),
             'errors'     => $errors,
             'summary'    => $this->draftSummary($merged),
             'proofTypes' => ItemService::PROOF_TYPES,
+            'temporaryCommunity' => (new UserDivision($this->pdo))->activeTemporary($this->userId())['division_name'] ?? null,
         ]);
     }
 
@@ -635,7 +769,7 @@ final class ItemController extends Controller
             $parts[] = $rates === [] ? 'no rate set yet' : implode(' or ', $rates);
         }
 
-        $parts[] = count($draft['photos']) . ' photo' . (count($draft['photos']) === 1 ? '' : 's');
+        $parts[] = plural(count($draft['photos']), 'photo');
 
         return implode('  ·  ', $parts);
     }
@@ -651,12 +785,10 @@ final class ItemController extends Controller
             http_response_code(422);
         }
 
-        $paths  = $this->service->decodePhotos($row);
-        $urls   = $this->photoUrls($paths);
         $photos = [];
 
-        foreach ($paths as $index => $path) {
-            $photos[] = ['path' => $path, 'url' => $urls[$index]];
+        foreach (PhotoStore::paths($row['photos']) as $path) {
+            $photos[] = ['path' => $path, 'url' => photo_url($path)];
         }
 
         [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], null);
@@ -678,6 +810,15 @@ final class ItemController extends Controller
             'errors'     => $errors,
             'proofTypes' => ItemService::PROOF_TYPES,
             'proofOnFile' => $row['value_proof_path'] !== null,
+            'blocks'      => $row['listing_type'] === 'rental' && $row['status'] !== 'archived'
+                ? array_map(fn (array $block): array => [
+                    'id'    => (int) $block['id'],
+                    'start' => (string) $block['start_date'],
+                    'end'   => (string) $block['end_date'],
+                    'note'  => (string) ($block['note'] ?? ''),
+                    'label' => $this->rangeLabel((string) $block['start_date'], (string) $block['end_date']),
+                ], (new ItemAvailabilityBlock($this->pdo))->upcomingForItem((int) $row['id']))
+                : null,
         ]);
     }
 
@@ -722,7 +863,8 @@ final class ItemController extends Controller
     {
         $validator
             ->integer('daily_rate', 'Daily rate', 1, ItemService::MAX_RATE)
-            ->integer('monthly_rate', 'Monthly rate', 1, ItemService::MAX_RATE);
+            ->integer('monthly_rate', 'Monthly rate', 1, ItemService::MAX_RATE)
+            ->inList('community', 'Community', ['', 'home', 'temporary']);
     }
 
     // ── Plumbing ────────────────────────────────────────────────────────────
@@ -743,6 +885,7 @@ final class ItemController extends Controller
             'listing_type'     => 'rental',
             'daily_rate'       => '',
             'monthly_rate'     => '',
+            'community'        => 'home',
             'step'             => 1,
         ];
 

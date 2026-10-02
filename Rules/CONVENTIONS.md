@@ -55,7 +55,7 @@ directly for scheduled work.
 | `/scripts/` | Cron CLI scripts | Each logs a row to `cron_runs`. Never accessed via HTTP. |
 | `/migrations/` | Numbered SQL files | `NNN_verb_noun.sql`, append-only, never edit an applied migration. |
 | `/config/` | `config.php` | Git-ignored. Code reads config via `Config::get()`, never `require`s it directly. |
-| `/tests/` | PHPUnit tests | Mirrors `/app/` structure: `tests/Services/PointLedgerTest.php`. |
+| `/tests/` | Plain PHP check scripts | One per module, e.g. `tests/bookings.php`; each starts with `tests/common.php` and asserts with its `check()`. No PHPUnit — §2 allows no packages. |
 
 ## 4. Naming — exactly these, no variations
 

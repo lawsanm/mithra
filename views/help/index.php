@@ -6,14 +6,12 @@ declare(strict_types=1);
  * Help & FAQ. Figma: "Help / FAQ" (97:241).
  *
  * @var string $query     current help search term
- * @var array  $faqs      question, answer, open
  * @var array  $moderator name and contact line for the division moderator
  */
 
-// Sample view data — replaced by the controller once HelpController lands.
-$query ??= '';
-
-$faqs ??= [
+// The questions are the help page's own content; the search term and the
+// moderator come from the controller.
+$faqs = [
     [
         'question' => 'How do points work? Can I buy or cash out points?',
         'answer'   => 'Points are earned by lending, donating and receiving gifts, and spent by '
@@ -36,26 +34,28 @@ $faqs ??= [
     ],
     [
         'question' => 'What are the gifting caps and why do they exist?',
-        'answer'   => 'Gifts are capped at 35 pts per day and 500 pts per year. The caps keep '
+        'answer'   => 'Gifts are capped at ' . Gift::DAILY_CAP . ' pts per day and ' . number_format(Gift::ANNUAL_CAP) . ' pts per year. The caps keep '
                     . 'points circulating as thanks between neighbours rather than being pooled '
                     . 'into a single account.',
         'open'     => false,
     ],
     [
         'question' => 'Can I use Mithra outside my home GN division?',
-        'answer'   => 'Yes — request a temporary community from Settings. With proof of stay and '
+        'answer'   => 'Yes — request a temporary community from My profile. With proof of stay and '
                     . 'verification by that division’s moderator you can lend and borrow there for '
                     . 'six months, while keeping your home membership.',
         'open'     => false,
     ],
 ];
 
-// Visitors and staff have no division moderator, so the line stays generic for them.
-$moderatorName = (string) ($viewer['moderator'] ?? '');
-$moderator ??= [
-    'line' => ($moderatorName !== '' ? 'Your moderator, ' . $moderatorName . ',' : 'Your GN division moderator')
-            . ' can help with verification, disputes and anything division-specific.',
-];
+// A search shows only the questions that mention the term, opened.
+if ($query !== '') {
+    $faqs = array_values(array_filter(
+        $faqs,
+        static fn (array $faq): bool => mb_stripos($faq['question'] . ' ' . $faq['answer'], $query) !== false
+    ));
+    $faqs = array_map(static fn (array $faq): array => ['open' => true] + $faq, $faqs);
+}
 
 $pageTitle = 'Help & FAQ';
 $navActive = '';
@@ -80,6 +80,9 @@ include __DIR__ . '/../../partials/header.php';
 </form>
 
 <div class="row-list">
+    <?php if ($faqs === []): ?>
+        <p class="empty-state__body">No help article mentions “<?= e($query) ?>”. Try another word, or ask your moderator below.</p>
+    <?php endif; ?>
     <?php foreach ($faqs as $faq): ?>
         <details class="faq"<?= $faq['open'] ? ' open' : '' ?>>
             <summary class="faq__question"><?= e($faq['question']) ?></summary>
@@ -92,7 +95,9 @@ include __DIR__ . '/../../partials/header.php';
     <h2 class="panel__title">Still stuck?</h2>
     <div class="help-cta">
         <p class="help-cta__text"><?= e($moderator['line']) ?></p>
-        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Contact moderator</button><span class="demo-note">Not available in this demo</span></span>
+        <?php if ($moderator['phone'] !== ''): ?>
+            <a class="btn btn--ghost" href="tel:<?= e(preg_replace('/[^0-9+]/', '', $moderator['phone'])) ?>">Call <?= e($moderator['name']) ?> · <?= e($moderator['phone']) ?></a>
+        <?php endif; ?>
     </div>
 </section>
 

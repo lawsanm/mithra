@@ -145,31 +145,19 @@ final class SponsorAccountService
      */
     private function insert(array $account, array $profile): int
     {
-        $this->pdo->beginTransaction();
-
         try {
-            $userId    = $this->users->create($account);
-            $this->users->markActive($userId);
-            $sponsorId = $this->sponsors->createWithLogin($profile, $userId);
+            return Database::transaction($this->pdo, function () use ($account, $profile): int {
+                $userId = $this->users->create($account);
+                $this->users->markActive($userId);
 
-            $this->pdo->commit();
+                return $this->sponsors->createWithLogin($profile, $userId);
+            });
         } catch (PDOException $exception) {
-            $this->pdo->rollBack();
-
-            if ($exception->getCode() === '23000') {
-                throw ValidationException::field(
-                    'form',
-                    'Those details were registered a moment ago. Check the company name, NIC, mobile number and email.'
-                );
+            if ($exception->getCode() !== '23000') {
+                throw $exception;
             }
 
-            throw $exception;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
+            throw ValidationException::field('form', 'Those details were registered a moment ago. Check the company name, NIC, mobile number and email.');
         }
-
-        return $sponsorId;
     }
 }

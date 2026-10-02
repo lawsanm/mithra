@@ -34,7 +34,6 @@ final class AdminController extends Controller
         'buffer_refund'        => 'Buffer refund',
     ];
 
-    /** Account status => badge class. */
     /** Role filter on the user list: role code => pill label. */
     private const USER_ROLES = [
         'member'          => 'Members',
@@ -44,6 +43,7 @@ final class AdminController extends Controller
         'admin'           => 'Admins',
     ];
 
+    /** Account status => badge class. */
     private const USER_BADGES = [
         'active'          => 'success',
         'pending'         => 'warning',
@@ -62,7 +62,7 @@ final class AdminController extends Controller
         $id = isset($params['id']) ? (int) $params['id'] : 0;
 
         if ($view === 'admin/moderators/appoint' && $id === 0) {
-            $id = (int) ($_GET['division'] ?? 0);
+            $id = (int) $this->queryValue('division');
 
             if ($id === 0) {
                 $this->redirect('/admin/moderators');
@@ -377,7 +377,7 @@ final class AdminController extends Controller
             return null;
         }
 
-        $requested = (int) ($_GET['division'] ?? 0);
+        $requested = (int) $this->queryValue('division');
         $ids       = array_map('intval', array_column($rows, 'id'));
         $id        = in_array($requested, $ids, true) ? $requested : $ids[0];
         $selected  = $rows[array_search($id, $ids, true)];
@@ -455,7 +455,7 @@ final class AdminController extends Controller
         }
 
         $candidates = $this->candidateRows($divisionId);
-        $chosen     = (int) ($_GET['member'] ?? 0);
+        $chosen     = (int) $this->queryValue('member');
         $selected   = null;
 
         foreach ($candidates as $candidate) {
@@ -750,7 +750,11 @@ final class AdminController extends Controller
                     ['label' => 'Dispute escalation timer', 'value' => 'Moderator disputes escalate to the Admin after 7 days'],
                 ],
                 'Aid' => [
-                    ['label' => 'Aid grant cap', 'value' => '500 pts per member per year · one active grant · 60-day cooling period'],
+                    ['label' => 'Aid grant cap', 'value' => sprintf(
+                        '%d pts per member per year · one active grant · %d-day cooling period',
+                        AidGrantService::YEARLY_CAP,
+                        AidGrantService::COOLING_DAYS
+                    )],
                 ],
             ],
         ];
@@ -759,10 +763,10 @@ final class AdminController extends Controller
     /** @return array<string, mixed> */
     private function ledger(): array
     {
-        $filter = (string) ($_GET['filter'] ?? '');
+        $filter = $this->queryValue('filter');
         $filter = array_key_exists($filter, PointLedger::GROUPS) ? $filter : '';
-        $search = trim((string) ($_GET['q'] ?? ''));
-        $page   = max(1, (int) ($_GET['page'] ?? 1));
+        $search = $this->queryValue('q');
+        $page   = $this->page();
         $result = (new PointLedger($this->pdo))->adminList($filter, $search, $page);
 
         $filters = [['label' => 'All types', 'slug' => '', 'active' => $filter === '']];
@@ -797,11 +801,11 @@ final class AdminController extends Controller
     private function users(): array
     {
         $users  = new User($this->pdo);
-        $status = (string) ($_GET['status'] ?? '');
+        $status = $this->queryValue('status');
         $status = array_key_exists($status, self::USER_BADGES) ? $status : '';
-        $role   = (string) ($_GET['role'] ?? '');
+        $role   = $this->queryValue('role');
         $role   = array_key_exists($role, self::USER_ROLES) ? $role : '';
-        $search = trim((string) ($_GET['q'] ?? ''));
+        $search = $this->queryValue('q');
 
         // Each pill keeps the other filter and the search term.
         $pillHref = static fn (array $query): string => base_url() . '/admin/users'
@@ -878,13 +882,13 @@ final class AdminController extends Controller
                 ['label' => 'Transactions', 'value' => (string) $stats['completed']],
                 ['label' => 'Disputes',     'value' => (string) $stats['disputes']],
             ],
-            // The account's point movements, newest first.
+            // The account's five latest point movements, from the first page.
             'activity' => array_map(static fn (array $entry): array => [
                 'icon_type' => $entry['incoming'] ? 'return' : 'lend',
                 'title'     => (self::LEDGER_REASONS[$entry['reason']] ?? ucfirst(str_replace('_', ' ', (string) $entry['reason'])))
                     . ' · ' . ($entry['incoming'] ? '+' : '−') . number_format((int) $entry['amount']) . ' pts',
                 'meta'      => date('j M Y', strtotime((string) $entry['created_at'])),
-            ], (new Wallet($this->pdo))->activity($id, 5)),
+            ], array_slice((new Wallet($this->pdo))->activity($id), 0, 5)),
         ];
     }
 
@@ -919,7 +923,7 @@ final class AdminController extends Controller
      */
     private function notifications(): array
     {
-        $type    = (string) ($_GET['type'] ?? '');
+        $type    = $this->queryValue('type');
         $cronRuns = new CronRun($this->pdo);
         $notices = [];
 
@@ -1096,6 +1100,7 @@ final class AdminController extends Controller
         return match (true) {
             $seconds < 60     => 'just now',
             $seconds < 3600   => intdiv($seconds, 60) . ' min ago',
+            $seconds < 7200   => '1 hour ago',
             $seconds < 86400  => intdiv($seconds, 3600) . ' hours ago',
             $seconds < 172800 => 'Yesterday',
             $seconds < 604800 => intdiv($seconds, 86400) . ' days ago',

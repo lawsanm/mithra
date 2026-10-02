@@ -2,18 +2,11 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../app/autoload.php';
+require_once __DIR__ . '/common.php';
 
 $routes = require __DIR__ . '/../app/routes.php';
 $router = new Router($routes);
 $checks = 0;
-
-function check(bool $condition, string $message): void
-{
-    if (!$condition) {
-        throw new RuntimeException($message);
-    }
-}
 
 $roleRules = $routes['ROLES'];
 unset($routes['ROLES']);

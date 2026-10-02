@@ -80,6 +80,45 @@ function photo_url(string $path): string
 }
 
 /**
+ * Stored photos as a page lists them: proxy URLs labelled "Photo 1", "Photo 2"…
+ *
+ * @param  list<string> $paths
+ * @return list<array{url: string, label: string}>
+ */
+function photo_list(array $paths, string $label): array
+{
+    $photos = [];
+
+    foreach (array_values($paths) as $index => $path) {
+        $photos[] = ['url' => photo_url($path), 'label' => $label . ' ' . ($index + 1)];
+    }
+
+    return $photos;
+}
+
+// A count with its noun: "1 request", "3 requests".
+function plural(int $count, string $word): string
+{
+    return $count . ' ' . $word . ($count === 1 ? '' : 's');
+}
+
+// A rental's rates as members read them, e.g. "80 pts / day  ·  1,500 pts / month".
+function rate_label(mixed $daily, mixed $monthly): string
+{
+    $rates = [];
+
+    if ((int) $daily > 0) {
+        $rates[] = number_format((int) $daily) . ' pts / day';
+    }
+
+    if ((int) $monthly > 0) {
+        $rates[] = number_format((int) $monthly) . ' pts / month';
+    }
+
+    return $rates === [] ? 'Rate not set' : implode('  ·  ', $rates);
+}
+
+/**
  * One form field's uploads as a plain list, whether the input was single or
  * multiple. Controllers call this so services never read $_FILES (§6).
  *

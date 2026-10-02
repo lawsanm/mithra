@@ -32,12 +32,14 @@ final class LedgerService
     /**
      * Move points from a pool into one member's wallet.
      *
+     * @param array{booking_id?:int, gift_id?:int, aid_grant_id?:int} $links the record behind it
+     *
      * @throws InsufficientPointsException when the pool cannot cover it
      * @throws LogicException              when called outside a transaction
      *
      * @return int the ledger entry id
      */
-    public function poolToMember(string $poolCode, int $memberId, int $amount, string $reason): int
+    public function poolToMember(string $poolCode, int $memberId, int $amount, string $reason, array $links = []): int
     {
         $this->guard($amount);
 
@@ -68,19 +70,21 @@ final class LedgerService
             'to_user_id'     => $memberId,
             'amount'         => $amount,
             'reason'         => $reason,
-        ]);
+        ] + $links);
     }
 
     /**
      * Move points from one member's wallet into a pool — an account closure
      * (Plan §17) sends the whole spendable balance to Retired or Aid.
      *
+     * @param array{booking_id?:int, gift_id?:int, aid_grant_id?:int} $links the record behind it
+     *
      * @throws InsufficientPointsException when the wallet cannot cover it
      * @throws LogicException              when called outside a transaction
      *
      * @return int the ledger entry id
      */
-    public function memberToPool(int $memberId, string $poolCode, int $amount, string $reason): int
+    public function memberToPool(int $memberId, string $poolCode, int $amount, string $reason, array $links = []): int
     {
         $this->guard($amount);
 
@@ -106,13 +110,133 @@ final class LedgerService
             'to_user_id'     => null,
             'amount'         => $amount,
             'reason'         => $reason,
-        ]);
+        ] + $links);
+    }
+
+    /**
+     * Move points straight from one wallet to another — a gift, a late fee
+     * or a damage penalty. Both wallets stay inside the 'member_wallets' pool,
+     * so no pool balance changes; the pool row is still locked first so the
+     * lock order matches every other movement.
+     *
+     * Wallets are locked in id order, the way lockPools() orders pools, so two
+     * opposite transfers can never wait on each other.
+     *
+     * @param array{booking_id?:int, gift_id?:int, aid_grant_id?:int} $links
+     *
+     * @throws InsufficientPointsException when the sender cannot cover it
+     * @throws LogicException              when called outside a transaction
+     */
+    public function memberToMember(int $fromId, int $toId, int $amount, string $reason, array $links = []): int
+    {
+        $this->guard($amount);
+
+        if ($fromId === $toId) {
+            throw new LogicException('A transfer needs two different wallets.');
+        }
+
+        $balances = $this->lockMemberBalances([$fromId, $toId]);
+        foreach ($balances as $id => $balance) {
+            if ($balance === null) {
+                $this->wallets->openFor($id);
+                $balances[$id] = 0;
+            }
+        }
+
+        if ($balances[$fromId] < $amount) {
+            throw new InsufficientPointsException(sprintf(
+                'The wallet holds %d points; %d are needed.',
+                $balances[$fromId],
+                $amount
+            ));
+        }
+
+        $this->wallets->adjust($fromId, -$amount);
+        $this->wallets->adjust($toId, $amount);
+
+        return $this->ledger->record([
+            'from_pool_code' => null,
+            'from_user_id'   => $fromId,
+            'to_pool_code'   => null,
+            'to_user_id'     => $toId,
+            'amount'         => $amount,
+            'reason'         => $reason,
+        ] + $links);
+    }
+
+    /**
+     * Charge a member what they owe another member, without ever creating
+     * debt (Plan §7.7): the payer gives what they have, and the Reserve Pool
+     * pays the payee the rest as 'shortfall_cover', linked to the booking.
+     *
+     * @return array{paid: int, covered: int} what the payer moved and what the Reserve added
+     *
+     * @throws InsufficientPointsException when the Reserve itself cannot cover the gap
+     */
+    public function chargeWithCover(int $payerId, int $payeeId, int $amount, string $reason, int $bookingId): array
+    {
+        if ($amount < 1) {
+            return ['paid' => 0, 'covered' => 0];
+        }
+
+        if ($payerId === $payeeId) {
+            throw new LogicException('A charge needs two different wallets.');
+        }
+
+        $balances = $this->lockMemberBalances([$payerId, $payeeId], ['reserve']);
+        $split = self::shortfallSplit($amount, $balances[$payerId] ?? 0);
+
+        if ($split['paid'] > 0) {
+            $this->memberToMember($payerId, $payeeId, $split['paid'], $reason, ['booking_id' => $bookingId]);
+        }
+
+        if ($split['covered'] > 0) {
+            $this->poolToMember('reserve', $payeeId, $split['covered'], 'shortfall_cover', ['booking_id' => $bookingId]);
+        }
+
+        return $split;
+    }
+
+    /**
+     * How a charge splits between the payer's wallet and the Reserve Pool.
+     * Pure, so the rule is testable without a database.
+     *
+     * @return array{paid: int, covered: int}
+     */
+    public static function shortfallSplit(int $amount, int $available): array
+    {
+        $paid = max(0, min($amount, $available));
+
+        return ['paid' => $paid, 'covered' => max(0, $amount - $paid)];
     }
 
     /** Whether this member already received a one-off movement, e.g. the welcome bonus. */
     public function hasReceived(int $memberId, string $reason): bool
     {
         return $this->ledger->hasReceived($memberId, $reason);
+    }
+
+    /**
+     * Lock before a business rule reads a balance or transfer limit. Callers
+     * supply every pool they will use, so pools always precede wallets.
+     *
+     * @param list<int> $memberIds
+     * @param list<string> $poolCodes
+     * @return array<int, ?int> null means the member has no wallet yet
+     */
+    public function lockMemberBalances(array $memberIds, array $poolCodes = []): array
+    {
+        $this->requireTransaction();
+        $this->lockPools([...$poolCodes, self::WALLETS_POOL]);
+        $memberIds = array_values(array_unique($memberIds));
+        sort($memberIds, SORT_NUMERIC);
+
+        $balances = [];
+        foreach ($memberIds as $memberId) {
+            $balances[$memberId] = $this->wallets->lockBalance($memberId);
+        }
+
+        return $balances;
     }
 
     /**
@@ -138,13 +262,18 @@ final class LedgerService
 
     private function guard(int $amount): void
     {
-        if (!$this->pdo->inTransaction()) {
-            throw new LogicException('Point movements must run inside the caller\'s transaction.');
-        }
+        $this->requireTransaction();
 
         // One point is the indivisible unit, and a movement of nothing is a bug (§7.1).
         if ($amount < 1) {
             throw new LogicException('A point movement must move at least one point.');
+        }
+    }
+
+    private function requireTransaction(): void
+    {
+        if (!$this->pdo->inTransaction()) {
+            throw new LogicException('Point movements must run inside the caller\'s transaction.');
         }
     }
 }

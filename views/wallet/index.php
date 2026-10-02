@@ -7,6 +7,10 @@ declare(strict_types=1);
  *
  * @var array $balances  available and escrow cards
  * @var array $activity  ledger rows: icon, title, note, amount, tone, date
+ * @var array  $filters  '' plus the PointLedger::GROUPS keys
+ * @var string $filter   the active one
+ * @var int    $page
+ * @var bool   $hasNextPage
  */
 
 $pageTitle = 'Wallet';
@@ -30,11 +34,21 @@ include __DIR__ . '/../../partials/header.php';
 
 <div class="actions">
     <?php // Without JS this lands on Gifts, which hosts the same form. ?>
-    <button type="button" class="btn btn--primary" data-modal-open="send-gift">Send a gift</button>
+    <a class="btn btn--primary" href="<?= base_url() ?>/gifts/new#send-gift" data-modal-open="send-gift">Send a gift</a>
     <a class="btn btn--ghost" href="<?= base_url() ?>/aid-grants/create">Request aid grant</a>
 </div>
 
-<h2 class="section-heading">Recent activity</h2>
+<h2 class="section-heading">Activity</h2>
+
+<ul class="filter-pills" aria-label="Activity type">
+    <?php foreach ($filters as $slug): ?>
+        <li>
+            <a class="pill<?= $filter === $slug ? ' pill--active' : '' ?>"
+               href="<?= base_url() ?>/wallet<?= $slug === '' ? '' : '?filter=' . e($slug) ?>"
+               <?= $filter === $slug ? 'aria-current="true"' : '' ?>><?= e($slug === '' ? 'All' : ucfirst($slug)) ?></a>
+        </li>
+    <?php endforeach; ?>
+</ul>
 
 <?php if ($activity === []): ?>
     <p class="empty-state">No wallet activity recorded.</p>
@@ -56,6 +70,12 @@ include __DIR__ . '/../../partials/header.php';
         </li>
     <?php endforeach; ?>
 </ul>
+
+<?php
+$pageUrl = static fn (int $target): string => base_url() . '/wallet?' . http_build_query(array_filter(['filter' => $filter, 'page' => $target]));
+$pagerLabels = ['Newer', 'Older'];
+include __DIR__ . '/../../partials/pager.php';
+?>
 
 <?php include __DIR__ . '/../../partials/modal-send-gift.php'; ?>
 

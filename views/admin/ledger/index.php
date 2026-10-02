@@ -89,16 +89,11 @@ include __DIR__ . '/../../../partials/header.php';
     </tbody>
 </table>
 
-<?php if ($page > 1 || $hasNextPage): ?>
-    <div class="actions">
-        <?php if ($page > 1): ?>
-            <a class="btn btn--ghost" href="<?= e($pageQuery(['page' => $page - 1])) ?>">Newer</a>
-        <?php endif; ?>
-        <?php if ($hasNextPage): ?>
-            <a class="btn btn--ghost" href="<?= e($pageQuery(['page' => $page + 1])) ?>">Older</a>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
+<?php
+$pageUrl = static fn (int $target): string => $pageQuery(['page' => $target]);
+$pagerLabels = ['Newer', 'Older'];
+include __DIR__ . '/../../../partials/pager.php';
+?>
 
 <div class="notice notice--info notice--full">
     Append-only: entries can never be edited or deleted. Corrections are new reversing entries. The nightly invariant check reconciles this ledger against every pool and wallet.

@@ -59,7 +59,7 @@ final class PasswordResetService
 
         $token = bin2hex(random_bytes(32));
 
-        $this->issue($userId, $token, self::LINK_TTL_MINUTES);
+        $this->issue($userId, $token);
 
         return ['token' => $token, 'name' => (string) $account['full_name'], 'email' => (string) $account['email']];
     }
@@ -112,17 +112,10 @@ final class PasswordResetService
             throw new ValidationException($errors);
         }
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($userId, $password): void {
             $this->users->updatePassword($userId, PasswordPolicy::hash($password));
             $this->resets->revokeFor($userId);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
 
         return $this->users->sessionState($userId)['password_changed_at'] ?? null;
     }
@@ -139,25 +132,18 @@ final class PasswordResetService
         return hash('sha256', $secret);
     }
 
-    private function issue(int $userId, string $secret, int $ttlMinutes): void
+    private function issue(int $userId, string $secret): void
     {
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($userId, $secret): void {
             // Only the newest link works: an older one is retired.
             $this->resets->revokeFor($userId);
             $this->resets->create([
                 'user_id'     => $userId,
                 'channel'     => 'email',
                 'secret_hash' => self::hash($secret),
-                'ttl_minutes' => $ttlMinutes,
+                'ttl_minutes' => self::LINK_TTL_MINUTES,
             ]);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
     }
 
     /**
@@ -176,20 +162,13 @@ final class PasswordResetService
             throw ValidationException::field('form', 'This account is not active, so its password cannot be reset.');
         }
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($reset, $password): void {
             if (!$this->resets->markUsed((int) $reset['id'])) {
                 throw ValidationException::field('form', 'This reset was already used. Ask for a new one.');
             }
 
             $this->users->updatePassword((int) $reset['user_id'], PasswordPolicy::hash($password));
             $this->resets->revokeFor((int) $reset['user_id']);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
     }
 }

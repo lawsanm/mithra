@@ -349,6 +349,7 @@ legend {
 }
 
 .nav__bell {
+    position: relative;
     display: flex;
     align-items: center;
     color: var(--color-text-muted);
@@ -2071,6 +2072,42 @@ legend {
     background-color: var(--color-primary);
 }
 
+/* Opening a notification is a POST that marks it read, so the row is a
+   button inside a form; it keeps the look of the link it replaced. */
+.notification-row {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-2);
+}
+
+.notification-row__open {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+button.notification {
+    width: 100%;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* The unread count on the navigation bell. */
+.nav__bell-count {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-error);
+    color: var(--color-surface);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-bold);
+    line-height: 18px;
+    text-align: center;
+}
+
 /* --------------------------------------------------------------------------
    29. Profile header
    -------------------------------------------------------------------------- */
@@ -2729,21 +2766,6 @@ legend {
     font-size: var(--text-ui-body);
 }
 
-/* Thumb grid for evidence photos */
-.thumb-grid {
-    display: flex;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-}
-
-.thumb-grid__img {
-    width: 120px;
-    height: 90px;
-    border-radius: var(--radius-sm);
-    background-color: var(--color-warm-100);
-    object-fit: cover;
-}
-
 /* Policy grid (point policies page) */
 .policy-grid {
     display: grid;
@@ -3000,26 +3022,31 @@ legend {
     white-space: nowrap;
 }
 
-/* Sponsor/Aid pool allocation bar (Purchase Points) */
+/* Sponsor / Aid pool allocation bar and its legend (Purchase Points, Record Contribution) */
 .split-bar {
     display: flex;
     width: 100%;
-    height: 8px;
+    height: 12px;
     border-radius: var(--radius-pill);
     overflow: hidden;
+    background-color: var(--color-border);
 }
 
-.split-bar__fill--sponsor {
+.split-bar__fill--sponsor,
+.split-legend__dot--sponsor {
     background-color: var(--color-primary);
 }
 
-.split-bar__fill--aid {
+.split-bar__fill--aid,
+.split-legend__dot--aid {
     background-color: var(--color-accent);
 }
 
 .split-legend {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    width: 100%;
     gap: var(--space-2);
 }
 
@@ -3037,14 +3064,6 @@ legend {
     height: 8px;
     flex-shrink: 0;
     border-radius: 50%;
-}
-
-.split-legend__dot--sponsor {
-    background-color: var(--color-primary);
-}
-
-.split-legend__dot--aid {
-    background-color: var(--color-accent);
 }
 
 /* Trailing bold amount on an otherwise plain list-row (CSR quarterly breakdown) */
@@ -3081,11 +3100,6 @@ legend {
     margin-left: auto;
     color: var(--color-text-muted);
     font-size: var(--text-ui-body);
-}
-
-/* Two-figure stat row (disaster mode). */
-.stat-grid--2 {
-    grid-template-columns: repeat(2, 1fr);
 }
 
 /* Panel heading with its actions trailing right, and its supporting copy. */
@@ -3145,55 +3159,7 @@ legend {
    Sponsor Liaison-specific components
    ========================================================================== */
 
-/* Two-colour allocation split bar (Record Contribution, Disaster Connection). */
-.split-bar {
-    display: flex;
-    width: 100%;
-    height: 12px;
-    border-radius: var(--radius-pill);
-    overflow: hidden;
-    background-color: var(--color-border);
-}
 
-.split-bar__segment--sponsor {
-    background-color: var(--color-primary);
-}
-
-.split-bar__segment--aid {
-    background-color: var(--color-accent);
-}
-
-.split-legend {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-.split-legend__item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--color-text);
-    font-size: var(--text-ui-body);
-    font-weight: var(--weight-semibold);
-}
-
-.split-legend__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.split-legend__dot--sponsor {
-    background-color: var(--color-primary);
-}
-
-.split-legend__dot--aid {
-    background-color: var(--color-accent);
-}
 
 /* --------------------------------------------------------------------------
    Public home page — what a visitor sees on the logo before signing in
@@ -3201,44 +3167,8 @@ legend {
 
 /* The signed-out page shell centres its one card; the home page's sections
    span the full width instead. */
-.hero,
 .home-section {
     align-self: stretch;
-}
-
-.hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-16) var(--space-12);
-    text-align: center;
-    border-radius: var(--radius-xl);
-    background-color: var(--color-primary-50);
-}
-
-.hero__eyebrow {
-    color: var(--color-primary-700);
-    font-size: var(--text-ui-label);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.hero__title {
-    max-width: 760px;
-    color: var(--color-text);
-    font-size: var(--text-display);
-    font-weight: var(--weight-bold);
-    line-height: 1.15;
-}
-
-.hero__lede {
-    max-width: 640px;
-    margin-bottom: var(--space-2);
-    color: var(--color-text-muted);
-    font-size: var(--text-body);
-    line-height: 1.6;
 }
 
 .feature-grid {
@@ -3302,11 +3232,6 @@ legend {
 
 @media (max-width: 1000px) {
     .feature-grid { grid-template-columns: minmax(0, 1fr); }
-    .hero { padding: var(--space-8) var(--space-6); }
-}
-
-@media (max-width: 600px) {
-    .hero__title { font-size: var(--text-h1); }
 }
 
 /* --------------------------------------------------------------------------
@@ -3668,7 +3593,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .form-card--wide { width: 100%; max-width: 100%; }
 .form-card__legend--lg { font-size: var(--text-lede); }
 .stat-card__label--caps { text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-ui-caption); }
-.inline-form { display: inline; }
 .scroll-x { overflow-x: auto; }
 .cluster { display: flex; align-items: center; gap: var(--space-3); }
 .disclosure > summary { list-style: none; width: fit-content; }

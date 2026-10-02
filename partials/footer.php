@@ -12,7 +12,8 @@ declare(strict_types=1);
  * @var array $pageScripts file names under /public/js
  */
 
-$pageScripts = $pageScripts ?? [];
+// polling.js keeps the bell's unread count current on every page (§21.4).
+$pageScripts = array_values(array_unique(array_merge($pageScripts ?? [], ['polling.js'])));
 
 ?>
 </main>

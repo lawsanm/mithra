@@ -61,7 +61,7 @@ final class ProfileService
             throw new ValidationException($errors);
         }
 
-        $this->users->updateContact($userId, $name, (string) $phone, $email === '' ? null : $email);
+        $this->users->updateContact($userId, $name, (string) $phone, $email);
     }
 
     /**
@@ -86,7 +86,7 @@ final class ProfileService
             $errors['address'] = 'That is already your address.';
         }
 
-        $files = array_filter($proofUpload, static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE);
+        $files = PhotoStore::chosen($proofUpload);
         if (count($files) !== 1) {
             $errors['address_proof'] = 'Add one proof of the new address, such as a utility bill.';
         }
@@ -99,20 +99,12 @@ final class ProfileService
             throw new ValidationException($errors);
         }
 
-        $proof = $this->documents->storeMany(array_values($files), RegistrationService::DOCUMENT_FOLDER, 'address_proof', 1)[0];
+        $proof = $this->documents->storeMany($files, RegistrationService::DOCUMENT_FOLDER, 'address_proof', 1)[0];
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($userId, $divisionId, $newAddress, $proof): void {
             $this->changes->withdrawPendingFor($userId);
             $this->changes->create($userId, $divisionId, $newAddress, $proof);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-            $this->documents->delete($proof);
-
-            throw $exception;
-        }
+        }, fn () => $this->documents->delete($proof));
     }
 
     public function setGiftReceive(int $userId, bool $enabled): void
@@ -129,7 +121,7 @@ final class ProfileService
      */
     public function addressQueue(int $moderatorId): array
     {
-        return $this->changes->pendingForDivision($this->divisionFor($moderatorId));
+        return $this->changes->pendingForDivision($this->divisions->moderatedByOrFail($moderatorId));
     }
 
     /**
@@ -165,9 +157,7 @@ final class ProfileService
             throw ValidationException::field('reason', 'Write the reason in words, so the member knows what to fix.');
         }
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($id, $approve, $moderatorId, $reason, $change): void {
             if (!$this->changes->decide($id, $approve ? 'approved' : 'rejected', $moderatorId, $reason)) {
                 throw ValidationException::field('form', 'This request has already been decided.');
             }
@@ -176,25 +166,8 @@ final class ProfileService
                 $this->users->updateAddress((int) $change['user_id'], (string) $change['new_address']);
                 $this->memberships->replaceHomeProof((int) $change['user_id'], (string) $change['proof_file_path']);
             }
-
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
 
         return (string) $change['full_name'];
-    }
-
-    private function divisionFor(int $moderatorId): int
-    {
-        $divisionId = $this->divisions->moderatedBy($moderatorId);
-
-        if ($divisionId === null) {
-            throw new AccessDeniedException('This account does not moderate a division.');
-        }
-
-        return $divisionId;
     }
 }

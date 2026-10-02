@@ -5,9 +5,10 @@ declare(strict_types=1);
 /**
  * Public member profile. Figma: "Public Member Profile" (94:279).
  *
- * @var array $member  initials, name, verified, meta, score, score_note
+ * @var array $member  initials, name, verified, meta, score, score_note, context, donor, is_donor
  * @var array $stats   four headline figures
  * @var array $reviews recent ratings received
+ * @var string|null $giftHref where to send this member a gift, when the viewer may
  */
 
 $pageTitle = $member['name'];
@@ -32,12 +33,24 @@ include __DIR__ . '/../../partials/header.php';
                 <?php endif; ?>
             </div>
             <span class="profile-head__meta"><?= e($member['meta']) ?></span>
+            <span class="profile-head__meta"><?= e($member['context']) ?></span>
+            <?php if ($member['is_donor']): ?>
+                <span class="award-pill">
+                    <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-award"></use></svg>
+                    Donor · <?= e($member['donor']) ?>
+                </span>
+            <?php endif; ?>
         </div>
         <span class="profile-head__score">
             <strong><?= e($member['score']) ?></strong>
             <span><?= e($member['score_note']) ?></span>
         </span>
     </div>
+    <?php if (!empty($giftHref)): ?>
+        <div class="actions">
+            <a class="btn btn--ghost" href="<?= e($giftHref) ?>">Send a gift</a>
+        </div>
+    <?php endif; ?>
 </section>
 
 <div class="stat-grid">

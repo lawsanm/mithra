@@ -12,6 +12,7 @@ declare(strict_types=1);
  * @var array       $draft          full_name, phone, email, address as shown in the forms
  * @var string      $currentAddress the verified address on file
  * @var array|null  $addressChange  the latest address-change request, if any
+ * @var array       $communities    rows: label, name, status, tone, note — home first, then temporary
  * @var array       $errors         per-field messages from the last save
  * @var array|null  $flash
  */
@@ -51,6 +52,31 @@ include __DIR__ . '/../../partials/header.php';
 </section>
 
 <?php include __DIR__ . '/../../partials/flash.php'; ?>
+
+<section class="panel panel--wide">
+    <h2 class="panel__heading">My communities</h2>
+
+    <?php foreach ($communities as $community): ?>
+        <p class="line-item">
+            <span class="line-item__label"><?= e($community['label']) ?></span>
+            <span class="line-item__value">
+                <?= e($community['name']) ?>
+                <span class="badge badge--<?= e($community['tone']) ?>"><?= e($community['status']) ?></span>
+            </span>
+        </p>
+        <p class="record-meta"><?= e($community['note']) ?></p>
+    <?php endforeach; ?>
+
+    <?php if (count($communities) === 1): ?>
+        <div class="help-cta">
+            <p class="help-cta__text">
+                No temporary community. Staying in another GN division for a while? You can join it
+                for 6 months and keep your home community.
+            </p>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/community/temporary">Request a temporary community</a>
+        </div>
+    <?php endif; ?>
+</section>
 
 <form class="panel panel--wide" method="post" action="<?= base_url() ?>/profile" novalidate>
     <?= csrf_field() ?>

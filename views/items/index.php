@@ -76,6 +76,9 @@ include __DIR__ . '/../../partials/header.php';
                     <span aria-hidden="true"><?= e($listing['status_glyph']) ?></span>
                     <?= e($listing['status_label']) ?>
                 </span>
+                <?php if (!empty($listing['requests_href'])): ?>
+                    <a class="btn btn--ghost" href="<?= e($listing['requests_href']) ?>">View requests</a>
+                <?php endif; ?>
                 <a class="btn btn--ghost" href="<?= e($listing['edit_href']) ?>">Edit</a>
             </li>
         <?php endforeach; ?>

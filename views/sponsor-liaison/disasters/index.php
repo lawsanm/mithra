@@ -83,4 +83,4 @@ include __DIR__ . '/../../../partials/header.php';
     </ul>
 </section>
 
-<?php $pageScripts = ['reports.js']; include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php $pageScripts = ['print.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

@@ -15,12 +15,10 @@ final class LoginAttempt extends BaseModel
 
     public function record(string $identifierHash, string $ip, bool $succeeded): void
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO login_attempts (identifier_hash, ip_address, succeeded)
-             VALUES (:hash, :ip, :succeeded)'
+        $this->execute(
+            'INSERT INTO login_attempts (identifier_hash, ip_address, succeeded) VALUES (:hash, :ip, :succeeded)',
+            ['hash' => $identifierHash, 'ip' => $ip, 'succeeded' => $succeeded ? 1 : 0]
         );
-
-        $statement->execute(['hash' => $identifierHash, 'ip' => $ip, 'succeeded' => $succeeded ? 1 : 0]);
     }
 
     /**

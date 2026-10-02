@@ -24,13 +24,11 @@ final class Wallet extends BaseModel
      */
     public function openFor(int $memberId): void
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO member_wallets (user_id, balance, bond_locked)
-             VALUES (:id, 0, 0)
-             ON DUPLICATE KEY UPDATE user_id = user_id'
+        $this->execute(
+            'INSERT INTO member_wallets (user_id, balance, bond_locked) VALUES (:id, 0, 0)
+             ON DUPLICATE KEY UPDATE user_id = user_id',
+            ['id' => $memberId]
         );
-
-        $statement->execute(['id' => $memberId]);
     }
 
     public function balance(int $memberId): int
@@ -48,7 +46,7 @@ final class Wallet extends BaseModel
                         WHEN l.from_pool_code = 'in_flight' THEN -l.amount ELSE 0 END), 0)
                FROM point_ledger l JOIN bookings b ON b.id = l.booking_id
               WHERE b.borrower_id = :member
-                AND b.status IN ('accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator')",
+                AND b.status IN ('accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator','escalated')",
             ['member' => $memberId]
         );
     }
@@ -66,14 +64,20 @@ final class Wallet extends BaseModel
         );
     }
 
+    /** Activity rows per page (Rules/CONVENTIONS.md §9). */
+    public const PER_PAGE = 20;
+
     /**
-     * Wallet activity: every ledger row touching this member, newest first.
+     * Wallet activity: ledger rows touching this member, newest first, one
+     * page at a time, optionally limited to one PointLedger::GROUPS filter.
      *
      * @return list<array<string, mixed>>
      */
-    public function activity(int $memberId, int $limit = 20): array
+    public function activity(int $memberId, int $page = 1, string $group = ''): array
     {
-        $statement = $this->pdo->prepare(
+        [$filter, $params] = self::reasonFilter($group);
+
+        return $this->selectPage(
             "SELECT l.id, l.amount, l.reason, l.created_at, l.booking_id,
                     (l.to_user_id = :to_id) AS incoming,
                     i.title AS item_title,
@@ -86,17 +90,36 @@ final class Wallet extends BaseModel
           LEFT JOIN gifts g          ON g.id = l.gift_id
           LEFT JOIN users sender     ON sender.id = l.from_user_id
           LEFT JOIN users recipient  ON recipient.id = l.to_user_id
-              WHERE l.from_user_id = :from_id OR l.to_user_id = :to_id2
-              ORDER BY l.created_at DESC
-              LIMIT :limit"
+              WHERE (l.from_user_id = :from_id OR l.to_user_id = :to_id2)" . $filter . '
+              ORDER BY l.created_at DESC, l.id DESC',
+            ['to_id' => $memberId, 'from_id' => $memberId, 'to_id2' => $memberId] + $params,
+            $page,
+            self::PER_PAGE
         );
-        $statement->bindValue(':to_id', $memberId, PDO::PARAM_INT);
-        $statement->bindValue(':from_id', $memberId, PDO::PARAM_INT);
-        $statement->bindValue(':to_id2', $memberId, PDO::PARAM_INT);
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
+    }
 
-        return $statement->fetchAll();
+    public function countActivity(int $memberId, string $group = ''): int
+    {
+        [$filter, $params] = self::reasonFilter($group);
+
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM point_ledger l WHERE (l.from_user_id = :a OR l.to_user_id = :b)' . $filter,
+            ['a' => $memberId, 'b' => $memberId] + $params
+        );
+    }
+
+    /**
+     * The WHERE clause and bound values for one PointLedger::GROUPS filter.
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private static function reasonFilter(string $group): array
+    {
+        $params = [];
+
+        return isset(PointLedger::GROUPS[$group])
+            ? [' AND l.reason IN ' . self::inList('reason', PointLedger::GROUPS[$group], $params), $params]
+            : ['', []];
     }
 
     /**
@@ -119,11 +142,7 @@ final class Wallet extends BaseModel
      */
     public function adjust(int $memberId, int $delta): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE member_wallets SET balance = balance + :delta WHERE user_id = :id'
-        );
-
-        $statement->execute(['delta' => $delta, 'id' => $memberId]);
+        $this->execute('UPDATE member_wallets SET balance = balance + :delta WHERE user_id = :id', ['delta' => $delta, 'id' => $memberId]);
     }
 
     /** The locked moderator conduct bond (Plan §16.7); zero for everyone else. */

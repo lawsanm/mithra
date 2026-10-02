@@ -35,22 +35,50 @@ final class PhotoStore
         $this->root = rtrim(str_replace('\\', '/', $root), '/');
     }
 
+    /** The store every screen and job uses: storage/uploads, outside the web root. */
+    public static function uploads(): self
+    {
+        return new self(dirname(__DIR__, 2) . '/storage/uploads');
+    }
+
+    /**
+     * The uploads a member actually chose — a file input left empty still
+     * posts one entry, flagged UPLOAD_ERR_NO_FILE.
+     *
+     * @param  list<array{name?: string, tmp_name?: string, error?: int, size?: int}> $uploads
+     * @return list<array{name?: string, tmp_name?: string, error?: int, size?: int}>
+     */
+    public static function chosen(array $uploads): array
+    {
+        return array_values(array_filter($uploads, static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE));
+    }
+
+    /**
+     * The stored paths in a JSON photo list column; anything else decodes to none.
+     *
+     * @return list<string>
+     */
+    public static function paths(mixed $json): array
+    {
+        $decoded = json_decode((string) ($json ?? '[]'), true);
+
+        return is_array($decoded) ? array_values(array_filter($decoded, 'is_string')) : [];
+    }
+
     /**
      * Validate and store a batch, returning the paths to record on the row.
      *
      * @param  list<array{name?: string, tmp_name?: string, error?: int, size?: int}> $uploads
      * @param  string                                                                 $folder  e.g. 'item-photos'
      * @param  string                                                                 $field   field name for error messages
+     * @param  string                                                                 $stamp   text burnt into the corner, '' for none
      * @return list<string> paths relative to the upload root
      *
      * @throws ValidationException when a file is unusable or the batch is too large
      */
-    public function storeMany(array $uploads, string $folder, string $field, int $limit): array
+    public function storeMany(array $uploads, string $folder, string $field, int $limit, string $stamp = ''): array
     {
-        $usable = array_values(array_filter(
-            $uploads,
-            static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE
-        ));
+        $usable = self::chosen($uploads);
 
         if ($usable === []) {
             return [];
@@ -62,8 +90,16 @@ final class PhotoStore
 
         $stored = [];
 
-        foreach ($usable as $upload) {
-            $stored[] = $this->storeOne($upload, $folder, $field);
+        try {
+            foreach ($usable as $upload) {
+                $stored[] = $this->storeOne($upload, $folder, $field, $stamp);
+            }
+        } catch (Throwable $exception) {
+            // The caller never receives paths when a later file fails, so it
+            // cannot clean them up. Treat the upload batch as one operation.
+            $this->delete(...$stored);
+
+            throw $exception;
         }
 
         return $stored;
@@ -92,20 +128,18 @@ final class PhotoStore
     }
 
     /**
-     * Remove a stored file. Missing files are not an error — the row is the
+     * Remove stored files. Missing files are not an error — the row is the
      * record of truth, and a half-deleted upload must not block an edit.
      */
-    public function delete(string $relativePath): void
+    public function delete(string ...$relativePaths): void
     {
-        // Bundled demo assets may be shared by records and belong to the project.
-        if (str_starts_with($relativePath, 'item-photos/demo/')) {
-            return;
-        }
+        foreach ($relativePaths as $relativePath) {
+            // Bundled demo assets may be shared by records and belong to the project.
+            $absolute = str_starts_with($relativePath, 'item-photos/demo/') ? null : $this->absolutePath($relativePath);
 
-        $absolute = $this->absolutePath($relativePath);
-
-        if ($absolute !== null) {
-            @unlink($absolute);
+            if ($absolute !== null) {
+                @unlink($absolute);
+            }
         }
     }
 
@@ -115,7 +149,7 @@ final class PhotoStore
      *
      * @throws ValidationException
      */
-    private function storeOne(array $upload, string $folder, string $field): string
+    private function storeOne(array $upload, string $folder, string $field, string $stamp = ''): string
     {
         $error = $upload['error'] ?? UPLOAD_ERR_NO_FILE;
 
@@ -158,6 +192,10 @@ final class PhotoStore
 
         $image = $this->downscale($image);
 
+        if ($stamp !== '') {
+            $this->stamp($image, $stamp);
+        }
+
         $relativePath = $folder . '/' . bin2hex(random_bytes(16)) . '.jpg';
         $absolutePath = $this->root . '/' . $relativePath;
 
@@ -173,10 +211,38 @@ final class PhotoStore
         imagedestroy($image);
 
         if ($written === false) {
+            @unlink($absolutePath);
             throw ValidationException::field($field, 'Could not save the photo. Tell an administrator.');
         }
 
         return $relativePath;
+    }
+
+    /**
+     * The text a condition photo carries (Plan §10.1): when it was uploaded
+     * and by whom, so a photo cannot be passed off as taken at another time.
+     */
+    public static function stampText(int $uploaderId, DateTimeInterface $at): string
+    {
+        return sprintf('Mithra %s  member #%d', $at->format('Y-m-d H:i'), $uploaderId);
+    }
+
+    /**
+     * Burn the stamp into the bottom-left corner on a dark band, with GD's
+     * built-in font so no font file has to ship with the project.
+     */
+    private function stamp(GdImage $image, string $text): void
+    {
+        $font   = 5;
+        $width  = imagefontwidth($font) * strlen($text) + 12;
+        $height = imagefontheight($font) + 8;
+        $top    = max(0, imagesy($image) - $height);
+
+        $band = imagecolorallocatealpha($image, 0, 0, 0, 50);
+        $ink  = imagecolorallocate($image, 255, 255, 255);
+
+        imagefilledrectangle($image, 0, $top, min($width, imagesx($image)), imagesy($image), $band);
+        imagestring($image, $font, 6, $top + 4, $text, $ink);
     }
 
     /**
