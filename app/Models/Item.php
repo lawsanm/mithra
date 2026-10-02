@@ -259,7 +259,7 @@ final class Item extends BaseModel
             'declared_value'   => $data['declared_value'],
             'value_proof_type' => $data['value_proof_type'],
             'value_proof_path' => $data['value_proof_path'],
-            'photos'           => json_encode($data['photos']),
+            'photos'           => json_encode($data['photos'], JSON_UNESCAPED_SLASHES),
             'daily_rate'       => $data['daily_rate'],
             'monthly_rate'     => $data['monthly_rate'],
         ]);
@@ -302,7 +302,7 @@ final class Item extends BaseModel
             'declared_value' => $data['declared_value'],
             'value_proof_type' => $data['value_proof_type'],
             'value_proof_path' => $data['value_proof_path'],
-            'photos'         => json_encode($data['photos']),
+            'photos'         => json_encode($data['photos'], JSON_UNESCAPED_SLASHES),
             'daily_rate'     => $data['daily_rate'],
             'monthly_rate'   => $data['monthly_rate'],
             'status'         => $data['status'],
