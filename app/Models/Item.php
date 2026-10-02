@@ -219,7 +219,7 @@ final class Item extends BaseModel
                       LIMIT 1) AS lent_to
                FROM items i
               WHERE i.owner_id = :owner AND i.listing_type = 'rental' AND i.status <> 'archived'
-              ORDER BY i.id
+              ORDER BY i.id DESC
               LIMIT :limit"
         );
         $statement->bindValue(':owner', $ownerId, PDO::PARAM_INT);
