@@ -47,7 +47,8 @@ return [
         '/wallet'                  => 'wallet/index',
         '/gifts'                   => ['GiftController', 'index'],
         '/gifts/new'               => ['GiftController', 'index'],
-        '/notifications'           => 'notifications/index',
+        '/notifications'           => ['NotificationController', 'index'],
+        '/notifications/unread-count' => ['NotificationController', 'unreadCount'],
         '/help'                    => 'help/index',
         '/settings'                => ['AccountController', 'settings'],
         '/settings/close-account'  => ['AccountController', 'settings'],
@@ -145,7 +146,7 @@ return [
         '/sponsor/purchase-points' => 'sponsor/purchase-points/create',
         '/sponsor/csr-reports'     => 'sponsor/csr-reports/index',
         '/sponsor/branding'        => 'sponsor/branding/edit',
-        '/sponsor/notifications'   => 'sponsor/notifications/index',
+        '/sponsor/notifications'   => ['NotificationController', 'index'],
         '/sponsor/disasters/{id}'  => 'sponsor/disasters/show',
     ],
     'POST' => [
@@ -220,5 +221,8 @@ return [
         '/aid-grants/{id}'                   => ['AidGrantController', 'update'],
         '/aid-grants/{id}/reply'             => ['AidGrantController', 'reply'],
         '/aid-grants/{id}/withdraw'          => ['AidGrantController', 'withdraw'],
+        '/notifications/read-all'            => ['NotificationController', 'readAll'],
+        '/notifications/{id}/read'           => ['NotificationController', 'read'],
+        '/notifications/{id}/delete'         => ['NotificationController', 'destroy'],
     ],
 ];

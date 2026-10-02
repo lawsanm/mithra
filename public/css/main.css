@@ -2071,6 +2071,46 @@ legend {
     background-color: var(--color-primary);
 }
 
+/* Opening a notification is a POST that marks it read, so the row is a
+   button inside a form; it keeps the look of the link it replaced. */
+.notification-row {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-2);
+}
+
+.notification-row__open {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+button.notification {
+    width: 100%;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* The unread count on the navigation bell. */
+.nav__bell {
+    position: relative;
+}
+
+.nav__bell-count {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-error);
+    color: var(--color-surface);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-bold);
+    line-height: 18px;
+    text-align: center;
+}
+
 /* --------------------------------------------------------------------------
    29. Profile header
    -------------------------------------------------------------------------- */

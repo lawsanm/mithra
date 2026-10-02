@@ -138,7 +138,7 @@ abstract class Controller
      * never from typed-in text.
      *
      * @return array{name: string, division: string, greeting: string, initials: string, points: string,
-     *               bond: string, company: string, moderator: string, liaison: string}|null
+     *               bond: string, company: string, moderator: string, liaison: string, unread: int}|null
      */
     private function viewer(): ?array
     {
@@ -167,6 +167,7 @@ abstract class Controller
             'company'   => $company,
             'moderator' => $this->moderatorName(),
             'liaison'   => $this->liaisonName(),
+            'unread'    => (new Notification($this->pdo))->unreadCount($id),
         ];
     }
 

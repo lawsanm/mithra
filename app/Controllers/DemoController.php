@@ -10,7 +10,7 @@ declare(strict_types=1);
 final class DemoController extends Controller
 {
     /** Pages every role can open; each role sees them in its own navigation. */
-    private const SHARED_VIEWS = ['help/index', 'notifications/index', 'transparency/index'];
+    private const SHARED_VIEWS = ['help/index', 'transparency/index'];
 
     /**
      * @param array{id?: string} $params the {id} from the URL, when the route has one
@@ -26,14 +26,13 @@ final class DemoController extends Controller
             return;
         }
         if ((str_starts_with($view, 'sponsor/') || str_starts_with($view, 'sponsor-liaison/'))
-            && !in_array($view, ['sponsor/notifications/index', 'sponsor/purchase-points/create'], true)) {
+            && $view !== 'sponsor/purchase-points/create') {
             (new SponsorScreenController($this->pdo))->show($view, $params);
             return;
         }
         $data = match ($view) {
             'dashboard/index' => $this->dashboard(),
             'wallet/index' => $this->wallet(),
-            'notifications/index', 'sponsor/notifications/index' => $this->notifications(),
             'transparency/index' => $this->transparency(),
             default           => [],
         };
@@ -159,17 +158,6 @@ final class DemoController extends Controller
                     'tone' => $incoming ? 'in' : 'out', 'date' => date('j M Y', strtotime($row['created_at']))];
             }, $wallet->activity($me)),
         ] + GiftController::modalData($this->pdo, $me);
-    }
-
-    private function notifications(): array
-    {
-        $group = is_string($_GET['type'] ?? null) ? $_GET['type'] : '';
-        $filters = [];
-        foreach (['' => 'All', 'bookings' => 'Bookings', 'gifts-aid' => 'Gifts & aid', 'system' => 'System'] as $slug => $label) {
-            $filters[] = ['label' => $label, 'slug' => $slug, 'active' => $group === $slug];
-        }
-        return ['filters' => $filters,
-            'notifications' => (new Notification($this->pdo))->displayForMember($this->userId(), $group)];
     }
 
     private function transparency(): array
