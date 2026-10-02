@@ -203,5 +203,10 @@ return [
         '/bookings/{id}/handover/accept'     => ['BookingController', 'handoverAccept'],
         '/bookings/{id}/return/photos'       => ['BookingController', 'returnPhotos'],
         '/bookings/{id}/return/accept'       => ['BookingController', 'returnAccept'],
+        '/bookings/{id}/claims'              => ['DamageClaimController', 'store'],
+        '/damage-claims/{id}/accept'         => ['DamageClaimController', 'accept'],
+        '/damage-claims/{id}/contest'        => ['DamageClaimController', 'contest'],
+        '/damage-claims/{id}/sign-off'       => ['DamageClaimController', 'signOff'],
+        '/damage-claims/{id}/withdraw'       => ['DamageClaimController', 'withdraw'],
     ],
 ];

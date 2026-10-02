@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+/**
+ * damage_claims — a lender's claim that an item came back damaged, on the
+ * simple path or the moderator path (Plan 3.4, §10.3–10.6).
+ */
 final class DamageClaim extends BaseModel
 {
     protected string $table = 'damage_claims';
@@ -42,8 +46,9 @@ final class DamageClaim extends BaseModel
                JOIN items i        ON i.id = b.item_id
                JOIN gn_divisions d ON d.id = i.gn_division_id
               WHERE c.evidence_path = :path
+                 OR JSON_CONTAINS(COALESCE(c.evidence_photos, '[]'), JSON_QUOTE(:photo))
               LIMIT 1",
-            ['path' => $path]
+            ['path' => $path, 'photo' => $path]
         );
 
         return $row === null ? null : Booking::ids($row);
@@ -53,15 +58,18 @@ final class DamageClaim extends BaseModel
      * Open a claim on a booking. Callers pass an already-checked set.
      *
      * @param array{booking_id:int, raised_by:int, severity:string, description:?string,
-     *              proposed_penalty:int, track:string, status:string} $data
+     *              proposed_penalty:int, track:string, status:string, evidence_photos?:list<string>} $data
      */
     public function open(array $data): int
     {
         $statement = $this->pdo->prepare(
-            'INSERT INTO damage_claims (booking_id, raised_by, severity, description, proposed_penalty, track, status)
-             VALUES (:booking_id, :raised_by, :severity, :description, :proposed_penalty, :track, :status)'
+            'INSERT INTO damage_claims
+                 (booking_id, raised_by, severity, description, proposed_penalty, evidence_photos, track, status)
+             VALUES
+                 (:booking_id, :raised_by, :severity, :description, :proposed_penalty, :evidence_photos, :track, :status)'
         );
         $statement->execute([
+            'evidence_photos'  => json_encode($data['evidence_photos'] ?? [], JSON_UNESCAPED_SLASHES),
             'booking_id'       => $data['booking_id'],
             'raised_by'        => $data['raised_by'],
             'severity'         => $data['severity'],
@@ -72,5 +80,143 @@ final class DamageClaim extends BaseModel
         ]);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * The latest claim on a booking, with its moderator resolution, for the
+     * booking page.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function latestForBooking(int $bookingId): ?array
+    {
+        return $this->selectOne(
+            'SELECT c.id, c.booking_id, c.raised_by, c.severity, c.description, c.proposed_penalty,
+                    c.evidence_path, c.evidence_photos, c.track, c.borrower_response, c.responded_at,
+                    c.status, c.created_at,
+                    r.id AS resolution_id, r.outcome_category, r.penalty_points, r.notes AS resolution_notes,
+                    r.met_at, r.lender_signoff_at, r.borrower_signoff_at, r.closed_at AS resolution_closed_at,
+                    m.full_name AS moderator_name
+               FROM damage_claims c
+          LEFT JOIN moderator_resolutions r ON r.damage_claim_id = c.id
+          LEFT JOIN users m ON m.id = r.moderator_id
+              WHERE c.booking_id = :booking
+              ORDER BY c.id DESC LIMIT 1',
+            ['booking' => $bookingId]
+        );
+    }
+
+    /**
+     * One claim with its booking and resolution, row-locked for the rest of
+     * the transaction.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lockForUpdate(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT c.id, c.booking_id, c.raised_by, c.severity, c.proposed_penalty, c.track,
+                    c.borrower_response, c.status, c.created_at,
+                    r.id AS resolution_id, r.penalty_points, r.met_at,
+                    r.lender_signoff_at, r.borrower_signoff_at, r.closed_at AS resolution_closed_at
+               FROM damage_claims c
+          LEFT JOIN moderator_resolutions r ON r.damage_claim_id = c.id
+              WHERE c.id = :id
+              FOR UPDATE',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * Move a claim on, guarded by the status it is expected to be in.
+     */
+    public function move(int $id, string $from, string $to, ?string $track = null, ?string $response = null): bool
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE damage_claims
+                SET status = :to,
+                    track = COALESCE(:track, track),
+                    borrower_response = COALESCE(:response, borrower_response),
+                    responded_at = IF(:responded = 1, NOW(), responded_at)
+              WHERE id = :id AND status = :from'
+        );
+        $statement->execute([
+            'to'        => $to,
+            'track'     => $track,
+            'response'  => $response,
+            'responded' => $response === null ? 0 : 1,
+            'id'        => $id,
+            'from'      => $from,
+        ]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /**
+     * Simple-path claims the borrower has not answered within the window.
+     *
+     * @return list<array{id: int}>
+     */
+    public function unansweredSince(int $hours): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id FROM damage_claims
+              WHERE status = 'awaiting_borrower' AND created_at < NOW() - INTERVAL :hours HOUR
+              ORDER BY id LIMIT 500"
+        );
+        $statement->bindValue(':hours', $hours, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    /** One party's sign-off on the moderator's recorded resolution (§10.5). */
+    public function signOff(int $resolutionId, string $side): void
+    {
+        $column = $side === 'lender' ? 'lender_signoff_at' : 'borrower_signoff_at';
+
+        $statement = $this->pdo->prepare(
+            "UPDATE moderator_resolutions SET {$column} = COALESCE({$column}, NOW()) WHERE id = :id"
+        );
+        $statement->execute(['id' => $resolutionId]);
+    }
+
+    public function closeResolution(int $resolutionId): void
+    {
+        $statement = $this->pdo->prepare('UPDATE moderator_resolutions SET closed_at = NOW() WHERE id = :id AND closed_at IS NULL');
+        $statement->execute(['id' => $resolutionId]);
+    }
+
+    /** Claims on this booking still being decided. */
+    public function countOpenForBooking(int $bookingId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM damage_claims WHERE booking_id = :booking AND status NOT IN ('resolved','closed')",
+            ['booking' => $bookingId]
+        );
+    }
+
+    /**
+     * Unsettled claims against this member as borrower — gifting waits for
+     * them (§11.1).
+     */
+    public function countPendingAgainst(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM damage_claims c JOIN bookings b ON b.id = c.booking_id
+              WHERE b.borrower_id = :member AND c.status NOT IN ('resolved','closed')",
+            ['member' => $memberId]
+        );
+    }
+
+    /** Upheld claims against this member as borrower in the last 12 months — a trust-score penalty (§6.3). */
+    public function countUpheldAgainst(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM damage_claims c JOIN bookings b ON b.id = c.booking_id
+              WHERE b.borrower_id = :member AND c.status = 'resolved'
+                AND c.created_at >= NOW() - INTERVAL 12 MONTH",
+            ['member' => $memberId]
+        );
     }
 }

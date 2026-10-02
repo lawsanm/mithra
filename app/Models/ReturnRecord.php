@@ -69,6 +69,16 @@ final class ReturnRecord extends BaseModel
         return $statement->rowCount() === 1;
     }
 
+    /** A withdrawn claim: the return counts as accepted after all. */
+    public function reopenAsAccepted(int $bookingId): void
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE return_records SET lender_decision = 'accepted', decided_at = NOW()
+              WHERE booking_id = :booking AND lender_decision = 'claim_raised'"
+        );
+        $statement->execute(['booking' => $bookingId]);
+    }
+
     /** The borrower's answer to a claim, kept on the return for the record. */
     public function borrowerDecision(int $bookingId, string $decision): void
     {

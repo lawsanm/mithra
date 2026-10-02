@@ -148,4 +148,38 @@ bookingCheck(!ReturnService::photosOpen(['lender_decision' => 'accepted'], 'awai
 bookingCheck(!ReturnService::photosOpen(null, 'awaiting_handover'), 'No return before the handover.');
 $checks += 3;
 
-echo 'Passed: ' . $checks . " booking checks — quotes, buffer, dates, who may act, transitions, handover, late fees.\n";
+// ── Damage claims (Plan 3.4, §10.3) ────────────────────────────────────────
+
+// 20% of the declared value, rounded in the lender's favour.
+bookingCheck(DamageClaimService::simpleCap(1000) === 200, '20% of 1,000 is 200.');
+bookingCheck(DamageClaimService::simpleCap(999) === 200, '20% of 999 rounds up to 200.');
+bookingCheck(DamageClaimService::simpleCap(1) === 1, '20% of 1 rounds up to 1.');
+$checks += 3;
+
+bookingCheck(DamageClaimService::track('minor', 200, 1000, false) === 'simple', 'Minor at the cap is simple.');
+bookingCheck(DamageClaimService::track('minor', 201, 1000, false) === 'moderator', 'Minor over the cap goes to the moderator.');
+bookingCheck(DamageClaimService::track('moderate', 10, 1000, false) === 'moderator', 'Anything but minor goes to the moderator.');
+bookingCheck(DamageClaimService::track('minor', 10, 1000, true) === 'admin', 'A moderator-involved booking goes to the Admin.');
+$checks += 4;
+
+bookingCheck(DamageClaimService::claimErrors('minor', 50, 1000, 'Cracked lid', 1) === [], 'A complete claim passes.');
+bookingCheck(isset(DamageClaimService::claimErrors('minor', 1001, 1000, 'x', 1)['amount']), 'A penalty over the declared value is refused.');
+bookingCheck(isset(DamageClaimService::claimErrors('minor', 0, 1000, 'x', 1)['amount']), 'A zero penalty is refused.');
+bookingCheck(isset(DamageClaimService::claimErrors('scratched', 10, 1000, 'x', 1)['severity']), 'An unknown severity is refused.');
+bookingCheck(isset(DamageClaimService::claimErrors('minor', 10, 1000, '', 1)['description']), 'A claim needs a description.');
+bookingCheck(isset(DamageClaimService::claimErrors('minor', 10, 1000, 'x', 0)['photos']), 'A claim needs evidence.');
+$checks += 6;
+
+foreach ([
+    ['awaiting_borrower', 'closed', true],
+    ['awaiting_borrower', 'pending_moderator', true],
+    ['awaiting_borrower', 'resolved', false],
+    ['pending_moderator', 'resolved', true],
+    ['pending_moderator', 'closed', false],
+    ['resolved', 'pending_moderator', false],
+] as [$from, $to, $allowed]) {
+    bookingCheck(DamageClaimService::canMove($from, $to) === $allowed, "Claim $from → $to must be " . ($allowed ? 'allowed' : 'refused') . '.');
+    $checks++;
+}
+
+echo 'Passed: ' . $checks . " booking checks — quotes, buffer, dates, who may act, transitions, handover, late fees, claims.\n";

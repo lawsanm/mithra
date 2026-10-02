@@ -7,6 +7,20 @@ final class Dispute extends BaseModel
     protected string $table = 'disputes';
     protected string $columns = 'id, booking_id, damage_claim_id, raised_by, admin_id, reason, status, resolution, ruling_at, created_at';
 
+    /**
+     * Open a dispute for the Admin. Callers have checked who may raise it.
+     */
+    public function open(?int $bookingId, ?int $claimId, int $raisedBy, string $reason): int
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO disputes (booking_id, damage_claim_id, raised_by, reason, status)
+             VALUES (:booking, :claim, :raised_by, :reason, \'open\')'
+        );
+        $statement->execute(['booking' => $bookingId, 'claim' => $claimId, 'raised_by' => $raisedBy, 'reason' => $reason]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
     public function countOpen(): int
     {
         return (int) $this->selectValue(

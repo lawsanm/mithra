@@ -132,7 +132,70 @@ final class BookingController extends Controller
             'endedBy'  => $this->endedBy($booking, $me),
             'handover' => $this->handoverView($id, $isLender ? 'lender' : 'borrower', $state),
             'return'   => $this->returnView($id, $isLender ? 'lender' : 'borrower', $state),
+            'claim'    => $this->claimView($id, $isLender ? 'lender' : 'borrower'),
+            'claimItem' => [
+                'title'          => (string) $booking['item_title'],
+                'party'          => 'Borrowed by ' . $booking['borrower_name'],
+                'photo'          => null,
+                'booking_id'     => $id,
+                'declared_value' => (int) $booking['declared_value'],
+                'simple_cap'     => DamageClaimService::simpleCap((int) $booking['declared_value']),
+            ],
+            'claimOpen' => ($_GET['claim'] ?? '') === '1',
         ]);
+    }
+
+    /**
+     * The claim on this booking, if any, and what this member can do about it.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function claimView(int $bookingId, string $me): ?array
+    {
+        $claim = (new DamageClaim($this->pdo))->latestForBooking($bookingId);
+
+        if ($claim === null) {
+            return null;
+        }
+
+        $paths = HandoverService::decode($claim['evidence_photos']);
+
+        if ($paths === [] && !empty($claim['evidence_path'])) {
+            $paths = [(string) $claim['evidence_path']];
+        }
+
+        $status   = (string) $claim['status'];
+        $recorded = $claim['met_at'] !== null && $claim['resolution_closed_at'] === null;
+
+        return [
+            'id'          => (int) $claim['id'],
+            'severity'    => ucfirst(str_replace('_', ' ', (string) $claim['severity'])),
+            'penalty'     => (int) $claim['proposed_penalty'],
+            'description' => (string) ($claim['description'] ?? ''),
+            'track'       => $claim['track'] === 'simple' ? 'Simple path' : 'Moderator path',
+            'status'      => match ($status) {
+                'awaiting_borrower' => 'Waiting for the borrower, until ' . date('j M Y, H:i', strtotime((string) $claim['created_at']) + DamageClaimService::ANSWER_HOURS * 3600),
+                'pending_moderator' => $recorded ? 'Moderator’s resolution recorded — waiting for both signatures' : 'With the moderator',
+                'escalated'         => 'With the Admin',
+                'resolved'          => 'Resolved',
+                'closed'            => $claim['borrower_response'] === 'accepted' ? 'Accepted by the borrower' : 'Withdrawn',
+                default             => ucfirst($status),
+            },
+            'photos'      => array_map(static fn (string $path, int $index): array => [
+                'url'   => photo_url($path),
+                'label' => 'Evidence ' . ($index + 1),
+            ], $paths, array_keys($paths)),
+            'resolution'  => $claim['met_at'] === null ? null : [
+                'moderator' => (string) ($claim['moderator_name'] ?? ''),
+                'penalty'   => (int) $claim['penalty_points'],
+                'notes'     => (string) ($claim['resolution_notes'] ?? ''),
+                'lender'    => $claim['lender_signoff_at'] !== null,
+                'borrower'  => $claim['borrower_signoff_at'] !== null,
+            ],
+            'can_answer'   => $me === 'borrower' && $status === 'awaiting_borrower',
+            'can_withdraw' => $me === 'lender' && $status === 'awaiting_borrower',
+            'can_sign'     => $status === 'pending_moderator' && $recorded && $claim[$me . '_signoff_at'] === null,
+        ];
     }
 
     /**
@@ -211,6 +274,7 @@ final class BookingController extends Controller
             'decision'   => $decision === null ? '' : ($decision === 'accepted' ? 'The lender accepted the item’s condition.' : 'The lender raised a damage claim.'),
             'can_edit'   => $open,
             'can_accept' => $open && $me === 'lender' && $state === 'awaiting_return' && $sides['lender']['photos'] !== [],
+            'can_claim'  => $open && $me === 'lender' && $state === 'awaiting_return',
         ];
     }
 

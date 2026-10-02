@@ -13,7 +13,10 @@ declare(strict_types=1);
  * @var string $answerBy when an unanswered request auto-cancels
  * @var string $endedBy  why a booking that did not run ended
  * @var array|null $handover me, sides (label, photos, note, accepted), locked, at, can_edit, can_accept, waiting
- * @var array|null $return   me, sides (label, photos, note), returned, decision, can_edit, can_accept
+ * @var array|null $return   me, sides (label, photos, note), returned, decision, can_edit, can_accept, can_claim
+ * @var array|null $claim    the damage claim on this booking and what this member can do
+ * @var array      $claimItem the claim modal's header and limits
+ * @var bool       $claimOpen render the claim dialog open
  * @var array|null $flash
  */
 
@@ -212,15 +215,81 @@ include __DIR__ . '/../../partials/header.php';
             </form>
         <?php endif; ?>
 
-        <?php if ($return['can_accept']): ?>
+        <?php if ($return['can_accept'] || $return['can_claim']): ?>
             <div class="actions">
-                <form method="post" action="<?= base_url() ?>/bookings/<?= e($id) ?>/return/accept"
-                    data-confirm="Accept the item’s condition? The booking completes and the buffer is settled. You cannot raise a claim afterwards." novalidate>
-                    <?= csrf_field() ?>
-                    <button class="btn btn--primary" type="submit">Accept return</button>
-                </form>
+                <?php if ($return['can_accept']): ?>
+                    <form method="post" action="<?= base_url() ?>/bookings/<?= e($id) ?>/return/accept"
+                        data-confirm="Accept the item’s condition? The booking completes and the buffer is settled. You cannot raise a claim afterwards." novalidate>
+                        <?= csrf_field() ?>
+                        <button class="btn btn--primary" type="submit">Accept return</button>
+                    </form>
+                <?php endif; ?>
+                <?php if ($return['can_claim']): ?>
+                    <a class="btn btn--ghost" href="<?= base_url() ?>/bookings/<?= e($id) ?>?claim=1#damage-claim" data-modal-open="damage-claim">Raise a damage claim</a>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
+    </section>
+
+    <?php if ($return['can_claim']): ?>
+        <?php include __DIR__ . '/../../partials/modal-damage-claim.php'; ?>
+    <?php endif; ?>
+<?php endif; ?>
+
+<?php if ($claim !== null): ?>
+    <section class="panel" id="claim">
+        <h2 class="panel__title">Damage claim</h2>
+        <dl class="facts">
+            <div class="fact"><dt class="fact__label">Severity</dt><dd class="fact__value"><?= e($claim['severity']) ?></dd></div>
+            <div class="fact"><dt class="fact__label">Penalty asked</dt><dd class="fact__value"><?= e(number_format($claim['penalty'])) ?> pts</dd></div>
+            <div class="fact"><dt class="fact__label">Track</dt><dd class="fact__value"><?= e($claim['track']) ?></dd></div>
+            <div class="fact"><dt class="fact__label">Status</dt><dd class="fact__value"><?= e($claim['status']) ?></dd></div>
+        </dl>
+        <?php if ($claim['description'] !== ''): ?>
+            <p class="record-card__quote">“<?= e($claim['description']) ?>”</p>
+        <?php endif; ?>
+        <?php if ($claim['photos'] !== []): ?>
+            <?php $gridPhotos = $claim['photos']; include __DIR__ . '/../../partials/photo-grid.php'; ?>
+        <?php endif; ?>
+
+        <?php if ($claim['resolution'] !== null): ?>
+            <p class="notice notice--info">
+                <?= e(trim('Moderator ' . $claim['resolution']['moderator'])) ?> recorded a penalty of
+                <?= e(number_format($claim['resolution']['penalty'])) ?> pts.
+                <?= e($claim['resolution']['notes']) ?>
+                Lender <?= $claim['resolution']['lender'] ? 'signed' : 'has not signed' ?> ·
+                borrower <?= $claim['resolution']['borrower'] ? 'signed' : 'has not signed' ?>.
+            </p>
+        <?php endif; ?>
+
+        <div class="actions">
+            <?php if ($claim['can_answer']): ?>
+                <form method="post" action="<?= base_url() ?>/damage-claims/<?= e((string) $claim['id']) ?>/accept"
+                    data-confirm="Accept the claim? <?= e(number_format($claim['penalty'])) ?> pts move from your wallet to the lender." novalidate>
+                    <?= csrf_field() ?>
+                    <button class="btn btn--primary" type="submit">Accept claim</button>
+                </form>
+                <form method="post" action="<?= base_url() ?>/damage-claims/<?= e((string) $claim['id']) ?>/contest"
+                    data-confirm="Contest the claim? Your moderator will meet you both and decide." novalidate>
+                    <?= csrf_field() ?>
+                    <button class="btn btn--ghost" type="submit">Contest</button>
+                </form>
+            <?php endif; ?>
+            <?php if ($claim['can_withdraw']): ?>
+                <form method="post" action="<?= base_url() ?>/damage-claims/<?= e((string) $claim['id']) ?>/withdraw"
+                    data-confirm="Withdraw the claim? The return is accepted and the booking completes." novalidate>
+                    <?= csrf_field() ?>
+                    <button class="btn btn--ghost" type="submit">Withdraw claim</button>
+                </form>
+            <?php endif; ?>
+            <?php if ($claim['can_sign']): ?>
+                <form method="post" action="<?= base_url() ?>/damage-claims/<?= e((string) $claim['id']) ?>/sign-off"
+                    data-confirm="Sign the resolution? When both of you have signed, the recorded points move and the booking closes." novalidate>
+                    <?= csrf_field() ?>
+                    <button class="btn btn--primary" type="submit">I agree with this resolution</button>
+                </form>
+            <?php endif; ?>
+        </div>
     </section>
 <?php endif; ?>
 
@@ -229,6 +298,6 @@ include __DIR__ . '/../../partials/header.php';
     <a class="btn btn--ghost" href="<?= base_url() ?>/members/<?= e((string) ($role === 'borrower' ? $booking['lender_id'] : $booking['borrower_id'])) ?>">View <?= e($role === 'borrower' ? 'lender' : 'borrower') ?> profile</a>
 </div>
 <?php
-$pageScripts = ['confirm.js', 'upload-name.js', 'polling.js'];
+$pageScripts = ['confirm.js', 'upload-name.js', 'polling.js', 'modal.js'];
 include __DIR__ . '/../../partials/footer.php';
 ?>
