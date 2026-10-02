@@ -35,7 +35,7 @@ final class ListingApprovalController extends Controller
      */
     public function index(): void
     {
-        $filter = (string) ($_GET['status'] ?? '');
+        $filter = $this->queryValue('status');
         $filter = in_array($filter, ListingReviewService::FILTERS, true) ? $filter : '';
 
         try {
@@ -163,9 +163,9 @@ final class ListingApprovalController extends Controller
             'trail'   => array_map(fn (array $row): array => $this->trailRow($row), $record['trail']),
             'errors'  => $errors,
             'old'     => [
-                'decision'       => (string) ($_POST['decision'] ?? ''),
-                'declared_value' => (string) ($_POST['declared_value'] ?? ''),
-                'reason'         => (string) ($_POST['reason'] ?? ''),
+                'decision'       => $this->posted('decision'),
+                'declared_value' => $this->posted('declared_value'),
+                'reason'         => $this->posted('reason'),
             ],
         ]);
     }

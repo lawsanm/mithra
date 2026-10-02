@@ -22,11 +22,11 @@ final class CronRun extends BaseModel
     /** @return list<array<string, mixed>> */
     public function recentJobs(int $limit = 10): array
     {
-        return $this->select(
-            'SELECT id, job_name, status, started_at, finished_at, notes
-               FROM cron_runs
-              ORDER BY started_at DESC
-              LIMIT ' . $limit
+        return $this->selectPage(
+            'SELECT id, job_name, status, started_at, finished_at, notes FROM cron_runs ORDER BY started_at DESC',
+            [],
+            1,
+            $limit
         );
     }
 
@@ -37,16 +37,12 @@ final class CronRun extends BaseModel
      */
     public function recentFailed(int $limit = 5): array
     {
-        $statement = $this->pdo->prepare(
-            "SELECT job_name, started_at, notes FROM cron_runs
-              WHERE status = 'failed'
-              ORDER BY started_at DESC
-              LIMIT :limit"
+        return $this->selectPage(
+            "SELECT job_name, started_at, notes FROM cron_runs WHERE status = 'failed' ORDER BY started_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /** @return list<array<string, mixed>> */
@@ -63,21 +59,13 @@ final class CronRun extends BaseModel
     /** Open a run's log row before the job does anything (Rules/CONVENTIONS.md §8). */
     public function start(string $jobName): int
     {
-        $statement = $this->pdo->prepare(
-            "INSERT INTO cron_runs (job_name, status) VALUES (:job, 'running')"
-        );
-        $statement->execute(['job' => $jobName]);
-
-        return (int) $this->pdo->lastInsertId();
+        return $this->insert("INSERT INTO cron_runs (job_name, status) VALUES (:job, 'running')", ['job' => $jobName]);
     }
 
     /** Close a run's log row with its outcome. */
     public function finish(int $id, bool $succeeded, string $notes): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE cron_runs SET status = :status, finished_at = NOW(), notes = :notes WHERE id = :id'
-        );
-        $statement->execute([
+        $this->execute('UPDATE cron_runs SET status = :status, finished_at = NOW(), notes = :notes WHERE id = :id', [
             'status' => $succeeded ? 'success' : 'failed',
             'notes'  => mb_substr($notes, 0, 2000),
             'id'     => $id,

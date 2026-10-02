@@ -13,16 +13,6 @@ declare(strict_types=1);
  */
 final class UserDivision extends BaseModel
 {
-    public function temporaryForUser(int $userId): ?array
-    {
-        return $this->selectOne(
-            "SELECT d.name, ud.created_at, ud.expires_at, ud.status
-               FROM user_divisions ud JOIN gn_divisions d ON d.id = ud.gn_division_id
-              WHERE ud.user_id = :user AND ud.membership_type = 'temporary'
-                AND ud.status IN ('active','pending','paused')
-              ORDER BY ud.created_at DESC LIMIT 1", ['user' => $userId]
-        );
-    }
     protected string $table = 'user_divisions';
     protected string $columns = 'id, user_id, gn_division_id, membership_type, verified_by, verified_at, status, created_at';
 
@@ -32,19 +22,11 @@ final class UserDivision extends BaseModel
      */
     public function createHome(int $userId, int $divisionId, string $proofType, string $proofPath): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             "INSERT INTO user_divisions (user_id, gn_division_id, membership_type, proof_type, proof_file_path, status)
-             VALUES (:user_id, :division_id, 'home', :proof_type, :proof_path, 'pending')"
+             VALUES (:user_id, :division_id, 'home', :proof_type, :proof_path, 'pending')",
+            ['user_id' => $userId, 'division_id' => $divisionId, 'proof_type' => $proofType, 'proof_path' => $proofPath]
         );
-
-        $statement->execute([
-            'user_id'     => $userId,
-            'division_id' => $divisionId,
-            'proof_type'  => $proofType,
-            'proof_path'  => $proofPath,
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -132,22 +114,13 @@ final class UserDivision extends BaseModel
      */
     public function decide(int $id, int $moderatorId, string $status, ?string $expiresAt = null, ?string $reason = null): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE user_divisions
                 SET status = :status, verified_by = :moderator, verified_at = NOW(),
                     expires_at = :expires, decision_reason = :reason
-              WHERE id = :id AND status = 'pending'"
-        );
-
-        $statement->execute([
-            'status'    => $status,
-            'moderator' => $moderatorId,
-            'expires'   => $expiresAt,
-            'reason'    => $reason,
-            'id'        => $id,
-        ]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND status = 'pending'",
+            ['status' => $status, 'moderator' => $moderatorId, 'expires' => $expiresAt, 'reason' => $reason, 'id' => $id]
+        ) === 1;
     }
 
     /**
@@ -158,7 +131,7 @@ final class UserDivision extends BaseModel
      */
     public function documentReviewers(string $path): array
     {
-        $rows = $this->select(
+        return $this->selectIds(
             'SELECT DISTINCT d.moderator_id
                FROM user_divisions ud
                JOIN users u        ON u.id = ud.user_id
@@ -167,8 +140,6 @@ final class UserDivision extends BaseModel
                 AND d.moderator_id IS NOT NULL',
             ['proof' => $path, 'renewal' => $path, 'nic' => $path]
         );
-
-        return array_map(static fn (array $row): int => (int) $row['moderator_id'], $rows);
     }
 
     /** Whether this path is an identity document at all. */
@@ -184,21 +155,21 @@ final class UserDivision extends BaseModel
     /** End every membership of a closing account (Plan §17). */
     public function deactivateAllFor(int $userId): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             "UPDATE user_divisions SET status = 'deactivated'
-              WHERE user_id = :user AND status IN ('pending','active','paused')"
+              WHERE user_id = :user AND status IN ('pending','active','paused')",
+            ['user' => $userId]
         );
-        $statement->execute(['user' => $userId]);
     }
 
     /** Replace the verified address proof after an approved address change. */
     public function replaceHomeProof(int $userId, string $proofPath): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             "UPDATE user_divisions SET proof_type = 'address', proof_file_path = :proof
-              WHERE user_id = :user AND membership_type = 'home'"
+              WHERE user_id = :user AND membership_type = 'home'",
+            ['proof' => $proofPath, 'user' => $userId]
         );
-        $statement->execute(['proof' => $proofPath, 'user' => $userId]);
     }
 
     /**
@@ -210,7 +181,7 @@ final class UserDivision extends BaseModel
      */
     public function activeDivisionIds(int $userId): array
     {
-        $rows = $this->select(
+        return $this->selectIds(
             "SELECT ud.gn_division_id
                FROM user_divisions ud
                JOIN gn_divisions d ON d.id = ud.gn_division_id
@@ -218,11 +189,26 @@ final class UserDivision extends BaseModel
               ORDER BY ud.membership_type = 'home' DESC, ud.id",
             ['user' => $userId]
         );
-
-        return array_map(static fn (array $row): int => (int) $row['gn_division_id'], $rows);
     }
 
     // ── Temporary community (Plan §6.5) ─────────────────────────────────────
+
+    /**
+     * The member's open temporary community, for the profile's communities panel.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function temporaryForUser(int $userId): ?array
+    {
+        return $this->selectOne(
+            "SELECT d.name, ud.created_at, ud.expires_at, ud.status
+               FROM user_divisions ud JOIN gn_divisions d ON d.id = ud.gn_division_id
+              WHERE ud.user_id = :user AND ud.membership_type = 'temporary'
+                AND ud.status IN ('active','pending','paused')
+              ORDER BY ud.created_at DESC LIMIT 1",
+            ['user' => $userId]
+        );
+    }
 
     /**
      * The member's latest temporary-community row in any state, with what the
@@ -273,13 +259,11 @@ final class UserDivision extends BaseModel
 
     public function createTemporary(int $userId, int $divisionId, string $proofType, string $proofPath): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             "INSERT INTO user_divisions (user_id, gn_division_id, membership_type, proof_type, proof_file_path, status)
-             VALUES (:user, :division, 'temporary', :type, :path, 'pending')"
+             VALUES (:user, :division, 'temporary', :type, :path, 'pending')",
+            ['user' => $userId, 'division' => $divisionId, 'type' => $proofType, 'path' => $proofPath]
         );
-        $statement->execute(['user' => $userId, 'division' => $divisionId, 'type' => $proofType, 'path' => $proofPath]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -288,17 +272,15 @@ final class UserDivision extends BaseModel
      */
     public function reapplyTemporary(int $id, string $proofType, string $proofPath): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE user_divisions
                 SET membership_type = 'temporary', status = 'pending', proof_type = :type,
                     proof_file_path = :path, verified_by = NULL, verified_at = NULL, expires_at = NULL,
                     decision_reason = NULL, renewal_proof_path = NULL, renewal_requested_at = NULL,
                     expiry_reminded_at = NULL, created_at = NOW()
-              WHERE id = :id AND status IN ('rejected','expired','deactivated')"
-        );
-        $statement->execute(['type' => $proofType, 'path' => $proofPath, 'id' => $id]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND status IN ('rejected','expired','deactivated')",
+            ['type' => $proofType, 'path' => $proofPath, 'id' => $id]
+        ) === 1;
     }
 
     /**
@@ -309,58 +291,44 @@ final class UserDivision extends BaseModel
      */
     public function moveTemporary(int $id, array $from, string $to): bool
     {
-        $names  = [];
         $params = ['to' => $to, 'id' => $id];
 
-        foreach (array_values($from) as $index => $state) {
-            $names[]                 = ':from' . $index;
-            $params['from' . $index] = $state;
-        }
-
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE user_divisions SET status = :to, renewal_requested_at = NULL
-              WHERE id = :id AND membership_type = 'temporary' AND status IN (" . implode(', ', $names) . ')'
-        );
-        $statement->execute($params);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND membership_type = 'temporary' AND status IN " . self::inList('from', $from, $params),
+            $params
+        ) === 1;
     }
 
     public function requestRenewal(int $id, string $proofPath): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE user_divisions SET renewal_proof_path = :path, renewal_requested_at = NOW(), decision_reason = NULL
-              WHERE id = :id AND membership_type = 'temporary' AND status IN ('active','paused')"
-        );
-        $statement->execute(['path' => $proofPath, 'id' => $id]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND membership_type = 'temporary' AND status IN ('active','paused')",
+            ['path' => $proofPath, 'id' => $id]
+        ) === 1;
     }
 
     /** The moderator accepts fresh proof: a new expiry, active again. */
     public function approveRenewal(int $id, int $moderatorId, string $expiresAt): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE user_divisions
                 SET status = 'active', expires_at = :expires, verified_by = :moderator, verified_at = NOW(),
                     renewal_requested_at = NULL, expiry_reminded_at = NULL, decision_reason = NULL
-              WHERE id = :id AND renewal_requested_at IS NOT NULL AND status IN ('active','paused')"
-        );
-        $statement->execute(['expires' => $expiresAt, 'moderator' => $moderatorId, 'id' => $id]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND renewal_requested_at IS NOT NULL AND status IN ('active','paused')",
+            ['expires' => $expiresAt, 'moderator' => $moderatorId, 'id' => $id]
+        ) === 1;
     }
 
     public function rejectRenewal(int $id, int $moderatorId, string $reason): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             'UPDATE user_divisions
                 SET renewal_requested_at = NULL, decision_reason = :reason, verified_by = :moderator
-              WHERE id = :id AND renewal_requested_at IS NOT NULL'
-        );
-        $statement->execute(['reason' => $reason, 'moderator' => $moderatorId, 'id' => $id]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND renewal_requested_at IS NOT NULL',
+            ['reason' => $reason, 'moderator' => $moderatorId, 'id' => $id]
+        ) === 1;
     }
 
     /**
@@ -370,23 +338,17 @@ final class UserDivision extends BaseModel
      */
     public function swapHome(int $userId, int $temporaryId): bool
     {
-        $demote = $this->pdo->prepare(
+        $demoted = $this->execute(
             "UPDATE user_divisions SET membership_type = 'temporary', status = 'deactivated', expires_at = NULL
-              WHERE user_id = :user AND membership_type = 'home' AND status = 'active'"
+              WHERE user_id = :user AND membership_type = 'home' AND status = 'active'",
+            ['user' => $userId]
         );
-        $demote->execute(['user' => $userId]);
 
-        if ($demote->rowCount() !== 1) {
-            return false;
-        }
-
-        $promote = $this->pdo->prepare(
+        return $demoted === 1 && $this->execute(
             "UPDATE user_divisions SET membership_type = 'home', expires_at = NULL, renewal_requested_at = NULL
-              WHERE id = :id AND user_id = :user AND membership_type = 'temporary' AND status = 'active'"
-        );
-        $promote->execute(['id' => $temporaryId, 'user' => $userId]);
-
-        return $promote->rowCount() === 1;
+              WHERE id = :id AND user_id = :user AND membership_type = 'temporary' AND status = 'active'",
+            ['id' => $temporaryId, 'user' => $userId]
+        ) === 1;
     }
 
     /**
@@ -416,23 +378,19 @@ final class UserDivision extends BaseModel
      */
     public function dueForReminder(int $days): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->select(
             "SELECT ud.id, ud.user_id, ud.expires_at, d.name AS division_name
                FROM user_divisions ud JOIN gn_divisions d ON d.id = ud.gn_division_id
               WHERE ud.membership_type = 'temporary' AND ud.status = 'active'
                 AND ud.expiry_reminded_at IS NULL
-                AND ud.expires_at <= NOW() + INTERVAL :days DAY"
+                AND ud.expires_at <= NOW() + INTERVAL :days DAY",
+            ['days' => $days]
         );
-        $statement->bindValue(':days', $days, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     public function markReminded(int $id): void
     {
-        $statement = $this->pdo->prepare('UPDATE user_divisions SET expiry_reminded_at = NOW() WHERE id = :id');
-        $statement->execute(['id' => $id]);
+        $this->execute('UPDATE user_divisions SET expiry_reminded_at = NOW() WHERE id = :id', ['id' => $id]);
     }
 
     /**
@@ -443,16 +401,12 @@ final class UserDivision extends BaseModel
      */
     public function lapsed(string $status, int $graceDays): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->select(
             "SELECT ud.id, ud.user_id, ud.gn_division_id, d.name AS division_name
                FROM user_divisions ud JOIN gn_divisions d ON d.id = ud.gn_division_id
               WHERE ud.membership_type = 'temporary' AND ud.status = :status
-                AND ud.expires_at < NOW() - INTERVAL :grace DAY"
+                AND ud.expires_at < NOW() - INTERVAL :grace DAY",
+            ['status' => $status, 'grace' => $graceDays]
         );
-        $statement->bindValue(':status', $status);
-        $statement->bindValue(':grace', $graceDays, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 }

@@ -29,3 +29,6 @@ spl_autoload_register(static function (string $class): void {
 });
 
 require_once __DIR__ . '/helpers.php';
+
+// Every date the app shows or compares is Sri Lankan time — web requests, jobs and tests alike.
+date_default_timezone_set('Asia/Colombo');

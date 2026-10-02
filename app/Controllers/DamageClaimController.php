@@ -9,18 +9,18 @@ declare(strict_types=1);
  */
 final class DamageClaimController extends Controller
 {
-    public static function service(PDO $pdo, PhotoStore $photos): DamageClaimService
+    public static function service(PDO $pdo): DamageClaimService
     {
         return new DamageClaimService(
             $pdo,
             new Booking($pdo),
             new DamageClaim($pdo),
             new ReturnRecord($pdo),
-            BookingController::returns($pdo, $photos),
+            BookingController::returns($pdo),
             new Dispute($pdo),
             new GnDivision($pdo),
-            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), new Wallet($pdo)),
-            $photos,
+            self::ledgerService($pdo),
+            PhotoStore::uploads(),
             new Notification($pdo)
         );
     }
@@ -36,12 +36,12 @@ final class DamageClaimController extends Controller
             ->required('amount', 'Claim amount')->integer('amount', 'Claim amount', 1)
             ->required('description', 'What happened')->maxLength('description', 'What happened', DamageClaimService::DESCRIPTION_MAX);
 
-        try {
+        $this->attempt(function () use ($id, $input): string {
             if (!$input->passes()) {
                 throw new ValidationException($input->errors());
             }
 
-            $track = self::service($this->pdo, $this->uploads())->raise(
+            $track = self::service($this->pdo)->raise(
                 $id,
                 $this->userId(),
                 $input->value('severity'),
@@ -50,20 +50,12 @@ final class DamageClaimController extends Controller
                 uploaded_files('evidence')
             );
 
-            $this->flash(match ($track) {
+            return match ($track) {
                 'simple' => 'Claim raised. The borrower has 48 hours to accept or contest it.',
                 'admin'  => 'Claim raised. Because your moderator is part of this booking, the Admin handles it.',
                 default  => 'Claim raised. Your moderator will arrange to meet you both.',
-            });
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException | AccessDeniedException $exception) {
-            $this->notice(404, 'Booking not found', 'Choose one of your bookings from My Bookings.');
-
-            return;
-        }
-
-        $this->redirect('/bookings/' . $id . '#claim');
+            };
+        }, '/bookings/' . $id . '#claim', ['Booking not found', 'Choose one of your bookings from My Bookings.']);
     }
 
     /**
@@ -121,16 +113,10 @@ final class DamageClaimController extends Controller
     {
         $bookingId = (int) ((new DamageClaim($this->pdo))->find($id)['booking_id'] ?? 0);
 
-        try {
-            $this->flash($action(self::service($this->pdo, $this->uploads())));
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException | AccessDeniedException $exception) {
-            $this->notice(404, 'Claim not found', 'This claim is not available to your account.');
-
-            return;
-        }
-
-        $this->redirect('/bookings/' . $bookingId . '#claim');
+        $this->attempt(
+            fn (): string => $action(self::service($this->pdo)),
+            '/bookings/' . $bookingId . '#claim',
+            ['Claim not found', 'This claim is not available to your account.']
+        );
     }
 }

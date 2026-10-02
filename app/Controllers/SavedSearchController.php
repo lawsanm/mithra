@@ -25,7 +25,7 @@ final class SavedSearchController extends Controller
         $filters = SavedSearchService::cleanFilters($_POST);
 
         try {
-            $this->service->save($this->userId(), (string) ($_POST['name'] ?? ''), $filters);
+            $this->service->save($this->userId(), $this->posted('name'), $filters);
             $this->flash('Search saved.');
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
@@ -39,7 +39,7 @@ final class SavedSearchController extends Controller
      */
     public function update(int $id): void
     {
-        $this->change(fn (): mixed => $this->service->rename($id, $this->userId(), (string) ($_POST['name'] ?? '')), 'Search renamed.');
+        $this->change(fn (): mixed => $this->service->rename($id, $this->userId(), $this->posted('name')), 'Search renamed.');
     }
 
     /**
@@ -52,17 +52,10 @@ final class SavedSearchController extends Controller
 
     private function change(callable $action, string $message): void
     {
-        try {
+        $this->attempt(function () use ($action, $message): string {
             $action();
-            $this->flash($message);
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException $exception) {
-            $this->notice(404, 'Saved search not found', 'Choose one of your saved searches on Browse.');
 
-            return;
-        }
-
-        $this->redirect('/items/browse#saved-searches');
+            return $message;
+        }, '/items/browse#saved-searches', ['Saved search not found', 'Choose one of your saved searches on Browse.']);
     }
 }

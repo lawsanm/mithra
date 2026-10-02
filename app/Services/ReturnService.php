@@ -110,35 +110,19 @@ final class ReturnService
      */
     public function savePhotos(int $bookingId, int $memberId, array $uploads, string $note): void
     {
-        $note = trim($note);
+        $note   = trim($note);
+        $stored = HandoverService::storeSidePhotos($this->photos, self::PHOTO_FOLDER, $memberId, $uploads, $note);
 
-        if (mb_strlen($note) > HandoverService::NOTE_MAX) {
-            throw ValidationException::field('note', sprintf('Keep the note to %d characters.', HandoverService::NOTE_MAX));
-        }
-
-        $usable = array_filter($uploads, static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE);
-        $errors = HandoverService::photoCountErrors(count($usable));
-
-        if ($errors !== []) {
-            throw new ValidationException($errors);
-        }
-
-        $stamp  = PhotoStore::stampText($memberId, new DateTimeImmutable());
-        $stored = $this->photos->storeMany($usable, self::PHOTO_FOLDER, 'photos', HandoverService::MAX_PHOTOS, $stamp);
-        $old    = [];
-
-        $this->pdo->beginTransaction();
-
-        try {
-            [$booking, $side] = $this->partyOrFail($bookingId, $memberId);
-            $record = $this->records->forBooking($bookingId, true);
+        $replaced = Database::transaction($this->pdo, function () use ($bookingId, $memberId, $note, $stored): array {
+            $booking = $this->bookings->lockForUpdate($bookingId);
+            $side    = BookingService::sideOf($booking, $memberId);
+            $record  = $this->records->forBooking($bookingId, true);
 
             if (!self::photosOpen($record, (string) $booking['status'])) {
                 throw ValidationException::field('photos', 'Return photos can no longer be changed for this booking.');
             }
 
             $this->records->ensure($bookingId);
-            $old = HandoverService::decode($record[$side . '_photos'] ?? null);
             $this->records->saveSide($bookingId, $side, $stored, $note === '' ? null : $note);
 
             if ($booking['status'] === 'in_progress') {
@@ -156,20 +140,10 @@ final class ReturnService
                 'booking_id' => $bookingId,
             ]);
 
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
+            return PhotoStore::paths($record[$side . '_photos'] ?? null);
+        }, fn () => $this->photos->delete(...$stored));
 
-            foreach ($stored as $path) {
-                $this->photos->delete($path);
-            }
-
-            throw $exception;
-        }
-
-        foreach ($old as $path) {
-            $this->photos->delete($path);
-        }
+        $this->photos->delete(...$replaced);
     }
 
     /**
@@ -182,13 +156,11 @@ final class ReturnService
      */
     public function accept(int $bookingId, int $lenderId): array
     {
-        $this->pdo->beginTransaction();
+        return Database::transaction($this->pdo, function () use ($bookingId, $lenderId): array {
+            $booking = $this->bookings->lockForUpdate($bookingId);
+            $record  = $this->records->forBooking($bookingId, true);
 
-        try {
-            [$booking, $side] = $this->partyOrFail($bookingId, $lenderId);
-            $record = $this->records->forBooking($bookingId, true);
-
-            if ($side !== 'lender') {
+            if (BookingService::sideOf($booking, $lenderId) !== 'lender') {
                 throw ValidationException::field('form', 'Only the lender accepts a return.');
             }
 
@@ -196,7 +168,7 @@ final class ReturnService
                 throw ValidationException::field('form', 'There is no return waiting for your decision.');
             }
 
-            if (HandoverService::decode($record['lender_photos']) === []) {
+            if (PhotoStore::paths($record['lender_photos']) === []) {
                 throw ValidationException::field('form', 'Add your own return photos before you accept.');
             }
 
@@ -208,14 +180,9 @@ final class ReturnService
             }
 
             $this->finish($booking, $outcome);
-            $this->pdo->commit();
 
             return $outcome;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
     }
 
     /**
@@ -300,84 +267,72 @@ final class ReturnService
         $flagged = 0;
 
         foreach ($this->bookings->unreturnedPast(self::NOT_RETURNED_HOURS, true) as $row) {
-            $this->pdo->beginTransaction();
-
-            try {
+            Database::transaction($this->pdo, function () use ($row, &$flagged): void {
                 $booking = $this->unreturnedBooking((int) $row['id']);
 
-                if ($booking !== null && $this->bookings->markOverdueFlagged((int) $booking['id'])) {
-                    $moderator = (int) ($this->divisions->findBasic((int) $booking['gn_division_id'])['moderator_id'] ?? 0);
-
-                    foreach (array_unique(array_filter([$moderator, (int) $booking['lender_id'], (int) $booking['borrower_id']])) as $who) {
-                        $this->notifications->push($who, 'return_overdue', [
-                            'title'      => 'Not returned: ' . $booking['item_title'],
-                            'detail'     => 'More than 72 hours past the return date. At 7 days a total-loss claim opens for review.',
-                            'icon'       => 'alert-triangle',
-                            'href'       => $who === $moderator && !(bool) $booking['moderator_involved']
-                                ? '/moderator/cases' : '/bookings/' . $booking['id'],
-                            'booking_id' => (int) $booking['id'],
-                        ]);
-                    }
-
-                    $flagged++;
+                if ($booking === null || !$this->bookings->markOverdueFlagged((int) $booking['id'])) {
+                    return;
                 }
 
-                $this->pdo->commit();
-            } catch (Throwable $exception) {
-                $this->pdo->rollBack();
+                $moderator = (int) ($this->divisions->findBasic((int) $booking['gn_division_id'])['moderator_id'] ?? 0);
 
-                throw $exception;
-            }
+                foreach (array_unique(array_filter([$moderator, (int) $booking['lender_id'], (int) $booking['borrower_id']])) as $who) {
+                    $this->notifications->push($who, 'return_overdue', [
+                        'title'      => 'Not returned: ' . $booking['item_title'],
+                        'detail'     => 'More than 72 hours past the return date. At 7 days a total-loss claim opens for review.',
+                        'icon'       => 'alert-triangle',
+                        'href'       => $who === $moderator && !(bool) $booking['moderator_involved']
+                            ? '/moderator/cases' : '/bookings/' . $booking['id'],
+                        'booking_id' => (int) $booking['id'],
+                    ]);
+                }
+
+                $flagged++;
+            });
         }
 
         $opened = 0;
 
         foreach ($this->bookings->unreturnedPast(self::TOTAL_LOSS_DAYS * 24, false) as $row) {
-            $this->pdo->beginTransaction();
-
-            try {
+            Database::transaction($this->pdo, function () use ($row, &$opened): void {
                 $booking = $this->unreturnedBooking((int) $row['id']);
 
-                if ($booking !== null) {
-                    $status = (bool) $booking['moderator_involved'] ? 'escalated' : 'pending_moderator';
-                    $this->bookings->move((int) $booking['id'], 'in_progress', $status);
-                    $claimId = $this->claims->open([
-                        'booking_id'       => (int) $booking['id'],
-                        'raised_by'        => (int) $booking['lender_id'],
-                        'severity'         => 'total_loss',
-                        'description'      => 'Opened automatically: the item was not returned within 7 days of the return date.',
-                        'proposed_penalty' => (int) $booking['declared_value'],
-                        'track'            => 'moderator',
-                        'status'           => $status,
-                    ]);
-
-                    if ($status === 'escalated') {
-                        $disputeId = $this->disputes->open(
-                            (int) $booking['id'],
-                            $claimId,
-                            (int) $booking['lender_id'],
-                            'Automatic total-loss claim on a booking the division moderator is party to.'
-                        );
-
-                        foreach ($this->users->idsInRole('admin') as $admin) {
-                            $this->notifications->push($admin, 'dispute_opened', [
-                                'title'  => 'Total-loss claim: ' . $booking['item_title'],
-                                'detail' => 'The item is over 7 days late. The division moderator is a party, so an Admin must review it.',
-                                'icon'   => 'alert-triangle',
-                                'href'   => '/admin/disputes/' . $disputeId,
-                            ]);
-                        }
-                    }
-
-                    $opened++;
+                if ($booking === null) {
+                    return;
                 }
 
-                $this->pdo->commit();
-            } catch (Throwable $exception) {
-                $this->pdo->rollBack();
+                $status = (bool) $booking['moderator_involved'] ? 'escalated' : 'pending_moderator';
+                $this->bookings->move((int) $booking['id'], 'in_progress', $status);
+                $claimId = $this->claims->open([
+                    'booking_id'       => (int) $booking['id'],
+                    'raised_by'        => (int) $booking['lender_id'],
+                    'severity'         => 'total_loss',
+                    'description'      => 'Opened automatically: the item was not returned within 7 days of the return date.',
+                    'proposed_penalty' => (int) $booking['declared_value'],
+                    'track'            => 'moderator',
+                    'status'           => $status,
+                ]);
 
-                throw $exception;
-            }
+                if ($status === 'escalated') {
+                    $disputeId = $this->disputes->open(
+                        (int) $booking['id'],
+                        $claimId,
+                        (int) $booking['lender_id'],
+                        'Automatic total-loss claim on a booking the division moderator is party to.'
+                    );
+
+                    foreach ($this->users->idsInRole('admin') as $admin) {
+                        $this->notifications->push($admin, 'dispute_opened', [
+                            'title'  => 'Total-loss claim: ' . $booking['item_title'],
+                            'detail' => 'The item is over 7 days late. The division moderator is a party, so an Admin must review it.',
+                            'icon'   => 'alert-triangle',
+                            'href'   => '/admin/disputes/' . $disputeId,
+                        ]);
+                    }
+                }
+
+                $opened++;
+            });
         }
 
         return sprintf('%d flagged as not returned, %d total-loss claims opened', $flagged, $opened);
@@ -394,31 +349,5 @@ final class ReturnService
         }
 
         return $booking;
-    }
-
-    /**
-     * @return array{0: array<string, mixed>, 1: string}
-     *
-     * @throws RecordNotFoundException|AccessDeniedException
-     */
-    private function partyOrFail(int $bookingId, int $memberId): array
-    {
-        $booking = $this->bookings->lockForUpdate($bookingId);
-
-        if ($booking === null) {
-            throw new RecordNotFoundException('No such booking.');
-        }
-
-        $side = match ($memberId) {
-            (int) $booking['lender_id']   => 'lender',
-            (int) $booking['borrower_id'] => 'borrower',
-            default                       => null,
-        };
-
-        if ($side === null) {
-            throw new AccessDeniedException('This booking belongs to other members.');
-        }
-
-        return [$booking, $side];
     }
 }

@@ -71,16 +71,11 @@ include __DIR__ . '/../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
-<?php if ($page > 1 || $hasNextPage): ?>
-    <div class="actions">
-        <?php if ($page > 1): ?>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/wallet?<?= e(http_build_query(array_filter(['filter' => $filter, 'page' => $page - 1]))) ?>">Newer</a>
-        <?php endif; ?>
-        <?php if ($hasNextPage): ?>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/wallet?<?= e(http_build_query(array_filter(['filter' => $filter, 'page' => $page + 1]))) ?>">Older</a>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
+<?php
+$pageUrl = static fn (int $target): string => base_url() . '/wallet?' . http_build_query(array_filter(['filter' => $filter, 'page' => $target]));
+$pagerLabels = ['Newer', 'Older'];
+include __DIR__ . '/../../partials/pager.php';
+?>
 
 <?php include __DIR__ . '/../../partials/modal-send-gift.php'; ?>
 

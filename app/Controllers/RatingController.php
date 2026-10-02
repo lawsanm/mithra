@@ -33,7 +33,7 @@ final class RatingController extends Controller
     public function index(): void
     {
         $me   = $this->userId();
-        $box  = ($_GET['box'] ?? '') === 'given' ? 'given' : 'received';
+        $box  = $this->queryValue('box') === 'given' ? 'given' : 'received';
         $now  = new DateTimeImmutable();
 
         $tabs = [];
@@ -81,10 +81,10 @@ final class RatingController extends Controller
         try {
             $this->service->rate(
                 $this->userId(),
-                (string) ($_POST['kind'] ?? ''),
-                (int) ($_POST['record_id'] ?? 0),
-                (int) ($_POST['rating'] ?? 0),
-                (string) ($_POST['review'] ?? ''),
+                $this->posted('kind'),
+                (int) $this->posted('record_id'),
+                (int) $this->posted('rating'),
+                $this->posted('review'),
                 $this->postedTags()
             );
             $this->flash('Thank you — your rating is saved.');
@@ -103,8 +103,8 @@ final class RatingController extends Controller
         $this->change(fn (): mixed => $this->service->update(
             $id,
             $this->userId(),
-            (int) ($_POST['rating'] ?? 0),
-            (string) ($_POST['review'] ?? ''),
+            (int) $this->posted('rating'),
+            $this->posted('review'),
             $this->postedTags()
         ), 'Rating updated.');
     }
@@ -119,18 +119,11 @@ final class RatingController extends Controller
 
     private function change(callable $action, string $message): void
     {
-        try {
+        $this->attempt(function () use ($action, $message): string {
             $action();
-            $this->flash($message);
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException $exception) {
-            $this->notice(404, 'Rating not found', 'Choose one of the ratings you gave.');
 
-            return;
-        }
-
-        $this->redirect('/ratings?box=given');
+            return $message;
+        }, '/ratings?box=given', ['Rating not found', 'Choose one of the ratings you gave.']);
     }
 
     /**
@@ -140,12 +133,12 @@ final class RatingController extends Controller
      */
     private function dialog(int $me): array
     {
-        $edit = (int) ($_GET['edit'] ?? 0);
+        $edit = (int) $this->queryValue('edit');
 
         if ($edit > 0) {
             try {
                 $rating = $this->service->editableOrFail($edit, $me);
-            } catch (ValidationException | RecordNotFoundException $exception) {
+            } catch (ValidationException | RecordNotFoundException) {
                 return [null, false];
             }
 
@@ -161,9 +154,7 @@ final class RatingController extends Controller
             ], true];
         }
 
-        $rate = is_string($_GET['rate'] ?? null) ? $_GET['rate'] : '';
-
-        if (preg_match('/^(booking|donation|gift)-([1-9][0-9]*)$/', $rate, $match) !== 1) {
+        if (preg_match('/^(booking|donation|gift)-([1-9][0-9]*)$/', $this->queryValue('rate'), $match) !== 1) {
             return [null, false];
         }
 

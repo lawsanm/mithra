@@ -160,8 +160,8 @@ final class DemoController extends Controller
     {
         $wallet = new Wallet($this->pdo);
         $me = $this->userId();
-        $group = is_string($_GET['filter'] ?? null) && isset(PointLedger::GROUPS[$_GET['filter']]) ? $_GET['filter'] : '';
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $group = isset(PointLedger::GROUPS[$this->queryValue('filter')]) ? $this->queryValue('filter') : '';
+        $page = $this->page();
         return [
             'filter' => $group,
             'page' => $page,
@@ -196,7 +196,7 @@ final class DemoController extends Controller
     {
         $moderator = $this->userId() > 0 ? (new User($this->pdo))->homeModerator($this->userId()) : null;
 
-        return ['query' => is_string($_GET['q'] ?? null) ? trim($_GET['q']) : '', 'moderator' => [
+        return ['query' => $this->queryValue('q'), 'moderator' => [
             'line'  => ($moderator === null ? 'Your GN division moderator' : 'Your moderator, ' . $moderator['name'] . ',')
                 . ' can help with verification, disputes and anything division-specific.',
             'phone' => $moderator['phone'] ?? '',

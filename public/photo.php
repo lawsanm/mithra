@@ -33,7 +33,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 $requested = is_string($_GET['p'] ?? null) ? $_GET['p'] : '';
 
-$store = new PhotoStore(dirname(__DIR__) . '/storage/uploads');
+$store = PhotoStore::uploads();
 
 // Accepts generated upload names and bundled demo item photos; rejects traversal.
 $absolute = $store->absolutePath($requested);

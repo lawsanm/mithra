@@ -68,7 +68,7 @@ final class AidGrant extends BaseModel
             ['path' => $path, 'photo' => $path]
         );
 
-        return $row === null ? null : Booking::ids($row);
+        return $row === null ? null : self::ids($row);
     }
 
     /** Statuses in which a grant is still alive — at most one per member (§12.1). */
@@ -77,11 +77,11 @@ final class AidGrant extends BaseModel
     /** How many of this member's grants are still alive. */
     public function countLiveFor(int $memberId): int
     {
+        $params = ['member' => $memberId];
+
         return (int) $this->selectValue(
-            "SELECT COUNT(*) FROM aid_grants
-              WHERE member_id = :member
-                AND status IN ('requested','vouched','info_requested','approved','disbursed','partially_returned')",
-            ['member' => $memberId]
+            'SELECT COUNT(*) FROM aid_grants WHERE member_id = :member AND status IN ' . self::inList('state', self::LIVE_STATES, $params),
+            $params
         );
     }
 
@@ -121,20 +121,18 @@ final class AidGrant extends BaseModel
      */
     public function create(array $data): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             "INSERT INTO aid_grants (member_id, gn_division_id, requested_amount, purpose, details, evidence_photos, status)
-             VALUES (:member, :division, :amount, :purpose, :details, :photos, 'requested')"
+             VALUES (:member, :division, :amount, :purpose, :details, :photos, 'requested')",
+            [
+                'member'   => $data['member_id'],
+                'division' => $data['division_id'],
+                'amount'   => $data['amount'],
+                'purpose'  => $data['purpose'],
+                'details'  => $data['details'],
+                'photos'   => json_encode($data['evidence_photos'], JSON_UNESCAPED_SLASHES),
+            ]
         );
-        $statement->execute([
-            'member'   => $data['member_id'],
-            'division' => $data['division_id'],
-            'amount'   => $data['amount'],
-            'purpose'  => $data['purpose'],
-            'details'  => $data['details'],
-            'photos'   => json_encode($data['evidence_photos'], JSON_UNESCAPED_SLASHES),
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -155,13 +153,11 @@ final class AidGrant extends BaseModel
     /** Change a request the moderator has not vouched for yet. */
     public function updateRequest(int $id, int $memberId, int $amount, string $purpose, string $details): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE aid_grants SET requested_amount = :amount, purpose = :purpose, details = :details
-              WHERE id = :id AND member_id = :member AND status = 'requested'"
-        );
-        $statement->execute(['amount' => $amount, 'purpose' => $purpose, 'details' => $details, 'id' => $id, 'member' => $memberId]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND member_id = :member AND status = 'requested'",
+            ['amount' => $amount, 'purpose' => $purpose, 'details' => $details, 'id' => $id, 'member' => $memberId]
+        ) === 1;
     }
 
     /**
@@ -170,25 +166,21 @@ final class AidGrant extends BaseModel
      */
     public function reply(int $id, int $memberId, string $reply): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE aid_grants
                 SET member_reply = :reply, status = IF(vouched_at IS NULL, 'requested', 'vouched')
-              WHERE id = :id AND member_id = :member AND status = 'info_requested'"
-        );
-        $statement->execute(['reply' => $reply, 'id' => $id, 'member' => $memberId]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND member_id = :member AND status = 'info_requested'",
+            ['reply' => $reply, 'id' => $id, 'member' => $memberId]
+        ) === 1;
     }
 
     /** The member withdraws a request still being considered. */
     public function withdraw(int $id, int $memberId): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE aid_grants SET status = 'closed', decision_reason = 'Withdrawn by the member.'
-              WHERE id = :id AND member_id = :member AND status IN ('requested','info_requested')"
-        );
-        $statement->execute(['id' => $id, 'member' => $memberId]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND member_id = :member AND status IN ('requested','info_requested')",
+            ['id' => $id, 'member' => $memberId]
+        ) === 1;
     }
 }

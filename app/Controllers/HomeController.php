@@ -17,7 +17,7 @@ final class HomeController extends Controller
     public function index(): void
     {
         if ($this->signedIn()) {
-            $this->redirect($this->homeFor($this->role()));
+            $this->redirect(home_for($this->role()));
 
             return;
         }

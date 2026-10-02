@@ -49,7 +49,7 @@ final class DonationController extends Controller
                 'item'          => (string) $row['title'],
                 'status'        => (string) $row['status'],
                 'status_label'  => $this->statusLabel((string) $row['status']),
-                'request_count' => count($requests) . ' request' . (count($requests) === 1 ? '' : 's'),
+                'request_count' => plural(count($requests), 'request'),
                 'first_come'    => $row['selection_mode'] === 'first_come',
                 'open'          => $open,
                 'cancellable'   => in_array($row['status'], ['open', 'recipient_selected'], true),
@@ -107,9 +107,7 @@ final class DonationController extends Controller
                 'mine'      => $mine !== null,
                 'theirs'    => $theirs !== null,
             ],
-            'badge'     => $isDonor
-                ? 'Donor badge · ' . $given . ' completed donation' . ($given === 1 ? '' : 's')
-                : '',
+            'badge'     => $isDonor ? 'Donor badge · ' . plural($given, 'completed donation') : '',
         ]);
     }
 
@@ -121,13 +119,13 @@ final class DonationController extends Controller
         $itemId = (int) (($this->donations->find($id) ?? [])['item_id'] ?? 0);
 
         try {
-            $chosen = $this->service->request($id, $this->userId(), (string) ($_POST['message'] ?? ''));
+            $chosen = $this->service->request($id, $this->userId(), $this->posted('message'));
             $this->flash($chosen
                 ? 'You were first, so it is yours. Arrange the handover with the donor.'
                 : 'Request sent. The donor chooses who receives it.');
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException $exception) {
+        } catch (RecordNotFoundException) {
             $this->notice(404, 'Donation not found', 'This donation is no longer available.');
 
             return;
@@ -141,10 +139,13 @@ final class DonationController extends Controller
      */
     public function mode(int $id): void
     {
-        $mode = ($_POST['first_come'] ?? '') === '1' ? 'first_come' : 'donor_chooses';
+        $mode = $this->posted('first_come') === '1' ? 'first_come' : 'donor_chooses';
 
-        $this->donorAction($id, fn (): mixed => $this->service->setMode($id, $this->userId(), $mode),
-            $mode === 'first_come' ? 'First-come is on: the first request is chosen automatically.' : 'First-come is off. You choose the recipient.');
+        $this->act(function () use ($id, $mode): string {
+            $this->service->setMode($id, $this->userId(), $mode);
+
+            return $mode === 'first_come' ? 'First-come is on: the first request is chosen automatically.' : 'First-come is off. You choose the recipient.';
+        }, '/donations/' . $id);
     }
 
     /**
@@ -152,10 +153,11 @@ final class DonationController extends Controller
      */
     public function select(int $id): void
     {
-        $requestId = (int) ($_POST['request_id'] ?? 0);
+        $this->act(function () use ($id): string {
+            $this->service->select($id, $this->userId(), (int) $this->posted('request_id'));
 
-        $this->donorAction($id, fn (): mixed => $this->service->select($id, $this->userId(), $requestId),
-            'Recipient chosen. Everyone else who asked has been told.');
+            return 'Recipient chosen. Everyone else who asked has been told.';
+        }, '/donations/' . $id);
     }
 
     /**
@@ -185,20 +187,9 @@ final class DonationController extends Controller
      */
     public function confirm(int $id): void
     {
-        try {
-            $completed = $this->service->confirm($id, $this->userId());
-            $this->flash($completed
-                ? 'Handover confirmed by both of you. The donation is complete.'
-                : 'Confirmed. Waiting for the other side to confirm too.');
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException | AccessDeniedException $exception) {
-            $this->refuse($exception);
-
-            return;
-        }
-
-        $this->redirect('/donations/' . $id . '/handover');
+        $this->act(fn (): string => $this->service->confirm($id, $this->userId())
+            ? 'Handover confirmed by both of you. The donation is complete.'
+            : 'Confirmed. Waiting for the other side to confirm too.', '/donations/' . $id . '/handover');
     }
 
     /**
@@ -223,11 +214,15 @@ final class DonationController extends Controller
         $this->redirect('/items/' . $itemId);
     }
 
-    private function donorAction(int $id, callable $action, string $message): void
+    /**
+     * Like Controller::attempt(), but someone else's donation gets a 403 here.
+     *
+     * @param callable(): string $action does the work, returns the confirmation
+     */
+    private function act(callable $action, string $redirect): void
     {
         try {
-            $action();
-            $this->flash($message);
+            $this->flash($action());
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
         } catch (RecordNotFoundException | AccessDeniedException $exception) {
@@ -236,7 +231,7 @@ final class DonationController extends Controller
             return;
         }
 
-        $this->redirect('/donations/' . $id);
+        $this->redirect($redirect);
     }
 
     private function statusLabel(string $status): string

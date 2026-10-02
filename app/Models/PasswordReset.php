@@ -18,19 +18,11 @@ final class PasswordReset extends BaseModel
      */
     public function create(array $data): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             'INSERT INTO password_resets (user_id, channel, secret_hash, expires_at)
-             VALUES (:user_id, :channel, :secret_hash, NOW() + INTERVAL :ttl MINUTE)'
+             VALUES (:user_id, :channel, :secret_hash, NOW() + INTERVAL :ttl_minutes MINUTE)',
+            $data
         );
-
-        $statement->execute([
-            'user_id'     => $data['user_id'],
-            'channel'     => $data['channel'],
-            'secret_hash' => $data['secret_hash'],
-            'ttl'         => $data['ttl_minutes'],
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -59,21 +51,13 @@ final class PasswordReset extends BaseModel
      */
     public function markUsed(int $id): bool
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE password_resets SET used_at = NOW() WHERE id = :id AND used_at IS NULL'
-        );
-        $statement->execute(['id' => $id]);
-
-        return $statement->rowCount() === 1;
+        return $this->execute('UPDATE password_resets SET used_at = NOW() WHERE id = :id AND used_at IS NULL', ['id' => $id]) === 1;
     }
 
     /** Retire every outstanding secret for this account — a newer one, or a reset, supersedes them. */
     public function revokeFor(int $userId): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE password_resets SET used_at = NOW() WHERE user_id = :user AND used_at IS NULL'
-        );
-        $statement->execute(['user' => $userId]);
+        $this->execute('UPDATE password_resets SET used_at = NOW() WHERE user_id = :user AND used_at IS NULL', ['user' => $userId]);
     }
 
     /** How many secrets this account was sent in the last $minutes, to stop a mailbox being flooded. */

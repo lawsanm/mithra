@@ -12,8 +12,7 @@ declare(strict_types=1);
  * in the same transaction that accepts it (Plan §7.4). A request costs
  * nothing, so a lender who never answers costs the borrower nothing either.
  *
- * Every allowed status change is listed once in TRANSITIONS, so adding a state
- * is one line here (Rules/DESIGN_PRINCIPLES.md).
+ * Every allowed status change is listed once, in Booking::TRANSITIONS.
  */
 final class BookingService
 {
@@ -31,16 +30,6 @@ final class BookingService
 
     public const MESSAGE_MAX = 255;
 
-    /** from => the statuses a booking may move to next. */
-    public const TRANSITIONS = [
-        'requested'         => ['awaiting_handover', 'rejected', 'cancelled', 'auto_cancelled'],
-        'awaiting_handover' => ['in_progress', 'cancelled', 'auto_cancelled'],
-        'in_progress'       => ['awaiting_return', 'pending_moderator', 'escalated'],
-        'awaiting_return'   => ['completed', 'pending_moderator', 'escalated'],
-        'pending_moderator' => ['completed', 'escalated'],
-        'escalated'         => ['completed', 'pending_moderator'],
-    ];
-
     public function __construct(
         private PDO $pdo,
         private Booking $bookings,
@@ -55,11 +44,6 @@ final class BookingService
     }
 
     // ── Pure rules ──────────────────────────────────────────────────────────
-
-    public static function canMove(string $from, string $to): bool
-    {
-        return in_array($to, self::TRANSITIONS[$from] ?? [], true);
-    }
 
     /**
      * The late-fee buffer: one daily rate (Plan §7.6). A monthly-only item has
@@ -144,6 +128,24 @@ final class BookingService
     }
 
     /**
+     * Which side of the booking this member is on. A missing booking is not
+     * found, and anyone who is not one of its two members is refused.
+     *
+     * @param array<string, mixed>|null $booking
+     *
+     * @throws RecordNotFoundException|AccessDeniedException
+     */
+    public static function sideOf(?array $booking, int $memberId): string
+    {
+        return match (true) {
+            $booking === null                           => throw new RecordNotFoundException('No such booking.'),
+            $memberId === (int) $booking['lender_id']   => 'lender',
+            $memberId === (int) $booking['borrower_id'] => 'borrower',
+            default                                     => throw new AccessDeniedException('This booking belongs to other members.'),
+        };
+    }
+
+    /**
      * Who may move a booking from its current status: the borrower may
      * cancel a request; either side may cancel before the handover; only the
      * lender accepts or declines.
@@ -221,12 +223,9 @@ final class BookingService
             ));
         }
 
-        $division = $this->divisions->findBasic((int) $item['gn_division_id']);
-        $moderator = $division['moderator_id'] ?? null;
+        $moderator = $this->divisions->findBasic((int) $item['gn_division_id'])['moderator_id'] ?? null;
 
-        $this->pdo->beginTransaction();
-
-        try {
+        return Database::transaction($this->pdo, function () use ($itemId, $borrowerId, $start, $end, $message, $item, $quote, $moderator): int {
             $id = $this->bookings->create([
                 'item_id'            => $itemId,
                 'borrower_id'        => $borrowerId,
@@ -238,7 +237,7 @@ final class BookingService
                 'rental_charge'      => $quote['charge'],
                 'late_buffer'        => $quote['buffer'],
                 // Rule 1 (§16.5): a moderator's own booking goes to the Admin if it is ever disputed.
-                'moderator_involved' => $moderator !== null && in_array((int) $moderator, [$borrowerId, (int) $item['owner_id']], true),
+                'moderator_involved' => in_array($moderator, [$borrowerId, (int) $item['owner_id']], true),
                 'message'            => $message === '' ? null : $message,
             ]);
 
@@ -250,14 +249,8 @@ final class BookingService
                 'booking_id' => $id,
             ]);
 
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
-
-        return $id;
+            return $id;
+        });
     }
 
     // ── Update: the lender decides ─────────────────────────────────────────
@@ -271,7 +264,7 @@ final class BookingService
      */
     public function accept(int $bookingId, int $lenderId): void
     {
-        $this->inTransaction(function () use ($bookingId, $lenderId): void {
+        Database::transaction($this->pdo, function () use ($bookingId, $lenderId): void {
             $booking = $this->lockedFor($bookingId, $lenderId, 'accept');
 
             if (strtotime((string) $booking['requested_at']) < time() - self::ANSWER_HOURS * 3600) {
@@ -348,7 +341,7 @@ final class BookingService
             throw ValidationException::field('reason', sprintf('Keep the reason to %d characters.', self::MESSAGE_MAX));
         }
 
-        $this->inTransaction(function () use ($bookingId, $lenderId, $reason): void {
+        Database::transaction($this->pdo, function () use ($bookingId, $lenderId, $reason): void {
             $booking = $this->lockedFor($bookingId, $lenderId, 'decline');
             $this->bookings->decline($bookingId, $reason === '' ? null : $reason);
 
@@ -372,7 +365,7 @@ final class BookingService
      */
     public function cancel(int $bookingId, int $memberId): void
     {
-        $this->inTransaction(function () use ($bookingId, $memberId): void {
+        Database::transaction($this->pdo, function () use ($bookingId, $memberId): void {
             $booking = $this->lockedFor($bookingId, $memberId, 'cancel');
             $this->refundAndClose($booking, 'cancelled', $memberId);
 
@@ -421,7 +414,7 @@ final class BookingService
         $count = 0;
 
         foreach ($this->bookings->staleRequests(self::ANSWER_HOURS) as $stale) {
-            $this->inTransaction(function () use ($stale, &$count): void {
+            Database::transaction($this->pdo, function () use ($stale, &$count): void {
                 $booking = $this->bookings->lockForUpdate((int) $stale['id']);
 
                 if ($booking === null || $booking['status'] !== 'requested') {
@@ -444,7 +437,7 @@ final class BookingService
             });
         }
 
-        return $count . ' request' . ($count === 1 ? '' : 's') . ' auto-cancelled';
+        return plural($count, 'request') . ' auto-cancelled';
     }
 
     // ── Plumbing ───────────────────────────────────────────────────────────
@@ -459,17 +452,8 @@ final class BookingService
      */
     private function lockedFor(int $bookingId, int $memberId, string $action): array
     {
-        $booking = $this->bookings->lockForUpdate($bookingId);
-
-        if ($booking === null) {
-            throw new RecordNotFoundException('No such booking.');
-        }
-
-        $isLender = (int) $booking['lender_id'] === $memberId;
-
-        if (!$isLender && (int) $booking['borrower_id'] !== $memberId) {
-            throw new AccessDeniedException('This booking belongs to other members.');
-        }
+        $booking  = $this->bookings->lockForUpdate($bookingId);
+        $isLender = self::sideOf($booking, $memberId) === 'lender';
 
         if (!self::mayAct($action, (string) $booking['status'], $isLender)) {
             throw ValidationException::field('form', match ($action) {
@@ -484,28 +468,5 @@ final class BookingService
     private static function rate(mixed $value): ?int
     {
         return $value === null ? null : (int) $value;
-    }
-
-    /**
-     * @template T
-     *
-     * @param callable(): T $work
-     *
-     * @return T
-     */
-    private function inTransaction(callable $work): mixed
-    {
-        $this->pdo->beginTransaction();
-
-        try {
-            $result = $work();
-            $this->pdo->commit();
-
-            return $result;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
     }
 }

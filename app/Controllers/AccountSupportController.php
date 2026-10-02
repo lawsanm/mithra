@@ -41,7 +41,7 @@ final class AccountSupportController extends Controller
 
     private function decideAddress(int $id, bool $approve): void
     {
-        $reason = (string) ($_POST['reason'] ?? '');
+        $reason = $this->posted('reason');
 
         try {
             $name = $this->profiles()->decideAddressChange($id, $this->userId(), $approve, $reason);

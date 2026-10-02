@@ -44,23 +44,19 @@ final class SavedSearch extends BaseModel
      */
     public function create(int $userId, string $name, array $filters): int
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO saved_searches (user_id, name, filters) VALUES (:user, :name, :filters)'
+        return $this->insert(
+            'INSERT INTO saved_searches (user_id, name, filters) VALUES (:user, :name, :filters)',
+            ['user' => $userId, 'name' => $name, 'filters' => json_encode($filters, JSON_THROW_ON_ERROR)]
         );
-        $statement->execute(['user' => $userId, 'name' => $name, 'filters' => json_encode($filters, JSON_THROW_ON_ERROR)]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     public function rename(int $id, int $userId, string $name): void
     {
-        $statement = $this->pdo->prepare('UPDATE saved_searches SET name = :name WHERE id = :id AND user_id = :user');
-        $statement->execute(['name' => $name, 'id' => $id, 'user' => $userId]);
+        $this->execute('UPDATE saved_searches SET name = :name WHERE id = :id AND user_id = :user', ['name' => $name, 'id' => $id, 'user' => $userId]);
     }
 
     public function delete(int $id, int $userId): void
     {
-        $statement = $this->pdo->prepare('DELETE FROM saved_searches WHERE id = :id AND user_id = :user');
-        $statement->execute(['id' => $id, 'user' => $userId]);
+        $this->execute('DELETE FROM saved_searches WHERE id = :id AND user_id = :user', ['id' => $id, 'user' => $userId]);
     }
 }

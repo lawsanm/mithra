@@ -88,16 +88,16 @@ include __DIR__ . '/../../../partials/header.php';
     <p class="form-card__legend">Allocation split — the sponsor's choice</p>
 
     <div class="split-bar">
-        <span class="split-bar__segment split-bar__segment--sponsor" style="width: <?= (int) $draft['sponsor_pct'] ?>%;"></span>
-        <span class="split-bar__segment split-bar__segment--aid" style="width: <?= (int) $draft['aid_pct'] ?>%;"></span>
+        <span class="split-bar__fill--sponsor" style="width: <?= (int) $draft['sponsor_pct'] ?>%;"></span>
+        <span class="split-bar__fill--aid" style="width: <?= (int) $draft['aid_pct'] ?>%;"></span>
     </div>
 
     <div class="split-legend">
-        <span class="split-legend__item">
+        <span class="split-legend__row">
             <span class="split-legend__dot split-legend__dot--sponsor"></span>
             Sponsor Pool  ·  <?= (int) $draft['sponsor_pct'] ?>%  =  <?= e($sponsorPoints) ?> pts
         </span>
-        <span class="split-legend__item">
+        <span class="split-legend__row">
             <span class="split-legend__dot split-legend__dot--aid"></span>
             Aid Pool  ·  <?= (int) $draft['aid_pct'] ?>%  =  <?= e($aidPoints) ?> pts
         </span>

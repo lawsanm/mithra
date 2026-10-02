@@ -127,11 +127,11 @@ final class AidGrantService
             throw ValidationException::field('form', 'Only a verified member can ask for an aid grant.');
         }
 
-        $details = trim($details);
-        $used    = $this->grants->usedThisYear($memberId);
-        $errors  = $this->eligibility($memberId) === ''
-            ? self::requestErrors($amount, $purpose, $details, $used)
-            : ['form' => $this->eligibility($memberId)];
+        $details     = trim($details);
+        $eligibility = $this->eligibility($memberId);
+        $errors      = $eligibility === ''
+            ? self::requestErrors($amount, $purpose, $details, $this->grants->usedThisYear($memberId))
+            : ['form' => $eligibility];
 
         if ($errors !== []) {
             throw new ValidationException($errors);
@@ -139,9 +139,7 @@ final class AidGrantService
 
         $stored = $this->photos->storeMany($uploads, self::PHOTO_FOLDER, 'evidence', self::MAX_PHOTOS);
 
-        $this->pdo->beginTransaction();
-
-        try {
+        return Database::transaction($this->pdo, function () use ($memberId, $member, $amount, $purpose, $details, $stored): int {
             // A grant belongs to the home division, whose moderator vouches (§12.1).
             $id = $this->grants->create([
                 'member_id'       => $memberId,
@@ -163,18 +161,8 @@ final class AidGrantService
                 ]);
             }
 
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            foreach ($stored as $path) {
-                $this->photos->delete($path);
-            }
-
-            throw $exception;
-        }
-
-        return $id;
+            return $id;
+        }, fn () => $this->photos->delete(...$stored));
     }
 
     /**

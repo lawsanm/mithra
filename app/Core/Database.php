@@ -42,6 +42,47 @@ final class Database
     }
 
     /**
+     * Run $work as one transaction: commit when it returns, roll back and
+     * rethrow when anything throws (Rules/CONVENTIONS.md §8). Called while a
+     * transaction is already open, $work joins it and the opener decides.
+     * $undo reverses what the database cannot — files stored for the change.
+     *
+     * @template T
+     *
+     * @param callable(): T $work
+     *
+     * @return T
+     */
+    public static function transaction(PDO $pdo, callable $work, ?callable $undo = null): mixed
+    {
+        $owner = !$pdo->inTransaction();
+
+        if ($owner) {
+            $pdo->beginTransaction();
+        }
+
+        try {
+            $result = $work();
+
+            if ($owner) {
+                $pdo->commit();
+            }
+
+            return $result;
+        } catch (Throwable $exception) {
+            if ($owner) {
+                $pdo->rollBack();
+            }
+
+            if ($undo !== null) {
+                $undo();
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
      * A separate handle with no database selected, for setup tooling that
      * creates the schema itself (scripts/migrate.php). Emulated prepares stay
      * on because multi-statement .sql files need the emulated driver path;

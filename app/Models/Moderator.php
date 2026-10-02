@@ -68,19 +68,17 @@ final class Moderator extends BaseModel
      */
     public function recentAppointments(int $limit = 5): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             "SELECT ma.appointed_at, u.full_name, d.name AS division_name
                FROM moderator_assignments ma
                JOIN users u ON u.id = ma.user_id
                JOIN gn_divisions d ON d.id = ma.gn_division_id
               WHERE ma.status IN ('active', 'trial')
-              ORDER BY ma.appointed_at DESC
-              LIMIT :limit"
+              ORDER BY ma.appointed_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /**

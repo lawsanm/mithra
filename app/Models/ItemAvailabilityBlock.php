@@ -61,26 +61,22 @@ final class ItemAvailabilityBlock extends BaseModel
 
     public function create(int $itemId, string $start, string $end, ?string $note): int
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO item_availability_blocks (item_id, start_date, end_date, note)
-             VALUES (:item, :start, :end, :note)'
+        return $this->insert(
+            'INSERT INTO item_availability_blocks (item_id, start_date, end_date, note) VALUES (:item, :start, :end, :note)',
+            ['item' => $itemId, 'start' => $start, 'end' => $end, 'note' => $note]
         );
-        $statement->execute(['item' => $itemId, 'start' => $start, 'end' => $end, 'note' => $note]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     public function update(int $id, string $start, string $end, ?string $note): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE item_availability_blocks SET start_date = :start, end_date = :end, note = :note WHERE id = :id'
+        $this->execute(
+            'UPDATE item_availability_blocks SET start_date = :start, end_date = :end, note = :note WHERE id = :id',
+            ['start' => $start, 'end' => $end, 'note' => $note, 'id' => $id]
         );
-        $statement->execute(['start' => $start, 'end' => $end, 'note' => $note, 'id' => $id]);
     }
 
     public function delete(int $id): void
     {
-        $statement = $this->pdo->prepare('DELETE FROM item_availability_blocks WHERE id = :id');
-        $statement->execute(['id' => $id]);
+        $this->execute('DELETE FROM item_availability_blocks WHERE id = :id', ['id' => $id]);
     }
 }

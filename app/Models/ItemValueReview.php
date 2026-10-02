@@ -19,23 +19,11 @@ final class ItemValueReview extends BaseModel
      */
     public function record(array $entry): int
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO item_value_reviews
-                 (item_id, reviewer_id, decision, previous_value, new_value, reason)
-             VALUES
-                 (:item_id, :reviewer_id, :decision, :previous_value, :new_value, :reason)'
+        return $this->insert(
+            'INSERT INTO item_value_reviews (item_id, reviewer_id, decision, previous_value, new_value, reason)
+             VALUES (:item_id, :reviewer_id, :decision, :previous_value, :new_value, :reason)',
+            $entry
         );
-
-        $statement->execute([
-            'item_id'        => $entry['item_id'],
-            'reviewer_id'    => $entry['reviewer_id'],
-            'decision'       => $entry['decision'],
-            'previous_value' => $entry['previous_value'],
-            'new_value'      => $entry['new_value'],
-            'reason'         => $entry['reason'],
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**

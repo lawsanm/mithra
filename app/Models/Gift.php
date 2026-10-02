@@ -48,12 +48,10 @@ final class Gift extends BaseModel
 
     public function create(int $senderId, int $recipientId, int $amount, string $reason): int
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO gifts (sender_id, recipient_id, amount, reason) VALUES (:sender, :recipient, :amount, :reason)'
+        return $this->insert(
+            'INSERT INTO gifts (sender_id, recipient_id, amount, reason) VALUES (:sender, :recipient, :amount, :reason)',
+            ['sender' => $senderId, 'recipient' => $recipientId, 'amount' => $amount, 'reason' => $reason]
         );
-        $statement->execute(['sender' => $senderId, 'recipient' => $recipientId, 'amount' => $amount, 'reason' => $reason]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -67,20 +65,16 @@ final class Gift extends BaseModel
         $column = $box === 'received' ? 'g.recipient_id' : 'g.sender_id';
         $other  = $box === 'received' ? 'g.sender_id'    : 'g.recipient_id';
 
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             "SELECT g.id, g.amount, g.reason, g.sent_at, u.full_name AS counterparty
                FROM gifts g
                JOIN users u ON u.id = {$other}
               WHERE {$column} = :member
-              ORDER BY g.sent_at DESC, g.id DESC
-              LIMIT :take OFFSET :skip"
+              ORDER BY g.sent_at DESC, g.id DESC",
+            ['member' => $memberId],
+            $page,
+            $perPage
         );
-        $statement->bindValue(':member', $memberId, PDO::PARAM_INT);
-        $statement->bindValue(':take', $perPage, PDO::PARAM_INT);
-        $statement->bindValue(':skip', (max(1, $page) - 1) * $perPage, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /**
@@ -91,7 +85,7 @@ final class Gift extends BaseModel
      */
     public function roundTripPairs(int $days, int $trips): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->select(
             'SELECT p.a, p.b, LEAST(p.ab, p.ba) AS trips, ua.full_name AS a_name, ub.full_name AS b_name
                FROM (SELECT LEAST(sender_id, recipient_id) AS a, GREATEST(sender_id, recipient_id) AS b,
                             SUM(sender_id < recipient_id) AS ab, SUM(sender_id > recipient_id) AS ba
@@ -100,12 +94,8 @@ final class Gift extends BaseModel
                       GROUP BY LEAST(sender_id, recipient_id), GREATEST(sender_id, recipient_id)) p
                JOIN users ua ON ua.id = p.a
                JOIN users ub ON ub.id = p.b
-              WHERE LEAST(p.ab, p.ba) >= :trips'
+              WHERE LEAST(p.ab, p.ba) >= :trips',
+            ['days' => $days, 'trips' => $trips]
         );
-        $statement->bindValue(':days', $days, PDO::PARAM_INT);
-        $statement->bindValue(':trips', $trips, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 }

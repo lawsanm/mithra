@@ -19,7 +19,7 @@ final class Rating extends BaseModel
         $column = $box === 'given' ? 'r.rater_id' : 'r.ratee_id';
         $other  = $box === 'given' ? 'r.ratee_id' : 'r.rater_id';
 
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             "SELECT r.id, r.stars, r.comment, r.created_at,
                     u.full_name AS counterparty, i.title AS item_title
                FROM ratings r
@@ -27,14 +27,11 @@ final class Rating extends BaseModel
           LEFT JOIN bookings b ON b.id = r.booking_id
           LEFT JOIN items i    ON i.id = b.item_id
               WHERE {$column} = :member
-              ORDER BY r.created_at DESC
-              LIMIT :limit"
+              ORDER BY r.created_at DESC",
+            ['member' => $memberId],
+            1,
+            $limit
         );
-        $statement->bindValue(':member', $memberId, PDO::PARAM_INT);
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     public function countForMember(int $memberId, string $box): int
@@ -102,22 +99,21 @@ final class Rating extends BaseModel
      */
     public function create(array $data): int
     {
-        $column    = self::column($data['kind']);
-        $statement = $this->pdo->prepare(
-            "INSERT INTO ratings ({$column}, rater_id, ratee_id, context, stars, comment, tags)
-             VALUES (:record, :rater, :ratee, :context, :stars, :comment, :tags)"
-        );
-        $statement->execute([
-            'record'  => $data['record_id'],
-            'rater'   => $data['rater_id'],
-            'ratee'   => $data['ratee_id'],
-            'context' => $data['context'],
-            'stars'   => $data['stars'],
-            'comment' => $data['comment'],
-            'tags'    => json_encode($data['tags'], JSON_UNESCAPED_SLASHES),
-        ]);
+        $column = self::column($data['kind']);
 
-        return (int) $this->pdo->lastInsertId();
+        return $this->insert(
+            "INSERT INTO ratings ({$column}, rater_id, ratee_id, context, stars, comment, tags)
+             VALUES (:record, :rater, :ratee, :context, :stars, :comment, :tags)",
+            [
+                'record'  => $data['record_id'],
+                'rater'   => $data['rater_id'],
+                'ratee'   => $data['ratee_id'],
+                'context' => $data['context'],
+                'stars'   => $data['stars'],
+                'comment' => $data['comment'],
+                'tags'    => json_encode($data['tags'], JSON_UNESCAPED_SLASHES),
+            ]
+        );
     }
 
     /**
@@ -125,16 +121,15 @@ final class Rating extends BaseModel
      */
     public function updateOwned(int $id, int $raterId, int $stars, ?string $comment, array $tags): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE ratings SET stars = :stars, comment = :comment, tags = :tags WHERE id = :id AND rater_id = :rater'
+        $this->execute(
+            'UPDATE ratings SET stars = :stars, comment = :comment, tags = :tags WHERE id = :id AND rater_id = :rater',
+            ['stars' => $stars, 'comment' => $comment, 'tags' => json_encode($tags, JSON_UNESCAPED_SLASHES), 'id' => $id, 'rater' => $raterId]
         );
-        $statement->execute(['stars' => $stars, 'comment' => $comment, 'tags' => json_encode($tags), 'id' => $id, 'rater' => $raterId]);
     }
 
     public function deleteOwned(int $id, int $raterId): void
     {
-        $statement = $this->pdo->prepare('DELETE FROM ratings WHERE id = :id AND rater_id = :rater');
-        $statement->execute(['id' => $id, 'rater' => $raterId]);
+        $this->execute('DELETE FROM ratings WHERE id = :id AND rater_id = :rater', ['id' => $id, 'rater' => $raterId]);
     }
 
     /**

@@ -28,7 +28,7 @@ final class ModerationController extends Controller
             new UserDivision($pdo),
             new GnDivision($pdo),
             new Wallet($pdo),
-            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), new Wallet($pdo)),
+            self::ledgerService($pdo),
             new Notification($pdo)
         );
     }
@@ -38,7 +38,7 @@ final class ModerationController extends Controller
      */
     public function index(): void
     {
-        $filter = $this->filter((string) ($_GET['status'] ?? ''));
+        $filter = $this->filter($this->queryValue('status'));
 
         try {
             $rows    = $this->verifications->queue($this->userId(), $filter);

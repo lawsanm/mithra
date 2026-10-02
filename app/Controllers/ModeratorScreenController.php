@@ -70,7 +70,7 @@ final class ModeratorScreenController extends Controller
 
     private function cases(int $division): array
     {
-        $state = is_string($_GET['status'] ?? null) ? $_GET['status'] : '';
+        $state = $this->queryValue('status');
         $rows = $this->caseRows($division);
         return ['filters' => $this->filters(['' => 'All', 'open' => 'Open', 'resolved' => 'Resolved', 'escalated' => 'Escalated'], $state),
             'cases' => array_values(array_filter($rows, static fn (array $row): bool => $state === '' || $row['state'] === $state)),
@@ -101,7 +101,7 @@ final class ModeratorScreenController extends Controller
 
     private function aid(int $division): array
     {
-        $state = is_string($_GET['status'] ?? null) ? $_GET['status'] : '';
+        $state = $this->queryValue('status');
         $rows = array_map(static function (array $row): array {
             $state = match ($row['status']) { 'requested', 'info_requested' => 'awaiting', 'rejected_moderator', 'rejected_liaison' => 'rejected', default => 'vouched' };
             return ['id' => (string) $row['id'], 'state' => $state, 'title' => $row['member_name'] . ' — ' . $row['requested_amount'] . ' pts',

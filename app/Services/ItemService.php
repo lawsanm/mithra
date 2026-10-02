@@ -66,17 +66,12 @@ final class ItemService
      */
     private const APPROVAL_FIELDS = ['category_id', 'title', 'description', 'listing_type', 'declared_value', 'photos'];
 
-    private Item $items;
-    private ItemCategory $categories;
-    private Booking $bookings;
-    private PhotoStore $photos;
-
-    public function __construct(Item $items, ItemCategory $categories, Booking $bookings, PhotoStore $photos)
-    {
-        $this->items      = $items;
-        $this->categories = $categories;
-        $this->bookings   = $bookings;
-        $this->photos     = $photos;
+    public function __construct(
+        private Item $items,
+        private ItemCategory $categories,
+        private Booking $bookings,
+        private PhotoStore $photos
+    ) {
     }
 
     /**
@@ -153,17 +148,7 @@ final class ItemService
         return [];
     }
 
-    /**
-     * Drop files that never made it onto a row — an abandoned wizard draft.
-     *
-     * @param list<string> $paths
-     */
-    public function discardPhotos(array $paths): void
-    {
-        foreach ($paths as $path) {
-            $this->photos->delete($path);
-        }
-    }
+
 
     /**
      * Create a listing. It enters the moderator's queue, never the shelf.
@@ -222,16 +207,14 @@ final class ItemService
         }
 
         // Proof already on file still stands unless the edit replaces it.
-        $newProof = $this->nullableString($input['value_proof_path'] ?? null);
-        $input['value_proof_type'] = $this->nullableString($input['value_proof_type'] ?? null) ?? $current['value_proof_type'];
+        $newProof = Validator::optional($input, 'value_proof_path');
+        $input['value_proof_type'] = Validator::optional($input, 'value_proof_type') ?? $current['value_proof_type'];
         $input['value_proof_path'] = $newProof ?? $current['value_proof_path'];
 
         try {
             $clean = $this->cleanFields($input, $photoPaths);
         } catch (ValidationException $exception) {
-            if ($newProof !== null) {
-                $this->photos->delete($newProof);
-            }
+            $this->photos->delete(...array_filter([$newProof]));
 
             throw $exception;
         }
@@ -256,7 +239,7 @@ final class ItemService
 
         // Files dropped from the set are no longer reachable — delete them last,
         // so a failed UPDATE never leaves the row pointing at missing photos.
-        $this->discardPhotos(array_values(array_diff($this->decodePhotos($current), $clean['photos'])));
+        $this->photos->delete(...array_diff(PhotoStore::paths($current['photos']), $clean['photos']));
 
         if ($current['value_proof_path'] !== null && $current['value_proof_path'] !== $clean['value_proof_path']) {
             $this->photos->delete((string) $current['value_proof_path']);
@@ -341,21 +324,7 @@ final class ItemService
         throw new RecordNotFoundException('No such listing.');
     }
 
-    /**
-     * @param array<string, mixed> $row
-     *
-     * @return list<string>
-     */
-    public function decodePhotos(array $row): array
-    {
-        $decoded = json_decode((string) ($row['photos'] ?? '[]'), true);
 
-        if (!is_array($decoded)) {
-            return [];
-        }
-
-        return array_values(array_filter($decoded, 'is_string'));
-    }
 
     /**
      * Business rules common to create and update.
@@ -389,8 +358,8 @@ final class ItemService
                 . number_format(self::MAX_DECLARED_VALUE) . ' points.';
         }
 
-        $proofType = $this->nullableString($input['value_proof_type'] ?? null);
-        $proofPath = $this->nullableString($input['value_proof_path'] ?? null);
+        $proofType = Validator::optional($input, 'value_proof_type');
+        $proofPath = Validator::optional($input, 'value_proof_path');
 
         if ($proofType !== null && !isset(self::PROOF_TYPES[$proofType])) {
             $errors['value_proof_type'] = 'Choose the kind of proof you are offering.';
@@ -449,7 +418,7 @@ final class ItemService
         }
 
         foreach (self::APPROVAL_FIELDS as $field) {
-            $before = $field === 'photos' ? $this->decodePhotos($current) : $current[$field];
+            $before = $field === 'photos' ? PhotoStore::paths($current['photos']) : $current[$field];
             $after  = $clean[$field];
 
             if (is_array($before) || is_array($after)) {
@@ -481,19 +450,6 @@ final class ItemService
 
     private function optionalRate(mixed $value): ?int
     {
-        $text = trim((string) ($value ?? ''));
-
-        if ($text === '' || (int) $text < 1) {
-            return null;
-        }
-
-        return (int) $text;
-    }
-
-    private function nullableString(mixed $value): ?string
-    {
-        $text = trim((string) ($value ?? ''));
-
-        return $text === '' ? null : $text;
+        return (int) $value > 0 ? (int) $value : null;
     }
 }

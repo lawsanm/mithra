@@ -27,8 +27,8 @@ final class NotificationController extends Controller
     public function index(): void
     {
         $me    = $this->userId();
-        $group = is_string($_GET['type'] ?? null) && isset(Notification::GROUPS[$_GET['type']]) ? $_GET['type'] : '';
-        $page  = max(1, (int) ($_GET['page'] ?? 1));
+        $group = isset(Notification::GROUPS[$this->queryValue('type')]) ? $this->queryValue('type') : '';
+        $page  = $this->page();
         $total = $this->notifications->countForMember($me, $group);
 
         $filters = [];

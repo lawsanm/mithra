@@ -91,7 +91,7 @@ foreach ([
     ['completed', 'cancelled', false],
     ['cancelled', 'requested', false],
 ] as [$from, $to, $allowed]) {
-    bookingCheck(BookingService::canMove($from, $to) === $allowed, "Transition $from → $to must be " . ($allowed ? 'allowed' : 'refused') . '.');
+    bookingCheck(Booking::canMove($from, $to) === $allowed, "Transition $from → $to must be " . ($allowed ? 'allowed' : 'refused') . '.');
     $checks++;
 }
 
@@ -178,7 +178,7 @@ foreach ([
     ['pending_moderator', 'closed', false],
     ['resolved', 'pending_moderator', false],
 ] as [$from, $to, $allowed]) {
-    bookingCheck(DamageClaimService::canMove($from, $to) === $allowed, "Claim $from → $to must be " . ($allowed ? 'allowed' : 'refused') . '.');
+    bookingCheck(DamageClaim::canMove($from, $to) === $allowed, "Claim $from → $to must be " . ($allowed ? 'allowed' : 'refused') . '.');
     $checks++;
 }
 

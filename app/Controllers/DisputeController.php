@@ -18,18 +18,11 @@ final class DisputeController extends Controller
      */
     public function store(int $id): void
     {
-        try {
-            self::service($this->pdo)->raise($id, $this->userId(), (string) ($_POST['reason'] ?? ''));
-            $this->flash('Dispute raised. The Admin will review the claim and rule on it.');
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException | AccessDeniedException $exception) {
-            $this->notice(404, 'Booking not found', 'Choose one of your bookings from My Bookings.');
+        $this->attempt(function () use ($id): string {
+            self::service($this->pdo)->raise($id, $this->userId(), $this->posted('reason'));
 
-            return;
-        }
-
-        $this->redirect('/bookings/' . $id . '#dispute');
+            return 'Dispute raised. The Admin will review the claim and rule on it.';
+        }, '/bookings/' . $id . '#dispute', ['Booking not found', 'Choose one of your bookings from My Bookings.']);
     }
 
     /**
@@ -37,7 +30,7 @@ final class DisputeController extends Controller
      */
     public function update(int $id): void
     {
-        $this->act(fn (DisputeService $disputes): int => $disputes->update($id, $this->userId(), (string) ($_POST['reason'] ?? '')), $id, 'Dispute updated.');
+        $this->act($id, fn (DisputeService $disputes): int => $disputes->update($id, $this->userId(), $this->posted('reason')), 'Dispute updated.');
     }
 
     /**
@@ -45,27 +38,22 @@ final class DisputeController extends Controller
      */
     public function withdraw(int $id): void
     {
-        $this->act(fn (DisputeService $disputes): int => $disputes->withdraw($id, $this->userId()), $id, 'Dispute withdrawn.');
+        $this->act($id, fn (DisputeService $disputes): int => $disputes->withdraw($id, $this->userId()), 'Dispute withdrawn.');
     }
 
     /**
-     * @param callable(DisputeService): int $action returns the booking to go back to
+     * Run one change to a dispute and go back to its booking.
+     *
+     * @param callable(DisputeService): mixed $action
      */
-    private function act(callable $action, int $id, string $message): void
+    private function act(int $id, callable $action, string $message): void
     {
         $bookingId = (int) ((new Dispute($this->pdo))->find($id)['booking_id'] ?? 0);
 
-        try {
-            $bookingId = $action(self::service($this->pdo));
-            $this->flash($message);
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException $exception) {
-            $this->notice(404, 'Dispute not found', 'Choose one of the disputes you raised.');
+        $this->attempt(function () use ($action, $message): string {
+            $action(self::service($this->pdo));
 
-            return;
-        }
-
-        $this->redirect('/bookings/' . $bookingId . '#dispute');
+            return $message;
+        }, '/bookings/' . $bookingId . '#dispute', ['Dispute not found', 'Choose one of the disputes you raised.']);
     }
 }

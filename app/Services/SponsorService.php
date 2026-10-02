@@ -130,20 +130,14 @@ final class SponsorService
      */
     public static function profile(array $input): array
     {
-        $optional = static function (string $field) use ($input): ?string {
-            $value = trim((string) ($input[$field] ?? ''));
-
-            return $value === '' ? null : $value;
-        };
-
         $profile = [
             'company_name'      => trim((string) ($input['company_name'] ?? '')),
-            'contact_name'      => $optional('contact_person'),
-            'contact_phone'     => $optional('contact_phone'),
-            'contact_email'     => $optional('contact_email'),
+            'contact_name'      => Validator::optional($input, 'contact_person'),
+            'contact_phone'     => Validator::optional($input, 'contact_phone'),
+            'contact_email'     => Validator::optional($input, 'contact_email'),
             'agreement_status'  => (string) ($input['agreement_status'] ?? ''),
-            'agreement_details' => $optional('agreement_details'),
-            'internal_notes'    => $optional('internal_notes'),
+            'agreement_details' => Validator::optional($input, 'agreement_details'),
+            'internal_notes'    => Validator::optional($input, 'internal_notes'),
         ];
 
         $errors = [];

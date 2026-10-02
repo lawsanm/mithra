@@ -17,11 +17,11 @@ final class CommunityController extends Controller
         parent::__construct($pdo);
 
         $this->memberships = new UserDivision($pdo);
-        $this->service     = self::service($pdo, $this->uploads());
+        $this->service     = self::service($pdo);
     }
 
     /** Shared with ItemController, which asks it where a new listing goes. */
-    public static function service(PDO $pdo, PhotoStore $photos): CommunityService
+    public static function service(PDO $pdo): CommunityService
     {
         return new CommunityService(
             $pdo,
@@ -31,7 +31,7 @@ final class CommunityController extends Controller
             new Item($pdo),
             new Booking($pdo),
             new Notification($pdo),
-            $photos
+            PhotoStore::uploads()
         );
     }
 

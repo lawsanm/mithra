@@ -122,16 +122,10 @@ $reliefUrl = base_url() . '/moderator/disasters/relief';
             <?php endforeach; ?>
         </ul>
 
-        <?php if ($page > 1 || $hasNextPage): ?>
-            <div class="actions">
-                <?php if ($page > 1): ?>
-                    <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters?page=<?= e((string) ($page - 1)) ?>">Previous</a>
-                <?php endif; ?>
-                <?php if ($hasNextPage): ?>
-                    <a class="btn btn--ghost" href="<?= base_url() ?>/moderator/disasters?page=<?= e((string) ($page + 1)) ?>">Next</a>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
+        <?php
+        $pageUrl = static fn (int $target): string => base_url() . '/moderator/disasters?page=' . $target;
+        include __DIR__ . '/../../../partials/pager.php';
+        ?>
     <?php endif; ?>
 </section>
 

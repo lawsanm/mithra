@@ -22,13 +22,8 @@ final class AuthService
     /** The throttle scope for sign-in attempts. */
     public const SCOPE = 'login';
 
-    private User $users;
-    private LoginThrottle $throttle;
-
-    public function __construct(User $users, LoginThrottle $throttle)
+    public function __construct(private User $users, private LoginThrottle $throttle)
     {
-        $this->users    = $users;
-        $this->throttle = $throttle;
     }
 
     /**

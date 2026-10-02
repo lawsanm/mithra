@@ -41,7 +41,7 @@ final class AuthController extends Controller
     public function loginForm(): void
     {
         if ($this->signedIn()) {
-            $this->redirect($this->homeFor($this->role()));
+            $this->redirect(home_for($this->role()));
 
             return;
         }
@@ -71,7 +71,7 @@ final class AuthController extends Controller
         try {
             // The raw value, not the validator's: a password is whatever was
             // typed, trailing spaces included.
-            $account = $this->auth->authenticate($identifier, $this->postedPassword('password'), $this->clientIp());
+            $account = $this->auth->authenticate($identifier, $this->posted('password'), $this->clientIp());
         } catch (ValidationException $exception) {
             $this->renderLogin(['errors' => $exception->errors(), 'identifier' => $identifier]);
 
@@ -79,7 +79,7 @@ final class AuthController extends Controller
         }
 
         $this->startSession($account);
-        $this->redirect($this->homeFor((string) $account['role_code']));
+        $this->redirect(home_for((string) $account['role_code']));
     }
 
     // ── Sign-up ─────────────────────────────────────────────────────────────
@@ -91,14 +91,14 @@ final class AuthController extends Controller
     public function registerForm(): void
     {
         if ($this->signedIn()) {
-            $this->redirect($this->homeFor($this->role()));
+            $this->redirect(home_for($this->role()));
 
             return;
         }
 
         $draft = $this->registerDraft();
 
-        if (($_GET['step'] ?? '') === '2' && $draft !== null) {
+        if ($this->queryValue('step') === '2' && $draft !== null) {
             $this->renderRegister(2, [], $draft);
 
             return;
@@ -112,7 +112,7 @@ final class AuthController extends Controller
      */
     public function register(): void
     {
-        if (($_POST['step'] ?? '') === '2') {
+        if ($this->posted('step') === '2') {
             $this->registerDocuments();
 
             return;
@@ -132,7 +132,7 @@ final class AuthController extends Controller
         $applied = $_SESSION[self::REGISTERED] ?? null;
 
         if ($this->signedIn() || !is_array($applied)) {
-            $this->redirect($this->signedIn() ? $this->homeFor($this->role()) : '/register');
+            $this->redirect($this->signedIn() ? home_for($this->role()) : '/register');
 
             return;
         }
@@ -204,8 +204,8 @@ final class AuthController extends Controller
         try {
             $this->registrations()->register(
                 $draft,
-                $this->postedPassword('password'),
-                $this->postedPassword('password_confirmation'),
+                $this->posted('password'),
+                $this->posted('password_confirmation'),
                 [
                     'nic_photo'     => uploaded_files('nic_photo'),
                     'address_proof' => uploaded_files('address_proof'),
@@ -305,7 +305,7 @@ final class AuthController extends Controller
      */
     public function resetForm(): void
     {
-        $token = (string) ($_GET['token'] ?? '');
+        $token = $this->queryValue('token');
 
         $this->renderLogin([
             'dialog'     => 'reset',
@@ -319,13 +319,13 @@ final class AuthController extends Controller
      */
     public function reset(): void
     {
-        $token = (string) ($_POST['token'] ?? '');
+        $token = $this->posted('token');
 
         try {
             $this->passwordResets()->resetWithLink(
                 $token,
-                $this->postedPassword('password'),
-                $this->postedPassword('password_confirmation')
+                $this->posted('password'),
+                $this->posted('password_confirmation')
             );
         } catch (ValidationException $exception) {
             $this->renderLogin([
@@ -481,7 +481,7 @@ final class AuthController extends Controller
             new User($this->pdo),
             new UserDivision($this->pdo),
             new GnDivision($this->pdo),
-            $this->uploads()
+            PhotoStore::uploads()
         );
     }
 }

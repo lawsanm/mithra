@@ -47,15 +47,10 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php include __DIR__ . '/../../partials/notification-list.php'; ?>
 
-<?php if ($page > 1 || $hasNextPage): ?>
-    <div class="actions">
-        <?php if ($page > 1): ?>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/notifications?<?= e(http_build_query(array_filter(['type' => $group, 'page' => $page - 1]))) ?>">Newer</a>
-        <?php endif; ?>
-        <?php if ($hasNextPage): ?>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/notifications?<?= e(http_build_query(array_filter(['type' => $group, 'page' => $page + 1]))) ?>">Older</a>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
+<?php
+$pageUrl = static fn (int $target): string => base_url() . '/notifications?' . http_build_query(array_filter(['type' => $group, 'page' => $target]));
+$pagerLabels = ['Newer', 'Older'];
+include __DIR__ . '/../../partials/pager.php';
+?>
 
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

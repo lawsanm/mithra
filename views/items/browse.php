@@ -200,16 +200,10 @@ include __DIR__ . '/../../partials/header.php';
         <?php endforeach; ?>
     </ul>
 
-    <?php if ($page > 1 || $hasNextPage): ?>
-        <div class="actions">
-            <?php if ($page > 1): ?>
-                <a class="btn btn--ghost" href="<?= e($browseUrl(['page' => $page - 1])) ?>">Previous</a>
-            <?php endif; ?>
-            <?php if ($hasNextPage): ?>
-                <a class="btn btn--ghost" href="<?= e($browseUrl(['page' => $page + 1])) ?>">Next</a>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
+    <?php
+    $pageUrl = static fn (int $target): string => $browseUrl(['page' => $target]);
+    include __DIR__ . '/../../partials/pager.php';
+    ?>
 <?php endif; ?>
 
 <?php $pageScripts = ['confirm.js']; ?>

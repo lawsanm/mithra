@@ -140,6 +140,17 @@ final class GnDivision extends BaseModel
         return $id === false || $id === null ? null : (int) $id;
     }
 
+    /**
+     * The division this moderator runs; an account that runs none has no
+     * queue to work, so it is refused.
+     *
+     * @throws AccessDeniedException
+     */
+    public function moderatedByOrFail(int $moderatorId): int
+    {
+        return $this->moderatedBy($moderatorId) ?? throw new AccessDeniedException('This account does not moderate a division.');
+    }
+
     public function countAll(): int
     {
         return (int) $this->selectValue('SELECT COUNT(*) FROM gn_divisions');
@@ -158,19 +169,17 @@ final class GnDivision extends BaseModel
      */
     public function recentPendingApprovals(int $limit = 5): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             "SELECT ud.created_at, u.full_name, d.name AS division_name
                FROM user_divisions ud
                JOIN users u ON u.id = ud.user_id
                JOIN gn_divisions d ON d.id = ud.gn_division_id
               WHERE ud.status = 'pending'
-              ORDER BY ud.created_at DESC
-              LIMIT :limit"
+              ORDER BY ud.created_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /**
@@ -214,40 +223,26 @@ final class GnDivision extends BaseModel
 
     public function create(string $province, string $district, string $name, string $postalCode): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             "INSERT INTO gn_divisions (province, district, name, postal_code, status)
-             VALUES (:province, :district, :name, :postal_code, 'active')"
+             VALUES (:province, :district, :name, :postal_code, 'active')",
+            ['province' => $province, 'district' => $district, 'name' => $name, 'postal_code' => $postalCode]
         );
-        $statement->execute([
-            'province'    => $province,
-            'district'    => $district,
-            'name'        => $name,
-            'postal_code' => $postalCode,
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     public function updateDetails(int $id, string $province, string $district, string $name, string $postalCode): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             'UPDATE gn_divisions
                 SET province = :province, district = :district, name = :name, postal_code = :postal_code
-              WHERE id = :id'
+              WHERE id = :id',
+            ['id' => $id, 'province' => $province, 'district' => $district, 'name' => $name, 'postal_code' => $postalCode]
         );
-        $statement->execute([
-            'id'          => $id,
-            'province'    => $province,
-            'district'    => $district,
-            'name'        => $name,
-            'postal_code' => $postalCode,
-        ]);
     }
 
     public function archive(int $id): void
     {
-        $statement = $this->pdo->prepare("UPDATE gn_divisions SET status = 'archived' WHERE id = :id");
-        $statement->execute(['id' => $id]);
+        $this->execute("UPDATE gn_divisions SET status = 'archived' WHERE id = :id", ['id' => $id]);
     }
 
     /**

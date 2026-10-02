@@ -110,9 +110,7 @@ final class GiftService
             throw new ValidationException($errors);
         }
 
-        $this->pdo->beginTransaction();
-
-        try {
+        return Database::transaction($this->pdo, function () use ($senderId, $recipientId, $amount, $reason): int {
             // Match every ledger movement: pools first, then wallets in id order.
             $balance = $this->ledger->lockMemberBalances([$senderId, $recipientId])[$senderId] ?? 0;
 
@@ -139,14 +137,8 @@ final class GiftService
                 'gift_id' => $giftId,
             ]);
 
-            $this->pdo->commit();
-
             return $giftId;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
     }
 
     /**
@@ -179,7 +171,7 @@ final class GiftService
             }
         }
 
-        return $reported . ' gift pattern' . ($reported === 1 ? '' : 's') . ' reported';
+        return plural($reported, 'gift pattern') . ' reported';
     }
 
     /**

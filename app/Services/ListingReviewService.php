@@ -50,7 +50,7 @@ final class ListingReviewService
 
         $rows = $role === 'admin'
             ? $this->items->reviewQueue([], $filter)
-            : $this->items->reviewQueue([$this->divisionFor($reviewerId)], $filter);
+            : $this->items->reviewQueue([$this->divisions->moderatedByOrFail($reviewerId)], $filter);
 
         return array_values(array_filter(
             $rows,
@@ -108,9 +108,7 @@ final class ListingReviewService
             default   => ['rejected', 'rejected', $previous, 'rejected'],
         };
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($id, $reviewerId, $listing, $status, $valueStatus, $previous, $newValue, $logged, $reason): void {
             if (!$this->items->recordReview($id, $status, $valueStatus, $newValue, $reviewerId)) {
                 throw ValidationException::field('form', 'This listing has already been decided.');
             }
@@ -138,13 +136,7 @@ final class ListingReviewService
                 $reason,
                 $id
             ));
-
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
 
         return (string) $listing['title'];
     }
@@ -166,16 +158,7 @@ final class ListingReviewService
         return $role === 'moderator' && $moderatorId === $reviewerId && $ownerId !== $reviewerId;
     }
 
-    private function divisionFor(int $moderatorId): int
-    {
-        $divisionId = $this->divisions->moderatedBy($moderatorId);
 
-        if ($divisionId === null) {
-            throw new AccessDeniedException('This account does not moderate a division.');
-        }
-
-        return $divisionId;
-    }
 
     /**
      * @throws ValidationException
@@ -214,13 +197,11 @@ final class ListingReviewService
      */
     private function notice(string $title, string $decision, int $previous, int $newValue, ?string $reason, int $id): array
     {
-        return match ($decision) {
+        return ['item_id' => $id, 'href' => '/items/' . $id . '/edit'] + match ($decision) {
             'approved' => [
                 'title'  => 'Listing approved: ' . $title,
                 'detail' => 'Your listing is now visible to members of your division.',
                 'icon'   => 'check-circle',
-                'item_id' => $id,
-                'href'   => '/items/' . $id . '/edit',
             ],
             'adjusted' => [
                 'title'  => 'Listing approved with a new value: ' . $title,
@@ -231,15 +212,11 @@ final class ListingReviewService
                     (string) $reason
                 ),
                 'icon'   => 'check-circle',
-                'item_id' => $id,
-                'href'   => '/items/' . $id . '/edit',
             ],
             default => [
                 'title'  => 'Listing not approved: ' . $title,
                 'detail' => 'Reason: ' . (string) $reason,
                 'icon'   => 'alert-triangle',
-                'item_id' => $id,
-                'href'   => '/items/' . $id . '/edit',
             ],
         };
     }

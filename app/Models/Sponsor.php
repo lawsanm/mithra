@@ -65,18 +65,7 @@ final class Sponsor extends BaseModel
             default          => ' ORDER BY s.total_contributed DESC, s.company_name',
         };
 
-        // LIMIT/OFFSET must bind as integers, which execute($params) cannot do.
-        $statement = $this->pdo->prepare($sql . ' LIMIT :take OFFSET :skip');
-
-        foreach ($params as $name => $value) {
-            $statement->bindValue(':' . $name, $value);
-        }
-
-        $statement->bindValue(':take', self::PER_PAGE, PDO::PARAM_INT);
-        $statement->bindValue(':skip', (max(1, $page) - 1) * self::PER_PAGE, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
+        return $this->selectPage($sql, $params, $page, self::PER_PAGE);
     }
 
     /**
@@ -133,16 +122,14 @@ final class Sponsor extends BaseModel
      */
     public function create(array $profile): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             'INSERT INTO sponsors
                     (user_id, company_name, contact_name, contact_phone, contact_email,
                      agreement_status, agreement_details, internal_notes, active)
              VALUES (:user_id, :company_name, :contact_name, :contact_phone, :contact_email,
-                     :agreement_status, :agreement_details, :internal_notes, 1)'
+                     :agreement_status, :agreement_details, :internal_notes, 1)',
+            $profile
         );
-        $statement->execute($profile);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -164,21 +151,20 @@ final class Sponsor extends BaseModel
      */
     public function updateProfile(int $id, array $profile): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             'UPDATE sponsors
                 SET user_id = :user_id, company_name = :company_name, contact_name = :contact_name,
                     contact_phone = :contact_phone, contact_email = :contact_email,
                     agreement_status = :agreement_status, agreement_details = :agreement_details,
                     internal_notes = :internal_notes
-              WHERE id = :id'
+              WHERE id = :id',
+            $profile + ['id' => $id]
         );
-        $statement->execute($profile + ['id' => $id]);
     }
 
     public function setActive(int $id, bool $active): void
     {
-        $statement = $this->pdo->prepare('UPDATE sponsors SET active = :active WHERE id = :id');
-        $statement->execute(['id' => $id, 'active' => $active ? 1 : 0]);
+        $this->execute('UPDATE sponsors SET active = :active WHERE id = :id', ['id' => $id, 'active' => $active ? 1 : 0]);
     }
 
     /**
@@ -212,17 +198,15 @@ final class Sponsor extends BaseModel
      */
     public function recentContributions(int $limit = 5): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             'SELECT s.company_name, c.receipt_number, c.general_points, c.aid_points,
                     (c.general_points + c.aid_points) AS points, c.recorded_at
                FROM sponsor_contributions c JOIN sponsors s ON s.id = c.sponsor_id
-              ORDER BY c.recorded_at DESC
-              LIMIT :limit'
+              ORDER BY c.recorded_at DESC',
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /**

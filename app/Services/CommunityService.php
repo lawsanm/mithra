@@ -125,7 +125,7 @@ final class CommunityService
     public function apply(int $userId, int $divisionId, string $proofType, array $uploads): string
     {
         $member = $this->users->findWithDivision($userId) ?? [];
-        $hasUpload = array_filter($uploads, static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) !== [];
+
 
         $errors = self::applicationErrors($divisionId, [
             'account_active'  => ($member['status'] ?? '') === 'active',
@@ -134,7 +134,7 @@ final class CommunityService
             'division_active' => $divisionId > 0 && $this->divisions->isActive($divisionId),
             'open_temporary'  => $this->memberships->countOpenTemporary($userId),
             'proof_type'      => $proofType,
-            'has_proof'       => $hasUpload,
+            'has_proof'       => PhotoStore::chosen($uploads) !== [],
         ]);
 
         if ($errors !== []) {
@@ -144,9 +144,7 @@ final class CommunityService
         $proofPath = $this->photos->storeMany($uploads, RegistrationService::DOCUMENT_FOLDER, 'proof', 1)[0];
         $existing  = $this->memberships->findFor($userId, $divisionId);
 
-        $this->pdo->beginTransaction();
-
-        try {
+        return Database::transaction($this->pdo, function () use ($userId, $divisionId, $proofType, $proofPath, $existing, $member): string {
             if ($existing === null) {
                 $this->memberships->createTemporary($userId, $divisionId, $proofType, $proofPath);
             } elseif (!$this->memberships->reapplyTemporary((int) $existing['id'], $proofType, $proofPath)) {
@@ -161,15 +159,8 @@ final class CommunityService
                 'href'   => '/moderator/verifications?status=temporary',
             ]);
 
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-            $this->photos->delete($proofPath);
-
-            throw $exception;
-        }
-
-        return (string) ($division['name'] ?? '');
+            return (string) ($division['name'] ?? '');
+        }, fn () => $this->photos->delete($proofPath));
     }
 
     /**
@@ -240,17 +231,10 @@ final class CommunityService
             throw ValidationException::field('form', 'You still have a booking running in ' . $current['division_name'] . '. Finish it before leaving.');
         }
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($current, $userId, $divisionId): void {
             $this->memberships->moveTemporary((int) $current['id'], ['active', 'paused'], 'deactivated');
             $this->items->pauseAllInDivision($userId, $divisionId);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
 
         return 'left';
     }
@@ -279,20 +263,13 @@ final class CommunityService
             throw ValidationException::field('form', 'You still have a booking running in ' . $home['division_name'] . '. Finish it before moving your home.');
         }
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($userId, $current, $oldHome): void {
             if (!$this->memberships->swapHome($userId, (int) $current['id'])) {
                 throw ValidationException::field('form', 'Your memberships changed while you were deciding. Try again.');
             }
 
             $this->items->pauseAllInDivision($userId, $oldHome);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
 
         return (string) $current['division_name'];
     }
@@ -341,9 +318,7 @@ final class CommunityService
 
         $paused = 0;
         foreach ($this->memberships->lapsed('active', 0) as $row) {
-            $this->pdo->beginTransaction();
-
-            try {
+            Database::transaction($this->pdo, function () use ($row, &$paused): void {
                 if ($this->memberships->moveTemporary((int) $row['id'], ['active'], 'paused')) {
                     $this->items->pauseAllInDivision((int) $row['user_id'], (int) $row['gn_division_id']);
                     $this->notifications->push((int) $row['user_id'], 'community_paused', [
@@ -354,13 +329,7 @@ final class CommunityService
                     ]);
                     $paused++;
                 }
-
-                $this->pdo->commit();
-            } catch (Throwable $exception) {
-                $this->pdo->rollBack();
-
-                throw $exception;
-            }
+            });
         }
 
         $expired = 0;

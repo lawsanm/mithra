@@ -55,7 +55,8 @@ final class AvailabilityService
      */
     public function create(int $itemId, int $ownerId, string $start, string $end, string $note): int
     {
-        return $this->withItemLock($itemId, function () use ($itemId, $ownerId, $start, $end, $note): int {
+        return Database::transaction($this->pdo, function () use ($itemId, $ownerId, $start, $end, $note): int {
+            $this->items->lockRow($itemId);
             $this->ownedItemOrFail($itemId, $ownerId);
             $this->check($itemId, $start, $end, $note, 0);
 
@@ -72,7 +73,10 @@ final class AvailabilityService
     {
         $itemId = $this->itemOf($blockId, $ownerId);
 
-        return $this->withItemLock($itemId, function () use ($itemId, $blockId, $ownerId, $start, $end, $note): int {
+        // Booking acceptance takes the same item lock, so a calendar edit and
+        // an acceptance can never reserve the same day at once.
+        return Database::transaction($this->pdo, function () use ($itemId, $blockId, $ownerId, $start, $end, $note): int {
+            $this->items->lockRow($itemId);
             $this->ownedItemOrFail($itemId, $ownerId);
             $this->ownedBlockOrFail($blockId, $ownerId);
             $this->check($itemId, $start, $end, $note, $blockId);
@@ -80,38 +84,6 @@ final class AvailabilityService
 
             return $itemId;
         });
-    }
-
-    /**
-     * Booking acceptance takes the same item lock. Check and save together,
-     * so concurrent bookings and calendar edits cannot reserve the same day.
-     *
-     * @param callable(): int $save
-     */
-    private function withItemLock(int $itemId, callable $save): int
-    {
-        $ownsTransaction = !$this->pdo->inTransaction();
-
-        if ($ownsTransaction) {
-            $this->pdo->beginTransaction();
-        }
-
-        try {
-            $this->items->lockRow($itemId);
-            $result = $save();
-
-            if ($ownsTransaction) {
-                $this->pdo->commit();
-            }
-
-            return $result;
-        } catch (Throwable $exception) {
-            if ($ownsTransaction && $this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-
-            throw $exception;
-        }
     }
 
     /**

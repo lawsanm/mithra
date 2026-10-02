@@ -25,47 +25,15 @@ final class VerificationService
     /** Credited once per verified person, from the Sponsor Pool (Plan §4.3, §6.4). */
     public const WELCOME_BONUS = 200;
 
-    private User $users;
-    private UserDivision $memberships;
-    private GnDivision $divisions;
-    private Wallet $wallets;
-    private LedgerService $ledger;
-    private Notification $notifications;
-    private PDO $pdo;
-
     public function __construct(
-        PDO $pdo,
-        User $users,
-        UserDivision $memberships,
-        GnDivision $divisions,
-        Wallet $wallets,
-        LedgerService $ledger,
-        Notification $notifications
+        private PDO $pdo,
+        private User $users,
+        private UserDivision $memberships,
+        private GnDivision $divisions,
+        private Wallet $wallets,
+        private LedgerService $ledger,
+        private Notification $notifications
     ) {
-        $this->pdo         = $pdo;
-        $this->users       = $users;
-        $this->memberships = $memberships;
-        $this->divisions   = $divisions;
-        $this->wallets     = $wallets;
-        $this->ledger      = $ledger;
-        $this->notifications = $notifications;
-    }
-
-    /**
-     * The division this moderator reviews for.
-     *
-     * @throws AccessDeniedException when they moderate nowhere — an account
-     *                               that is not a moderator has no queue
-     */
-    public function divisionFor(int $moderatorId): int
-    {
-        $divisionId = $this->divisions->moderatedBy($moderatorId);
-
-        if ($divisionId === null) {
-            throw new AccessDeniedException('This account does not moderate a division.');
-        }
-
-        return $divisionId;
     }
 
     /**
@@ -77,12 +45,12 @@ final class VerificationService
     {
         $filter = in_array($filter, self::FILTERS, true) ? $filter : '';
 
-        return $this->memberships->queueForDivision($this->divisionFor($moderatorId), $filter);
+        return $this->memberships->queueForDivision($this->divisions->moderatedByOrFail($moderatorId), $filter);
     }
 
     public function pendingCount(int $moderatorId): int
     {
-        return $this->memberships->countPendingForDivision($this->divisionFor($moderatorId));
+        return $this->memberships->countPendingForDivision($this->divisions->moderatedByOrFail($moderatorId));
     }
 
     /**
@@ -128,40 +96,29 @@ final class VerificationService
 
         $memberId = (int) $application['user_id'];
 
-        $this->pdo->beginTransaction();
-
         try {
-            if (!$this->memberships->decide($id, $moderatorId, 'active')) {
-                // Another moderator decided it between the read and this
-                // write. Fail closed rather than approve twice.
-                throw $this->alreadyDecided();
-            }
+            Database::transaction($this->pdo, function () use ($id, $moderatorId, $memberId): void {
+                if (!$this->memberships->decide($id, $moderatorId, 'active')) {
+                    // Another moderator decided it between the read and this
+                    // write. Fail closed rather than approve twice.
+                    throw $this->alreadyDecided();
+                }
 
-            $this->users->markActive($memberId);
-            $this->wallets->openFor($memberId);
+                $this->users->markActive($memberId);
+                $this->wallets->openFor($memberId);
 
-            // Once per verified person, however many times they are approved.
-            if (!$this->ledger->hasReceived($memberId, 'welcome_bonus')) {
-                $this->ledger->poolToMember('sponsor', $memberId, self::WELCOME_BONUS, 'welcome_bonus');
-            }
-
-            $this->pdo->commit();
+                // Once per verified person, however many times they are approved.
+                if (!$this->ledger->hasReceived($memberId, 'welcome_bonus')) {
+                    $this->ledger->poolToMember('sponsor', $memberId, self::WELCOME_BONUS, 'welcome_bonus');
+                }
+            });
         } catch (InsufficientPointsException $exception) {
             // Fail closed: nobody is approved without the bonus the plan promises.
-            $this->pdo->rollBack();
-
-            throw ValidationException::field(
-                'form',
-                sprintf(
-                    'The Sponsor Pool cannot fund the %d-point welcome bonus right now, so nothing was approved. '
-                    . 'Ask the Sponsor Liaison to record a General contribution, then approve again.',
-                    self::WELCOME_BONUS
-                )
-            );
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
+            throw ValidationException::field('form', sprintf(
+                'The Sponsor Pool cannot fund the %d-point welcome bonus right now, so nothing was approved. '
+                . 'Ask the Sponsor Liaison to record a General contribution, then approve again.',
+                self::WELCOME_BONUS
+            ));
         }
 
         return (string) $application['full_name'];

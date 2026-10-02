@@ -349,6 +349,7 @@ legend {
 }
 
 .nav__bell {
+    position: relative;
     display: flex;
     align-items: center;
     color: var(--color-text-muted);
@@ -2092,10 +2093,6 @@ button.notification {
 }
 
 /* The unread count on the navigation bell. */
-.nav__bell {
-    position: relative;
-}
-
 .nav__bell-count {
     position: absolute;
     top: -6px;
@@ -3025,26 +3022,31 @@ button.notification {
     white-space: nowrap;
 }
 
-/* Sponsor/Aid pool allocation bar (Purchase Points) */
+/* Sponsor / Aid pool allocation bar and its legend (Purchase Points, Record Contribution) */
 .split-bar {
     display: flex;
     width: 100%;
-    height: 8px;
+    height: 12px;
     border-radius: var(--radius-pill);
     overflow: hidden;
+    background-color: var(--color-border);
 }
 
-.split-bar__fill--sponsor {
+.split-bar__fill--sponsor,
+.split-legend__dot--sponsor {
     background-color: var(--color-primary);
 }
 
-.split-bar__fill--aid {
+.split-bar__fill--aid,
+.split-legend__dot--aid {
     background-color: var(--color-accent);
 }
 
 .split-legend {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    width: 100%;
     gap: var(--space-2);
 }
 
@@ -3062,14 +3064,6 @@ button.notification {
     height: 8px;
     flex-shrink: 0;
     border-radius: 50%;
-}
-
-.split-legend__dot--sponsor {
-    background-color: var(--color-primary);
-}
-
-.split-legend__dot--aid {
-    background-color: var(--color-accent);
 }
 
 /* Trailing bold amount on an otherwise plain list-row (CSR quarterly breakdown) */
@@ -3165,55 +3159,7 @@ button.notification {
    Sponsor Liaison-specific components
    ========================================================================== */
 
-/* Two-colour allocation split bar (Record Contribution, Disaster Connection). */
-.split-bar {
-    display: flex;
-    width: 100%;
-    height: 12px;
-    border-radius: var(--radius-pill);
-    overflow: hidden;
-    background-color: var(--color-border);
-}
 
-.split-bar__segment--sponsor {
-    background-color: var(--color-primary);
-}
-
-.split-bar__segment--aid {
-    background-color: var(--color-accent);
-}
-
-.split-legend {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-.split-legend__item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--color-text);
-    font-size: var(--text-ui-body);
-    font-weight: var(--weight-semibold);
-}
-
-.split-legend__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.split-legend__dot--sponsor {
-    background-color: var(--color-primary);
-}
-
-.split-legend__dot--aid {
-    background-color: var(--color-accent);
-}
 
 /* --------------------------------------------------------------------------
    Public home page — what a visitor sees on the logo before signing in

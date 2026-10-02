@@ -9,6 +9,8 @@ declare(strict_types=1);
  */
 final class AidGrantController extends Controller
 {
+    private const NOT_FOUND = ['Record not found', 'This record is not available to your account.'];
+
     private AidGrantService $service;
     private AidGrant $grants;
 
@@ -17,7 +19,7 @@ final class AidGrantController extends Controller
         parent::__construct($pdo);
 
         $this->grants  = new AidGrant($pdo);
-        $this->service = new AidGrantService($pdo, $this->grants, new User($pdo), new GnDivision($pdo), $this->uploads(), new Notification($pdo));
+        $this->service = new AidGrantService($pdo, $this->grants, new User($pdo), new GnDivision($pdo), PhotoStore::uploads(), new Notification($pdo));
     }
 
     /**
@@ -43,7 +45,7 @@ final class AidGrantController extends Controller
         }
 
         if ($id > 0 && $row === null) {
-            $this->notice(404, 'Record not found', 'This record is not available to your account.');
+            $this->notice(404, ...self::NOT_FOUND);
 
             return;
         }
@@ -78,8 +80,8 @@ final class AidGrantController extends Controller
     {
         try {
             $grant = $this->service->ownOrFail($id, $this->userId());
-        } catch (RecordNotFoundException $exception) {
-            $this->notice(404, 'Record not found', 'This record is not available to your account.');
+        } catch (RecordNotFoundException) {
+            $this->notice(404, ...self::NOT_FOUND);
 
             return;
         }
@@ -138,8 +140,8 @@ final class AidGrantController extends Controller
             $this->renderForm($grant, $input->values(), $exception->errors());
 
             return;
-        } catch (RecordNotFoundException $exception) {
-            $this->notice(404, 'Record not found', 'This record is not available to your account.');
+        } catch (RecordNotFoundException) {
+            $this->notice(404, ...self::NOT_FOUND);
 
             return;
         }
@@ -153,7 +155,11 @@ final class AidGrantController extends Controller
      */
     public function reply(int $id): void
     {
-        $this->act($id, fn (): mixed => $this->service->reply($id, $this->userId(), (string) ($_POST['reply'] ?? '')), 'Answer sent.');
+        $this->attempt(function () use ($id): string {
+            $this->service->reply($id, $this->userId(), $this->posted('reply'));
+
+            return 'Answer sent.';
+        }, '/aid-grants/' . $id, self::NOT_FOUND);
     }
 
     /**
@@ -161,23 +167,11 @@ final class AidGrantController extends Controller
      */
     public function withdraw(int $id): void
     {
-        $this->act($id, fn (): mixed => $this->service->withdraw($id, $this->userId()), 'Request withdrawn.');
-    }
+        $this->attempt(function () use ($id): string {
+            $this->service->withdraw($id, $this->userId());
 
-    private function act(int $id, callable $action, string $message): void
-    {
-        try {
-            $action();
-            $this->flash($message);
-        } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
-        } catch (RecordNotFoundException $exception) {
-            $this->notice(404, 'Record not found', 'This record is not available to your account.');
-
-            return;
-        }
-
-        $this->redirect('/aid-grants/' . $id);
+            return 'Request withdrawn.';
+        }, '/aid-grants/' . $id, self::NOT_FOUND);
     }
 
     private function input(): Validator
@@ -222,7 +216,7 @@ final class AidGrantController extends Controller
     private function grantView(array $row, ?array $own): array
     {
         $status = (string) $row['status'];
-        $paths  = $own === null ? [] : HandoverService::decode($own['evidence_photos'] ?? null);
+        $paths  = $own === null ? [] : PhotoStore::paths($own['evidence_photos'] ?? null);
 
         return [
             'id'        => (int) $row['id'],
@@ -244,7 +238,7 @@ final class AidGrantController extends Controller
             ],
             'notice'    => 'Status: ' . ucfirst(str_replace('_', ' ', $status)),
             'details'   => (string) ($own['details'] ?? ''),
-            'photos'    => array_map(static fn (string $path, int $index): array => ['url' => photo_url($path), 'label' => 'Evidence ' . ($index + 1)], $paths, array_keys($paths)),
+            'photos'    => photo_list($paths, 'Evidence'),
             'question'  => (string) ($own['info_request'] ?? ''),
             'answer'    => (string) ($own['member_reply'] ?? ''),
             'reason'    => (string) ($own['decision_reason'] ?? ''),

@@ -185,6 +185,18 @@ final class Validator
         return $this;
     }
 
+    /**
+     * An optional field as it is stored: trimmed, or null when left empty.
+     *
+     * @param array<string, mixed> $input
+     */
+    public static function optional(array $input, string $field): ?string
+    {
+        $value = is_scalar($input[$field] ?? null) ? trim((string) $input[$field]) : '';
+
+        return $value === '' ? null : $value;
+    }
+
     public static function isDate(string $value): bool
     {
         // Check the shape first: DateTime throws on embedded null bytes and

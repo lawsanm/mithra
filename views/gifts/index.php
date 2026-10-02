@@ -72,16 +72,10 @@ include __DIR__ . '/../../partials/header.php';
     <p class="empty-state"><?= $box === 'sent' ? 'You have not sent any gifts yet.' : 'No gifts received yet.' ?></p>
 <?php endif; ?>
 
-<?php if ($page > 1 || $hasNextPage): ?>
-    <div class="actions">
-        <?php if ($page > 1): ?>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/gifts?box=<?= e($box) ?>&amp;page=<?= e((string) ($page - 1)) ?>">Previous</a>
-        <?php endif; ?>
-        <?php if ($hasNextPage): ?>
-            <a class="btn btn--ghost" href="<?= base_url() ?>/gifts?box=<?= e($box) ?>&amp;page=<?= e((string) ($page + 1)) ?>">Next</a>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
+<?php
+$pageUrl = static fn (int $target): string => base_url() . '/gifts?' . http_build_query(['box' => $box, 'page' => $target]);
+include __DIR__ . '/../../partials/pager.php';
+?>
 
 <?php include __DIR__ . '/../../partials/modal-send-gift.php'; ?>
 

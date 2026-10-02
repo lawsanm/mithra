@@ -100,8 +100,8 @@ final class SponsorLiaisonController extends Controller
 
             $id = $this->accounts()->onboardWithLogin(
                 $validator->values(),
-                $this->postedPassword('password'),
-                $this->postedPassword('password_confirmation')
+                $this->posted('password'),
+                $this->posted('password_confirmation')
             );
         } catch (ValidationException $exception) {
             $this->renderSponsorForm('sponsor-liaison/sponsors/onboarding', $exception->errors(), $validator->values());
@@ -469,10 +469,5 @@ final class SponsorLiaisonController extends Controller
             if ($row['id'] === $id) return $row;
         }
         return null;
-    }
-
-    private function queryValue(string $key): string
-    {
-        return is_string($_GET[$key] ?? null) ? trim($_GET[$key]) : '';
     }
 }

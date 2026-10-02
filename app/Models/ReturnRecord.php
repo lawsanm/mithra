@@ -29,11 +29,11 @@ final class ReturnRecord extends BaseModel
      */
     public function ensure(int $bookingId): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             'INSERT INTO return_records (booking_id, return_at) VALUES (:booking, NOW())
-             ON DUPLICATE KEY UPDATE return_at = COALESCE(return_at, NOW())'
+             ON DUPLICATE KEY UPDATE return_at = COALESCE(return_at, NOW())',
+            ['booking' => $bookingId]
         );
-        $statement->execute(['booking' => $bookingId]);
     }
 
     /**
@@ -43,15 +43,13 @@ final class ReturnRecord extends BaseModel
      */
     public function saveSide(int $bookingId, string $side, array $photos, ?string $notes): bool
     {
-        $side = self::side($side);
+        $side = HandoverRecord::side($side);
 
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE return_records SET {$side}_photos = :photos, {$side}_notes = :notes
-              WHERE booking_id = :booking AND lender_decision IS NULL"
-        );
-        $statement->execute(['photos' => json_encode(array_values($photos), JSON_UNESCAPED_SLASHES), 'notes' => $notes, 'booking' => $bookingId]);
-
-        return $statement->rowCount() === 1;
+              WHERE booking_id = :booking AND lender_decision IS NULL",
+            ['photos' => json_encode(array_values($photos), JSON_UNESCAPED_SLASHES), 'notes' => $notes, 'booking' => $bookingId]
+        ) === 1;
     }
 
     /**
@@ -60,38 +58,26 @@ final class ReturnRecord extends BaseModel
      */
     public function decide(int $bookingId, string $decision): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             'UPDATE return_records SET lender_decision = :decision, decided_at = NOW()
-              WHERE booking_id = :booking AND lender_decision IS NULL'
-        );
-        $statement->execute(['decision' => $decision, 'booking' => $bookingId]);
-
-        return $statement->rowCount() === 1;
+              WHERE booking_id = :booking AND lender_decision IS NULL',
+            ['decision' => $decision, 'booking' => $bookingId]
+        ) === 1;
     }
 
     /** A withdrawn claim: the return counts as accepted after all. */
     public function reopenAsAccepted(int $bookingId): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             "UPDATE return_records SET lender_decision = 'accepted', decided_at = NOW()
-              WHERE booking_id = :booking AND lender_decision = 'claim_raised'"
+              WHERE booking_id = :booking AND lender_decision = 'claim_raised'",
+            ['booking' => $bookingId]
         );
-        $statement->execute(['booking' => $bookingId]);
     }
 
     /** The borrower's answer to a claim, kept on the return for the record. */
     public function borrowerDecision(int $bookingId, string $decision): void
     {
-        $statement = $this->pdo->prepare('UPDATE return_records SET borrower_decision = :decision WHERE booking_id = :booking');
-        $statement->execute(['decision' => $decision, 'booking' => $bookingId]);
-    }
-
-    private static function side(string $side): string
-    {
-        if (!in_array($side, HandoverRecord::SIDES, true)) {
-            throw new LogicException('Unknown return side.');
-        }
-
-        return $side;
+        $this->execute('UPDATE return_records SET borrower_decision = :decision WHERE booking_id = :booking', ['decision' => $decision, 'booking' => $bookingId]);
     }
 }

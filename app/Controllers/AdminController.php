@@ -62,7 +62,7 @@ final class AdminController extends Controller
         $id = isset($params['id']) ? (int) $params['id'] : 0;
 
         if ($view === 'admin/moderators/appoint' && $id === 0) {
-            $id = (int) ($_GET['division'] ?? 0);
+            $id = (int) $this->queryValue('division');
 
             if ($id === 0) {
                 $this->redirect('/admin/moderators');
@@ -377,7 +377,7 @@ final class AdminController extends Controller
             return null;
         }
 
-        $requested = (int) ($_GET['division'] ?? 0);
+        $requested = (int) $this->queryValue('division');
         $ids       = array_map('intval', array_column($rows, 'id'));
         $id        = in_array($requested, $ids, true) ? $requested : $ids[0];
         $selected  = $rows[array_search($id, $ids, true)];
@@ -455,7 +455,7 @@ final class AdminController extends Controller
         }
 
         $candidates = $this->candidateRows($divisionId);
-        $chosen     = (int) ($_GET['member'] ?? 0);
+        $chosen     = (int) $this->queryValue('member');
         $selected   = null;
 
         foreach ($candidates as $candidate) {
@@ -763,10 +763,10 @@ final class AdminController extends Controller
     /** @return array<string, mixed> */
     private function ledger(): array
     {
-        $filter = (string) ($_GET['filter'] ?? '');
+        $filter = $this->queryValue('filter');
         $filter = array_key_exists($filter, PointLedger::GROUPS) ? $filter : '';
-        $search = trim((string) ($_GET['q'] ?? ''));
-        $page   = max(1, (int) ($_GET['page'] ?? 1));
+        $search = $this->queryValue('q');
+        $page   = $this->page();
         $result = (new PointLedger($this->pdo))->adminList($filter, $search, $page);
 
         $filters = [['label' => 'All types', 'slug' => '', 'active' => $filter === '']];
@@ -801,11 +801,11 @@ final class AdminController extends Controller
     private function users(): array
     {
         $users  = new User($this->pdo);
-        $status = (string) ($_GET['status'] ?? '');
+        $status = $this->queryValue('status');
         $status = array_key_exists($status, self::USER_BADGES) ? $status : '';
-        $role   = (string) ($_GET['role'] ?? '');
+        $role   = $this->queryValue('role');
         $role   = array_key_exists($role, self::USER_ROLES) ? $role : '';
-        $search = trim((string) ($_GET['q'] ?? ''));
+        $search = $this->queryValue('q');
 
         // Each pill keeps the other filter and the search term.
         $pillHref = static fn (array $query): string => base_url() . '/admin/users'
@@ -923,7 +923,7 @@ final class AdminController extends Controller
      */
     private function notifications(): array
     {
-        $type    = (string) ($_GET['type'] ?? '');
+        $type    = $this->queryValue('type');
         $cronRuns = new CronRun($this->pdo);
         $notices = [];
 

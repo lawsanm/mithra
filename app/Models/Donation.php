@@ -70,13 +70,10 @@ final class Donation extends BaseModel
     /** Open the donation for a newly approved donation listing (Plan §13.1). */
     public function openFor(int $itemId, int $donorId): int
     {
-        $statement = $this->pdo->prepare(
-            "INSERT INTO donations (item_id, donor_id, selection_mode, status)
-             VALUES (:item, :donor, 'donor_chooses', 'open')"
+        return $this->insert(
+            "INSERT INTO donations (item_id, donor_id, selection_mode, status) VALUES (:item, :donor, 'donor_chooses', 'open')",
+            ['item' => $itemId, 'donor' => $donorId]
         );
-        $statement->execute(['item' => $itemId, 'donor' => $donorId]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     public function hasLiveForItem(int $itemId): bool
@@ -123,28 +120,25 @@ final class Donation extends BaseModel
         $existing = $this->requestBy($donationId, $requesterId);
 
         if ($existing !== null) {
-            $statement = $this->pdo->prepare(
+            $this->execute(
                 "UPDATE donation_requests SET status = 'pending', message = :message, requested_at = NOW()
-                  WHERE id = :id AND status = 'withdrawn'"
+                  WHERE id = :id AND status = 'withdrawn'",
+                ['message' => $message, 'id' => $existing['id']]
             );
-            $statement->execute(['message' => $message, 'id' => $existing['id']]);
 
             return (int) $existing['id'];
         }
 
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             "INSERT INTO donation_requests (donation_id, requester_id, message, status)
-             VALUES (:donation, :requester, :message, 'pending')"
+             VALUES (:donation, :requester, :message, 'pending')",
+            ['donation' => $donationId, 'requester' => $requesterId, 'message' => $message]
         );
-        $statement->execute(['donation' => $donationId, 'requester' => $requesterId, 'message' => $message]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     public function setRequestStatus(int $requestId, string $status): void
     {
-        $statement = $this->pdo->prepare('UPDATE donation_requests SET status = :status WHERE id = :id');
-        $statement->execute(['status' => $status, 'id' => $requestId]);
+        $this->execute('UPDATE donation_requests SET status = :status WHERE id = :id', ['status' => $status, 'id' => $requestId]);
     }
 
     /**
@@ -155,19 +149,20 @@ final class Donation extends BaseModel
      */
     public function declineOthers(int $donationId, int $keepRequestId): array
     {
-        $rows = $this->select(
+        $params   = ['donation' => $donationId, 'keep' => $keepRequestId];
+        $declined = $this->selectIds(
             "SELECT requester_id FROM donation_requests
               WHERE donation_id = :donation AND id <> :keep AND status IN ('pending','selected')",
-            ['donation' => $donationId, 'keep' => $keepRequestId]
+            $params
         );
 
-        $statement = $this->pdo->prepare(
+        $this->execute(
             "UPDATE donation_requests SET status = 'declined'
-              WHERE donation_id = :donation AND id <> :keep AND status IN ('pending','selected')"
+              WHERE donation_id = :donation AND id <> :keep AND status IN ('pending','selected')",
+            $params
         );
-        $statement->execute(['donation' => $donationId, 'keep' => $keepRequestId]);
 
-        return array_map(static fn (array $row): int => (int) $row['requester_id'], $rows);
+        return $declined;
     }
 
     /**
@@ -187,21 +182,20 @@ final class Donation extends BaseModel
 
     public function setMode(int $id, string $mode): void
     {
-        $statement = $this->pdo->prepare('UPDATE donations SET selection_mode = :mode WHERE id = :id');
-        $statement->execute(['mode' => $mode, 'id' => $id]);
+        $this->execute('UPDATE donations SET selection_mode = :mode WHERE id = :id', ['mode' => $mode, 'id' => $id]);
     }
 
     /** Point the donation at a recipient, or back at nobody (null) after a withdrawal. */
     public function setRecipient(int $id, ?int $recipientId): void
     {
-        $statement = $this->pdo->prepare(
+        $this->execute(
             "UPDATE donations
                 SET recipient_id = :recipient,
                     status = IF(:selected = 1, 'recipient_selected', 'open'),
                     donor_confirmed_at = NULL, recipient_confirmed_at = NULL
-              WHERE id = :id"
+              WHERE id = :id",
+            ['recipient' => $recipientId, 'selected' => $recipientId === null ? 0 : 1, 'id' => $id]
         );
-        $statement->execute(['recipient' => $recipientId, 'selected' => $recipientId === null ? 0 : 1, 'id' => $id]);
     }
 
     /** One side's handover confirmation (Plan §13.1 step 4). */
@@ -209,22 +203,17 @@ final class Donation extends BaseModel
     {
         $column = $side === 'donor' ? 'donor_confirmed_at' : 'recipient_confirmed_at';
 
-        $statement = $this->pdo->prepare("UPDATE donations SET {$column} = COALESCE({$column}, NOW()) WHERE id = :id");
-        $statement->execute(['id' => $id]);
+        $this->execute("UPDATE donations SET {$column} = COALESCE({$column}, NOW()) WHERE id = :id", ['id' => $id]);
     }
 
     public function complete(int $id): void
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE donations SET status = 'completed', handover_at = NOW() WHERE id = :id"
-        );
-        $statement->execute(['id' => $id]);
+        $this->execute("UPDATE donations SET status = 'completed', handover_at = NOW() WHERE id = :id", ['id' => $id]);
     }
 
     public function cancel(int $id): void
     {
-        $statement = $this->pdo->prepare("UPDATE donations SET status = 'cancelled' WHERE id = :id");
-        $statement->execute(['id' => $id]);
+        $this->execute("UPDATE donations SET status = 'cancelled' WHERE id = :id", ['id' => $id]);
     }
 
     /**

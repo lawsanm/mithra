@@ -23,7 +23,7 @@ final class ShortfallCover extends BaseModel
      */
     public function recent(int $limit = 20): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             "SELECT l.id, l.amount, l.created_at, l.booking_id,
                     lender.full_name   AS lender_name,
                     borrower.full_name AS borrower_name,
@@ -35,13 +35,11 @@ final class ShortfallCover extends BaseModel
           LEFT JOIN items i        ON i.id = b.item_id
           LEFT JOIN gn_divisions d ON d.id = i.gn_division_id
               WHERE l.reason = 'shortfall_cover'
-              ORDER BY l.created_at DESC
-              LIMIT :limit"
+              ORDER BY l.created_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /** @return array{total_pts: int, covers: int} */

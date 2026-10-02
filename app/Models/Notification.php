@@ -76,12 +76,7 @@ final class Notification extends BaseModel
 
         $sql .= ' ORDER BY n.created_at DESC, n.id DESC';
 
-        if ($page > 0) {
-            // Whole numbers worked out here, never request text.
-            $sql .= ' LIMIT ' . self::PER_PAGE . ' OFFSET ' . (($page - 1) * self::PER_PAGE);
-        }
-
-        return $this->select($sql, $params);
+        return $page > 0 ? $this->selectPage($sql, $params, $page, self::PER_PAGE) : $this->select($sql, $params);
     }
 
     public function countForMember(int $memberId, string $group = ''): int
@@ -95,23 +90,13 @@ final class Notification extends BaseModel
     }
 
     /**
-     * A fixed set of placeholders for one pill's types — the values stay bound.
+     * The WHERE clause for one pill's types, its values bound into $params.
      *
-     * @param array<string, mixed> $params filled in with the bound types
+     * @param array<string, mixed> $params
      */
     private function groupFilter(string $group, array &$params): string
     {
-        if (!isset(self::GROUPS[$group])) {
-            return '';
-        }
-
-        $names = [];
-        foreach (self::GROUPS[$group] as $index => $type) {
-            $names[]               = ':type' . $index;
-            $params['type' . $index] = $type;
-        }
-
-        return ' AND n.type IN (' . implode(', ', $names) . ')';
+        return isset(self::GROUPS[$group]) ? ' AND n.type IN ' . self::inList('type', self::GROUPS[$group], $params) : '';
     }
 
     /**
@@ -129,27 +114,21 @@ final class Notification extends BaseModel
     /** Mark one read; the owner is part of the WHERE clause. */
     public function markRead(int $id, int $memberId): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE notifications SET read_at = COALESCE(read_at, NOW()) WHERE id = :id AND user_id = :member'
+        $this->execute(
+            'UPDATE notifications SET read_at = COALESCE(read_at, NOW()) WHERE id = :id AND user_id = :member',
+            ['id' => $id, 'member' => $memberId]
         );
-        $statement->execute(['id' => $id, 'member' => $memberId]);
     }
 
     public function markAllRead(int $memberId): int
     {
-        $statement = $this->pdo->prepare('UPDATE notifications SET read_at = NOW() WHERE user_id = :member AND read_at IS NULL');
-        $statement->execute(['member' => $memberId]);
-
-        return $statement->rowCount();
+        return $this->execute('UPDATE notifications SET read_at = NOW() WHERE user_id = :member AND read_at IS NULL', ['member' => $memberId]);
     }
 
     /** Dismiss one; the owner is part of the WHERE clause. */
     public function deleteOwned(int $id, int $memberId): bool
     {
-        $statement = $this->pdo->prepare('DELETE FROM notifications WHERE id = :id AND user_id = :member');
-        $statement->execute(['id' => $id, 'member' => $memberId]);
-
-        return $statement->rowCount() === 1;
+        return $this->execute('DELETE FROM notifications WHERE id = :id AND user_id = :member', ['id' => $id, 'member' => $memberId]) === 1;
     }
 
     public function unreadCount(int $memberId): int
@@ -223,19 +202,13 @@ final class Notification extends BaseModel
      */
     public function sentRecently(int $userId, string $type, string $key, int $days): bool
     {
-        $statement = $this->pdo->prepare(
+        return (int) $this->selectValue(
             "SELECT COUNT(*) FROM notifications
               WHERE user_id = :user AND type = :type
                 AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.pair')) = :pair
-                AND created_at >= NOW() - INTERVAL :days DAY"
-        );
-        $statement->bindValue(':user', $userId, PDO::PARAM_INT);
-        $statement->bindValue(':type', $type);
-        $statement->bindValue(':pair', $key);
-        $statement->bindValue(':days', $days, PDO::PARAM_INT);
-        $statement->execute();
-
-        return (int) $statement->fetchColumn() > 0;
+                AND created_at >= NOW() - INTERVAL :days DAY",
+            ['user' => $userId, 'type' => $type, 'pair' => $key, 'days' => $days]
+        ) > 0;
     }
 
     /**
@@ -245,14 +218,9 @@ final class Notification extends BaseModel
      */
     public function push(int $userId, string $type, array $payload): void
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO notifications (user_id, type, payload) VALUES (:user, :type, :payload)'
+        $this->execute(
+            'INSERT INTO notifications (user_id, type, payload) VALUES (:user, :type, :payload)',
+            ['user' => $userId, 'type' => $type, 'payload' => json_encode($payload, JSON_THROW_ON_ERROR)]
         );
-
-        $statement->execute([
-            'user'    => $userId,
-            'type'    => $type,
-            'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
-        ]);
     }
 }

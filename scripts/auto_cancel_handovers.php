@@ -14,11 +14,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../app/autoload.php';
 
-date_default_timezone_set('Asia/Colombo');
-
 $pdo = Database::connection();
 
 exit((new CronJob(new CronRun($pdo)))->run(
     'auto_cancel_handovers',
-    static fn (): string => BookingController::handovers($pdo, new PhotoStore(dirname(__DIR__) . '/storage/uploads'))->autoCancelStale()
+    static fn (): string => BookingController::handovers($pdo)->autoCancelStale()
 ));

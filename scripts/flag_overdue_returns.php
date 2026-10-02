@@ -15,11 +15,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../app/autoload.php';
 
-date_default_timezone_set('Asia/Colombo');
-
 $pdo = Database::connection();
 
 exit((new CronJob(new CronRun($pdo)))->run(
     'flag_overdue_returns',
-    static fn (): string => BookingController::returns($pdo, new PhotoStore(dirname(__DIR__) . '/storage/uploads'))->flagOverdue()
+    static fn (): string => BookingController::returns($pdo)->flagOverdue()
 ));

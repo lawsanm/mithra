@@ -131,25 +131,13 @@ final class User extends BaseModel
      */
     public function create(array $data): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             "INSERT INTO users
                  (role_id, full_name, nic, nic_photo_path, phone, email, address, password_hash, status)
              VALUES
-                 (:role_id, :full_name, :nic, :nic_photo_path, :phone, :email, :address, :password_hash, 'pending')"
+                 (:role_id, :full_name, :nic, :nic_photo_path, :phone, :email, :address, :password_hash, 'pending')",
+            $data
         );
-
-        $statement->execute([
-            'role_id'        => $data['role_id'],
-            'full_name'      => $data['full_name'],
-            'nic'            => $data['nic'],
-            'nic_photo_path' => $data['nic_photo_path'],
-            'phone'         => $data['phone'],
-            'email'         => $data['email'],
-            'address'       => $data['address'],
-            'password_hash' => $data['password_hash'],
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -159,13 +147,10 @@ final class User extends BaseModel
      */
     public function markActive(int $id): void
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE users
-                SET status = 'active', joined_at = COALESCE(joined_at, NOW())
-              WHERE id = :id AND status = 'pending'"
+        $this->execute(
+            "UPDATE users SET status = 'active', joined_at = COALESCE(joined_at, NOW()) WHERE id = :id AND status = 'pending'",
+            ['id' => $id]
         );
-
-        $statement->execute(['id' => $id]);
     }
 
     public function roleIdFor(string $code): ?int
@@ -238,23 +223,7 @@ final class User extends BaseModel
         );
     }
 
-    /**
-     * The moderator of a member's home division, or null when the account has
-     * no home division or the division has no moderator.
-     */
-    public function homeModeratorName(int $userId): ?string
-    {
-        $name = $this->selectValue(
-            "SELECT m.full_name
-               FROM user_divisions ud
-               JOIN gn_divisions d ON d.id = ud.gn_division_id
-               JOIN users m        ON m.id = d.moderator_id
-              WHERE ud.user_id = :id AND ud.membership_type = 'home'",
-            ['id' => $userId]
-        );
 
-        return $name === false ? null : (string) $name;
-    }
 
     /**
      * The longest-standing active account in a role, e.g. the Sponsor Liaison.
@@ -330,16 +299,12 @@ final class User extends BaseModel
      */
     public function recentlySuspended(int $limit = 5): array
     {
-        $statement = $this->pdo->prepare(
-            "SELECT id, full_name, updated_at FROM users
-              WHERE status = 'suspended'
-              ORDER BY updated_at DESC
-              LIMIT :limit"
+        return $this->selectPage(
+            "SELECT id, full_name, updated_at FROM users WHERE status = 'suspended' ORDER BY updated_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     public function roleCode(int $id): string
@@ -469,37 +434,31 @@ final class User extends BaseModel
     /** Store a new password hash and stamp the change, which ends older sessions. */
     public function updatePassword(int $id, string $passwordHash): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE users SET password_hash = :hash, password_changed_at = NOW() WHERE id = :id'
-        );
-        $statement->execute(['hash' => $passwordHash, 'id' => $id]);
+        $this->execute('UPDATE users SET password_hash = :hash, password_changed_at = NOW() WHERE id = :id', ['hash' => $passwordHash, 'id' => $id]);
     }
 
     /** Upgrade a hash to the current cost without counting as a password change. */
     public function rehashPassword(int $id, string $passwordHash): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET password_hash = :hash WHERE id = :id');
-        $statement->execute(['hash' => $passwordHash, 'id' => $id]);
+        $this->execute('UPDATE users SET password_hash = :hash WHERE id = :id', ['hash' => $passwordHash, 'id' => $id]);
     }
 
     public function updateContact(int $id, string $fullName, string $phone, ?string $email): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE users SET full_name = :name, phone = :phone, email = :email WHERE id = :id'
+        $this->execute(
+            'UPDATE users SET full_name = :name, phone = :phone, email = :email WHERE id = :id',
+            ['name' => $fullName, 'phone' => $phone, 'email' => $email, 'id' => $id]
         );
-        $statement->execute(['name' => $fullName, 'phone' => $phone, 'email' => $email, 'id' => $id]);
     }
 
     public function updateAddress(int $id, string $address): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET address = :address WHERE id = :id');
-        $statement->execute(['address' => $address, 'id' => $id]);
+        $this->execute('UPDATE users SET address = :address WHERE id = :id', ['address' => $address, 'id' => $id]);
     }
 
     public function setGiftReceive(int $id, bool $enabled): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET gift_receive_enabled = :on WHERE id = :id');
-        $statement->execute(['on' => $enabled ? 1 : 0, 'id' => $id]);
+        $this->execute('UPDATE users SET gift_receive_enabled = :on WHERE id = :id', ['on' => $enabled ? 1 : 0, 'id' => $id]);
     }
 
     public function emailTakenByOther(string $email, int $id): bool
@@ -527,20 +486,16 @@ final class User extends BaseModel
      */
     public function close(int $id, string $status): bool
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE users SET status = :status, closed_at = NOW(), gift_receive_enabled = 0
-              WHERE id = :id AND status = 'active'"
-        );
-        $statement->execute(['status' => $status, 'id' => $id]);
-
-        return $statement->rowCount() === 1;
+        return $this->execute(
+            "UPDATE users SET status = :status, closed_at = NOW(), gift_receive_enabled = 0 WHERE id = :id AND status = 'active'",
+            ['status' => $status, 'id' => $id]
+        ) === 1;
     }
 
     /** Store a freshly computed trust score (Plan §6.3) — the cached column every page reads. */
     public function setTrustScore(int $id, int $score): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET trust_score = :score WHERE id = :id');
-        $statement->execute(['score' => max(0, min(100, $score)), 'id' => $id]);
+        $this->execute('UPDATE users SET trust_score = :score WHERE id = :id', ['score' => max(0, min(100, $score)), 'id' => $id]);
     }
 
     /** When membership began — the trust score's tenure factor. */
@@ -559,13 +514,11 @@ final class User extends BaseModel
      */
     public function activeMemberIds(): array
     {
-        $rows = $this->select(
+        return $this->selectIds(
             "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
               WHERE r.code IN ('member','moderator') AND u.status = 'active'
               ORDER BY u.id"
         );
-
-        return array_map(static fn (array $row): int => (int) $row['id'], $rows);
     }
 
     /**
@@ -575,13 +528,11 @@ final class User extends BaseModel
      */
     public function idsInRole(string $roleCode): array
     {
-        $rows = $this->select(
+        return $this->selectIds(
             "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
               WHERE r.code = :code AND u.status = 'active' ORDER BY u.id",
             ['code' => $roleCode]
         );
-
-        return array_map(static fn (array $row): int => (int) $row['id'], $rows);
     }
 
     /**

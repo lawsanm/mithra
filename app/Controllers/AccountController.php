@@ -30,15 +30,14 @@ final class AccountController extends Controller
      */
     public function changePassword(): void
     {
-        $returnTo = (string) ($_POST['return_to'] ?? '/account/password');
-        $returnTo = in_array($returnTo, self::RETURN_PATHS, true) ? $returnTo : '/account/password';
+        $returnTo = in_array($this->posted('return_to'), self::RETURN_PATHS, true) ? $this->posted('return_to') : '/account/password';
 
         try {
             $stamp = $this->passwordResets()->change(
                 $this->userId(),
-                $this->postedPassword('current_password'),
-                $this->postedPassword('password'),
-                $this->postedPassword('password_confirmation')
+                $this->posted('current_password'),
+                $this->posted('password'),
+                $this->posted('password_confirmation')
             );
         } catch (ValidationException $exception) {
             http_response_code(422);
@@ -71,7 +70,7 @@ final class AccountController extends Controller
      */
     public function savePreferences(): void
     {
-        $this->profiles()->setGiftReceive($this->userId(), ($_POST['receive_gifts'] ?? '') === '1');
+        $this->profiles()->setGiftReceive($this->userId(), $this->posted('receive_gifts') === '1');
 
         $this->flash('Preferences saved.');
         $this->redirect('/settings');
@@ -95,7 +94,7 @@ final class AccountController extends Controller
             $moved = $this->closures()->close(
                 $this->userId(),
                 $validator->value('closure_type'),
-                $this->postedPassword('password')
+                $this->posted('password')
             );
         } catch (ValidationException $exception) {
             $this->renderSettings($exception->errors());
@@ -169,7 +168,7 @@ final class AccountController extends Controller
             new Donation($this->pdo),
             new Wallet($this->pdo),
             new PasswordReset($this->pdo),
-            new LedgerService($this->pdo, new PointLedger($this->pdo), new PointPool($this->pdo), new Wallet($this->pdo))
+            self::ledgerService($this->pdo)
         );
     }
 }

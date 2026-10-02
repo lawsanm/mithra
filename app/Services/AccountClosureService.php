@@ -99,20 +99,15 @@ final class AccountClosureService
             throw ValidationException::field('close_password', 'Enter your current password to confirm.');
         }
 
-        $blockers = $this->blockers($userId);
-        if ($blockers !== []) {
-            throw ValidationException::field('form', implode(' ', $blockers));
-        }
-
         [$pool, $reason, $status] = $type === 'parting_gift'
             ? ['aid', 'parting_gift', 'closed_donation']
             : ['retired', 'account_closure', 'closed_standard'];
 
-        $this->pdo->beginTransaction();
-
-        try {
-            $balance = $this->ledger->lockMemberBalances([$userId], [$pool])[$userId] ?? 0;
+        return Database::transaction($this->pdo, function () use ($userId, $pool, $reason, $status): int {
+            // Locked first, so what blocks closing cannot change underneath it.
+            $balance  = $this->ledger->lockMemberBalances([$userId], [$pool])[$userId] ?? 0;
             $blockers = $this->blockers($userId);
+
             if ($blockers !== []) {
                 throw ValidationException::field('form', implode(' ', $blockers));
             }
@@ -129,13 +124,7 @@ final class AccountClosureService
             $this->memberships->deactivateAllFor($userId);
             $this->resets->revokeFor($userId);
 
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
-
-        return $balance;
+            return $balance;
+        });
     }
 }

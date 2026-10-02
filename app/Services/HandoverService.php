@@ -58,6 +58,32 @@ final class HandoverService
     }
 
     /**
+     * Check a side's note and photos, then store the photos stamped with who
+     * took them and when — what both the handover and the return ask first.
+     *
+     * @param list<array{name?: string, tmp_name?: string, error?: int, size?: int}> $uploads
+     *
+     * @throws ValidationException
+     *
+     * @return list<string> the stored paths
+     */
+    public static function storeSidePhotos(PhotoStore $photos, string $folder, int $memberId, array $uploads, string $note): array
+    {
+        if (mb_strlen($note) > self::NOTE_MAX) {
+            throw ValidationException::field('note', sprintf('Keep the note to %d characters.', self::NOTE_MAX));
+        }
+
+        $usable = PhotoStore::chosen($uploads);
+        $errors = self::photoCountErrors(count($usable));
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+
+        return $photos->storeMany($usable, $folder, 'photos', self::MAX_PHOTOS, PhotoStore::stampText($memberId, new DateTimeImmutable()));
+    }
+
+    /**
      * May this side still change or accept its half? Only before it accepted,
      * only while the booking waits for the handover, and never once both have
      * locked the baseline.
@@ -66,11 +92,7 @@ final class HandoverService
      */
     public static function sideOpen(?array $record, string $side, string $bookingStatus): bool
     {
-        if ($bookingStatus !== 'awaiting_handover') {
-            return false;
-        }
-
-        return $record === null || $record[$side . '_accepted_at'] === null;
+        return $bookingStatus === 'awaiting_handover' && ($record === null || $record[$side . '_accepted_at'] === null);
     }
 
     /**
@@ -82,27 +104,12 @@ final class HandoverService
      */
     public function savePhotos(int $bookingId, int $memberId, array $uploads, string $note): void
     {
-        $note = trim($note);
+        $note   = trim($note);
+        $stored = self::storeSidePhotos($this->photos, self::PHOTO_FOLDER, $memberId, $uploads, $note);
 
-        if (mb_strlen($note) > self::NOTE_MAX) {
-            throw ValidationException::field('note', sprintf('Keep the note to %d characters.', self::NOTE_MAX));
-        }
-
-        $usable = array_filter($uploads, static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE);
-        $errors = self::photoCountErrors(count($usable));
-
-        if ($errors !== []) {
-            throw new ValidationException($errors);
-        }
-
-        $stamp  = PhotoStore::stampText($memberId, new DateTimeImmutable());
-        $stored = $this->photos->storeMany($usable, self::PHOTO_FOLDER, 'photos', self::MAX_PHOTOS, $stamp);
-        $old    = [];
-
-        $this->pdo->beginTransaction();
-
-        try {
-            [$booking, $side] = $this->partyOrFail($bookingId, $memberId);
+        $replaced = Database::transaction($this->pdo, function () use ($bookingId, $memberId, $note, $stored): array {
+            $booking = $this->bookings->lockForUpdate($bookingId);
+            $side    = BookingService::sideOf($booking, $memberId);
             $this->records->ensure($bookingId);
             $record = $this->records->forBooking($bookingId, true);
 
@@ -110,23 +117,13 @@ final class HandoverService
                 throw ValidationException::field('photos', 'You have already accepted the handover, so your photos are locked.');
             }
 
-            $old = self::decode($record[$side . '_photos'] ?? null);
             $this->records->saveSide($bookingId, $side, $stored, $note === '' ? null : $note);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
 
-            foreach ($stored as $path) {
-                $this->photos->delete($path);
-            }
-
-            throw $exception;
-        }
+            return PhotoStore::paths($record[$side . '_photos'] ?? null);
+        }, fn () => $this->photos->delete(...$stored));
 
         // Replaced photos are no longer on any record — remove them last.
-        foreach ($old as $path) {
-            $this->photos->delete($path);
-        }
+        $this->photos->delete(...$replaced);
     }
 
     /**
@@ -139,17 +136,16 @@ final class HandoverService
      */
     public function accept(int $bookingId, int $memberId): bool
     {
-        $this->pdo->beginTransaction();
-
-        try {
-            [$booking, $side] = $this->partyOrFail($bookingId, $memberId);
-            $record = $this->records->forBooking($bookingId, true);
+        return Database::transaction($this->pdo, function () use ($bookingId, $memberId): bool {
+            $booking = $this->bookings->lockForUpdate($bookingId);
+            $side    = BookingService::sideOf($booking, $memberId);
+            $record  = $this->records->forBooking($bookingId, true);
 
             if (!self::sideOpen($record, $side, (string) $booking['status'])) {
                 throw ValidationException::field('form', 'There is no handover waiting for your acceptance.');
             }
 
-            if (self::decode($record[$side . '_photos'] ?? null) === []) {
+            if (PhotoStore::paths($record[$side . '_photos'] ?? null) === []) {
                 throw ValidationException::field('form', 'Upload your photos of the item before you accept.');
             }
 
@@ -179,14 +175,8 @@ final class HandoverService
                 'booking_id' => $bookingId,
             ]);
 
-            $this->pdo->commit();
-
             return $completed;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
     }
 
     /**
@@ -199,15 +189,7 @@ final class HandoverService
     public function status(int $bookingId, int $memberId): array
     {
         $booking = $this->bookings->find($bookingId);
-
-        if ($booking === null) {
-            throw new RecordNotFoundException('No such booking.');
-        }
-
-        if (!in_array($memberId, [(int) $booking['lender_id'], (int) $booking['borrower_id']], true)) {
-            throw new AccessDeniedException('This booking belongs to other members.');
-        }
-
+        BookingService::sideOf($booking, $memberId);
         $record = $this->records->forBooking($bookingId);
 
         return [
@@ -227,73 +209,29 @@ final class HandoverService
         $count = 0;
 
         foreach ($this->bookings->staleHandovers(self::AUTO_CANCEL_HOURS) as $stale) {
-            $this->pdo->beginTransaction();
-
-            try {
+            Database::transaction($this->pdo, function () use ($stale, &$count): void {
                 $booking = $this->bookings->lockForUpdate((int) $stale['id']);
 
-                if ($booking !== null && $booking['status'] === 'awaiting_handover') {
-                    $this->bookingRules->refundAndClose($booking, 'auto_cancelled', null);
-
-                    foreach ([(int) $booking['borrower_id'], (int) $booking['lender_id']] as $party) {
-                        $this->notifications->push($party, 'booking_auto_cancelled', [
-                            'title'      => 'Booking cancelled: ' . $booking['item_title'],
-                            'detail'     => 'The handover was not completed within 48 hours of the start date. The borrower was refunded in full.',
-                            'icon'       => 'clock',
-                            'href'       => '/bookings/' . $booking['id'],
-                            'booking_id' => (int) $booking['id'],
-                        ]);
-                    }
-
-                    $count++;
+                if ($booking === null || $booking['status'] !== 'awaiting_handover') {
+                    return;
                 }
 
-                $this->pdo->commit();
-            } catch (Throwable $exception) {
-                $this->pdo->rollBack();
+                $this->bookingRules->refundAndClose($booking, 'auto_cancelled', null);
 
-                throw $exception;
-            }
+                foreach ([(int) $booking['borrower_id'], (int) $booking['lender_id']] as $party) {
+                    $this->notifications->push($party, 'booking_auto_cancelled', [
+                        'title'      => 'Booking cancelled: ' . $booking['item_title'],
+                        'detail'     => 'The handover was not completed within 48 hours of the start date. The borrower was refunded in full.',
+                        'icon'       => 'clock',
+                        'href'       => '/bookings/' . $booking['id'],
+                        'booking_id' => (int) $booking['id'],
+                    ]);
+                }
+
+                $count++;
+            });
         }
 
-        return $count . ' unfinished handover' . ($count === 1 ? '' : 's') . ' auto-cancelled';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function decode(mixed $json): array
-    {
-        $decoded = json_decode((string) ($json ?? '[]'), true);
-
-        return is_array($decoded) ? array_values(array_filter($decoded, 'is_string')) : [];
-    }
-
-    /**
-     * The locked booking and which side this member is on.
-     *
-     * @return array{0: array<string, mixed>, 1: string}
-     *
-     * @throws RecordNotFoundException|AccessDeniedException
-     */
-    private function partyOrFail(int $bookingId, int $memberId): array
-    {
-        $booking = $this->bookings->lockForUpdate($bookingId);
-
-        if ($booking === null) {
-            throw new RecordNotFoundException('No such booking.');
-        }
-
-        $side = match ($memberId) {
-            (int) $booking['lender_id']   => 'lender',
-            (int) $booking['borrower_id'] => 'borrower',
-            default                       => null,
-        };
-
-        if ($side === null) {
-            throw new AccessDeniedException('This booking belongs to other members.');
-        }
-
-        return [$booking, $side];
+        return plural($count, 'unfinished handover') . ' auto-cancelled';
     }
 }

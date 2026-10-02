@@ -52,10 +52,6 @@ final class PointPool extends BaseModel
      */
     public function adjust(string $poolCode, int $delta): void
     {
-        $statement = $this->pdo->prepare(
-            'UPDATE point_pools SET balance = balance + :delta WHERE pool_code = :code'
-        );
-
-        $statement->execute(['delta' => $delta, 'code' => $poolCode]);
+        $this->execute('UPDATE point_pools SET balance = balance + :delta WHERE pool_code = :code', ['delta' => $delta, 'code' => $poolCode]);
     }
 }

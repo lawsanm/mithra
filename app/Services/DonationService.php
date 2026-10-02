@@ -75,7 +75,7 @@ final class DonationService
             throw ValidationException::field('message', sprintf('Keep the message to %d characters.', self::MESSAGE_MAX));
         }
 
-        return $this->inTransaction(function () use ($donationId, $requesterId, $message): bool {
+        return Database::transaction($this->pdo, function () use ($donationId, $requesterId, $message): bool {
             $donation = $this->lockOrFail($donationId);
             $existing = $this->donations->requestBy($donationId, $requesterId);
 
@@ -121,7 +121,7 @@ final class DonationService
             throw ValidationException::field('form', 'Choose how the recipient is picked.');
         }
 
-        $this->inTransaction(function () use ($donationId, $donorId, $mode): void {
+        Database::transaction($this->pdo, function () use ($donationId, $donorId, $mode): void {
             $donation = $this->donorsOrFail($donationId, $donorId);
 
             if ($donation['status'] !== 'open') {
@@ -145,7 +145,7 @@ final class DonationService
      */
     public function select(int $donationId, int $donorId, int $requestId): void
     {
-        $this->inTransaction(function () use ($donationId, $donorId, $requestId): void {
+        Database::transaction($this->pdo, function () use ($donationId, $donorId, $requestId): void {
             $donation = $this->donorsOrFail($donationId, $donorId);
             $request  = $this->donations->findRequest($requestId);
 
@@ -171,7 +171,7 @@ final class DonationService
      */
     public function confirm(int $donationId, int $memberId): bool
     {
-        return $this->inTransaction(function () use ($donationId, $memberId): bool {
+        return Database::transaction($this->pdo, function () use ($donationId, $memberId): bool {
             $donation = $this->lockOrFail($donationId);
             $side     = match ($memberId) {
                 (int) $donation['donor_id']           => 'donor',
@@ -231,7 +231,7 @@ final class DonationService
      */
     public function withdraw(int $requestId, int $requesterId): int
     {
-        return $this->inTransaction(function () use ($requestId, $requesterId): int {
+        return Database::transaction($this->pdo, function () use ($requestId, $requesterId): int {
             $request = $this->donations->findRequest($requestId);
 
             if ($request === null) {
@@ -272,7 +272,7 @@ final class DonationService
      */
     public function cancel(int $donationId, int $donorId): void
     {
-        $this->inTransaction(function () use ($donationId, $donorId): void {
+        Database::transaction($this->pdo, function () use ($donationId, $donorId): void {
             $donation = $this->donorsOrFail($donationId, $donorId);
 
             if (!in_array($donation['status'], ['open', 'recipient_selected'], true)) {
@@ -352,26 +352,4 @@ final class DonationService
         return $donation;
     }
 
-    /**
-     * @template T
-     *
-     * @param callable(): T $work
-     *
-     * @return T
-     */
-    private function inTransaction(callable $work): mixed
-    {
-        $this->pdo->beginTransaction();
-
-        try {
-            $result = $work();
-            $this->pdo->commit();
-
-            return $result;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
-    }
 }

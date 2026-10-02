@@ -17,9 +17,8 @@ declare(strict_types=1);
  *              borrower each sign off, and the points move (§10.5).
  *
  * A booking the division's moderator is party to goes to the Admin instead
- * (§10.5 step 7, Rule 1 of §16.5).
- *
- * Claim statuses move only along TRANSITIONS.
+ * (§10.5 step 7, Rule 1 of §16.5). Claim statuses move only along
+ * DamageClaim::TRANSITIONS.
  */
 final class DamageClaimService
 {
@@ -34,13 +33,6 @@ final class DamageClaimService
     public const ANSWER_HOURS = 48;
 
     public const DESCRIPTION_MAX = 1000;
-
-    /** from => the statuses a claim may move to next. */
-    public const TRANSITIONS = [
-        'awaiting_borrower' => ['pending_moderator', 'closed', 'escalated'],
-        'pending_moderator' => ['resolved', 'escalated'],
-        'escalated'         => ['resolved', 'closed', 'pending_moderator'],
-    ];
 
     public function __construct(
         private PDO $pdo,
@@ -57,11 +49,6 @@ final class DamageClaimService
     }
 
     // ── Pure rules ──────────────────────────────────────────────────────────
-
-    public static function canMove(string $from, string $to): bool
-    {
-        return in_array($to, self::TRANSITIONS[$from] ?? [], true);
-    }
 
     /** The largest simple-path penalty: 20% of the declared value, rounded up. */
     public static function simpleCap(int $declaredValue): int
@@ -121,13 +108,14 @@ final class DamageClaimService
      */
     public function raise(int $bookingId, int $lenderId, string $severity, int $penalty, string $description, array $uploads): string
     {
-        $booking = $this->bookings->lockForUpdate($bookingId) ?? throw new RecordNotFoundException('No such booking.');
+        // A plain read for the checks; the transaction below locks and reads again.
+        $booking = $this->bookings->findForDetail($bookingId) ?? throw new RecordNotFoundException('No such booking.');
 
         if ((int) $booking['lender_id'] !== $lenderId) {
             throw new AccessDeniedException('Only the lender raises a damage claim.');
         }
 
-        $usable = array_values(array_filter($uploads, static fn (array $u): bool => ($u['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE));
+        $usable = PhotoStore::chosen($uploads);
         $errors = self::claimErrors($severity, $penalty, (int) $booking['declared_value'], $description, count($usable));
 
         if ($errors !== []) {
@@ -137,9 +125,7 @@ final class DamageClaimService
         $stored = $this->photos->storeMany($usable, self::PHOTO_FOLDER, 'photos', HandoverService::MAX_PHOTOS, PhotoStore::stampText($lenderId, new DateTimeImmutable()));
         $track  = self::track($severity, $penalty, (int) $booking['declared_value'], (bool) $booking['moderator_involved']);
 
-        $this->pdo->beginTransaction();
-
-        try {
+        Database::transaction($this->pdo, function () use ($bookingId, $lenderId, $severity, $penalty, $description, $stored, $track): void {
             $booking = $this->bookings->lockForUpdate($bookingId);
             $record  = $this->returns->forBooking($bookingId, true);
 
@@ -175,16 +161,7 @@ final class DamageClaimService
             }
 
             $this->notify($booking, $track, $penalty);
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            foreach ($stored as $path) {
-                $this->photos->delete($path);
-            }
-
-            throw $exception;
-        }
+        }, fn () => $this->photos->delete(...$stored));
 
         return $track;
     }
@@ -202,7 +179,7 @@ final class DamageClaimService
      */
     public function accept(int $claimId, int $borrowerId): bool
     {
-        return $this->inTransaction(function () use ($claimId, $borrowerId): bool {
+        return Database::transaction($this->pdo, function () use ($claimId, $borrowerId): bool {
             [$claim, $booking] = $this->borrowerAnswerable($claimId, $borrowerId);
             $penalty = (int) $claim['proposed_penalty'];
 
@@ -232,7 +209,7 @@ final class DamageClaimService
      */
     public function contest(int $claimId, int $borrowerId): void
     {
-        $this->inTransaction(function () use ($claimId, $borrowerId): void {
+        Database::transaction($this->pdo, function () use ($claimId, $borrowerId): void {
             [$claim, $booking] = $this->borrowerAnswerable($claimId, $borrowerId);
             $this->returns->borrowerDecision((int) $booking['id'], 'contested');
             $this->toModerator($claim, $booking, 'contested');
@@ -250,10 +227,8 @@ final class DamageClaimService
      */
     public function signOff(int $claimId, int $memberId): bool
     {
-        return $this->inTransaction(function () use ($claimId, $memberId): bool {
-            $claim   = $this->claims->lockForUpdate($claimId) ?? throw new RecordNotFoundException('No such claim.');
-            $booking = $this->bookings->lockForUpdate((int) $claim['booking_id']);
-            $side    = $this->sideOf($booking, $memberId);
+        return Database::transaction($this->pdo, function () use ($claimId, $memberId): bool {
+            [$claim, $booking, $side] = $this->lockedFor($claimId, $memberId);
 
             if ($claim['status'] !== 'pending_moderator' || $claim['resolution_id'] === null || $claim['met_at'] === null) {
                 throw ValidationException::field('form', 'There is no moderator resolution to sign yet.');
@@ -294,14 +269,11 @@ final class DamageClaimService
      */
     public function withdraw(int $claimId, int $lenderId): void
     {
-        $this->inTransaction(function () use ($claimId, $lenderId): void {
-            $claim   = $this->claims->lockForUpdate($claimId) ?? throw new RecordNotFoundException('No such claim.');
-            $booking = $this->bookings->lockForUpdate((int) $claim['booking_id']);
+        Database::transaction($this->pdo, function () use ($claimId, $lenderId): void {
+            [$claim, $booking, $side] = $this->lockedFor($claimId, $lenderId);
 
-            if ((int) $booking['lender_id'] !== $lenderId) {
-                throw (int) $booking['borrower_id'] === $lenderId
-                    ? ValidationException::field('form', 'Only the lender withdraws a claim.')
-                    : new AccessDeniedException('This claim belongs to other members.');
+            if ($side !== 'lender') {
+                throw ValidationException::field('form', 'Only the lender withdraws a claim.');
             }
 
             if ($claim['status'] !== 'awaiting_borrower') {
@@ -325,7 +297,7 @@ final class DamageClaimService
         $count = 0;
 
         foreach ($this->claims->unansweredSince(self::ANSWER_HOURS) as $row) {
-            $this->inTransaction(function () use ($row, &$count): void {
+            Database::transaction($this->pdo, function () use ($row, &$count): void {
                 $claim = $this->claims->lockForUpdate((int) $row['id']);
 
                 if ($claim !== null && $claim['status'] === 'awaiting_borrower') {
@@ -335,7 +307,7 @@ final class DamageClaimService
             });
         }
 
-        return $count . ' unanswered claim' . ($count === 1 ? '' : 's') . ' sent to the moderator';
+        return plural($count, 'unanswered claim') . ' sent to the moderator';
     }
 
     // ── Plumbing ───────────────────────────────────────────────────────────
@@ -370,19 +342,32 @@ final class DamageClaimService
     }
 
     /**
+     * The claim and its booking, both row-locked, and which side this member
+     * is on; anyone who is not one of the two members is refused.
+     *
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>, 2: string}
+     *
+     * @throws RecordNotFoundException|AccessDeniedException
+     */
+    private function lockedFor(int $claimId, int $memberId): array
+    {
+        $claim   = $this->claims->lockForUpdate($claimId) ?? throw new RecordNotFoundException('No such claim.');
+        $booking = $this->bookings->lockForUpdate((int) $claim['booking_id']);
+
+        return [$claim, $booking, BookingService::sideOf($booking, $memberId)];
+    }
+
+    /**
      * @return array{0: array<string, mixed>, 1: array<string, mixed>}
      *
      * @throws ValidationException|RecordNotFoundException|AccessDeniedException
      */
     private function borrowerAnswerable(int $claimId, int $borrowerId): array
     {
-        $claim   = $this->claims->lockForUpdate($claimId) ?? throw new RecordNotFoundException('No such claim.');
-        $booking = $this->bookings->lockForUpdate((int) $claim['booking_id']);
+        [$claim, $booking, $side] = $this->lockedFor($claimId, $borrowerId);
 
-        if ((int) $booking['borrower_id'] !== $borrowerId) {
-            throw (int) $booking['lender_id'] === $borrowerId
-                ? ValidationException::field('form', 'Only the borrower answers a claim.')
-                : new AccessDeniedException('This claim belongs to other members.');
+        if ($side !== 'borrower') {
+            throw ValidationException::field('form', 'Only the borrower answers a claim.');
         }
 
         if ($claim['status'] !== 'awaiting_borrower') {
@@ -390,20 +375,6 @@ final class DamageClaimService
         }
 
         return [$claim, $booking];
-    }
-
-    /**
-     * @param array<string, mixed>|null $booking
-     *
-     * @throws AccessDeniedException
-     */
-    private function sideOf(?array $booking, int $memberId): string
-    {
-        return match ($memberId) {
-            (int) ($booking['lender_id'] ?? 0)   => 'lender',
-            (int) ($booking['borrower_id'] ?? 0) => 'borrower',
-            default => throw new AccessDeniedException('This claim belongs to other members.'),
-        };
     }
 
     /**
@@ -442,26 +413,4 @@ final class DamageClaimService
         }
     }
 
-    /**
-     * @template T
-     *
-     * @param callable(): T $work
-     *
-     * @return T
-     */
-    private function inTransaction(callable $work): mixed
-    {
-        $this->pdo->beginTransaction();
-
-        try {
-            $result = $work();
-            $this->pdo->commit();
-
-            return $result;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
-    }
 }

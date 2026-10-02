@@ -43,13 +43,7 @@ final class PointLedger extends BaseModel
         $params = [];
 
         if (isset(self::GROUPS[$filter])) {
-            // A fixed set of placeholders — the values stay bound.
-            $names = [];
-            foreach (self::GROUPS[$filter] as $index => $reason) {
-                $names[]                    = ':reason' . $index;
-                $params['reason' . $index] = $reason;
-            }
-            $where .= ' AND pl.reason IN (' . implode(', ', $names) . ')';
+            $where .= ' AND pl.reason IN ' . self::inList('reason', self::GROUPS[$filter], $params);
         }
 
         if ($search !== '') {
@@ -67,9 +61,7 @@ final class PointLedger extends BaseModel
             $params
         );
 
-        $offset = ($page - 1) * self::PER_PAGE;
-
-        $rows = $this->select(
+        $rows = $this->selectPage(
             "SELECT pl.id, pl.from_pool_code, pl.from_user_id, pl.to_pool_code, pl.to_user_id,
                     pl.amount, pl.reason, pl.booking_id, pl.gift_id, pl.aid_grant_id,
                     pl.contribution_id, pl.created_at,
@@ -79,9 +71,10 @@ final class PointLedger extends BaseModel
                LEFT JOIN users fu ON fu.id = pl.from_user_id
                LEFT JOIN users tu ON tu.id = pl.to_user_id
               WHERE {$where}
-              ORDER BY pl.created_at DESC
-              LIMIT " . self::PER_PAGE . " OFFSET {$offset}",
-            $params
+              ORDER BY pl.created_at DESC",
+            $params,
+            $page,
+            self::PER_PAGE
         );
 
         return [
@@ -106,28 +99,15 @@ final class PointLedger extends BaseModel
      */
     public function record(array $entry): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             'INSERT INTO point_ledger
                  (from_pool_code, from_user_id, to_pool_code, to_user_id, amount, reason,
                   booking_id, gift_id, aid_grant_id)
              VALUES
                  (:from_pool_code, :from_user_id, :to_pool_code, :to_user_id, :amount, :reason,
-                  :booking_id, :gift_id, :aid_grant_id)'
+                  :booking_id, :gift_id, :aid_grant_id)',
+            $entry + ['booking_id' => null, 'gift_id' => null, 'aid_grant_id' => null]
         );
-
-        $statement->execute([
-            'from_pool_code' => $entry['from_pool_code'],
-            'from_user_id'   => $entry['from_user_id'],
-            'to_pool_code'   => $entry['to_pool_code'],
-            'to_user_id'     => $entry['to_user_id'],
-            'amount'         => $entry['amount'],
-            'reason'         => $entry['reason'],
-            'booking_id'     => $entry['booking_id'] ?? null,
-            'gift_id'        => $entry['gift_id'] ?? null,
-            'aid_grant_id'   => $entry['aid_grant_id'] ?? null,
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /** Whether this member has ever received a movement of this kind. */

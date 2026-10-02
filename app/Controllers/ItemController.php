@@ -29,7 +29,7 @@ final class ItemController extends Controller
 
         $this->items      = new Item($pdo);
         $this->categories = new ItemCategory($pdo);
-        $this->service    = new ItemService($this->items, $this->categories, new Booking($pdo), $this->uploads());
+        $this->service    = new ItemService($this->items, $this->categories, new Booking($pdo), PhotoStore::uploads());
     }
 
     // ── Read ────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ final class ItemController extends Controller
     public function index(): void
     {
         $me   = $this->userId();
-        $type = $this->listingTypeFilter((string) ($_GET['type'] ?? ''));
+        $type = $this->listingTypeFilter($this->queryValue('type'));
 
         $rows   = $this->items->ownedBy($me, $type);
         $counts = $this->items->ownedCounts($me);
@@ -66,7 +66,7 @@ final class ItemController extends Controller
         $me        = $this->userId();
         $member    = (new User($this->pdo))->findWithDivision($me) ?? [];
         $temporary = (new UserDivision($this->pdo))->activeTemporary($me);
-        $community = ($_GET['community'] ?? '') === 'temporary' && $temporary !== null ? 'temporary' : 'home';
+        $community = $this->queryValue('community') === 'temporary' && $temporary !== null ? 'temporary' : 'home';
         $homeName  = (string) ($member['division_name'] ?? 'Home');
 
         if ($community === 'temporary') {
@@ -75,12 +75,12 @@ final class ItemController extends Controller
         }
 
         $division = (int) ($member['division_id'] ?? 0);
-        $query    = trim((string) ($_GET['q'] ?? ''));
-        $page     = max(1, (int) ($_GET['page'] ?? 1));
-        $type     = $this->listingTypeFilter((string) ($_GET['type'] ?? ''));
+        $query    = $this->queryValue('q');
+        $page     = $this->page();
+        $type     = $this->listingTypeFilter($this->queryValue('type'));
 
         $allCategories = $this->categories->allActive();
-        $categoryId    = $this->categoryIdFromSlug((string) ($_GET['category'] ?? ''), $allCategories);
+        $categoryId    = $this->categoryIdFromSlug($this->queryValue('category'), $allCategories);
 
         $rows  = $this->items->browse($division, $me, $categoryId, $query, $page, $type);
         $total = $this->items->countBrowse($division, $me, $categoryId, $query, $type);
@@ -165,7 +165,7 @@ final class ItemController extends Controller
                 'declared_value' => 'Declared value: ' . number_format((int) $row['declared_value']) . ' pts',
                 'description'    => (string) ($row['description'] ?? ''),
                 'listing_type'   => (string) $row['listing_type'],
-                'photos'         => $this->photoUrls($this->service->decodePhotos($row)),
+                'photos'         => array_map(photo_url(...), PhotoStore::paths($row['photos'])),
                 'status'         => $badge,
                 'status_glyph'   => $glyph,
                 'status_label'   => $label,
@@ -189,11 +189,11 @@ final class ItemController extends Controller
             'quote'      => $quote,
             'quoteError' => $quoteError,
             'quoteInput' => [
-                'from'  => is_string($_GET['from'] ?? null) ? $_GET['from'] : '',
-                'to'    => is_string($_GET['to'] ?? null) ? $_GET['to'] : '',
+                'from'  => $this->queryValue('from'),
+                'to'    => $this->queryValue('to'),
                 'basis' => $quote['basis'] ?? '',
             ],
-            'modalOpen'  => $quote !== null && ($_GET['request'] ?? '') === '1',
+            'modalOpen'  => $quote !== null && $this->queryValue('request') === '1',
             'pricing'    => $this->pricing($row, $quote),
         ]);
     }
@@ -206,7 +206,7 @@ final class ItemController extends Controller
     public function createForm(): void
     {
         $draft = $this->draft();
-        $step  = min($this->clampStep((int) ($_GET['step'] ?? 1)), (int) $draft['step']);
+        $step  = min($this->clampStep((int) $this->queryValue('step')), (int) $draft['step']);
 
         $this->renderWizard($step, $draft, []);
     }
@@ -217,7 +217,7 @@ final class ItemController extends Controller
     public function store(): void
     {
         $draft = $this->draft();
-        $step  = min($this->clampStep((int) ($_POST['step'] ?? 1)), (int) $draft['step']);
+        $step  = min($this->clampStep((int) $this->posted('step')), (int) $draft['step']);
 
         $validator = new Validator($_POST);
 
@@ -269,7 +269,7 @@ final class ItemController extends Controller
 
                     if ($proof !== null) {
                         if ($draft['value_proof_path'] !== null) {
-                            $this->service->discardPhotos([(string) $draft['value_proof_path']]);
+                            PhotoStore::uploads()->delete((string) $draft['value_proof_path']);
                         }
 
                         $draft['value_proof_path'] = $proof;
@@ -319,7 +319,7 @@ final class ItemController extends Controller
                     $draft['monthly_rate'] = $validator->value('monthly_rate');
                     $draft['community']    = $validator->value('community', 'home');
 
-                    $division = CommunityController::service($this->pdo, $this->uploads())
+                    $division = CommunityController::service($this->pdo)
                         ->listingDivision($this->userId(), (string) $draft['community']);
                     $this->service->create($this->userId(), $division, $draft, $draft['photos']);
 
@@ -389,7 +389,7 @@ final class ItemController extends Controller
         // Only paths already on the row can be kept — the checkbox values are
         // client input and are never trusted as file names (§8).
         $kept = array_values(array_intersect(
-            $this->service->decodePhotos($row),
+            PhotoStore::paths($row['photos']),
             array_map('strval', (array) ($_POST['keep_photos'] ?? []))
         ));
 
@@ -494,18 +494,16 @@ final class ItemController extends Controller
         }
 
         if ((int) $row['request_count'] > 0) {
-            $meta[] = $row['request_count'] . ' request' . ((int) $row['request_count'] === 1 ? '' : 's');
+            $meta[] = plural((int) $row['request_count'], 'request');
         } else {
             $meta[] = 'listed ' . date('j M Y', strtotime((string) $row['created_at']));
         }
-
-        $photos = $this->photoUrls(array_filter([$row['photo'] ?? null]));
 
         return [
             'id'           => (int) $row['id'],
             'title'        => (string) $row['title'],
             'meta'         => implode('  ·  ', $meta),
-            'photo'        => $photos[0] ?? null,
+            'photo'        => empty($row['photo']) ? null : photo_url((string) $row['photo']),
             'status'       => $badge,
             'status_glyph' => $glyph,
             'status_label' => $label,
@@ -523,12 +521,11 @@ final class ItemController extends Controller
     private function browseCard(array $row): array
     {
         [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], $row['back_on'] ?? null);
-        $photos = $this->photoUrls(array_filter([$row['photo'] ?? null]));
 
         return [
             'title'        => (string) $row['title'],
             'rate'         => $this->rateLabel($row),
-            'photo'        => $photos[0] ?? null,
+            'photo'        => empty($row['photo']) ? null : photo_url((string) $row['photo']),
             'owner_meta'   => sprintf('%s  ·  Trust %d', $row['owner_name'], (int) $row['trust_score']),
             'status'       => $badge,
             'status_glyph' => $glyph,
@@ -573,9 +570,9 @@ final class ItemController extends Controller
      */
     private function quoteFromQuery(array $row): array
     {
-        $from  = is_string($_GET['from'] ?? null) ? trim($_GET['from']) : '';
-        $to    = is_string($_GET['to'] ?? null) ? trim($_GET['to']) : '';
-        $basis = is_string($_GET['basis'] ?? null) ? $_GET['basis'] : '';
+        $from  = $this->queryValue('from');
+        $to    = $this->queryValue('to');
+        $basis = $this->queryValue('basis');
 
         if ($from === '' && $to === '') {
             return [null, ''];
@@ -704,39 +701,9 @@ final class ItemController extends Controller
      */
     private function rateLabel(array $row): string
     {
-        if (($row['listing_type'] ?? 'rental') === 'donation') {
-            return 'Free — donation';
-        }
-
-        $parts = [];
-
-        if (!empty($row['daily_rate'])) {
-            $parts[] = $row['daily_rate'] . ' pts / day';
-        }
-
-        if (!empty($row['monthly_rate'])) {
-            $parts[] = $row['monthly_rate'] . ' pts / month';
-        }
-
-        return $parts === [] ? 'Rate not set' : implode('  ·  ', $parts);
-    }
-
-    /**
-     * Stored paths become proxy URLs — storage is outside the web root, so a
-     * file is only ever reachable through public/photo.php (§7.5).
-     *
-     * @param  iterable<string> $paths
-     * @return list<string>
-     */
-    private function photoUrls(iterable $paths): array
-    {
-        $urls = [];
-
-        foreach ($paths as $path) {
-            $urls[] = photo_url((string) $path);
-        }
-
-        return $urls;
+        return ($row['listing_type'] ?? 'rental') === 'donation'
+            ? 'Free — donation'
+            : rate_label($row['daily_rate'] ?? null, $row['monthly_rate'] ?? null);
     }
 
     // ── Rendering ───────────────────────────────────────────────────────────
@@ -762,7 +729,7 @@ final class ItemController extends Controller
             'step'       => $step,
             'categories' => $this->categories->allActive(),
             'draft'      => $merged,
-            'photos'     => $this->photoUrls($draft['photos']),
+            'photos'     => array_map(photo_url(...), $draft['photos']),
             'errors'     => $errors,
             'summary'    => $this->draftSummary($merged),
             'proofTypes' => ItemService::PROOF_TYPES,
@@ -802,7 +769,7 @@ final class ItemController extends Controller
             $parts[] = $rates === [] ? 'no rate set yet' : implode(' or ', $rates);
         }
 
-        $parts[] = count($draft['photos']) . ' photo' . (count($draft['photos']) === 1 ? '' : 's');
+        $parts[] = plural(count($draft['photos']), 'photo');
 
         return implode('  ·  ', $parts);
     }
@@ -818,12 +785,10 @@ final class ItemController extends Controller
             http_response_code(422);
         }
 
-        $paths  = $this->service->decodePhotos($row);
-        $urls   = $this->photoUrls($paths);
         $photos = [];
 
-        foreach ($paths as $index => $path) {
-            $photos[] = ['path' => $path, 'url' => $urls[$index]];
+        foreach (PhotoStore::paths($row['photos']) as $path) {
+            $photos[] = ['path' => $path, 'url' => photo_url($path)];
         }
 
         [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], null);

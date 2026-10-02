@@ -4,12 +4,25 @@ declare(strict_types=1);
 
 /**
  * damage_claims — a lender's claim that an item came back damaged, on the
- * simple path or the moderator path (Plan 3.4, §10.3–10.6).
+ * simple path or the moderator path (Plan 3.4, §10.3–10.6). Claim statuses
+ * move only along TRANSITIONS.
  */
 final class DamageClaim extends BaseModel
 {
     protected string $table = 'damage_claims';
     protected string $columns = 'id, booking_id, raised_by, severity, description, status, created_at';
+
+    /** from => the statuses a claim may move to next. */
+    public const TRANSITIONS = [
+        'awaiting_borrower' => ['pending_moderator', 'closed', 'escalated'],
+        'pending_moderator' => ['resolved', 'escalated'],
+        'escalated'         => ['resolved', 'closed', 'pending_moderator'],
+    ];
+
+    public static function canMove(string $from, string $to): bool
+    {
+        return in_array($to, self::TRANSITIONS[$from] ?? [], true);
+    }
 
     public function forDivision(int $divisionId): array
     {
@@ -51,7 +64,7 @@ final class DamageClaim extends BaseModel
             ['path' => $path, 'photo' => $path]
         );
 
-        return $row === null ? null : Booking::ids($row);
+        return $row === null ? null : self::ids($row);
     }
 
     /**
@@ -62,24 +75,13 @@ final class DamageClaim extends BaseModel
      */
     public function open(array $data): int
     {
-        $statement = $this->pdo->prepare(
+        return $this->insert(
             'INSERT INTO damage_claims
                  (booking_id, raised_by, severity, description, proposed_penalty, evidence_photos, track, status)
              VALUES
-                 (:booking_id, :raised_by, :severity, :description, :proposed_penalty, :evidence_photos, :track, :status)'
+                 (:booking_id, :raised_by, :severity, :description, :proposed_penalty, :evidence_photos, :track, :status)',
+            ['evidence_photos' => json_encode($data['evidence_photos'] ?? [], JSON_UNESCAPED_SLASHES)] + $data
         );
-        $statement->execute([
-            'evidence_photos'  => json_encode($data['evidence_photos'] ?? [], JSON_UNESCAPED_SLASHES),
-            'booking_id'       => $data['booking_id'],
-            'raised_by'        => $data['raised_by'],
-            'severity'         => $data['severity'],
-            'description'      => $data['description'],
-            'proposed_penalty' => $data['proposed_penalty'],
-            'track'            => $data['track'],
-            'status'           => $data['status'],
-        ]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     /**
@@ -128,28 +130,24 @@ final class DamageClaim extends BaseModel
     }
 
     /**
-     * Move a claim on, guarded by the status it is expected to be in.
+     * Move a claim on, guarded by the status it is expected to be in. A change
+     * TRANSITIONS does not list is a bug, never a write.
      */
     public function move(int $id, string $from, string $to, ?string $track = null, ?string $response = null): bool
     {
-        $statement = $this->pdo->prepare(
+        if (!self::canMove($from, $to)) {
+            throw new LogicException(sprintf('A damage claim cannot move from %s to %s.', $from, $to));
+        }
+
+        return $this->execute(
             'UPDATE damage_claims
                 SET status = :to,
                     track = COALESCE(:track, track),
                     borrower_response = COALESCE(:response, borrower_response),
                     responded_at = IF(:responded = 1, NOW(), responded_at)
-              WHERE id = :id AND status = :from'
-        );
-        $statement->execute([
-            'to'        => $to,
-            'track'     => $track,
-            'response'  => $response,
-            'responded' => $response === null ? 0 : 1,
-            'id'        => $id,
-            'from'      => $from,
-        ]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND status = :from',
+            ['to' => $to, 'track' => $track, 'response' => $response, 'responded' => $response === null ? 0 : 1, 'id' => $id, 'from' => $from]
+        ) === 1;
     }
 
     /**
@@ -159,15 +157,12 @@ final class DamageClaim extends BaseModel
      */
     public function unansweredSince(int $hours): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->select(
             "SELECT id FROM damage_claims
               WHERE status = 'awaiting_borrower' AND created_at < NOW() - INTERVAL :hours HOUR
-              ORDER BY id LIMIT 500"
+              ORDER BY id LIMIT 500",
+            ['hours' => $hours]
         );
-        $statement->bindValue(':hours', $hours, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /** One party's sign-off on the moderator's recorded resolution (§10.5). */
@@ -175,16 +170,12 @@ final class DamageClaim extends BaseModel
     {
         $column = $side === 'lender' ? 'lender_signoff_at' : 'borrower_signoff_at';
 
-        $statement = $this->pdo->prepare(
-            "UPDATE moderator_resolutions SET {$column} = COALESCE({$column}, NOW()) WHERE id = :id"
-        );
-        $statement->execute(['id' => $resolutionId]);
+        $this->execute("UPDATE moderator_resolutions SET {$column} = COALESCE({$column}, NOW()) WHERE id = :id", ['id' => $resolutionId]);
     }
 
     public function closeResolution(int $resolutionId): void
     {
-        $statement = $this->pdo->prepare('UPDATE moderator_resolutions SET closed_at = NOW() WHERE id = :id AND closed_at IS NULL');
-        $statement->execute(['id' => $resolutionId]);
+        $this->execute('UPDATE moderator_resolutions SET closed_at = NOW() WHERE id = :id AND closed_at IS NULL', ['id' => $resolutionId]);
     }
 
     /**

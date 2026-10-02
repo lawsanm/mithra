@@ -12,13 +12,11 @@ final class Dispute extends BaseModel
      */
     public function open(?int $bookingId, ?int $claimId, int $raisedBy, string $reason): int
     {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO disputes (booking_id, damage_claim_id, raised_by, reason, status)
-             VALUES (:booking, :claim, :raised_by, :reason, \'open\')'
+        return $this->insert(
+            "INSERT INTO disputes (booking_id, damage_claim_id, raised_by, reason, status)
+             VALUES (:booking, :claim, :raised_by, :reason, 'open')",
+            ['booking' => $bookingId, 'claim' => $claimId, 'raised_by' => $raisedBy, 'reason' => $reason]
         );
-        $statement->execute(['booking' => $bookingId, 'claim' => $claimId, 'raised_by' => $raisedBy, 'reason' => $reason]);
-
-        return (int) $this->pdo->lastInsertId();
     }
 
     public function countOpen(): int
@@ -53,8 +51,7 @@ final class Dispute extends BaseModel
                LEFT JOIN items i ON i.id = b.item_id
                LEFT JOIN users borrower ON borrower.id = b.borrower_id
                LEFT JOIN users lender ON lender.id = b.lender_id
-               LEFT JOIN items i2 ON i2.id = b.item_id
-               LEFT JOIN gn_divisions d ON d.id = i2.gn_division_id
+               LEFT JOIN gn_divisions d ON d.id = i.gn_division_id
               WHERE dp.status = \'open\'
               ORDER BY dp.created_at ASC'
         );
@@ -67,7 +64,7 @@ final class Dispute extends BaseModel
      */
     public function recentOpen(int $limit = 10): array
     {
-        $statement = $this->pdo->prepare(
+        return $this->selectPage(
             "SELECT dp.id, dp.reason, dp.status, dp.created_at,
                     borrower.full_name AS borrower_name, lender.full_name AS lender_name
                FROM disputes dp
@@ -75,13 +72,11 @@ final class Dispute extends BaseModel
                LEFT JOIN users borrower ON borrower.id = b.borrower_id
                LEFT JOIN users lender ON lender.id = b.lender_id
               WHERE dp.status = 'open'
-              ORDER BY dp.created_at DESC
-              LIMIT :limit"
+              ORDER BY dp.created_at DESC",
+            [],
+            1,
+            $limit
         );
-        $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $statement->execute();
-
-        return $statement->fetchAll();
     }
 
     /** @return array<string, mixed>|null */
@@ -150,24 +145,20 @@ final class Dispute extends BaseModel
     /** Change the reason while no Admin has picked the dispute up. */
     public function updateReason(int $id, string $reason): bool
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE disputes SET reason = :reason WHERE id = :id AND status = 'open' AND admin_id IS NULL"
-        );
-        $statement->execute(['reason' => $reason, 'id' => $id]);
-
-        return $statement->rowCount() === 1;
+        return $this->execute(
+            "UPDATE disputes SET reason = :reason WHERE id = :id AND status = 'open' AND admin_id IS NULL",
+            ['reason' => $reason, 'id' => $id]
+        ) === 1;
     }
 
     /** The raiser withdraws it. */
     public function withdraw(int $id): bool
     {
-        $statement = $this->pdo->prepare(
+        return $this->execute(
             "UPDATE disputes SET status = 'closed', resolution = 'Withdrawn by the member who raised it.'
-              WHERE id = :id AND status = 'open'"
-        );
-        $statement->execute(['id' => $id]);
-
-        return $statement->rowCount() === 1;
+              WHERE id = :id AND status = 'open'",
+            ['id' => $id]
+        ) === 1;
     }
 
     /** Open disputes this member raised or is party to — account closure waits for them (Plan §17). */

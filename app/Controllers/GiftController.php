@@ -20,7 +20,7 @@ final class GiftController extends Controller
             new DamageClaim($pdo),
             new Dispute($pdo),
             new GnDivision($pdo),
-            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), new Wallet($pdo)),
+            self::ledgerService($pdo),
             new Notification($pdo)
         );
     }
@@ -54,7 +54,7 @@ final class GiftController extends Controller
      */
     public function index(): void
     {
-        $to = (int) ($_GET['to'] ?? 0);
+        $to = (int) $this->queryValue('to');
 
         $this->renderPage($to > 0 ? ['recipient' => (string) $to] : [], []);
     }
@@ -103,8 +103,8 @@ final class GiftController extends Controller
 
         $me    = $this->userId();
         $gifts = new Gift($this->pdo);
-        $box   = ($_GET['box'] ?? 'sent') === 'received' ? 'received' : 'sent';
-        $page  = max(1, (int) ($_GET['page'] ?? 1));
+        $box   = $this->queryValue('box') === 'received' ? 'received' : 'sent';
+        $page  = $this->page();
         $total = $gifts->countForMember($me, $box);
 
         $this->render('gifts/index', [

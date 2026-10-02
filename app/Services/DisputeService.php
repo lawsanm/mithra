@@ -69,14 +69,9 @@ final class DisputeService
         $reason = trim($reason);
         $this->checkReason($reason);
 
-        $this->pdo->beginTransaction();
-
-        try {
-            $booking = $this->bookings->lockForUpdate($bookingId) ?? throw new RecordNotFoundException('No such booking.');
-
-            if (!in_array($memberId, [(int) $booking['borrower_id'], (int) $booking['lender_id']], true)) {
-                throw new AccessDeniedException('Only the two members of a booking can dispute it.');
-            }
+        return Database::transaction($this->pdo, function () use ($bookingId, $memberId, $reason): int {
+            $booking = $this->bookings->lockForUpdate($bookingId);
+            BookingService::sideOf($booking, $memberId);
 
             $claim = $this->claims->latestForBooking($bookingId);
             $route = self::route($claim, $claim === null ? 0 : $this->disputes->countOpenForClaim((int) $claim['id']), new DateTimeImmutable());
@@ -110,14 +105,8 @@ final class DisputeService
                 'booking_id' => $bookingId,
             ]);
 
-            $this->pdo->commit();
-
             return $id;
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
+        });
     }
 
     /**
@@ -149,9 +138,7 @@ final class DisputeService
      */
     public function withdraw(int $disputeId, int $memberId): int
     {
-        $this->pdo->beginTransaction();
-
-        try {
+        return Database::transaction($this->pdo, function () use ($disputeId, $memberId): int {
             $dispute = $this->ownOpenOrFail($disputeId, $memberId, true);
             $this->disputes->withdraw($disputeId);
 
@@ -164,14 +151,8 @@ final class DisputeService
                 }
             }
 
-            $this->pdo->commit();
-        } catch (Throwable $exception) {
-            $this->pdo->rollBack();
-
-            throw $exception;
-        }
-
-        return (int) $dispute['booking_id'];
+            return (int) $dispute['booking_id'];
+        });
     }
 
     /**
