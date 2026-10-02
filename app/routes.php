@@ -60,7 +60,7 @@ return [
         '/aid-grants/{id}'         => 'aid-grants/show',
         '/donations/{id}'          => 'donations/index',
         '/donations/{id}/handover' => 'donations/handover',
-        '/community/temporary'     => 'community/create',
+        '/community/temporary'     => ['CommunityController', 'createForm'],
     
         // ── Admin ──
         '/admin'                          => 'admin/dashboard/index',
@@ -178,5 +178,9 @@ return [
         '/items/{id}/archive' => ['ItemController', 'archive'],
         '/items/{id}/pause'   => ['ItemController', 'pause'],
         '/items/{id}/resume'  => ['ItemController', 'resume'],
+        '/community/temporary'        => ['CommunityController', 'store'],
+        '/community/temporary/extend' => ['CommunityController', 'extend'],
+        '/community/temporary/leave'  => ['CommunityController', 'leave'],
+        '/community/promote'          => ['CommunityController', 'promote'],
     ],
 ];

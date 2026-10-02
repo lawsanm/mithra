@@ -13,6 +13,8 @@ declare(strict_types=1);
  *                          status_glyph, status_label, href
  * @var int    $page        1-based page number
  * @var bool   $hasNextPage
+ * @var string $community   'home' or 'temporary' — which division is shown
+ * @var array  $communities home and temporary names; empty without a temporary community
  * @var array|null $flash
  */
 
@@ -23,6 +25,8 @@ $results     = $results ?? [];
 $resultCount = $resultCount ?? '';
 $page        = $page ?? 1;
 $hasNextPage = $hasNextPage ?? false;
+$community   = $community ?? 'home';
+$communities = $communities ?? [];
 
 $activeSlug = '';
 
@@ -32,11 +36,12 @@ foreach ($categories as $category) {
     }
 }
 
-$browseUrl = static function (array $changes = []) use ($query, $activeSlug, $typeSlug): string {
+$browseUrl = static function (array $changes = []) use ($query, $activeSlug, $typeSlug, $community): string {
     return base_url() . '/items/browse?' . http_build_query(array_filter(array_replace([
-        'q'        => $query,
-        'category' => $activeSlug,
-        'type'     => $typeSlug,
+        'q'         => $query,
+        'category'  => $activeSlug,
+        'type'      => $typeSlug,
+        'community' => $community === 'temporary' ? 'temporary' : '',
     ], $changes), static fn ($value): bool => $value !== ''));
 };
 
@@ -53,6 +58,19 @@ include __DIR__ . '/../../partials/header.php';
 </header>
 
 <?php include __DIR__ . '/../../partials/flash.php'; ?>
+
+<?php if ($communities !== []): ?>
+    <ul class="filter-pills" aria-label="Community">
+        <?php foreach (['' => 'Home · ' . $communities['home'], 'temporary' => 'Temporary · ' . $communities['temporary']] as $slug => $label): ?>
+            <?php $isActive = ($slug === 'temporary') === ($community === 'temporary'); ?>
+            <li>
+                <a class="pill<?= $isActive ? ' pill--active' : '' ?>"
+                    href="<?= e($browseUrl(['community' => $slug, 'page' => ''])) ?>"
+                    <?= $isActive ? 'aria-current="true"' : '' ?>><?= e($label) ?></a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+<?php endif; ?>
 
 <ul class="filter-pills" aria-label="Listing type">
     <?php foreach (['' => 'All items', 'rentals' => 'Rentals', 'donations' => 'Donations'] as $slug => $label): ?>
@@ -77,6 +95,9 @@ include __DIR__ . '/../../partials/header.php';
     >
     <input type="hidden" name="category" value="<?= e($activeSlug) ?>">
     <input type="hidden" name="type" value="<?= e($typeSlug) ?>">
+    <?php if ($community === 'temporary'): ?>
+        <input type="hidden" name="community" value="temporary">
+    <?php endif; ?>
     <button class="btn btn--primary" type="submit">Search</button>
 </form>
 

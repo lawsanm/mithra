@@ -214,4 +214,20 @@ final class Booking extends BaseModel
             static fn (int $id): bool => $id > 0
         ));
     }
+
+    /**
+     * Open bookings this member is party to on items listed in one division —
+     * leaving that community, or moving home out of it, waits for them.
+     */
+    public function countOpenInDivisionFor(int $memberId, int $divisionId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE i.gn_division_id = :division
+                AND (b.borrower_id = :borrower OR b.lender_id = :lender)
+                AND b.status IN ('requested','accepted','awaiting_handover','in_progress',
+                                 'awaiting_return','pending_moderator','escalated')",
+            ['division' => $divisionId, 'borrower' => $memberId, 'lender' => $memberId]
+        );
+    }
 }

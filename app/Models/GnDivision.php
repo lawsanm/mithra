@@ -249,4 +249,29 @@ final class GnDivision extends BaseModel
         $statement = $this->pdo->prepare("UPDATE gn_divisions SET status = 'archived' WHERE id = :id");
         $statement->execute(['id' => $id]);
     }
+
+    /**
+     * A division's name, status and current moderator — what member-side
+     * rules and notifications need, without findWithStaff()'s aggregates.
+     *
+     * @return array{id: int, name: string, status: string, moderator_id: ?int}|null
+     */
+    public function findBasic(int $id): ?array
+    {
+        $row = $this->selectOne(
+            'SELECT id, name, status, moderator_id FROM gn_divisions WHERE id = :id',
+            ['id' => $id]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'id'           => (int) $row['id'],
+            'name'         => (string) $row['name'],
+            'status'       => (string) $row['status'],
+            'moderator_id' => $row['moderator_id'] === null ? null : (int) $row['moderator_id'],
+        ];
+    }
 }

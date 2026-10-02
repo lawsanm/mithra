@@ -19,6 +19,7 @@ declare(strict_types=1);
  * @var array $facts     label/value pairs describing the application
  * @var bool  $decided   whether this application has already been decided
  * @var int   $recordId  the membership id the decisions post to
+ * @var string $kind     Home community, Temporary community or Temporary extension
  * @var array|null $flash
  */
 
@@ -32,6 +33,8 @@ $applicant = ($applicant ?? []) + [
 $facts     = $facts ?? [];
 $decided   = $decided ?? true;
 $recordId  = (int) ($recordId ?? 0);
+$kind      = (string) ($kind ?? 'Home community');
+$isHome    = $kind === 'Home community';
 
 $pageTitle = (string) $applicant['name'];
 $navActive = 'verifications';
@@ -92,15 +95,31 @@ include __DIR__ . '/../../../partials/header.php';
 
             <section class="panel">
                 <h2 class="panel__title">Before you approve</h2>
-                <ul class="checklist">
-                    <li><span class="checklist__label">The NIC matches the name on the application.</span></li>
-                    <li><span class="checklist__label">The address is inside this GN division.</span></li>
-                    <li><span class="checklist__label">Somebody in the division knows this person.</span></li>
-                </ul>
-                <p class="demo-note">
-                    Approving opens the account, lets this member sign in and credits the
-                    <?= e((string) VerificationService::WELCOME_BONUS) ?>-point welcome bonus from the Sponsor Pool.
-                </p>
+                <?php if ($isHome): ?>
+                    <ul class="checklist">
+                        <li><span class="checklist__label">The NIC matches the name on the application.</span></li>
+                        <li><span class="checklist__label">The address is inside this GN division.</span></li>
+                        <li><span class="checklist__label">Somebody in the division knows this person.</span></li>
+                    </ul>
+                    <p class="record-meta">
+                        Approving opens the account, lets this member sign in and credits the
+                        <?= e((string) VerificationService::WELCOME_BONUS) ?>-point welcome bonus from the Sponsor Pool.
+                    </p>
+                <?php else: ?>
+                    <ul class="checklist">
+                        <li><span class="checklist__label">The proof names this member.</span></li>
+                        <li><span class="checklist__label">The stay it shows is inside this GN division.</span></li>
+                        <li><span class="checklist__label">The proof is current.</span></li>
+                    </ul>
+                    <p class="record-meta">
+                        <?php if ($kind === 'Temporary extension'): ?>
+                            Approving extends the membership by <?= e((string) CommunityService::TERM_MONTHS) ?> months.
+                        <?php else: ?>
+                            Approving lets this verified member browse, list and borrow here for
+                            <?= e((string) CommunityService::TERM_MONTHS) ?> months. Their home community is unchanged.
+                        <?php endif; ?>
+                    </p>
+                <?php endif; ?>
             </section>
 
         </div>
@@ -113,8 +132,12 @@ include __DIR__ . '/../../../partials/header.php';
         </p>
     <?php else: ?>
         <div class="actions">
-            <form method="post" action="<?= base_url() ?>/moderator/verifications/<?= e((string) $recordId) ?>/reject" novalidate>
+            <form class="stack" method="post" action="<?= base_url() ?>/moderator/verifications/<?= e((string) $recordId) ?>/reject" novalidate>
                 <?= csrf_field() ?>
+                <div class="field">
+                    <label class="field__label" for="reject-reason">Reason for the member<?= $isHome ? ' (optional)' : '' ?></label>
+                    <input class="input" type="text" id="reject-reason" name="reason">
+                </div>
                 <button class="btn btn--ghost" type="submit">Reject</button>
             </form>
 
@@ -125,7 +148,7 @@ include __DIR__ . '/../../../partials/header.php';
 
             <form method="post" action="<?= base_url() ?>/moderator/verifications/<?= e((string) $recordId) ?>/approve" novalidate>
                 <?= csrf_field() ?>
-                <button class="btn btn--primary" type="submit">Approve membership</button>
+                <button class="btn btn--primary" type="submit"><?= e($kind === 'Temporary extension' ? 'Approve extension' : 'Approve membership') ?></button>
             </form>
         </div>
     <?php endif; ?>

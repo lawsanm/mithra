@@ -57,12 +57,23 @@ final class ItemController extends Controller
     }
 
     /**
-     * GET /items/browse — everyone else's listings in the member's division.
+     * GET /items/browse — everyone else's listings in the member's division,
+     * or in their active temporary community with ?community=temporary
+     * (Plan §6.5).
      */
     public function browse(): void
     {
-        $me       = $this->userId();
-        $member   = (new User($this->pdo))->findWithDivision($me) ?? [];
+        $me        = $this->userId();
+        $member    = (new User($this->pdo))->findWithDivision($me) ?? [];
+        $temporary = (new UserDivision($this->pdo))->activeTemporary($me);
+        $community = ($_GET['community'] ?? '') === 'temporary' && $temporary !== null ? 'temporary' : 'home';
+        $homeName  = (string) ($member['division_name'] ?? 'Home');
+
+        if ($community === 'temporary') {
+            $member['division_id']   = $temporary['gn_division_id'];
+            $member['division_name'] = $temporary['division_name'];
+        }
+
         $division = (int) ($member['division_id'] ?? 0);
         $query    = trim((string) ($_GET['q'] ?? ''));
         $page     = max(1, (int) ($_GET['page'] ?? 1));
@@ -102,6 +113,11 @@ final class ItemController extends Controller
             'resultCount' => $resultCount,
             'page'        => $page,
             'hasNextPage' => $page * Item::PER_PAGE < $total,
+            'community'   => $community,
+            'communities' => $temporary === null ? [] : [
+                'home'      => $homeName,
+                'temporary' => (string) $temporary['division_name'],
+            ],
         ]);
     }
 
@@ -290,9 +306,11 @@ final class ItemController extends Controller
 
                     $draft['daily_rate']   = $validator->value('daily_rate');
                     $draft['monthly_rate'] = $validator->value('monthly_rate');
+                    $draft['community']    = $validator->value('community', 'home');
 
-                    $member = (new User($this->pdo))->findWithDivision($this->userId()) ?? [];
-                    $this->service->create($this->userId(), (int) ($member['division_id'] ?? 0), $draft, $draft['photos']);
+                    $division = CommunityController::service($this->pdo, $this->uploads())
+                        ->listingDivision($this->userId(), (string) $draft['community']);
+                    $this->service->create($this->userId(), $division, $draft, $draft['photos']);
 
                     unset($_SESSION[self::DRAFT_KEY]);
                     $this->flash('Listing submitted. Your moderator reviews it before it goes live.');
@@ -588,7 +606,7 @@ final class ItemController extends Controller
 
         // Only the text fields come back from a failed post; photos and the
         // step counter stay under the draft's control.
-        $textFields = ['name', 'category', 'description', 'declared_value', 'value_proof_type', 'listing_type', 'daily_rate', 'monthly_rate'];
+        $textFields = ['name', 'category', 'description', 'declared_value', 'value_proof_type', 'listing_type', 'daily_rate', 'monthly_rate', 'community'];
 
         $merged = array_merge($draft, array_intersect_key($submitted, array_flip($textFields)));
 
@@ -600,6 +618,7 @@ final class ItemController extends Controller
             'errors'     => $errors,
             'summary'    => $this->draftSummary($merged),
             'proofTypes' => ItemService::PROOF_TYPES,
+            'temporaryCommunity' => (new UserDivision($this->pdo))->activeTemporary($this->userId())['division_name'] ?? null,
         ]);
     }
 
@@ -722,7 +741,8 @@ final class ItemController extends Controller
     {
         $validator
             ->integer('daily_rate', 'Daily rate', 1, ItemService::MAX_RATE)
-            ->integer('monthly_rate', 'Monthly rate', 1, ItemService::MAX_RATE);
+            ->integer('monthly_rate', 'Monthly rate', 1, ItemService::MAX_RATE)
+            ->inList('community', 'Community', ['', 'home', 'temporary']);
     }
 
     // ── Plumbing ────────────────────────────────────────────────────────────
@@ -743,6 +763,7 @@ final class ItemController extends Controller
             'listing_type'     => 'rental',
             'daily_rate'       => '',
             'monthly_rate'     => '',
+            'community'        => 'home',
             'step'             => 1,
         ];
 

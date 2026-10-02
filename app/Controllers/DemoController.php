@@ -41,7 +41,6 @@ final class DemoController extends Controller
             'transparency/index' => $this->transparency(),
             'aid-grants/show' => $this->aidGrant($id),
             'donations/index', 'donations/handover' => $this->donation($id, $view),
-            'community/create' => $this->community(),
             default           => [],
         };
 
@@ -319,22 +318,6 @@ final class DemoController extends Controller
                 'meta' => $row['recipient_name'] === null ? '' : 'Trust ' . $row['trust_score']],
             'badge' => 'Donation status: ' . $row['status']];
     }
-
-    private function community(): array
-    {
-        $home = (new User($this->pdo))->findWithDivision($this->userId());
-        $temporary = (new UserDivision($this->pdo))->temporaryForUser($this->userId());
-        return ['homeCommunity' => $home['division_name'] ?? 'No home division',
-            'promotion' => ['temporary_name' => $temporary['name'] ?? 'No temporary community selected',
-                'home_line' => $home['division_name'] ?? 'No home division',
-                'temporary_line' => $temporary === null ? 'No temporary membership recorded'
-                    : $temporary['name'] . ' · ' . $temporary['status']
-                        . ($temporary['expires_at'] === null ? '' : ' · Expires ' . date('j M Y', strtotime($temporary['expires_at'])))],
-            'divisions' => array_column(array_filter((new GnDivision($this->pdo))->activeNames(),
-                static fn (array $row): bool => (int) $row['id'] !== (int) ($home['division_id'] ?? 0)), 'name'),
-            'draft' => ['temporary_community' => ''], 'errors' => []];
-    }
-
 
     private function dueNote(int $dueTomorrow): string
     {

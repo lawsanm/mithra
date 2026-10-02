@@ -476,4 +476,18 @@ final class Item extends BaseModel
         );
         $statement->execute(['owner' => $ownerId]);
     }
+
+    /**
+     * Take a member's live listings in one division off the shelf — their
+     * temporary membership there ended or their home moved (Plan §6.5). A
+     * listing out on loan keeps running; it is paused by the owner later.
+     */
+    public function pauseAllInDivision(int $ownerId, int $divisionId): void
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE items SET status = 'paused'
+              WHERE owner_id = :owner AND gn_division_id = :division AND status = 'active'"
+        );
+        $statement->execute(['owner' => $ownerId, 'division' => $divisionId]);
+    }
 }

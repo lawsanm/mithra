@@ -18,7 +18,9 @@ declare(strict_types=1);
 final class VerificationService
 {
     /** Queue filters, as the pills on the screen offer them. */
-    public const FILTERS = ['', 'pending', 'active', 'rejected'];
+    public const FILTERS = ['', 'pending', 'temporary', 'active', 'rejected'];
+
+    private const REASON_MAX = 255;
 
     /** Credited once per verified person, from the Sponsor Pool (Plan §4.3, §6.4). */
     public const WELCOME_BONUS = 200;
@@ -28,6 +30,7 @@ final class VerificationService
     private GnDivision $divisions;
     private Wallet $wallets;
     private LedgerService $ledger;
+    private Notification $notifications;
     private PDO $pdo;
 
     public function __construct(
@@ -36,7 +39,8 @@ final class VerificationService
         UserDivision $memberships,
         GnDivision $divisions,
         Wallet $wallets,
-        LedgerService $ledger
+        LedgerService $ledger,
+        Notification $notifications
     ) {
         $this->pdo         = $pdo;
         $this->users       = $users;
@@ -44,6 +48,7 @@ final class VerificationService
         $this->divisions   = $divisions;
         $this->wallets     = $wallets;
         $this->ledger      = $ledger;
+        $this->notifications = $notifications;
     }
 
     /**
@@ -116,7 +121,12 @@ final class VerificationService
     public function approve(int $id, int $moderatorId): string
     {
         $application = $this->pendingOrFail($id, $moderatorId);
-        $memberId    = (int) $application['user_id'];
+
+        if ($application['membership_type'] === 'temporary') {
+            return $this->approveTemporary($application, $moderatorId);
+        }
+
+        $memberId = (int) $application['user_id'];
 
         $this->pdo->beginTransaction();
 
@@ -158,20 +168,93 @@ final class VerificationService
     }
 
     /**
-     * Reject one application. The membership is closed; the account stays
-     * pending and signs in nowhere, because `users.status` has no rejected
-     * state to move it to — AuthService reads the membership for the refusal
-     * message instead.
+     * Reject one application, or one extension request. A home applicant's
+     * account stays pending and signs in nowhere, because `users.status` has
+     * no rejected state — AuthService reads the membership for the refusal
+     * message instead. A temporary applicant must be told why (Plan §19), so
+     * a reason is required there; a home rejection may carry one.
+     *
+     * @throws ValidationException when a temporary decision has no reason
      *
      * @return string the applicant's name
      */
-    public function reject(int $id, int $moderatorId): string
+    public function reject(int $id, int $moderatorId, ?string $reason = null): string
     {
         $application = $this->pendingOrFail($id, $moderatorId);
+        $reason      = $reason === null || trim($reason) === '' ? null : trim($reason);
+        $temporary   = $application['membership_type'] === 'temporary';
 
-        if (!$this->memberships->decide($id, $moderatorId, 'rejected')) {
+        if ($temporary && $reason === null) {
+            throw ValidationException::field('reason', 'Tell the member why — they see this reason and can resubmit.');
+        }
+
+        if ($reason !== null && mb_strlen($reason) > self::REASON_MAX) {
+            throw ValidationException::field('reason', sprintf('Keep the reason to %d characters.', self::REASON_MAX));
+        }
+
+        $decided = self::isExtension($application)
+            ? $this->memberships->rejectRenewal($id, $moderatorId, (string) $reason)
+            : $this->memberships->decide($id, $moderatorId, 'rejected', null, $reason);
+
+        if (!$decided) {
             throw $this->alreadyDecided();
         }
+
+        if ($temporary) {
+            $this->notifications->push((int) $application['user_id'], 'community_rejected', [
+                'title'  => (self::isExtension($application) ? 'Extension not approved: ' : 'Temporary community not approved: ')
+                    . $application['division_name'],
+                'detail' => 'Reason: ' . $reason,
+                'icon'   => 'alert-triangle',
+                'href'   => '/community/temporary',
+            ]);
+        }
+
+        return (string) $application['full_name'];
+    }
+
+    /** An extension request waits on a live temporary row, not a pending one. */
+    public static function isExtension(array $application): bool
+    {
+        return $application['membership_type'] === 'temporary'
+            && $application['status'] !== 'pending'
+            && $application['renewal_requested_at'] !== null;
+    }
+
+    /**
+     * A temporary membership needs no account change and no welcome bonus —
+     * the member is already verified at home. It runs six months from today;
+     * an extension runs six months from the current expiry, or from today if
+     * it had lapsed (Plan §6.5).
+     *
+     * @param array<string, mixed> $application
+     */
+    private function approveTemporary(array $application, int $moderatorId): string
+    {
+        $id  = (int) $application['id'];
+        $now = new DateTimeImmutable();
+
+        if (self::isExtension($application)) {
+            $current = new DateTimeImmutable((string) ($application['expires_at'] ?? 'now'));
+            $expiry  = CommunityService::renewedExpiry($current, $now);
+            $decided = $this->memberships->approveRenewal($id, $moderatorId, $expiry->format('Y-m-d H:i:s'));
+            $title   = 'Temporary membership extended: ';
+        } else {
+            $expiry  = CommunityService::expiryFrom($now);
+            $decided = $this->memberships->decide($id, $moderatorId, 'active', $expiry->format('Y-m-d H:i:s'));
+            $title   = 'Welcome to ';
+        }
+
+        if (!$decided) {
+            throw $this->alreadyDecided();
+        }
+
+        $this->notifications->push((int) $application['user_id'], 'community_approved', [
+            'title'  => $title . $application['division_name'],
+            'detail' => 'Your temporary membership runs until ' . $expiry->format('j M Y') . '.',
+            'icon'   => 'check-circle',
+            'href'   => '/community/temporary',
+        ]);
 
         return (string) $application['full_name'];
     }
@@ -183,7 +266,7 @@ final class VerificationService
     {
         $application = $this->review($id, $moderatorId);
 
-        if ($application['status'] !== 'pending') {
+        if ($application['status'] !== 'pending' && !self::isExtension($application)) {
             throw $this->alreadyDecided();
         }
 

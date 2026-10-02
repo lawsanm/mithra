@@ -42,13 +42,14 @@ $promotion = ($promotion ?? []) + [
     <p class="notice notice--warning">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-alert-triangle"></use></svg>
         Promoting swaps the two: <?= e($promotion['temporary_name']) ?> becomes your home
-        community and your current home membership ends. Your listings there are unlisted
-        and active bookings must complete first. This can’t be undone from this screen.
+        community and your current home membership ends. Your listings there are paused
+        and bookings there must be finished first. You then confirm your new address with
+        your new moderator. This can’t be undone from this screen.
     </p>
 
-    <div class="modal__footer" data-demo-form>
-        <p class="demo-note">Preview only. Saving is not available yet.</p>
+    <form class="modal__footer" method="post" action="<?= base_url() ?>/community/promote" novalidate>
+        <?= csrf_field() ?>
         <button class="btn btn--ghost" type="button" data-modal-close>Keep as temporary</button>
-        <button class="btn btn--primary" type="submit" disabled>Confirm promotion</button>
-    </div>
+        <button class="btn btn--primary" type="submit">Confirm promotion</button>
+    </form>
 </dialog>
