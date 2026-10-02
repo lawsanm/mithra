@@ -11,7 +11,7 @@ final class Booking extends BaseModel
     protected string $columns = 'id, item_id, borrower_id, lender_id, start_date, end_date, rental_charge, status';
 
     /** Statuses that count as a live booking, for both roles. */
-    private const OPEN_STATES = "('requested','accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator')";
+    private const OPEN_STATES = "('requested','accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator','escalated')";
 
     /** Statuses where the borrower physically holds the item. */
     private const HOLDING_STATES = "('awaiting_handover','in_progress','awaiting_return')";
@@ -125,8 +125,9 @@ final class Booking extends BaseModel
     public function findForDetail(int $id): ?array
     {
         return $this->selectOne(
-            "SELECT b.id, b.start_date, b.end_date, b.rate_basis, b.agreed_rate, b.rental_charge,
-                    b.late_buffer, b.status, b.requested_at, b.accepted_at,
+            "SELECT b.id, b.item_id, b.start_date, b.end_date, b.rate_basis, b.agreed_rate, b.rental_charge,
+                    b.late_buffer, b.status, b.requested_at, b.accepted_at, b.closed_at,
+                    b.message, b.decline_reason, b.cancelled_by, b.moderator_involved,
                     DATEDIFF(b.end_date, b.start_date) + 1 AS days,
                     GREATEST(DATEDIFF(CURDATE(), b.end_date), 0) AS days_overdue,
                     i.title AS item_title, i.declared_value,
@@ -276,4 +277,184 @@ final class Booking extends BaseModel
             ['item' => $itemId]
         );
     }
+
+    /**
+     * Insert a new request. Callers pass an already-checked set.
+     *
+     * @param array{item_id:int, borrower_id:int, lender_id:int, start_date:string, end_date:string,
+     *              rate_basis:string, agreed_rate:int, rental_charge:int, late_buffer:int,
+     *              moderator_involved:bool, message:?string} $data
+     */
+    public function create(array $data): int
+    {
+        $statement = $this->pdo->prepare(
+            "INSERT INTO bookings
+                 (item_id, borrower_id, lender_id, start_date, end_date, rate_basis, agreed_rate,
+                  rental_charge, late_buffer, moderator_involved, message, status)
+             VALUES
+                 (:item_id, :borrower_id, :lender_id, :start_date, :end_date, :rate_basis, :agreed_rate,
+                  :rental_charge, :late_buffer, :moderator_involved, :message, 'requested')"
+        );
+
+        $statement->execute([
+            'item_id'            => $data['item_id'],
+            'borrower_id'        => $data['borrower_id'],
+            'lender_id'          => $data['lender_id'],
+            'start_date'         => $data['start_date'],
+            'end_date'           => $data['end_date'],
+            'rate_basis'         => $data['rate_basis'],
+            'agreed_rate'        => $data['agreed_rate'],
+            'rental_charge'      => $data['rental_charge'],
+            'late_buffer'        => $data['late_buffer'],
+            'moderator_involved' => $data['moderator_involved'] ? 1 : 0,
+            'message'            => $data['message'],
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /**
+     * One booking with what every state change needs, row-locked until the
+     * surrounding transaction ends (Rules/CONVENTIONS.md §8).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lockForUpdate(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT b.id, b.item_id, b.borrower_id, b.lender_id, b.start_date, b.end_date, b.rate_basis,
+                    b.agreed_rate, b.rental_charge, b.late_buffer, b.moderator_involved, b.status,
+                    b.requested_at, b.accepted_at, b.closed_at,
+                    i.title AS item_title, i.declared_value, i.daily_rate, i.monthly_rate, i.gn_division_id
+               FROM bookings b JOIN items i ON i.id = b.item_id
+              WHERE b.id = :id
+              FOR UPDATE',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * Move a booking on, guarded by the status it is expected to be in, so a
+     * concurrent change makes this a no-op instead of a double move.
+     */
+    public function move(int $id, string $from, string $to): bool
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE bookings
+                SET status = :to,
+                    accepted_at = IF(:to2 = 'awaiting_handover', NOW(), accepted_at),
+                    closed_at = IF(:to3 IN ('completed'), NOW(), closed_at)
+              WHERE id = :id AND status = :from"
+        );
+        $statement->execute(['to' => $to, 'to2' => $to, 'to3' => $to, 'id' => $id, 'from' => $from]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /** The lender says no; the status guard keeps it to waiting requests. */
+    public function decline(int $id, ?string $reason): void
+    {
+        $statement = $this->pdo->prepare(
+            "UPDATE bookings SET status = 'rejected', decline_reason = :reason, closed_at = NOW()
+              WHERE id = :id AND status = 'requested'"
+        );
+        $statement->execute(['reason' => $reason, 'id' => $id]);
+    }
+
+    /** Close in a cancelled state, recording who cancelled (null for the system). */
+    public function close(int $id, string $from, string $to, ?int $cancelledBy): bool
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE bookings SET status = :to, cancelled_by = :by, closed_at = NOW()
+              WHERE id = :id AND status = :from'
+        );
+        $statement->execute(['to' => $to, 'by' => $cancelledBy, 'id' => $id, 'from' => $from]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /**
+     * Other waiting requests on the same item whose dates overlap this one —
+     * declined when this one is accepted.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function overlappingRequests(int $bookingId): array
+    {
+        return $this->select(
+            "SELECT o.id, o.borrower_id
+               FROM bookings b
+               JOIN bookings o ON o.item_id = b.item_id AND o.id <> b.id
+              WHERE b.id = :id AND o.status = 'requested'
+                AND o.start_date <= b.end_date AND o.end_date >= b.start_date",
+            ['id' => $bookingId]
+        );
+    }
+
+    /**
+     * Requests nobody answered within the window.
+     *
+     * @return list<array{id: int}>
+     */
+    public function staleRequests(int $hours): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id FROM bookings
+              WHERE status = 'requested' AND requested_at < NOW() - INTERVAL :hours HOUR
+              ORDER BY id LIMIT 500"
+        );
+        $statement->bindValue(':hours', $hours, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    /** Bookings per page on My Bookings (Rules/CONVENTIONS.md §9). */
+    public const PER_PAGE = 20;
+
+    /**
+     * My Bookings, one page: current bookings, or past ones (finished,
+     * declined or cancelled) with ?state=past.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function pageForMember(int $memberId, string $role, bool $past, int $page): array
+    {
+        // Whitelisted, never interpolated from request input.
+        $column = $role === 'lender' ? 'b.lender_id' : 'b.borrower_id';
+        $other  = $role === 'lender' ? 'b.borrower_id' : 'b.lender_id';
+        $states = $past ? self::PAST_STATES : self::OPEN_STATES;
+        $order  = $past ? 'COALESCE(b.closed_at, b.requested_at) DESC' : 'b.start_date';
+
+        $statement = $this->pdo->prepare(
+            "SELECT b.id, b.start_date, b.end_date, b.rental_charge, b.status,
+                    i.title AS item_title, o.full_name AS counterparty,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo
+               FROM bookings b
+               JOIN items i ON i.id = b.item_id
+               JOIN users o ON o.id = {$other}
+              WHERE {$column} = :member AND b.status IN {$states}
+              ORDER BY {$order}, b.id DESC
+              LIMIT :take OFFSET :skip"
+        );
+        $statement->bindValue(':member', $memberId, PDO::PARAM_INT);
+        $statement->bindValue(':take', self::PER_PAGE, PDO::PARAM_INT);
+        $statement->bindValue(':skip', (max(1, $page) - 1) * self::PER_PAGE, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    public function countPastForMember(int $memberId, string $role): int
+    {
+        $column = $role === 'lender' ? 'lender_id' : 'borrower_id';
+
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings WHERE {$column} = :member AND status IN " . self::PAST_STATES,
+            ['member' => $memberId]
+        );
+    }
+
+    /** Statuses a booking ends in. */
+    private const PAST_STATES = "('completed','rejected','cancelled','auto_cancelled')";
 }

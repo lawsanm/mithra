@@ -194,5 +194,9 @@ return [
         '/donations/{id}/confirm'            => ['DonationController', 'confirm'],
         '/donations/{id}/cancel'             => ['DonationController', 'cancel'],
         '/donation-requests/{id}/withdraw'   => ['DonationController', 'withdraw'],
+        '/items/{id}/borrow'                 => ['BookingController', 'store'],
+        '/bookings/{id}/accept'              => ['BookingController', 'accept'],
+        '/bookings/{id}/decline'             => ['BookingController', 'decline'],
+        '/bookings/{id}/cancel'              => ['BookingController', 'cancel'],
     ],
 ];

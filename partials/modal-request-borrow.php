@@ -6,27 +6,17 @@ declare(strict_types=1);
  * "Request to Borrow" modal. Figma: "Request to Borrow — Modal" (69:119).
  *
  * Include from a page that also loads /js/modal.js, and open it with a trigger
- * carrying data-modal-open="request-borrow".
+ * carrying data-modal-open="request-borrow". Without JavaScript the trigger's
+ * link reloads the page with ?request=1 and the dialog renders open.
  *
- * @var array $item    title, owner_meta
- * @var array $pricing daily and monthly options
- * @var array $quote   from, to, escrow total
+ * @var array $item      id, title, owner, owner_meta, photos
+ * @var array $pricing   rate options: value, title, total, selected, recommended
+ * @var array $quote     BookingService::quote() plus from, to
+ * @var bool  $modalOpen render it open
  */
 
-// Merge key-by-key: the host page already sets $item, but not every key the
-// modal needs, so ??= on the whole array would leave gaps.
-$item = ($item ?? []) + ['title' => '', 'owner' => '', 'owner_meta' => ''];
-
-$pricing ??= [];
-
-$quote = ($quote ?? []) + [
-    'from'   => '',
-    'to'     => '',
-    'escrow' => 'Choose dates for a quote',
-];
-
 ?>
-<dialog class="modal" id="request-borrow" aria-labelledby="request-borrow-title">
+<dialog class="modal" id="request-borrow" aria-labelledby="request-borrow-title"<?= !empty($modalOpen) ? ' open' : '' ?>>
     <div class="modal__head">
         <h2 class="modal__title" id="request-borrow-title">Request to Borrow</h2>
         <button class="modal__close" type="button" data-modal-close aria-label="Close">
@@ -42,35 +32,29 @@ $quote = ($quote ?? []) + [
         </span>
     </div>
 
-    <div class="stack" data-demo-form>
-        <p class="demo-note">Preview only. Saving is not available yet.</p>
-        <div class="field-row">
-            <div class="field">
-                <label class="visually-hidden" for="modal-from">From date</label>
-                <input class="input input--half" type="date" id="modal-from" name="from_date" value="<?= e($quote['from']) ?>" disabled>
-            </div>
-            <div class="field">
-                <label class="visually-hidden" for="modal-to">To date</label>
-                <input class="input input--half" type="date" id="modal-to" name="to_date" value="<?= e($quote['to']) ?>" disabled>
-            </div>
-        </div>
+    <form class="stack" method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/borrow" novalidate>
+        <?= csrf_field() ?>
+        <input type="hidden" name="from_date" value="<?= e($quote['from']) ?>">
+        <input type="hidden" name="to_date" value="<?= e($quote['to']) ?>">
+
+        <p class="line-item">
+            <span class="line-item__label">Dates</span>
+            <span class="line-item__value">
+                <?= e(date('j M Y', strtotime($quote['from']))) ?> – <?= e(date('j M Y', strtotime($quote['to']))) ?>
+                · <?= e($quote['days'] . ' day' . ($quote['days'] === 1 ? '' : 's')) ?>
+            </span>
+        </p>
 
         <p class="field__label">Choose a pricing option</p>
 
         <?php foreach ($pricing as $option): ?>
-            <label class="choice choice--compact<?= isset($option['recommended']) ? ' choice--recommended' : '' ?>">
-                <input
-                    class="choice__input"
-                    type="radio"
-                    name="pricing"
-                    value="<?= e($option['value']) ?>"
-                    <?= $option['selected'] ? 'checked' : '' ?>
-                 disabled>
+            <label class="choice choice--compact<?= !empty($option['recommended']) ? ' choice--recommended' : '' ?>">
+                <input class="choice__input" type="radio" name="basis" value="<?= e($option['value']) ?>" <?= $option['selected'] ? 'checked' : '' ?>>
                 <span class="choice__body">
                     <span class="choice__title"><?= e($option['title']) ?></span>
                     <span class="choice__note"><?= e($option['total']) ?></span>
                 </span>
-                <?php if (isset($option['recommended'])): ?>
+                <?php if (!empty($option['recommended'])): ?>
                     <span class="badge badge--success choice__aside">
                         <span aria-hidden="true">✓</span>
                         <?= e($option['recommended']) ?>
@@ -80,26 +64,22 @@ $quote = ($quote ?? []) + [
         <?php endforeach; ?>
 
         <div class="field">
-            <label class="field__label" for="modal-message">
-                Message to <?= e($item['owner']) ?> (optional)
-            </label>
-            <input
-                class="input"
-                type="text"
-                id="modal-message"
-                name="message"
-                placeholder="Hi! I’d like to borrow this for a shelving project…"
-             disabled>
+            <label class="field__label" for="modal-message">Message to <?= e($item['owner']) ?> (optional)</label>
+            <input class="input" type="text" id="modal-message" name="message"
+                placeholder="Hi! I’d like to borrow this for a shelving project…">
         </div>
 
         <p class="line-item">
             <span class="line-item__label">Held in escrow on acceptance</span>
-            <strong class="line-item__value total-row__value"><?= e($quote['escrow']) ?></strong>
+            <strong class="line-item__value total-row__value"><?= e(number_format($quote['total'])) ?> pts</strong>
+        </p>
+        <p class="field__hint">
+            <?= e($quote['charge'] . ' pts rental charge and a ' . $quote['buffer'] . '-point late buffer, returned if the item comes back on time. Nothing moves until the lender accepts.') ?>
         </p>
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--primary" type="submit" disabled>Send request</button>
+            <button class="btn btn--primary" type="submit">Send request</button>
         </div>
-    </div>
+    </form>
 </dialog>

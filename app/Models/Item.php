@@ -491,4 +491,14 @@ final class Item extends BaseModel
         );
         $statement->execute(['owner' => $ownerId, 'division' => $divisionId]);
     }
+
+    /**
+     * Lock one listing row until the transaction ends. Accepting a booking
+     * takes this lock first, so two acceptances on the same item queue up
+     * and the second sees the first's dates.
+     */
+    public function lockRow(int $id): void
+    {
+        $this->selectValue('SELECT id FROM items WHERE id = :id FOR UPDATE', ['id' => $id]);
+    }
 }

@@ -147,6 +147,12 @@ final class ItemController extends Controller
 
         [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], $row['due_back'] ?? null);
 
+        // Borrowing is for active members of the item's division only (§6.5, I5).
+        $canBorrow = !$isOwner && $row['status'] === 'active' && $row['listing_type'] === 'rental'
+            && in_array((int) $row['gn_division_id'], (new UserDivision($this->pdo))->activeDivisionIds($me), true);
+
+        [$quote, $quoteError] = $canBorrow ? $this->quoteFromQuery($row) : [null, ''];
+
         $this->render('items/show', [
             'item' => [
                 'id'             => (int) $row['id'],
@@ -163,7 +169,7 @@ final class ItemController extends Controller
                 'status'         => $badge,
                 'status_glyph'   => $glyph,
                 'status_label'   => $label,
-                'can_borrow'     => !$isOwner && $row['status'] === 'active' && $row['listing_type'] === 'rental',
+                'can_borrow'     => $canBorrow,
             ],
             'owner' => [
                 'initials' => User::initials((string) $row['owner_name']),
@@ -180,13 +186,15 @@ final class ItemController extends Controller
             'isOwner' => $isOwner,
             'donation' => $row['listing_type'] === 'donation' ? $this->donationPanel((int) $row['id'], $me) : null,
             'calendar' => $row['listing_type'] === 'rental' ? $this->calendar((int) $row['id']) : [],
-            'quote'   => ['from' => '', 'to' => '', 'days_label' => 'Select dates  ·  Total', 'total' => '—'],
-            'pricing' => array_values(array_filter([
-                $row['daily_rate'] === null ? null : ['value' => 'daily', 'title' => 'Daily rate',
-                    'total' => number_format((int) $row['daily_rate']) . ' pts / day', 'selected' => false],
-                $row['monthly_rate'] === null ? null : ['value' => 'monthly', 'title' => 'Monthly rate',
-                    'total' => number_format((int) $row['monthly_rate']) . ' pts / month', 'selected' => false],
-            ])),
+            'quote'      => $quote,
+            'quoteError' => $quoteError,
+            'quoteInput' => [
+                'from'  => is_string($_GET['from'] ?? null) ? $_GET['from'] : '',
+                'to'    => is_string($_GET['to'] ?? null) ? $_GET['to'] : '',
+                'basis' => $quote['basis'] ?? '',
+            ],
+            'modalOpen'  => $quote !== null && ($_GET['request'] ?? '') === '1',
+            'pricing'    => $this->pricing($row, $quote),
         ]);
     }
 
@@ -553,6 +561,76 @@ final class ItemController extends Controller
             'archived'         => ['neutral', '—', 'Removed'],
             default            => ['neutral', '—', ucfirst($status)],
         };
+    }
+
+    /**
+     * The quote for the dates in the query string, worked out on the server
+     * so the page needs no JavaScript (Plan §8.4).
+     *
+     * @param array<string, mixed> $row
+     *
+     * @return array{0: array<string, mixed>|null, 1: string} the quote, or why there is none
+     */
+    private function quoteFromQuery(array $row): array
+    {
+        $from  = is_string($_GET['from'] ?? null) ? trim($_GET['from']) : '';
+        $to    = is_string($_GET['to'] ?? null) ? trim($_GET['to']) : '';
+        $basis = is_string($_GET['basis'] ?? null) ? $_GET['basis'] : '';
+
+        if ($from === '' && $to === '') {
+            return [null, ''];
+        }
+
+        $errors = BookingService::datesErrors($from, $to, date('Y-m-d'));
+
+        if ($errors !== []) {
+            return [null, implode(' ', $errors)];
+        }
+
+        $quote = BookingService::quote(
+            $from,
+            $to,
+            $row['daily_rate'] === null ? null : (int) $row['daily_rate'],
+            $row['monthly_rate'] === null ? null : (int) $row['monthly_rate'],
+            $basis
+        );
+
+        return [$quote + ['from' => $from, 'to' => $to], ''];
+    }
+
+    /**
+     * The rate options, with this quote's totals when there is one.
+     *
+     * @param array<string, mixed>      $row
+     * @param array<string, mixed>|null $quote
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function pricing(array $row, ?array $quote): array
+    {
+        $options = [];
+
+        foreach (['daily' => 'Daily rate', 'monthly' => 'Monthly rate'] as $basis => $title) {
+            $rate = $row[$basis . '_rate'];
+
+            if ($rate === null) {
+                continue;
+            }
+
+            $total = $quote === null ? null : $quote[$basis . '_total'];
+
+            $options[] = [
+                'value'       => $basis,
+                'title'       => $title . ' · ' . number_format((int) $rate) . ' pts / ' . ($basis === 'daily' ? 'day' : 'month'),
+                'total'       => $total === null ? 'Choose dates for a total' : number_format((int) $total) . ' pts for ' . $quote['days'] . ' day' . ($quote['days'] === 1 ? '' : 's'),
+                'selected'    => $quote !== null && $quote['basis'] === $basis,
+                'recommended' => $quote !== null && $quote['cheaper'] === $basis && $quote['daily_total'] !== null && $quote['monthly_total'] !== null
+                    ? 'Cheaper'
+                    : null,
+            ];
+        }
+
+        return $options;
     }
 
     /**
