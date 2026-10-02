@@ -46,4 +46,20 @@ final class Rating extends BaseModel
             ['member' => $memberId]
         );
     }
+
+    /**
+     * Average stars and how many ratings a member has received — the trust
+     * score's rating factor (§6.3).
+     *
+     * @return array{average: float, count: int}
+     */
+    public function summaryFor(int $memberId): array
+    {
+        $row = $this->selectOne(
+            'SELECT COALESCE(AVG(stars), 0) AS average, COUNT(*) AS total FROM ratings WHERE ratee_id = :id',
+            ['id' => $memberId]
+        ) ?? [];
+
+        return ['average' => (float) ($row['average'] ?? 0), 'count' => (int) ($row['total'] ?? 0)];
+    }
 }

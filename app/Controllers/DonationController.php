@@ -17,7 +17,14 @@ final class DonationController extends Controller
         parent::__construct($pdo);
 
         $this->donations = new Donation($pdo);
-        $this->service   = new DonationService($pdo, $this->donations, new Item($pdo), new UserDivision($pdo), new Notification($pdo));
+        $this->service   = new DonationService(
+            $pdo,
+            $this->donations,
+            new Item($pdo),
+            new UserDivision($pdo),
+            new Notification($pdo),
+            TrustController::service($pdo)
+        );
     }
 
     /**

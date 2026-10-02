@@ -44,7 +44,8 @@ final class ReturnService
         private GnDivision $divisions,
         private LedgerService $ledger,
         private PhotoStore $photos,
-        private Notification $notifications
+        private Notification $notifications,
+        private TrustScoreService $trust
     ) {
     }
 
@@ -253,8 +254,9 @@ final class ReturnService
     }
 
     /**
-     * After a settled return: the item goes back on the shelf, and both are
-     * asked to rate each other.
+     * After a settled return: the item goes back on the shelf, both trust
+     * scores are recalculated (Plan 1.6), and both are asked to rate each
+     * other.
      *
      * @param array<string, mixed>                                              $booking
      * @param array{hours_late: int, buffer_to: string, extra: int, covered: int} $outcome
@@ -271,6 +273,7 @@ final class ReturnService
                 $outcome['extra'] > 0 ? ' and ' . $outcome['extra'] . ' pts more' : '');
 
         foreach ([(int) $booking['borrower_id'], (int) $booking['lender_id']] as $party) {
+            $this->trust->recalculate($party);
             $this->notifications->push($party, 'booking_completed', [
                 'title'      => 'Booking complete: ' . $booking['item_title'],
                 'detail'     => $late . ' Rate each other from the booking page.',

@@ -65,6 +65,7 @@ jobs:
           php tests/saved-searches.php
           php tests/donations.php
           php tests/bookings.php
+          php tests/trust.php
 
       - name: Every migration applies to a clean MySQL 8
         run: |

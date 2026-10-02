@@ -64,7 +64,8 @@ final class BookingController extends Controller
             new GnDivision($pdo),
             new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), $wallets),
             $photos,
-            new Notification($pdo)
+            new Notification($pdo),
+            TrustController::service($pdo)
         );
     }
 

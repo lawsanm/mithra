@@ -532,4 +532,36 @@ final class User extends BaseModel
 
         return $statement->rowCount() === 1;
     }
+
+    /** Store a freshly computed trust score (Plan §6.3) — the cached column every page reads. */
+    public function setTrustScore(int $id, int $score): void
+    {
+        $statement = $this->pdo->prepare('UPDATE users SET trust_score = :score WHERE id = :id');
+        $statement->execute(['score' => max(0, min(100, $score)), 'id' => $id]);
+    }
+
+    /** When membership began — the trust score's tenure factor. */
+    public function joinedAt(int $id): ?string
+    {
+        $value = $this->selectValue('SELECT joined_at FROM users WHERE id = :id', ['id' => $id]);
+
+        return $value === false || $value === null ? null : (string) $value;
+    }
+
+    /**
+     * Every verified member and moderator still taking part — the nightly
+     * trust-score refresh walks these.
+     *
+     * @return list<int>
+     */
+    public function activeMemberIds(): array
+    {
+        $rows = $this->select(
+            "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+              WHERE r.code IN ('member','moderator') AND u.status = 'active'
+              ORDER BY u.id"
+        );
+
+        return array_map(static fn (array $row): int => (int) $row['id'], $rows);
+    }
 }

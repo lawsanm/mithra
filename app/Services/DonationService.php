@@ -24,7 +24,8 @@ final class DonationService
         private Donation $donations,
         private Item $items,
         private UserDivision $memberships,
-        private Notification $notifications
+        private Notification $notifications,
+        private TrustScoreService $trust
     ) {
     }
 
@@ -208,6 +209,7 @@ final class DonationService
             $this->items->updateOwnedStatus((int) $donation['item_id'], (int) $donation['donor_id'], 'donated');
 
             foreach ([(int) $donation['donor_id'], (int) $donation['recipient_id']] as $party) {
+                $this->trust->recalculate($party);
                 $this->notifications->push($party, 'donation_completed', [
                     'title'  => 'Donation completed: ' . $donation['title'],
                     'detail' => 'Thank you. You can now rate each other.',

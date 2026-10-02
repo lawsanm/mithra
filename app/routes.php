@@ -53,7 +53,7 @@ return [
         '/settings/close-account'  => ['AccountController', 'settings'],
         '/transparency'            => 'transparency/index',
         '/ratings'                 => 'ratings/index',
-        '/trust'                   => 'trust/index',
+        '/trust'                   => ['TrustController', 'show'],
         '/profile'                 => ['ProfileController', 'editForm'],
         '/members/{id}'            => ['ProfileController', 'show'],
         '/aid-grants'              => 'aid-grants/show',

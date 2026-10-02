@@ -36,7 +36,6 @@ final class DemoController extends Controller
             'gifts/index'     => $this->gifts(),
             'wallet/index' => $this->wallet(),
             'ratings/index' => $this->ratings(),
-            'trust/index' => $this->trust(),
             'notifications/index', 'sponsor/notifications/index' => $this->notifications(),
             'transparency/index' => $this->transparency(),
             'aid-grants/show' => $this->aidGrant($id),
@@ -215,21 +214,6 @@ final class DemoController extends Controller
             'rating' => (int) $row['stars'], 'text' => (string) $row['comment'],
             'meta' => date('j M Y', strtotime($row['created_at'])) . ' · ' . ($row['item_title'] ?? 'Review'),
         ], $ratings->forMember($this->userId(), $box))];
-    }
-
-    private function trust(): array
-    {
-        $users = new User($this->pdo);
-        $member = $users->findWithDivision($this->userId()) ?? [];
-        $stats = $users->profileStats($this->userId());
-        return ['score' => ['value' => (string) ($member['trust_score'] ?? 0),
-            'badge' => ['info', 'i', 'Current trust score'],
-            'meta' => 'Out of 100 · ' . $stats['completed'] . ' completed transactions · ' . ($member['division_name'] ?? '')],
-            'factors' => [], 'trustFacts' => [
-                'Completed transactions' => (string) $stats['completed'],
-                'Completed donations' => (string) $stats['donations'],
-                'Member since' => empty($member['joined_at']) ? 'Not yet verified' : date('j M Y', strtotime($member['joined_at'])),
-            ]];
     }
 
     private function notifications(): array

@@ -64,4 +64,18 @@ final class ShortfallCover extends BaseModel
               WHERE reason = 'reserve_topup' AND YEAR(created_at) = YEAR(CURDATE())"
         );
     }
+
+    /**
+     * Covers the Reserve paid on this member's behalf as a borrower in the
+     * last 12 months — each one −5 on their trust score (§6.3.3).
+     */
+    public function countAgainstWithinYear(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM point_ledger l JOIN bookings b ON b.id = l.booking_id
+              WHERE l.reason = 'shortfall_cover' AND b.borrower_id = :member
+                AND l.created_at >= NOW() - INTERVAL 12 MONTH",
+            ['member' => $memberId]
+        );
+    }
 }
