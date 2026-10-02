@@ -8,6 +8,7 @@ declare(strict_types=1);
  * @var array $member  initials, name, verified, meta, score, score_note
  * @var array $stats   four headline figures
  * @var array $reviews recent ratings received
+ * @var string|null $giftHref where to send this member a gift, when the viewer may
  */
 
 $pageTitle = $member['name'];
@@ -38,6 +39,11 @@ include __DIR__ . '/../../partials/header.php';
             <span><?= e($member['score_note']) ?></span>
         </span>
     </div>
+    <?php if (!empty($giftHref)): ?>
+        <div class="actions">
+            <a class="btn btn--ghost" href="<?= e($giftHref) ?>">Send a gift</a>
+        </div>
+    <?php endif; ?>
 </section>
 
 <div class="stat-grid">

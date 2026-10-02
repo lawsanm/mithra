@@ -147,6 +147,12 @@ final class ProfileController extends Controller
                 ['label' => 'Times lent',      'value' => (string) $counts['times_lent']],
                 ['label' => 'Disputes',        'value' => (string) $counts['disputes']],
             ];
+            // §18.4: send a gift straight from a neighbour's profile.
+            $data['giftHref'] = in_array($id, array_map(
+                static fn (array $row): int => (int) $row['id'],
+                $users->giftableExcept($this->userId())
+            ), true) ? base_url() . '/gifts?to=' . $id . '#send-gift' : null;
+
             $data['reviews'] = array_map(
                 static fn (array $rating): array => [
                     'initials' => User::initials((string) $rating['counterparty']),

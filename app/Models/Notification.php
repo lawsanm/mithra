@@ -121,6 +121,28 @@ final class Notification extends BaseModel
     }
 
     /**
+     * Whether this kind of notice, about this subject key (the payload's
+     * "pair"), already went to this account within the last few days — so a
+     * daily job does not repeat itself.
+     */
+    public function sentRecently(int $userId, string $type, string $key, int $days): bool
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM notifications
+              WHERE user_id = :user AND type = :type
+                AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.pair')) = :pair
+                AND created_at >= NOW() - INTERVAL :days DAY"
+        );
+        $statement->bindValue(':user', $userId, PDO::PARAM_INT);
+        $statement->bindValue(':type', $type);
+        $statement->bindValue(':pair', $key);
+        $statement->bindValue(':days', $days, PDO::PARAM_INT);
+        $statement->execute();
+
+        return (int) $statement->fetchColumn() > 0;
+    }
+
+    /**
      * Leave one in-app notification (Plan §21.4).
      *
      * @param array{title:string, detail:string, icon:string, href:string} $payload

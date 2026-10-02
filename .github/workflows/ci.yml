@@ -68,6 +68,7 @@ jobs:
           php tests/trust.php
           php tests/ratings.php
           php tests/disputes.php
+          php tests/gifts.php
 
       - name: Every migration applies to a clean MySQL 8
         run: |

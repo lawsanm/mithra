@@ -509,4 +509,14 @@ final class Booking extends BaseModel
         $statement = $this->pdo->prepare('UPDATE bookings SET overdue_flagged_at = NOW() WHERE id = :id');
         $statement->execute(['id' => $id]);
     }
+
+    /** Items this member borrowed that are past their return date and not back yet. */
+    public function countOverdueBorrowings(int $memberId): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM bookings
+              WHERE borrower_id = :member AND status = 'in_progress' AND end_date < CURDATE()",
+            ['member' => $memberId]
+        );
+    }
 }

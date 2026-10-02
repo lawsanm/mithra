@@ -33,7 +33,6 @@ final class DemoController extends Controller
         $id = (int) ($params['id'] ?? 0);
         $data = match ($view) {
             'dashboard/index' => $this->dashboard(),
-            'gifts/index'     => $this->gifts(),
             'wallet/index' => $this->wallet(),
             'notifications/index', 'sponsor/notifications/index' => $this->notifications(),
             'transparency/index' => $this->transparency(),
@@ -140,41 +139,6 @@ final class DemoController extends Controller
         ];
     }
 
-    /** @return array<string, mixed> */
-    private function gifts(): array
-    {
-        $me        = $this->userId();
-        $gifts     = new Gift($this->pdo);
-        $box       = ($_GET['box'] ?? 'sent') === 'received' ? 'received' : 'sent';
-        $sentToday = $gifts->sentToday($me);
-
-        return [
-            'tabs' => [
-                ['label' => 'Sent (' . $gifts->countForMember($me, 'sent') . ')',         'box' => 'sent',     'active' => $box === 'sent'],
-                ['label' => 'Received (' . $gifts->countForMember($me, 'received') . ')', 'box' => 'received', 'active' => $box === 'received'],
-            ],
-            'caps' => [
-                ['label' => 'Sent today',     'value' => $sentToday . ' / ' . Gift::DAILY_CAP . ' pts daily cap'],
-                ['label' => 'Sent this year', 'value' => $gifts->sentThisYear($me) . ' / ' . Gift::ANNUAL_CAP . ' pts annual cap'],
-            ],
-            'gifts' => array_map(
-                fn (array $gift): array => [
-                    'initials'  => User::initials((string) $gift['counterparty']),
-                    'name'      => (string) $gift['counterparty'],
-                    'note'      => '“' . $gift['reason'] . '”',
-                    'amount'    => ($box === 'sent' ? '−' : '+') . $gift['amount'] . ' pts',
-                    'direction' => $box === 'sent' ? 'out' : 'in',
-                    'date'      => date('j M Y', strtotime((string) $gift['sent_at'])),
-                ],
-                $gifts->forMember($me, $box)
-            ),
-            // Feeds the Send a gift modal that this page includes.
-            'recipients'    => (new User($this->pdo))->giftableExcept($me),
-            'giftSentToday' => $sentToday,
-            'giftRemaining' => max(0, Gift::DAILY_CAP - $sentToday),
-        ];
-    }
-
     private function wallet(): array
     {
         $wallet = new Wallet($this->pdo);
@@ -196,7 +160,7 @@ final class DemoController extends Controller
                     'amount' => ($incoming ? '+' : '−') . number_format((int) $row['amount']) . ' pts',
                     'tone' => $incoming ? 'in' : 'out', 'date' => date('j M Y', strtotime($row['created_at']))];
             }, $wallet->activity($me)),
-        ] + $this->gifts();
+        ] + GiftController::modalData($this->pdo, $me);
     }
 
     private function notifications(): array

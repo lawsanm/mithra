@@ -7,7 +7,11 @@ declare(strict_types=1);
  *
  * @var array $tabs  sent / received tabs: label, box, active
  * @var array $caps  daily and annual gifting caps
- * @var array $gifts rows: initials, name, note, amount, direction, date
+ * @var array $gifts rows: id, initials, name, note, amount, direction, date
+ * @var string $box  sent | received
+ * @var int   $page
+ * @var bool  $hasNextPage
+ * @var array|null $flash
  */
 
 $pageTitle = 'Gifts';
@@ -19,10 +23,12 @@ include __DIR__ . '/../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Gifts</h1>
-    <button class="btn btn--primary page-header__action" type="button" data-modal-open="send-gift">
+    <a class="btn btn--primary page-header__action" href="<?= base_url() ?>/gifts/new#send-gift" data-modal-open="send-gift">
         Send a gift
-    </button>
+    </a>
 </header>
+
+<?php include __DIR__ . '/../../partials/flash.php'; ?>
 
 <nav class="tabs" aria-label="Gift direction">
     <?php foreach ($tabs as $tab): ?>
@@ -55,9 +61,27 @@ include __DIR__ . '/../../partials/header.php';
                 <span class="txn-row__value txn-row__value--<?= e($gift['direction']) ?>"><?= e($gift['amount']) ?></span>
                 <span class="txn-row__date"><?= e($gift['date']) ?></span>
             </span>
+            <?php if ($box === 'received'): ?>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/ratings?rate=gift-<?= e((string) $gift['id']) ?>#rate-review">Rate</a>
+            <?php endif; ?>
         </li>
     <?php endforeach; ?>
 </ul>
+
+<?php if ($gifts === []): ?>
+    <p class="empty-state"><?= $box === 'sent' ? 'You have not sent any gifts yet.' : 'No gifts received yet.' ?></p>
+<?php endif; ?>
+
+<?php if ($page > 1 || $hasNextPage): ?>
+    <div class="actions">
+        <?php if ($page > 1): ?>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/gifts?box=<?= e($box) ?>&amp;page=<?= e((string) ($page - 1)) ?>">Previous</a>
+        <?php endif; ?>
+        <?php if ($hasNextPage): ?>
+            <a class="btn btn--ghost" href="<?= base_url() ?>/gifts?box=<?= e($box) ?>&amp;page=<?= e((string) ($page + 1)) ?>">Next</a>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 
 <?php include __DIR__ . '/../../partials/modal-send-gift.php'; ?>
 

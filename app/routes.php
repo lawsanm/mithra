@@ -45,8 +45,8 @@ return [
         '/bookings/{id}'           => ['BookingController', 'show'],
         '/bookings/{id}/handover-status' => ['BookingController', 'handoverStatus'],
         '/wallet'                  => 'wallet/index',
-        '/gifts'                   => 'gifts/index',
-        '/gifts/new'               => 'gifts/index',
+        '/gifts'                   => ['GiftController', 'index'],
+        '/gifts/new'               => ['GiftController', 'index'],
         '/notifications'           => 'notifications/index',
         '/help'                    => 'help/index',
         '/settings'                => ['AccountController', 'settings'],
@@ -214,5 +214,6 @@ return [
         '/bookings/{id}/disputes'            => ['DisputeController', 'store'],
         '/disputes/{id}'                     => ['DisputeController', 'update'],
         '/disputes/{id}/withdraw'            => ['DisputeController', 'withdraw'],
+        '/gifts'                             => ['GiftController', 'store'],
     ],
 ];

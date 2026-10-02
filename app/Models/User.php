@@ -213,25 +213,28 @@ final class User extends BaseModel
     }
 
     /**
-     * Members this person may send a gift to.
-     *
-     * Only the member role is giftable — moderators, the sponsor liaison and
-     * admins hold staff accounts and are never gift recipients.
+     * Members this person may send a gift to: active members who accept
+     * gifts and share an active division with them (§11.1). A moderator is a
+     * verified member (§16.3) and can receive gifts too; the Sponsor Liaison,
+     * admins and sponsors cannot.
      *
      * @return list<array<string, mixed>>
      */
     public function giftableExcept(int $id): array
     {
         return $this->select(
-            "SELECT u.id, u.full_name
+            "SELECT DISTINCT u.id, u.full_name
                FROM users u
-               JOIN roles r ON r.id = u.role_id
+               JOIN roles r            ON r.id = u.role_id
+               JOIN user_divisions them ON them.user_id = u.id AND them.status = 'active'
+               JOIN user_divisions mine ON mine.user_id = :me AND mine.status = 'active'
+                                       AND mine.gn_division_id = them.gn_division_id
               WHERE u.id <> :id
-                AND r.code = 'member'
+                AND r.code IN ('member', 'moderator')
                 AND u.status = 'active'
                 AND u.gift_receive_enabled = 1
               ORDER BY u.full_name",
-            ['id' => $id]
+            ['me' => $id, 'id' => $id]
         );
     }
 
