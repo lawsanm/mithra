@@ -182,5 +182,8 @@ return [
         '/community/temporary/extend' => ['CommunityController', 'extend'],
         '/community/temporary/leave'  => ['CommunityController', 'leave'],
         '/community/promote'          => ['CommunityController', 'promote'],
+        '/items/{id}/availability'           => ['AvailabilityController', 'store'],
+        '/availability-blocks/{id}'          => ['AvailabilityController', 'update'],
+        '/availability-blocks/{id}/delete'   => ['AvailabilityController', 'destroy'],
     ],
 ];

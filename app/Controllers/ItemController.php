@@ -177,6 +177,7 @@ final class ItemController extends Controller
                 'href'     => base_url() . '/members/' . $row['owner_id'],
             ],
             'isOwner' => $isOwner,
+            'calendar' => $row['listing_type'] === 'rental' ? $this->calendar((int) $row['id']) : [],
             'quote'   => ['from' => '', 'to' => '', 'days_label' => 'Select dates  ·  Total', 'total' => '—'],
             'pricing' => array_values(array_filter([
                 $row['daily_rate'] === null ? null : ['value' => 'daily', 'title' => 'Daily rate',
@@ -552,6 +553,38 @@ final class ItemController extends Controller
     }
 
     /**
+     * The dates a borrower cannot have: the lender's blocks and the bookings
+     * already holding the item, in date order.
+     *
+     * @return list<array{kind: string, label: string}>
+     */
+    private function calendar(int $itemId): array
+    {
+        $ranges = [];
+
+        foreach ((new ItemAvailabilityBlock($this->pdo))->upcomingForItem($itemId) as $block) {
+            $ranges[] = ['start' => (string) $block['start_date'], 'kind' => 'Unavailable',
+                'label' => $this->rangeLabel((string) $block['start_date'], (string) $block['end_date'])];
+        }
+
+        foreach ((new Booking($this->pdo))->bookedRanges($itemId) as $booking) {
+            $ranges[] = ['start' => (string) $booking['start_date'], 'kind' => 'Booked',
+                'label' => $this->rangeLabel((string) $booking['start_date'], (string) $booking['end_date'])];
+        }
+
+        usort($ranges, static fn (array $a, array $b): int => strcmp($a['start'], $b['start']));
+
+        return array_map(static fn (array $range): array => ['kind' => $range['kind'], 'label' => $range['label']], $ranges);
+    }
+
+    private function rangeLabel(string $start, string $end): string
+    {
+        return $start === $end
+            ? date('j M Y', strtotime($start))
+            : date('j M', strtotime($start)) . ' – ' . date('j M Y', strtotime($end));
+    }
+
+    /**
      * @param array<string, mixed> $row
      */
     private function rateLabel(array $row): string
@@ -697,6 +730,15 @@ final class ItemController extends Controller
             'errors'     => $errors,
             'proofTypes' => ItemService::PROOF_TYPES,
             'proofOnFile' => $row['value_proof_path'] !== null,
+            'blocks'      => $row['listing_type'] === 'rental' && $row['status'] !== 'archived'
+                ? array_map(fn (array $block): array => [
+                    'id'    => (int) $block['id'],
+                    'start' => (string) $block['start_date'],
+                    'end'   => (string) $block['end_date'],
+                    'note'  => (string) ($block['note'] ?? ''),
+                    'label' => $this->rangeLabel((string) $block['start_date'], (string) $block['end_date']),
+                ], (new ItemAvailabilityBlock($this->pdo))->upcomingForItem((int) $row['id']))
+                : null,
         ]);
     }
 

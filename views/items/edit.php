@@ -173,5 +173,61 @@ include __DIR__ . '/../../partials/header.php';
 
 <?php endif; ?>
 
+<?php if (($blocks ?? null) !== null): ?>
+    <section class="panel panel--wide" id="availability">
+        <h2 class="panel__title">Availability calendar</h2>
+        <p class="record-meta">Block dates you need the item yourself. Borrowers cannot request them.</p>
+
+        <?php if ($blocks === []): ?>
+            <p class="record-meta">No dates blocked.</p>
+        <?php else: ?>
+            <ul class="row-list">
+                <?php foreach ($blocks as $block): ?>
+                    <li class="list-row">
+                        <form class="field-row" method="post" action="<?= base_url() ?>/availability-blocks/<?= e((string) $block['id']) ?>" novalidate>
+                            <?= csrf_field() ?>
+                            <div class="field">
+                                <label class="visually-hidden" for="block-start-<?= e((string) $block['id']) ?>">From</label>
+                                <input class="input input--date" type="date" id="block-start-<?= e((string) $block['id']) ?>" name="start_date" value="<?= e($block['start']) ?>">
+                            </div>
+                            <div class="field">
+                                <label class="visually-hidden" for="block-end-<?= e((string) $block['id']) ?>">To</label>
+                                <input class="input input--date" type="date" id="block-end-<?= e((string) $block['id']) ?>" name="end_date" value="<?= e($block['end']) ?>">
+                            </div>
+                            <div class="field">
+                                <label class="visually-hidden" for="block-note-<?= e((string) $block['id']) ?>">Note</label>
+                                <input class="input" type="text" id="block-note-<?= e((string) $block['id']) ?>" name="note" value="<?= e($block['note']) ?>" placeholder="Note (optional)">
+                            </div>
+                            <button class="btn btn--ghost" type="submit">Save</button>
+                        </form>
+                        <form method="post" action="<?= base_url() ?>/availability-blocks/<?= e((string) $block['id']) ?>/delete"
+                            data-confirm="Open <?= e($block['label']) ?> again? Borrowers will be able to request these dates." novalidate>
+                            <?= csrf_field() ?>
+                            <button class="btn btn--ghost" type="submit">Unblock</button>
+                        </form>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <form class="field-row" method="post" action="<?= base_url() ?>/items/<?= e((string) $item['id']) ?>/availability" novalidate>
+            <?= csrf_field() ?>
+            <div class="field">
+                <label class="field__label" for="new-block-start">From</label>
+                <input class="input input--date" type="date" id="new-block-start" name="start_date">
+            </div>
+            <div class="field">
+                <label class="field__label" for="new-block-end">To</label>
+                <input class="input input--date" type="date" id="new-block-end" name="end_date">
+            </div>
+            <div class="field">
+                <label class="field__label" for="new-block-note">Note (optional)</label>
+                <input class="input" type="text" id="new-block-note" name="note">
+            </div>
+            <button class="btn btn--primary" type="submit">Block dates</button>
+        </form>
+    </section>
+<?php endif; ?>
+
 <?php $pageScripts = ['upload-name.js', 'confirm.js']; ?>
 <?php include __DIR__ . '/../../partials/footer.php'; ?>

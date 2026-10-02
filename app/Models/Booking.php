@@ -230,4 +230,50 @@ final class Booking extends BaseModel
             ['division' => $divisionId, 'borrower' => $memberId, 'lender' => $memberId]
         );
     }
+
+    /** Statuses in which a booking holds its dates against every other use of the item. */
+    public const DATE_HOLDING_STATES = ['accepted', 'awaiting_handover', 'in_progress', 'awaiting_return', 'pending_moderator', 'escalated'];
+
+    /**
+     * Bookings on this item sharing at least one day with the range, in the
+     * given statuses. Both ends are inclusive.
+     *
+     * @param list<string> $states
+     */
+    public function countOverlapping(int $itemId, string $start, string $end, array $states, int $exceptId = 0): int
+    {
+        $names  = [];
+        $params = ['item' => $itemId, 'start' => $start, 'end' => $end, 'except' => $exceptId];
+
+        foreach (array_values($states) as $index => $state) {
+            $names[]                  = ':state' . $index;
+            $params['state' . $index] = $state;
+        }
+
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM bookings
+              WHERE item_id = :item AND id <> :except
+                AND start_date <= :end AND end_date >= :start
+                AND status IN (' . implode(', ', $names) . ')',
+            $params
+        );
+    }
+
+    /**
+     * The date ranges an item is already booked for, from today on — the
+     * item page shows them as "Booked".
+     *
+     * @return list<array{start_date: string, end_date: string}>
+     */
+    public function bookedRanges(int $itemId): array
+    {
+        return $this->select(
+            "SELECT start_date, end_date FROM bookings
+              WHERE item_id = :item AND end_date >= CURDATE()
+                AND status IN ('accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator','escalated')
+              ORDER BY start_date
+              LIMIT 50",
+            ['item' => $itemId]
+        );
+    }
 }

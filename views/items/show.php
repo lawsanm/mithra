@@ -11,6 +11,7 @@ declare(strict_types=1);
  * @var array $owner     initials, name, verified, meta, href
  * @var array $quote     from, to, days_label, total
  * @var bool  $isOwner   the member is looking at their own listing
+ * @var array $calendar  dates a borrower cannot have: kind (Unavailable / Booked), label
  * @var array|null $flash
  */
 
@@ -75,6 +76,20 @@ include __DIR__ . '/../../partials/header.php';
 
         <?php if ($item['description'] !== ''): ?>
             <p class="detail__prose"><?= e($item['description']) ?></p>
+        <?php endif; ?>
+
+        <?php if (($calendar ?? []) !== []): ?>
+            <section class="stack" aria-label="Dates not available">
+                <p class="field__label">Dates not available</p>
+                <ul class="row-list">
+                    <?php foreach ($calendar as $range): ?>
+                        <li class="line-item">
+                            <span class="line-item__label"><?= e($range['label']) ?></span>
+                            <span class="badge badge--<?= $range['kind'] === 'Booked' ? 'info' : 'neutral' ?>"><?= e($range['kind']) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
         <?php endif; ?>
 
         <hr class="divider detail__divider">

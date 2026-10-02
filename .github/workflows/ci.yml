@@ -61,6 +61,7 @@ jobs:
           php tests/items.php
           php tests/sponsors.php
           php tests/community.php
+          php tests/availability.php
 
       - name: Every migration applies to a clean MySQL 8
         run: |
