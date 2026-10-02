@@ -11,8 +11,6 @@ final class DamageClaimController extends Controller
 {
     public static function service(PDO $pdo, PhotoStore $photos): DamageClaimService
     {
-        $wallets = new Wallet($pdo);
-
         return new DamageClaimService(
             $pdo,
             new Booking($pdo),
@@ -21,8 +19,7 @@ final class DamageClaimController extends Controller
             BookingController::returns($pdo, $photos),
             new Dispute($pdo),
             new GnDivision($pdo),
-            $wallets,
-            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), $wallets),
+            new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), new Wallet($pdo)),
             $photos,
             new Notification($pdo)
         );

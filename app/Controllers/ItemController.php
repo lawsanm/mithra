@@ -145,7 +145,7 @@ final class ItemController extends Controller
             return;
         }
 
-        [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], $row['due_back'] ?? null);
+        [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], $row['due_back']);
 
         // Borrowing is for active members of the item's division only (§6.5, I5).
         $canBorrow = !$isOwner && $row['status'] === 'active' && $row['listing_type'] === 'rental'

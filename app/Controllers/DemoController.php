@@ -126,7 +126,7 @@ final class DemoController extends Controller
                     return [
                         'title' => (string) $item['title'],
                         'photo' => empty($item['photo']) ? null : photo_url((string) $item['photo']),
-                        'rate'  => $item['daily_rate'] . ' pts / day',
+                        'rate'  => rate_label($item['daily_rate'], $item['monthly_rate']),
                         'meta'  => $who === ''
                             ? ($item['status'] === 'active' ? 'Available' : ucfirst(str_replace('_', ' ', $item['status'])))
                             : sprintf('Lent to %s  ·  due %s', User::shortName($who), date('j M', strtotime($due))),
@@ -243,7 +243,7 @@ final class DemoController extends Controller
         $days = (int) floor((strtotime($endDate) - strtotime('today')) / 86400);
 
         if ($days < 0) {
-            return ['error', '✕', abs($days) . ' days overdue'];
+            return ['error', '✕', abs($days) . (abs($days) === 1 ? ' day' : ' days') . ' overdue'];
         }
 
         if ($days <= 1) {

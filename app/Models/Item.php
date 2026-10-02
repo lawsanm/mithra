@@ -117,7 +117,9 @@ final class Item extends BaseModel
                     u.id AS owner_id, u.full_name AS owner_name, u.trust_score,
                     u.joined_at AS owner_joined, u.status AS owner_status,
                     (SELECT COUNT(*) FROM bookings b WHERE b.lender_id = u.id AND b.status = 'completed')
-                      AS owner_lends
+                      AS owner_lends,
+                    (SELECT MIN(b.end_date) FROM bookings b
+                      WHERE b.item_id = i.id AND b.status IN ('in_progress','awaiting_return')) AS due_back
                FROM items i
                JOIN item_categories c ON c.id = i.category_id
                JOIN users u           ON u.id = i.owner_id
@@ -209,7 +211,7 @@ final class Item extends BaseModel
     public function recentListings(int $ownerId, int $limit = 4): array
     {
         $statement = $this->pdo->prepare(
-            "SELECT i.id, i.title, i.daily_rate, i.status,
+            "SELECT i.id, i.title, i.daily_rate, i.monthly_rate, i.status,
                     JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS photo,
                     (SELECT CONCAT(u.full_name, '|', b.end_date) FROM bookings b
                        JOIN users u ON u.id = b.borrower_id

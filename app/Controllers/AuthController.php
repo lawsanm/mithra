@@ -10,10 +10,9 @@ declare(strict_types=1);
  * session — the two keys the rest of the app reads.
  *
  * These are the sign-in screens a signed-out visitor can reach — sign-in,
- * sign-up and the two ways back into an account (an emailed link, or a code
- * issued in person by the moderator). Public sign-up creates members and
- * nothing else — moderator, liaison, sponsor and admin accounts are appointed,
- * not self-served (Plan §16).
+ * sign-up and the way back into an account (an emailed reset link). Public
+ * sign-up creates members and nothing else — moderator, liaison, sponsor and
+ * admin accounts are appointed, not self-served (Plan §16).
  *
  * Figma: Common → "Login" (93:282), "Forgot Password — Modal" (93:315),
  * "Reset Password — New Password" (646:764), "Register — Step 1" (93:127),
@@ -240,8 +239,8 @@ final class AuthController extends Controller
     }
 
     /**
-     * POST /forgot-password — always the same answer, whether or not the
-     * address belongs to an account.
+     * POST /forgot-password — an address with no active account is refused
+     * with a message, so the member can check the spelling (PasswordResetService).
      */
     public function forgot(): void
     {

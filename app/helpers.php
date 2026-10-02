@@ -79,6 +79,22 @@ function photo_url(string $path): string
     return base_url() . '/photo.php?p=' . rawurlencode($path);
 }
 
+// A rental's rates as members read them, e.g. "80 pts / day  ·  1,500 pts / month".
+function rate_label(mixed $daily, mixed $monthly): string
+{
+    $rates = [];
+
+    if ((int) $daily > 0) {
+        $rates[] = number_format((int) $daily) . ' pts / day';
+    }
+
+    if ((int) $monthly > 0) {
+        $rates[] = number_format((int) $monthly) . ' pts / month';
+    }
+
+    return $rates === [] ? 'Rate not set' : implode('  ·  ', $rates);
+}
+
 /**
  * One form field's uploads as a plain list, whether the input was single or
  * multiple. Controllers call this so services never read $_FILES (§6).

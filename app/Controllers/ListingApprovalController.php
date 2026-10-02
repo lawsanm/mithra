@@ -97,7 +97,7 @@ final class ListingApprovalController extends Controller
             $this->renderReview($id, $exception->errors());
 
             return;
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -121,7 +121,7 @@ final class ListingApprovalController extends Controller
     {
         try {
             $record = $this->reviews->review($id, $this->userId(), $this->role());
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -331,7 +331,7 @@ final class ListingApprovalController extends Controller
         parent::render($view, $data);
     }
 
-    private function renderException(RuntimeException $exception): void
+    private function renderException(RecordNotFoundException|AccessDeniedException $exception): void
     {
         if ($exception instanceof AccessDeniedException) {
             $this->notice(403, 'Not yours to review', 'This listing is reviewed by its own division moderator, or by the Admin when the lister is a moderator.');

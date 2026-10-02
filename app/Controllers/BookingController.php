@@ -139,7 +139,7 @@ final class BookingController extends Controller
             'claimItem' => [
                 'title'          => (string) $booking['item_title'],
                 'party'          => 'Borrowed by ' . $booking['borrower_name'],
-                'photo'          => null,
+                'photo'          => empty($booking['item_photo']) ? null : photo_url((string) $booking['item_photo']),
                 'booking_id'     => $id,
                 'declared_value' => (int) $booking['declared_value'],
                 'simple_cap'     => DamageClaimService::simpleCap((int) $booking['declared_value']),

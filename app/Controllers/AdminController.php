@@ -34,7 +34,6 @@ final class AdminController extends Controller
         'buffer_refund'        => 'Buffer refund',
     ];
 
-    /** Account status => badge class. */
     /** Role filter on the user list: role code => pill label. */
     private const USER_ROLES = [
         'member'          => 'Members',
@@ -44,6 +43,7 @@ final class AdminController extends Controller
         'admin'           => 'Admins',
     ];
 
+    /** Account status => badge class. */
     private const USER_BADGES = [
         'active'          => 'success',
         'pending'         => 'warning',
@@ -750,7 +750,11 @@ final class AdminController extends Controller
                     ['label' => 'Dispute escalation timer', 'value' => 'Moderator disputes escalate to the Admin after 7 days'],
                 ],
                 'Aid' => [
-                    ['label' => 'Aid grant cap', 'value' => '500 pts per member per year · one active grant · 60-day cooling period'],
+                    ['label' => 'Aid grant cap', 'value' => sprintf(
+                        '%d pts per member per year · one active grant · %d-day cooling period',
+                        AidGrantService::YEARLY_CAP,
+                        AidGrantService::COOLING_DAYS
+                    )],
                 ],
             ],
         ];
@@ -878,13 +882,13 @@ final class AdminController extends Controller
                 ['label' => 'Transactions', 'value' => (string) $stats['completed']],
                 ['label' => 'Disputes',     'value' => (string) $stats['disputes']],
             ],
-            // The account's point movements, newest first.
+            // The account's five latest point movements, from the first page.
             'activity' => array_map(static fn (array $entry): array => [
                 'icon_type' => $entry['incoming'] ? 'return' : 'lend',
                 'title'     => (self::LEDGER_REASONS[$entry['reason']] ?? ucfirst(str_replace('_', ' ', (string) $entry['reason'])))
                     . ' · ' . ($entry['incoming'] ? '+' : '−') . number_format((int) $entry['amount']) . ' pts',
                 'meta'      => date('j M Y', strtotime((string) $entry['created_at'])),
-            ], (new Wallet($this->pdo))->activity($id, 5)),
+            ], array_slice((new Wallet($this->pdo))->activity($id), 0, 5)),
         ];
     }
 
@@ -1096,6 +1100,7 @@ final class AdminController extends Controller
         return match (true) {
             $seconds < 60     => 'just now',
             $seconds < 3600   => intdiv($seconds, 60) . ' min ago',
+            $seconds < 7200   => '1 hour ago',
             $seconds < 86400  => intdiv($seconds, 3600) . ' hours ago',
             $seconds < 172800 => 'Yesterday',
             $seconds < 604800 => intdiv($seconds, 86400) . ' days ago',

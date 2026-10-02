@@ -131,6 +131,7 @@ final class Booking extends BaseModel
                     DATEDIFF(b.end_date, b.start_date) + 1 AS days,
                     GREATEST(DATEDIFF(CURDATE(), b.end_date), 0) AS days_overdue,
                     i.title AS item_title, i.declared_value,
+                    JSON_UNQUOTE(JSON_EXTRACT(i.photos, '$[0]')) AS item_photo,
                     b.borrower_id, borrower.full_name AS borrower_name,
                     l.id AS lender_id, l.full_name AS lender_name, l.trust_score AS lender_trust,
                     l.status AS lender_status,

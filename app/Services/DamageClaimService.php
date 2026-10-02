@@ -50,7 +50,6 @@ final class DamageClaimService
         private ReturnService $returnRules,
         private Dispute $disputes,
         private GnDivision $divisions,
-        private Wallet $wallets,
         private LedgerService $ledger,
         private PhotoStore $photos,
         private Notification $notifications
@@ -207,7 +206,11 @@ final class DamageClaimService
             [$claim, $booking] = $this->borrowerAnswerable($claimId, $borrowerId);
             $penalty = (int) $claim['proposed_penalty'];
 
-            if (($this->wallets->lockBalance($borrowerId) ?? 0) < $penalty) {
+            // Pools before wallets, both wallets in id order — the order every
+            // ledger movement locks in, so this can never deadlock against one.
+            $balance = $this->ledger->lockMemberBalances([$borrowerId, (int) $booking['lender_id']])[$borrowerId] ?? 0;
+
+            if ($balance < $penalty) {
                 $this->toModerator($claim, $booking, 'accepted');
 
                 return false;

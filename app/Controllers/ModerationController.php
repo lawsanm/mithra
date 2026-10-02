@@ -63,7 +63,7 @@ final class ModerationController extends Controller
     {
         try {
             $application = $this->verifications->review($id, $this->userId());
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -92,7 +92,7 @@ final class ModerationController extends Controller
     {
         try {
             $kind = $this->kindOf($this->verifications->review($id, $this->userId()));
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -141,7 +141,7 @@ final class ModerationController extends Controller
             $this->redirect('/moderator/verifications/' . $id);
 
             return;
-        } catch (RuntimeException $exception) {
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
             $this->renderException($exception);
 
             return;
@@ -300,7 +300,7 @@ final class ModerationController extends Controller
         };
     }
 
-    private function renderException(RuntimeException $exception): void
+    private function renderException(RecordNotFoundException|AccessDeniedException $exception): void
     {
         if ($exception instanceof AccessDeniedException) {
             $this->notice(403, 'Not your division', 'You can only review applications from the division you moderate.');

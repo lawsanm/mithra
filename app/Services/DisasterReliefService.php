@@ -271,9 +271,7 @@ final class DisasterReliefService
             $errors['households_reached'] = 'Households reached must be at least 1.';
         }
 
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $record['distributed_on']);
-
-        if ($date === false || $date->format('Y-m-d') !== $record['distributed_on']) {
+        if (!Validator::isDate($record['distributed_on'])) {
             $errors['distributed_on'] = 'Enter the date the relief was handed out.';
         } elseif ($record['distributed_on'] > $today) {
             $errors['distributed_on'] = 'The date cannot be in the future.';

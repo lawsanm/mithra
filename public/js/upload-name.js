@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let chosen = [];
         let previews = [];
 
+        const limit = `Only ${max} photo${max === 1 ? '' : 's'} can be added here`;
         const room = () => max - keptBy.filter((box) => box.checked).length;
         const sameFile = (a, b) => a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
 
@@ -106,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chosen = chosen.concat(picked.slice(0, space));
             const left = picked.length - space;
             notice.textContent = left > 0
-                ? `The listing is full (5 photos at most), so ${left} photo${left === 1 ? ' was' : 's were'} not added.`
+                ? `${limit}, so ${left} photo${left === 1 ? ' was' : 's were'} not added.`
                 : '';
             render();
         });
@@ -116,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         keptBy.forEach((box) => box.addEventListener('change', () => {
             if (chosen.length > room()) {
                 chosen = chosen.slice(0, Math.max(room(), 0));
-                notice.textContent = 'The listing is full (5 photos at most), so the newest choice was dropped.';
+                notice.textContent = `${limit}, so the newest choice was dropped.`;
             } else {
                 notice.textContent = '';
             }
