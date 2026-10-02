@@ -59,4 +59,28 @@ final class CronRun extends BaseModel
               ORDER BY started_at DESC'
         );
     }
+
+    /** Open a run's log row before the job does anything (Rules/CONVENTIONS.md §8). */
+    public function start(string $jobName): int
+    {
+        $statement = $this->pdo->prepare(
+            "INSERT INTO cron_runs (job_name, status) VALUES (:job, 'running')"
+        );
+        $statement->execute(['job' => $jobName]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /** Close a run's log row with its outcome. */
+    public function finish(int $id, bool $succeeded, string $notes): void
+    {
+        $statement = $this->pdo->prepare(
+            'UPDATE cron_runs SET status = :status, finished_at = NOW(), notes = :notes WHERE id = :id'
+        );
+        $statement->execute([
+            'status' => $succeeded ? 'success' : 'failed',
+            'notes'  => mb_substr($notes, 0, 2000),
+            'id'     => $id,
+        ]);
+    }
 }

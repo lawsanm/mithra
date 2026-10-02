@@ -174,4 +174,44 @@ final class Booking extends BaseModel
             ['borrower' => $memberId, 'lender' => $memberId]
         );
     }
+
+    /**
+     * Who may see a handover or return photo: the booking's two parties and
+     * the moderator of the item's division (Plan §10.1). Null when no booking
+     * carries this path, so the proxy refuses it (§7.5).
+     *
+     * @return list<int>|null
+     */
+    public function conditionPhotoViewers(string $path): ?array
+    {
+        $row = $this->selectOne(
+            "SELECT b.lender_id, b.borrower_id, d.moderator_id
+               FROM bookings b
+               JOIN items i        ON i.id = b.item_id
+               JOIN gn_divisions d ON d.id = i.gn_division_id
+          LEFT JOIN handover_records h ON h.booking_id = b.id
+          LEFT JOIN return_records r   ON r.booking_id = b.id
+              WHERE JSON_CONTAINS(COALESCE(h.lender_photos, '[]'), JSON_QUOTE(:p1))
+                 OR JSON_CONTAINS(COALESCE(h.borrower_photos, '[]'), JSON_QUOTE(:p2))
+                 OR JSON_CONTAINS(COALESCE(r.lender_photos, '[]'), JSON_QUOTE(:p3))
+                 OR JSON_CONTAINS(COALESCE(r.borrower_photos, '[]'), JSON_QUOTE(:p4))
+              LIMIT 1",
+            ['p1' => $path, 'p2' => $path, 'p3' => $path, 'p4' => $path]
+        );
+
+        return $row === null ? null : self::ids($row);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     *
+     * @return list<int>
+     */
+    public static function ids(array $row): array
+    {
+        return array_values(array_filter(
+            array_map('intval', array_values($row)),
+            static fn (int $id): bool => $id > 0
+        ));
+    }
 }

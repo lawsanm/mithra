@@ -13,6 +13,11 @@ declare(strict_types=1);
  *   identity-documents/  the division's moderator and the Admin (Plan §25.3),
  *                        including proofs sent with an address change
  *   value-proofs/        the item's owner, its division's moderator, the Admin
+ *   handover-photos/,    the booking's lender and borrower, the moderator of
+ *   return-photos/,      the item's division, the Admin (Plan §10.1)
+ *   damage-evidence/
+ *   aid-evidence/        the member, their division's moderator, the Sponsor
+ *                        Liaison, the Admin (Plan §12)
  *   item-photos/         any signed-in account, while the listing is live
  *
  * plus anything in the asking member's own half-finished create wizard.
@@ -94,7 +99,31 @@ function photo_is_visible(string $path, int $userId, string $role): bool
         return $role === 'admin' || in_array($userId, $viewers, true);
     }
 
+    if ($folder === 'handover-photos' || $folder === 'return-photos') {
+        return photo_viewer_allowed((new Booking($pdo))->conditionPhotoViewers($path), $userId, $role === 'admin');
+    }
+
+    if ($folder === 'damage-evidence') {
+        return photo_viewer_allowed((new DamageClaim($pdo))->evidenceViewers($path), $userId, $role === 'admin');
+    }
+
+    if ($folder === 'aid-evidence') {
+        return photo_viewer_allowed(
+            (new AidGrant($pdo))->evidenceViewers($path),
+            $userId,
+            in_array($role, ['admin', 'sponsor_liaison'], true)
+        );
+    }
+
     return (new Item($pdo))->photoPathExists($path);
+}
+
+/**
+ * @param list<int>|null $viewers null when no record carries the path
+ */
+function photo_viewer_allowed(?array $viewers, int $userId, bool $byRole): bool
+{
+    return $viewers !== null && ($byRole || in_array($userId, $viewers, true));
 }
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);

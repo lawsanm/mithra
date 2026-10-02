@@ -49,7 +49,7 @@ include __DIR__ . '/../../partials/header.php';
     <label class="upload-drop">
         <span class="upload-drop__glyph" aria-hidden="true">＋</span>
         <span>Upload rental agreement, employer letter, or similar</span>
-        <input class="visually-hidden" type="file" name="proof" accept="image/*,application/pdf" disabled>
+        <input class="visually-hidden" type="file" name="proof" accept="image/jpeg,image/png,image/webp" disabled>
     </label>
 
     <p class="notice notice--info">

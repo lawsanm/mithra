@@ -41,11 +41,12 @@ final class PhotoStore
      * @param  list<array{name?: string, tmp_name?: string, error?: int, size?: int}> $uploads
      * @param  string                                                                 $folder  e.g. 'item-photos'
      * @param  string                                                                 $field   field name for error messages
+     * @param  string                                                                 $stamp   text burnt into the corner, '' for none
      * @return list<string> paths relative to the upload root
      *
      * @throws ValidationException when a file is unusable or the batch is too large
      */
-    public function storeMany(array $uploads, string $folder, string $field, int $limit): array
+    public function storeMany(array $uploads, string $folder, string $field, int $limit, string $stamp = ''): array
     {
         $usable = array_values(array_filter(
             $uploads,
@@ -63,7 +64,7 @@ final class PhotoStore
         $stored = [];
 
         foreach ($usable as $upload) {
-            $stored[] = $this->storeOne($upload, $folder, $field);
+            $stored[] = $this->storeOne($upload, $folder, $field, $stamp);
         }
 
         return $stored;
@@ -115,7 +116,7 @@ final class PhotoStore
      *
      * @throws ValidationException
      */
-    private function storeOne(array $upload, string $folder, string $field): string
+    private function storeOne(array $upload, string $folder, string $field, string $stamp = ''): string
     {
         $error = $upload['error'] ?? UPLOAD_ERR_NO_FILE;
 
@@ -158,6 +159,10 @@ final class PhotoStore
 
         $image = $this->downscale($image);
 
+        if ($stamp !== '') {
+            $this->stamp($image, $stamp);
+        }
+
         $relativePath = $folder . '/' . bin2hex(random_bytes(16)) . '.jpg';
         $absolutePath = $this->root . '/' . $relativePath;
 
@@ -177,6 +182,33 @@ final class PhotoStore
         }
 
         return $relativePath;
+    }
+
+    /**
+     * The text a condition photo carries (Plan §10.1): when it was uploaded
+     * and by whom, so a photo cannot be passed off as taken at another time.
+     */
+    public static function stampText(int $uploaderId, DateTimeInterface $at): string
+    {
+        return sprintf('Mithra %s  member #%d', $at->format('Y-m-d H:i'), $uploaderId);
+    }
+
+    /**
+     * Burn the stamp into the bottom-left corner on a dark band, with GD's
+     * built-in font so no font file has to ship with the project.
+     */
+    private function stamp(GdImage $image, string $text): void
+    {
+        $font   = 5;
+        $width  = imagefontwidth($font) * strlen($text) + 12;
+        $height = imagefontheight($font) + 8;
+        $top    = max(0, imagesy($image) - $height);
+
+        $band = imagecolorallocatealpha($image, 0, 0, 0, 50);
+        $ink  = imagecolorallocate($image, 255, 255, 255);
+
+        imagefilledrectangle($image, 0, $top, min($width, imagesx($image)), imagesy($image), $band);
+        imagestring($image, $font, 6, $top + 4, $text, $ink);
     }
 
     /**

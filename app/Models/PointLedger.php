@@ -27,7 +27,7 @@ final class PointLedger extends BaseModel
 
     /** Filter pill => the ledger reasons it covers (Plan §7.3). */
     public const GROUPS = [
-        'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout'],
+        'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout', 'booking_refund'],
         'gifts'   => ['gift'],
         'aid'     => ['aid_grant', 'aid_return', 'parting_gift'],
         'fees'    => ['late_fee', 'damage_penalty'],
@@ -96,18 +96,23 @@ final class PointLedger extends BaseModel
      * Append one movement. The ledger is INSERT-only (Plan §15.5): there is no
      * update or delete method on this model, and there never will be.
      *
-     * Each side is a pool code or a member id, never both.
+     * Each side is a pool code or a member id, never both. The optional links
+     * tie the movement to the booking, gift or aid grant behind it, so the
+     * wallet's escrow figure and activity lines can find their record.
      *
      * @param array{from_pool_code:?string, from_user_id:?int, to_pool_code:?string,
-     *              to_user_id:?int, amount:int, reason:string} $entry
+     *              to_user_id:?int, amount:int, reason:string, booking_id?:?int,
+     *              gift_id?:?int, aid_grant_id?:?int} $entry
      */
     public function record(array $entry): int
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO point_ledger
-                 (from_pool_code, from_user_id, to_pool_code, to_user_id, amount, reason)
+                 (from_pool_code, from_user_id, to_pool_code, to_user_id, amount, reason,
+                  booking_id, gift_id, aid_grant_id)
              VALUES
-                 (:from_pool_code, :from_user_id, :to_pool_code, :to_user_id, :amount, :reason)'
+                 (:from_pool_code, :from_user_id, :to_pool_code, :to_user_id, :amount, :reason,
+                  :booking_id, :gift_id, :aid_grant_id)'
         );
 
         $statement->execute([
@@ -117,6 +122,9 @@ final class PointLedger extends BaseModel
             'to_user_id'     => $entry['to_user_id'],
             'amount'         => $entry['amount'],
             'reason'         => $entry['reason'],
+            'booking_id'     => $entry['booking_id'] ?? null,
+            'gift_id'        => $entry['gift_id'] ?? null,
+            'aid_grant_id'   => $entry['aid_grant_id'] ?? null,
         ]);
 
         return (int) $this->pdo->lastInsertId();

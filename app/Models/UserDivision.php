@@ -182,4 +182,25 @@ final class UserDivision extends BaseModel
         );
         $statement->execute(['proof' => $proofPath, 'user' => $userId]);
     }
+
+    /**
+     * The divisions a member may act in right now: the home division and any
+     * active temporary one. Browse, borrowing, donation requests and gifts all
+     * check it — "a borrower must be an active member of that division" (§6.5).
+     *
+     * @return list<int>
+     */
+    public function activeDivisionIds(int $userId): array
+    {
+        $rows = $this->select(
+            "SELECT ud.gn_division_id
+               FROM user_divisions ud
+               JOIN gn_divisions d ON d.id = ud.gn_division_id
+              WHERE ud.user_id = :user AND ud.status = 'active' AND d.status = 'active'
+              ORDER BY ud.membership_type = 'home' DESC, ud.id",
+            ['user' => $userId]
+        );
+
+        return array_map(static fn (array $row): int => (int) $row['gn_division_id'], $rows);
+    }
 }

@@ -157,6 +157,32 @@ final class Validator
     }
 
     /**
+     * A real calendar date written as YYYY-MM-DD, the format a date input
+     * posts. "2026-02-30" is refused. Range rules (not in the past, end after
+     * start) belong to the service that knows what the dates are for. An
+     * empty value passes — combine with required().
+     */
+    public function date(string $field, string $label): self
+    {
+        if ($this->skip($field) || $this->value($field) === '') {
+            return $this;
+        }
+
+        if (!self::isDate($this->value($field))) {
+            $this->errors[$field] = $label . ' must be a real date.';
+        }
+
+        return $this;
+    }
+
+    public static function isDate(string $value): bool
+    {
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $parsed !== false && $parsed->format('Y-m-d') === $value;
+    }
+
+    /**
      * @param list<string> $allowed
      */
     public function inList(string $field, string $label, array $allowed): self

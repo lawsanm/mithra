@@ -88,7 +88,7 @@ include __DIR__ . '/../../partials/header.php';
     <label class="upload-drop">
         <span class="upload-drop__glyph" aria-hidden="true">＋</span>
         <span>Upload supporting documents — helps vouching go faster</span>
-        <input class="visually-hidden" type="file" name="evidence[]" accept="image/*,application/pdf" multiple disabled>
+        <input class="visually-hidden" type="file" name="evidence[]" accept="image/jpeg,image/png,image/webp" multiple disabled>
     </label>
 
     <p class="notice notice--info">

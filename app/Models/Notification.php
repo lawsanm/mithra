@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * notifications — the Notifications screen and the nav bell.
  *
- * Display copy lives in the JSON payload written by Notifier::push().
+ * Display copy lives in the JSON payload written by Notification::push().
  */
 final class Notification extends BaseModel
 {
@@ -32,7 +32,7 @@ final class Notification extends BaseModel
                           i.id AS item_id, i.title AS item_title, d.name AS division_name
                      FROM notifications n
                 LEFT JOIN bookings b ON b.id = JSON_UNQUOTE(JSON_EXTRACT(n.payload, \'$.booking_id\'))
-                                    AND b.borrower_id = n.user_id
+                                    AND n.user_id IN (b.borrower_id, b.lender_id)
                 LEFT JOIN items bi ON bi.id = b.item_id
                 LEFT JOIN users lender ON lender.id = b.lender_id
                 LEFT JOIN gifts g ON g.id = JSON_UNQUOTE(JSON_EXTRACT(n.payload, \'$.gift_id\'))
@@ -72,12 +72,16 @@ final class Notification extends BaseModel
         return array_map(static function (array $row): array {
             $payload = json_decode((string) $row['payload'], true) ?: [];
             if ($row['booking_id'] !== null) {
-                $payload['title'] = $row['type'] === 'return_due'
-                    ? 'Return due ' . date('j M Y', strtotime($row['end_date'])) . ': ' . $row['booking_title']
-                    : $row['lender_name'] . ' accepted your request for ' . $row['booking_title'];
-                $payload['detail'] = $row['type'] === 'return_due'
-                    ? 'Return by ' . date('j M Y', strtotime($row['end_date'])) . '.'
-                    : 'View your booking for handover details.';
+                // Only these two types are re-worded from live data; every
+                // other booking notification keeps the wording it was sent
+                // with, so a decline is never titled as an acceptance.
+                if ($row['type'] === 'return_due') {
+                    $payload['title'] = 'Return due ' . date('j M Y', strtotime($row['end_date'])) . ': ' . $row['booking_title'];
+                    $payload['detail'] = 'Return by ' . date('j M Y', strtotime($row['end_date'])) . '.';
+                } elseif ($row['type'] === 'booking_accepted') {
+                    $payload['title'] = $row['lender_name'] . ' accepted your request for ' . $row['booking_title'];
+                    $payload['detail'] = 'View your booking for handover details.';
+                }
                 $payload['href'] = '/bookings/' . $row['booking_id'];
             }
             if ($row['gift_id'] !== null) {

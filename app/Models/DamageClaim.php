@@ -26,4 +26,26 @@ final class DamageClaim extends BaseModel
             ['division' => $divisionId]
         );
     }
+
+    /**
+     * Who may see a piece of damage evidence: the booking's two parties and
+     * the item's division moderator. Null when no claim carries the path.
+     *
+     * @return list<int>|null
+     */
+    public function evidenceViewers(string $path): ?array
+    {
+        $row = $this->selectOne(
+            "SELECT b.lender_id, b.borrower_id, d.moderator_id
+               FROM damage_claims c
+               JOIN bookings b     ON b.id = c.booking_id
+               JOIN items i        ON i.id = b.item_id
+               JOIN gn_divisions d ON d.id = i.gn_division_id
+              WHERE c.evidence_path = :path
+              LIMIT 1",
+            ['path' => $path]
+        );
+
+        return $row === null ? null : Booking::ids($row);
+    }
 }

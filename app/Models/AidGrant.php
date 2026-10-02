@@ -70,4 +70,25 @@ final class AidGrant extends BaseModel
             ['member' => $memberId]
         );
     }
+
+    /**
+     * Who may see aid evidence: the member who sent it and their division's
+     * moderator (the Sponsor Liaison and the Admin are checked by role).
+     * Null when no grant carries the path.
+     *
+     * @return list<int>|null
+     */
+    public function evidenceViewers(string $path): ?array
+    {
+        $row = $this->selectOne(
+            'SELECT g.member_id, d.moderator_id
+               FROM aid_grants g
+               JOIN gn_divisions d ON d.id = g.gn_division_id
+              WHERE g.evidence_path = :path
+              LIMIT 1',
+            ['path' => $path]
+        );
+
+        return $row === null ? null : Booking::ids($row);
+    }
 }
