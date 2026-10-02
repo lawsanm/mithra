@@ -141,7 +141,17 @@ final class Validator
             return $this;
         }
 
-        $number = (int) $value;
+        // Casting an oversized number silently clamps it to PHP_INT_MAX/MIN.
+        // Validate the range before casting, while preserving decimal leading zeros.
+        $digits = ltrim(ltrim($value, '-'), '0');
+        $normalized = $digits === '' ? '0' : (str_starts_with($value, '-') ? '-' : '') . $digits;
+        $number = filter_var($normalized, FILTER_VALIDATE_INT);
+
+        if ($number === false) {
+            $this->errors[$field] = $label . ' is outside the supported whole-number range.';
+
+            return $this;
+        }
 
         if ($number < $min) {
             $this->errors[$field] = sprintf('%s must be at least %d.', $label, $min);
@@ -177,9 +187,10 @@ final class Validator
 
     public static function isDate(string $value): bool
     {
-        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        return $parsed !== false && $parsed->format('Y-m-d') === $value;
+        // Check the shape first: DateTime throws on embedded null bytes and
+        // accepts year zero, which cannot be stored as a valid database date.
+        return preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $value) === 1
+            && checkdate((int) substr($value, 5, 2), (int) substr($value, 8, 2), (int) substr($value, 0, 4));
     }
 
     /**

@@ -35,7 +35,7 @@ final class BookingService
     public const TRANSITIONS = [
         'requested'         => ['awaiting_handover', 'rejected', 'cancelled', 'auto_cancelled'],
         'awaiting_handover' => ['in_progress', 'cancelled', 'auto_cancelled'],
-        'in_progress'       => ['awaiting_return', 'pending_moderator'],
+        'in_progress'       => ['awaiting_return', 'pending_moderator', 'escalated'],
         'awaiting_return'   => ['completed', 'pending_moderator', 'escalated'],
         'pending_moderator' => ['completed', 'escalated'],
         'escalated'         => ['completed', 'pending_moderator'],
@@ -238,7 +238,7 @@ final class BookingService
                 'rental_charge'      => $quote['charge'],
                 'late_buffer'        => $quote['buffer'],
                 // Rule 1 (§16.5): a moderator's own booking goes to the Admin if it is ever disputed.
-                'moderator_involved' => $moderator !== null && in_array($moderator, [$borrowerId, (int) $item['owner_id']], true),
+                'moderator_involved' => $moderator !== null && in_array((int) $moderator, [$borrowerId, (int) $item['owner_id']], true),
                 'message'            => $message === '' ? null : $message,
             ]);
 
@@ -279,6 +279,20 @@ final class BookingService
             }
 
             $this->items->lockRow((int) $booking['item_id']);
+
+            // A request does not reserve the listing or its calendar. Recheck
+            // eligibility under the item lock before taking any points.
+            if ($booking['listing_type'] !== 'rental' || !in_array($booking['item_status'], ['active', 'borrowed'], true)) {
+                throw ValidationException::field('form', 'This listing is no longer available to borrow.');
+            }
+
+            if (!in_array((int) $booking['gn_division_id'], $this->memberships->activeDivisionIds((int) $booking['borrower_id']), true)) {
+                throw ValidationException::field('form', 'The borrower is no longer an active member of this GN division.');
+            }
+
+            if ($this->availability->isBlocked((int) $booking['item_id'], (string) $booking['start_date'], (string) $booking['end_date'])) {
+                throw ValidationException::field('form', 'Some of these dates are now blocked on your calendar.');
+            }
 
             if ($this->bookings->countOverlapping(
                 (int) $booking['item_id'],

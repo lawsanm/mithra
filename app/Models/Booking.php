@@ -324,8 +324,9 @@ final class Booking extends BaseModel
         return $this->selectOne(
             'SELECT b.id, b.item_id, b.borrower_id, b.lender_id, b.start_date, b.end_date, b.rate_basis,
                     b.agreed_rate, b.rental_charge, b.late_buffer, b.moderator_involved, b.status,
-                    b.requested_at, b.accepted_at, b.closed_at,
-                    i.title AS item_title, i.declared_value, i.daily_rate, i.monthly_rate, i.gn_division_id
+                    b.requested_at, b.accepted_at, b.closed_at, b.overdue_flagged_at,
+                    i.title AS item_title, i.declared_value, i.daily_rate, i.monthly_rate, i.gn_division_id,
+                    i.status AS item_status, i.listing_type
                FROM bookings b JOIN items i ON i.id = b.item_id
               WHERE b.id = :id
               FOR UPDATE',
@@ -504,10 +505,15 @@ final class Booking extends BaseModel
         return $statement->fetchAll();
     }
 
-    public function markOverdueFlagged(int $id): void
+    public function markOverdueFlagged(int $id): bool
     {
-        $statement = $this->pdo->prepare('UPDATE bookings SET overdue_flagged_at = NOW() WHERE id = :id');
+        $statement = $this->pdo->prepare(
+            "UPDATE bookings SET overdue_flagged_at = NOW()
+              WHERE id = :id AND status = 'in_progress' AND overdue_flagged_at IS NULL"
+        );
         $statement->execute(['id' => $id]);
+
+        return $statement->rowCount() === 1;
     }
 
     /** Items this member borrowed that are past their return date and not back yet. */

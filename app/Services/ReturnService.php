@@ -45,7 +45,9 @@ final class ReturnService
         private LedgerService $ledger,
         private PhotoStore $photos,
         private Notification $notifications,
-        private TrustScoreService $trust
+        private TrustScoreService $trust,
+        private Dispute $disputes,
+        private User $users
     ) {
     }
 
@@ -298,20 +300,34 @@ final class ReturnService
         $flagged = 0;
 
         foreach ($this->bookings->unreturnedPast(self::NOT_RETURNED_HOURS, true) as $row) {
-            $this->bookings->markOverdueFlagged((int) $row['id']);
-            $moderator = $this->divisions->findBasic((int) $row['gn_division_id'])['moderator_id'] ?? null;
+            $this->pdo->beginTransaction();
 
-            foreach (array_filter([$moderator, (int) $row['lender_id'], (int) $row['borrower_id']]) as $who) {
-                $this->notifications->push((int) $who, 'return_overdue', [
-                    'title'      => 'Not returned: ' . $row['item_title'],
-                    'detail'     => 'More than 72 hours past the return date. At 7 days a total-loss claim opens with the moderator.',
-                    'icon'       => 'alert-triangle',
-                    'href'       => $who === $moderator ? '/moderator/cases' : '/bookings/' . $row['id'],
-                    'booking_id' => (int) $row['id'],
-                ]);
+            try {
+                $booking = $this->unreturnedBooking((int) $row['id']);
+
+                if ($booking !== null && $this->bookings->markOverdueFlagged((int) $booking['id'])) {
+                    $moderator = (int) ($this->divisions->findBasic((int) $booking['gn_division_id'])['moderator_id'] ?? 0);
+
+                    foreach (array_unique(array_filter([$moderator, (int) $booking['lender_id'], (int) $booking['borrower_id']])) as $who) {
+                        $this->notifications->push($who, 'return_overdue', [
+                            'title'      => 'Not returned: ' . $booking['item_title'],
+                            'detail'     => 'More than 72 hours past the return date. At 7 days a total-loss claim opens for review.',
+                            'icon'       => 'alert-triangle',
+                            'href'       => $who === $moderator && !(bool) $booking['moderator_involved']
+                                ? '/moderator/cases' : '/bookings/' . $booking['id'],
+                            'booking_id' => (int) $booking['id'],
+                        ]);
+                    }
+
+                    $flagged++;
+                }
+
+                $this->pdo->commit();
+            } catch (Throwable $exception) {
+                $this->pdo->rollBack();
+
+                throw $exception;
             }
-
-            $flagged++;
         }
 
         $opened = 0;
@@ -320,19 +336,39 @@ final class ReturnService
             $this->pdo->beginTransaction();
 
             try {
-                $booking = $this->bookings->lockForUpdate((int) $row['id']);
+                $booking = $this->unreturnedBooking((int) $row['id']);
 
-                if ($booking !== null && $booking['status'] === 'in_progress'
-                    && $this->bookings->move((int) $booking['id'], 'in_progress', 'pending_moderator')) {
-                    $this->claims->open([
+                if ($booking !== null) {
+                    $status = (bool) $booking['moderator_involved'] ? 'escalated' : 'pending_moderator';
+                    $this->bookings->move((int) $booking['id'], 'in_progress', $status);
+                    $claimId = $this->claims->open([
                         'booking_id'       => (int) $booking['id'],
                         'raised_by'        => (int) $booking['lender_id'],
                         'severity'         => 'total_loss',
                         'description'      => 'Opened automatically: the item was not returned within 7 days of the return date.',
                         'proposed_penalty' => (int) $booking['declared_value'],
                         'track'            => 'moderator',
-                        'status'           => 'pending_moderator',
+                        'status'           => $status,
                     ]);
+
+                    if ($status === 'escalated') {
+                        $disputeId = $this->disputes->open(
+                            (int) $booking['id'],
+                            $claimId,
+                            (int) $booking['lender_id'],
+                            'Automatic total-loss claim on a booking the division moderator is party to.'
+                        );
+
+                        foreach ($this->users->idsInRole('admin') as $admin) {
+                            $this->notifications->push($admin, 'dispute_opened', [
+                                'title'  => 'Total-loss claim: ' . $booking['item_title'],
+                                'detail' => 'The item is over 7 days late. The division moderator is a party, so an Admin must review it.',
+                                'icon'   => 'alert-triangle',
+                                'href'   => '/admin/disputes/' . $disputeId,
+                            ]);
+                        }
+                    }
+
                     $opened++;
                 }
 
@@ -345,6 +381,19 @@ final class ReturnService
         }
 
         return sprintf('%d flagged as not returned, %d total-loss claims opened', $flagged, $opened);
+    }
+
+    /** Recheck a scheduled candidate after locking it; a return may have arrived meanwhile. */
+    private function unreturnedBooking(int $bookingId): ?array
+    {
+        $booking = $this->bookings->lockForUpdate($bookingId);
+
+        if ($booking === null || $booking['status'] !== 'in_progress'
+            || ($this->records->forBooking($bookingId, true)['return_at'] ?? null) !== null) {
+            return null;
+        }
+
+        return $booking;
     }
 
     /**

@@ -31,6 +31,10 @@ final class PasswordPolicy
             return [$field => 'Password is required.'];
         }
 
+        if (str_contains($password, "\0")) {
+            return [$field => 'Password must not contain null characters.'];
+        }
+
         if (mb_strlen($password) < self::MIN_LENGTH) {
             return [$field => sprintf('Choose a password of at least %d characters.', self::MIN_LENGTH)];
         }

@@ -135,18 +135,12 @@ final class LedgerService
             throw new LogicException('A transfer needs two different wallets.');
         }
 
-        $this->lockPools([self::WALLETS_POOL]);
-
-        $balances = [];
-        foreach ([min($fromId, $toId), max($fromId, $toId)] as $id) {
-            $balance = $this->wallets->lockBalance($id);
-
+        $balances = $this->lockMemberBalances([$fromId, $toId]);
+        foreach ($balances as $id => $balance) {
             if ($balance === null) {
                 $this->wallets->openFor($id);
-                $balance = $this->wallets->lockBalance($id) ?? 0;
+                $balances[$id] = 0;
             }
-
-            $balances[$id] = $balance;
         }
 
         if ($balances[$fromId] < $amount) {
@@ -185,15 +179,12 @@ final class LedgerService
             return ['paid' => 0, 'covered' => 0];
         }
 
-        $this->lockPools(['reserve', self::WALLETS_POOL]);
-
-        // Same id order as memberToMember(), so the two never deadlock.
-        $balances = [];
-        foreach ([min($payerId, $payeeId), max($payerId, $payeeId)] as $id) {
-            $balances[$id] = $this->wallets->lockBalance($id) ?? 0;
+        if ($payerId === $payeeId) {
+            throw new LogicException('A charge needs two different wallets.');
         }
 
-        $split = self::shortfallSplit($amount, $balances[$payerId]);
+        $balances = $this->lockMemberBalances([$payerId, $payeeId], ['reserve']);
+        $split = self::shortfallSplit($amount, $balances[$payerId] ?? 0);
 
         if ($split['paid'] > 0) {
             $this->memberToMember($payerId, $payeeId, $split['paid'], $reason, ['booking_id' => $bookingId]);
@@ -226,6 +217,29 @@ final class LedgerService
     }
 
     /**
+     * Lock before a business rule reads a balance or transfer limit. Callers
+     * supply every pool they will use, so pools always precede wallets.
+     *
+     * @param list<int> $memberIds
+     * @param list<string> $poolCodes
+     * @return array<int, ?int> null means the member has no wallet yet
+     */
+    public function lockMemberBalances(array $memberIds, array $poolCodes = []): array
+    {
+        $this->requireTransaction();
+        $this->lockPools([...$poolCodes, self::WALLETS_POOL]);
+        $memberIds = array_values(array_unique($memberIds));
+        sort($memberIds, SORT_NUMERIC);
+
+        $balances = [];
+        foreach ($memberIds as $memberId) {
+            $balances[$memberId] = $this->wallets->lockBalance($memberId);
+        }
+
+        return $balances;
+    }
+
+    /**
      * Lock pool rows in one fixed order (by code), then the wallet, so two
      * movements can never wait on each other's locks.
      *
@@ -248,13 +262,18 @@ final class LedgerService
 
     private function guard(int $amount): void
     {
-        if (!$this->pdo->inTransaction()) {
-            throw new LogicException('Point movements must run inside the caller\'s transaction.');
-        }
+        $this->requireTransaction();
 
         // One point is the indivisible unit, and a movement of nothing is a bug (§7.1).
         if ($amount < 1) {
             throw new LogicException('A point movement must move at least one point.');
+        }
+    }
+
+    private function requireTransaction(): void
+    {
+        if (!$this->pdo->inTransaction()) {
+            throw new LogicException('Point movements must run inside the caller\'s transaction.');
         }
     }
 }

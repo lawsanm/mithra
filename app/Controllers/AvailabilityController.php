@@ -15,7 +15,7 @@ final class AvailabilityController extends Controller
     {
         parent::__construct($pdo);
 
-        $this->service = new AvailabilityService(new Item($pdo), new ItemAvailabilityBlock($pdo), new Booking($pdo));
+        $this->service = new AvailabilityService($pdo, new Item($pdo), new ItemAvailabilityBlock($pdo), new Booking($pdo));
     }
 
     /**

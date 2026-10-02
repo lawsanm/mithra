@@ -114,8 +114,8 @@ final class GiftService
         $this->pdo->beginTransaction();
 
         try {
-            // The lock first: the caps below are read under it (§11.1).
-            $balance = $this->wallets->lockBalance($senderId) ?? 0;
+            // Match every ledger movement: pools first, then wallets in id order.
+            $balance = $this->ledger->lockMemberBalances([$senderId, $recipientId])[$senderId] ?? 0;
 
             $this->checkPeople($senderId, $recipientId);
 

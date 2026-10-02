@@ -19,9 +19,6 @@ final class AccountClosureService
 {
     public const TYPES = ['standard', 'parting_gift'];
 
-    /** Aid grant states that still need the member's account. */
-    private const OPEN_GRANT_STATES = ['requested', 'vouched', 'info_requested', 'approved', 'disbursed'];
-
     public function __construct(
         private PDO $pdo,
         private User $users,
@@ -65,8 +62,7 @@ final class AccountClosureService
             $blockers[] = 'You are part of a damage claim that is not settled yet.';
         }
 
-        $grant = $this->grants->activeForMember($userId);
-        if ($grant !== null && in_array($grant['status'], self::OPEN_GRANT_STATES, true)) {
+        if ($this->grants->countLiveFor($userId) > 0) {
             $blockers[] = 'You have an open aid grant.';
         }
 
@@ -115,7 +111,11 @@ final class AccountClosureService
         $this->pdo->beginTransaction();
 
         try {
-            $balance = $this->wallets->lockBalance($userId) ?? 0;
+            $balance = $this->ledger->lockMemberBalances([$userId], [$pool])[$userId] ?? 0;
+            $blockers = $this->blockers($userId);
+            if ($blockers !== []) {
+                throw ValidationException::field('form', implode(' ', $blockers));
+            }
 
             if ($balance > 0) {
                 $this->ledger->memberToPool($userId, $pool, $balance, $reason);

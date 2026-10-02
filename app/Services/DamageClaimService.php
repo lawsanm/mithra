@@ -431,11 +431,11 @@ final class DamageClaimService
         }
 
         if ($track === 'moderator' && $moderator !== null) {
-            $this->notifications->push($moderator, 'claim_raised', $base + [
+            $this->notifications->push((int) $moderator, 'claim_raised', [
                 'title'  => 'New damage case: ' . $booking['item_title'],
                 'detail' => 'Meet both members and record the outcome.',
                 'href'   => '/moderator/cases',
-            ]);
+            ] + $base);
         }
     }
 

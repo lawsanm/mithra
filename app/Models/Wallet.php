@@ -48,7 +48,7 @@ final class Wallet extends BaseModel
                         WHEN l.from_pool_code = 'in_flight' THEN -l.amount ELSE 0 END), 0)
                FROM point_ledger l JOIN bookings b ON b.id = l.booking_id
               WHERE b.borrower_id = :member
-                AND b.status IN ('accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator')",
+                AND b.status IN ('accepted','awaiting_handover','in_progress','awaiting_return','pending_moderator','escalated')",
             ['member' => $memberId]
         );
     }

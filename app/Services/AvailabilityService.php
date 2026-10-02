@@ -16,6 +16,7 @@ final class AvailabilityService
     public const NOTE_MAX = 255;
 
     public function __construct(
+        private PDO $pdo,
         private Item $items,
         private ItemAvailabilityBlock $blocks,
         private Booking $bookings
@@ -71,10 +72,12 @@ final class AvailabilityService
      */
     public function create(int $itemId, int $ownerId, string $start, string $end, string $note): int
     {
-        $this->ownedItemOrFail($itemId, $ownerId);
-        $this->check($itemId, $start, $end, $note, 0);
+        return $this->withItemLock($itemId, function () use ($itemId, $ownerId, $start, $end, $note): int {
+            $this->ownedItemOrFail($itemId, $ownerId);
+            $this->check($itemId, $start, $end, $note, 0);
 
-        return $this->blocks->create($itemId, $start, $end, $note === '' ? null : $note);
+            return $this->blocks->create($itemId, $start, $end, $note === '' ? null : $note);
+        });
     }
 
     /**
@@ -84,11 +87,48 @@ final class AvailabilityService
      */
     public function update(int $blockId, int $ownerId, string $start, string $end, string $note): int
     {
-        $block = $this->ownedBlockOrFail($blockId, $ownerId);
-        $this->check((int) $block['item_id'], $start, $end, $note, $blockId);
-        $this->blocks->update($blockId, $start, $end, $note === '' ? null : $note);
+        $itemId = $this->itemOf($blockId, $ownerId);
 
-        return (int) $block['item_id'];
+        return $this->withItemLock($itemId, function () use ($itemId, $blockId, $ownerId, $start, $end, $note): int {
+            $this->ownedItemOrFail($itemId, $ownerId);
+            $this->ownedBlockOrFail($blockId, $ownerId);
+            $this->check($itemId, $start, $end, $note, $blockId);
+            $this->blocks->update($blockId, $start, $end, $note === '' ? null : $note);
+
+            return $itemId;
+        });
+    }
+
+    /**
+     * Booking acceptance takes the same item lock. Check and save together,
+     * so concurrent bookings and calendar edits cannot reserve the same day.
+     *
+     * @param callable(): int $save
+     */
+    private function withItemLock(int $itemId, callable $save): int
+    {
+        $ownsTransaction = !$this->pdo->inTransaction();
+
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $this->items->lockRow($itemId);
+            $result = $save();
+
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+
+            return $result;
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     /**

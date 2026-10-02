@@ -194,4 +194,24 @@ foreach (['40', '12-5', '100 !!', '#'] as $text) {
 check((new Validator(['f' => '']))->words('f', 'Field')->personName('f', 'Field')->passes(), 'An empty optional field must pass.');
 $checks++;
 
+// Malformed form values must be validation errors, never exceptions or clamped IDs.
+foreach (["2026-10-02\0suffix", '0000-01-01', '2026-02-30', "2026-10-02\n", '2026-1-02'] as $date) {
+    check(!Validator::isDate($date), 'Malformed calendar dates must be refused.');
+    $checks++;
+}
+foreach (['2024-02-29', '2026-10-02'] as $date) {
+    check(Validator::isDate($date), 'Real calendar dates must be accepted.');
+    $checks++;
+}
+foreach ([(string) PHP_INT_MAX . '0', (string) PHP_INT_MIN . '0'] as $number) {
+    check(!(new Validator(['id' => $number]))->integer('id', 'ID', PHP_INT_MIN)->passes(), 'Out-of-range integers must be refused.');
+    $checks++;
+}
+foreach (['00012', '0', '-0', (string) PHP_INT_MAX, (string) PHP_INT_MIN] as $number) {
+    check((new Validator(['id' => $number]))->integer('id', 'ID', PHP_INT_MIN)->passes(), 'Representable integers must be accepted.');
+    $checks++;
+}
+check(isset(PasswordPolicy::errors("long\0password", "long\0password")['password']), 'Null bytes must be rejected before bcrypt throws.');
+$checks++;
+
 echo 'Passed: ' . $checks . " identity checks — normalisation, passwords, reset secrets, throttling, sessions and refusals.\n";

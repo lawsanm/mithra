@@ -31,7 +31,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-$requested = (string) ($_GET['p'] ?? '');
+$requested = is_string($_GET['p'] ?? null) ? $_GET['p'] : '';
 
 $store = new PhotoStore(dirname(__DIR__) . '/storage/uploads');
 
@@ -129,7 +129,27 @@ function photo_viewer_allowed(?array $viewers, int $userId, bool $byRole): bool
 $userId = (int) ($_SESSION['user_id'] ?? 0);
 $role   = (string) ($_SESSION['role'] ?? '');
 
-if ($userId < 1 || !photo_is_visible($requested, $userId, $role)) {
+// This endpoint bypasses Router, so it must apply the same session rules before
+// accepting a cached role or granting access to a draft or private document.
+$allowed = false;
+
+try {
+    if ($userId > 0) {
+        $ended = (new SessionMiddleware())->handle(
+            (new User(Database::connection()))->sessionState($userId),
+            $role,
+            isset($_SESSION['password_stamp']) ? (string) $_SESSION['password_stamp'] : null,
+            isset($_SESSION['last_seen']) ? (int) $_SESSION['last_seen'] : null,
+            time()
+        );
+
+        $allowed = $ended === null && photo_is_visible($requested, $userId, $role);
+    }
+} catch (Throwable $exception) {
+    error_log((string) $exception);
+}
+
+if (!$allowed) {
     http_response_code(404);
 
     exit;
@@ -140,6 +160,6 @@ if ($userId < 1 || !photo_is_visible($requested, $userId, $role)) {
 header('Content-Type: image/jpeg');
 header('X-Content-Type-Options: nosniff');
 header('Content-Length: ' . (string) filesize($absolute));
-header('Cache-Control: private, max-age=86400');
+header('Cache-Control: private, no-store');
 
 readfile($absolute);

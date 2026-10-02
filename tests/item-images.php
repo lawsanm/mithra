@@ -91,6 +91,23 @@ try {
         imageCheck(str_contains($body, 'item-photos%2Fdemo%2F'), $path . ': missing catalog images');
         $checks += 2;
     }
+
+    // Photo requests bypass the router; stale sessions must still be refused.
+    $state = (new User($pdo))->sessionState(4);
+    $valid = ['user_id' => 4, 'role' => 'member', 'password_stamp' => $state['password_changed_at'], 'last_seen' => time()];
+    foreach ([
+        ['last_seen' => time() - SessionMiddleware::IDLE_SECONDS - 1],
+        ['password_stamp' => 'stale-password-stamp'],
+        ['role' => 'admin'],
+        ['user_id' => PHP_INT_MAX],
+    ] as $stale) {
+        session_start();
+        $_SESSION = $stale + $valid;
+        session_write_close();
+        [$headers] = imageRequest($base . '/photo.php?p=item-photos%2Fdemo%2Fcordless-drill.jpg', $cookie);
+        imageCheck(str_contains($headers[0] ?? '', '404'), 'A stale session must not access stored photos');
+        $checks++;
+    }
 } finally {
     if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();

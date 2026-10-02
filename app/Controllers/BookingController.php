@@ -30,7 +30,7 @@ final class BookingController extends Controller
             new GnDivision($pdo),
             $wallets,
             new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), $wallets),
-            new AvailabilityService(new Item($pdo), new ItemAvailabilityBlock($pdo), new Booking($pdo)),
+            new AvailabilityService($pdo, new Item($pdo), new ItemAvailabilityBlock($pdo), new Booking($pdo)),
             new Notification($pdo)
         );
     }
@@ -65,7 +65,9 @@ final class BookingController extends Controller
             new LedgerService($pdo, new PointLedger($pdo), new PointPool($pdo), $wallets),
             $photos,
             new Notification($pdo),
-            TrustController::service($pdo)
+            TrustController::service($pdo),
+            new Dispute($pdo),
+            new User($pdo)
         );
     }
 

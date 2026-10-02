@@ -63,8 +63,18 @@ final class PhotoStore
 
         $stored = [];
 
-        foreach ($usable as $upload) {
-            $stored[] = $this->storeOne($upload, $folder, $field, $stamp);
+        try {
+            foreach ($usable as $upload) {
+                $stored[] = $this->storeOne($upload, $folder, $field, $stamp);
+            }
+        } catch (Throwable $exception) {
+            // The caller never receives paths when a later file fails, so it
+            // cannot clean them up. Treat the upload batch as one operation.
+            foreach ($stored as $path) {
+                $this->delete($path);
+            }
+
+            throw $exception;
         }
 
         return $stored;
@@ -178,6 +188,7 @@ final class PhotoStore
         imagedestroy($image);
 
         if ($written === false) {
+            @unlink($absolutePath);
             throw ValidationException::field($field, 'Could not save the photo. Tell an administrator.');
         }
 
