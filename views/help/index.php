@@ -6,14 +6,12 @@ declare(strict_types=1);
  * Help & FAQ. Figma: "Help / FAQ" (97:241).
  *
  * @var string $query     current help search term
- * @var array  $faqs      question, answer, open
  * @var array  $moderator name and contact line for the division moderator
  */
 
-// The questions are the help page's own content; the moderator comes from the controller.
-$query ??= '';
-
-$faqs ??= [
+// The questions are the help page's own content; the search term and the
+// moderator come from the controller.
+$faqs = [
     [
         'question' => 'How do points work? Can I buy or cash out points?',
         'answer'   => 'Points are earned by lending, donating and receiving gifts, and spent by '
@@ -50,7 +48,14 @@ $faqs ??= [
     ],
 ];
 
-$moderator ??= ['line' => 'Your GN division moderator can help with verification, disputes and anything division-specific.', 'phone' => '', 'name' => ''];
+// A search shows only the questions that mention the term, opened.
+if ($query !== '') {
+    $faqs = array_values(array_filter(
+        $faqs,
+        static fn (array $faq): bool => mb_stripos($faq['question'] . ' ' . $faq['answer'], $query) !== false
+    ));
+    $faqs = array_map(static fn (array $faq): array => ['open' => true] + $faq, $faqs);
+}
 
 $pageTitle = 'Help & FAQ';
 $navActive = '';
@@ -75,6 +80,9 @@ include __DIR__ . '/../../partials/header.php';
 </form>
 
 <div class="row-list">
+    <?php if ($faqs === []): ?>
+        <p class="empty-state__body">No help article mentions “<?= e($query) ?>”. Try another word, or ask your moderator below.</p>
+    <?php endif; ?>
     <?php foreach ($faqs as $faq): ?>
         <details class="faq"<?= $faq['open'] ? ' open' : '' ?>>
             <summary class="faq__question"><?= e($faq['question']) ?></summary>

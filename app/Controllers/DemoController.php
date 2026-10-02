@@ -196,7 +196,7 @@ final class DemoController extends Controller
     {
         $moderator = $this->userId() > 0 ? (new User($this->pdo))->homeModerator($this->userId()) : null;
 
-        return ['moderator' => [
+        return ['query' => is_string($_GET['q'] ?? null) ? trim($_GET['q']) : '', 'moderator' => [
             'line'  => ($moderator === null ? 'Your GN division moderator' : 'Your moderator, ' . $moderator['name'] . ',')
                 . ' can help with verification, disputes and anything division-specific.',
             'phone' => $moderator['phone'] ?? '',
