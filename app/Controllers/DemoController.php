@@ -30,13 +30,11 @@ final class DemoController extends Controller
             (new SponsorScreenController($this->pdo))->show($view, $params);
             return;
         }
-        $id = (int) ($params['id'] ?? 0);
         $data = match ($view) {
             'dashboard/index' => $this->dashboard(),
             'wallet/index' => $this->wallet(),
             'notifications/index', 'sponsor/notifications/index' => $this->notifications(),
             'transparency/index' => $this->transparency(),
-            'aid-grants/show' => $this->aidGrant($id),
             default           => [],
         };
 
@@ -189,41 +187,6 @@ final class DemoController extends Controller
                 'amount' => number_format((int) $row['points']) . ' pts',
                 'date' => date('j M Y', strtotime($row['recorded_at'])),
             ], (new Sponsor($this->pdo))->recentContributions())];
-    }
-
-    private function aidGrant(int $id): ?array
-    {
-        $records = (new AidGrant($this->pdo))->records($this->userId());
-        if ($id > 0 && $this->role() === 'moderator') {
-            $division = (new GnDivision($this->pdo))->moderatedBy($this->userId());
-            $records = $division === null ? $records : (new AidGrant($this->pdo))->records(null, $division);
-        }
-        $row = null;
-        foreach ($records as $record) {
-            if (($id > 0 && (int) $record['id'] === $id)
-                || ($id === 0 && !in_array($record['status'], ['closed', 'expired'], true))) {
-                $row = $record;
-                break;
-            }
-        }
-        if ($id > 0 && $row === null) {
-            return null;
-        }
-        return ['grant' => $row === null ? null : [
-                'reference' => 'Aid grant #A-' . $row['id'], 'stage' => AidGrant::stage($row['status']),
-                'badge' => ['info', 'i', ucfirst(str_replace('_', ' ', $row['status']))],
-                'facts' => [
-                    ['label' => 'Member', 'value' => $row['member_name']],
-                    ['label' => 'Purpose', 'value' => $row['purpose']],
-                    ['label' => 'Amount requested', 'value' => number_format((int) $row['requested_amount']) . ' pts'],
-                    ['label' => 'Amount approved', 'value' => $row['approved_amount'] === null ? 'Not approved' : $row['approved_amount'] . ' pts'],
-                    ['label' => 'Requested', 'value' => date('j M Y', strtotime($row['created_at']))],
-                    ['label' => 'Division', 'value' => $row['division_name']],
-                ], 'notice' => 'Status: ' . ucfirst(str_replace('_', ' ', $row['status'])),
-            ], 'vouch' => ['initials' => User::initials((string) ($row['moderator_name'] ?? '')),
-                'line' => empty($row['vouched_at']) ? 'Awaiting moderator vouch' : 'Vouched by ' . $row['moderator_name'] . ' · ' . date('j M Y', strtotime($row['vouched_at'])),
-                'quote' => (string) ($row['moderator_vouch'] ?? ''),
-                'badge' => empty($row['vouched_at']) ? 'Pending' : 'Vouch recorded'], 'cooling' => ''];
     }
 
     private function dueNote(int $dueTomorrow): string

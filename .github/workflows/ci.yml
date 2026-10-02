@@ -69,6 +69,7 @@ jobs:
           php tests/ratings.php
           php tests/disputes.php
           php tests/gifts.php
+          php tests/aid-grants.php
 
       - name: Every migration applies to a clean MySQL 8
         run: |
