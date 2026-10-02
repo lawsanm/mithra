@@ -40,6 +40,11 @@ include __DIR__ . '/../../../partials/header.php';
 <form class="form-card" method="post" action="<?= base_url() ?>/sponsor-liaison/sponsors" novalidate>
     <?= csrf_field() ?>
 
+    <div class="field">
+        <button class="btn btn--ghost" type="button" data-fill-sponsor-demo hidden>Fill demo data</button>
+        <p class="field__hint" data-sponsor-demo-status role="status"></p>
+    </div>
+
     <?php $contactRequired = true; include __DIR__ . '/../../../partials/sponsor-profile-fields.php'; ?>
 
     <fieldset class="form-card__section">
@@ -133,4 +138,4 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 </form>
 
-<?php include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php $pageScripts = ['sponsor-demo.js']; include __DIR__ . '/../../../partials/footer.php'; ?>
