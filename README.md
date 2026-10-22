@@ -2,6 +2,8 @@
 
 A community lending and sharing project built with plain PHP, MySQL, HTML, CSS and JavaScript. No framework or package installation is needed.
 
+> Mithra is an interim demonstration and is not ready for production use.
+
 ## Run on Windows
 
 1. Install XAMPP with PHP 8.1 or newer. The default location is `C:\xampp`.
