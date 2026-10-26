@@ -165,6 +165,8 @@ return [
         '/admin/divisions'    => ['AdminController', 'createDivision'],
         '/admin/divisions/{id}'          => ['AdminController', 'updateDivision'],
         '/admin/divisions/{id}/archive'  => ['AdminController', 'archiveDivision'],
+        '/admin/disaster/activate'       => ['AdminController', 'activateDisaster'],
+        '/admin/disaster/deactivate'     => ['AdminController', 'deactivateDisaster'],
         '/moderator/verifications/{id}/approve' => ['ModerationController', 'approve'],
         '/moderator/verifications/{id}/reject'  => ['ModerationController', 'reject'],
         '/moderator/listing-approvals/{id}'     => ['ListingApprovalController', 'decide'],
