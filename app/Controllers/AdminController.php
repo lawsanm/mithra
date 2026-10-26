@@ -210,6 +210,92 @@ final class AdminController extends Controller
         $this->redirect('/admin/divisions');
     }
 
+        /**
+     * POST /admin/disaster/activate
+     */
+    public function activateDisaster(): void
+    {
+        $divisionId = (int) $this->posted('division_id');
+        $type       = trim($this->posted('type'));
+        $endDate    = trim($this->posted('end_date'));
+        $notes      = trim($this->posted('notes'));
+
+        if ($divisionId <= 0) {
+            $this->flash('Please select a division to activate Disaster Mode.', 'error');
+            $this->redirect('/admin/disaster');
+            return;
+        }
+
+        $division = (new GnDivision($this->pdo))->findBasic($divisionId);
+        if ($division === null) {
+            $this->notice(404, 'Division not found', 'Return to the disaster control page to choose another.');
+            return;
+        }
+
+        if ($division['status'] === 'archived') {
+            $this->flash('Cannot activate Disaster Mode for an archived division.', 'error');
+            $this->redirect('/admin/disaster');
+            return;
+        }
+
+        if ($type === '') {
+            $this->flash('Please select a disaster type.', 'error');
+            $this->redirect('/admin/disaster');
+            return;
+        }
+
+        $until  = $endDate !== '' ? $endDate . ' 23:59:59' : null;
+        $reason = ucfirst($type) . ($notes !== '' ? ' — ' . $notes : '');
+
+        (new GnDivision($this->pdo))->setDisasterMode($divisionId, true, $until);
+
+        (new DisasterEvent($this->pdo))->execute(
+            'INSERT INTO disaster_events (gn_division_id, started_by, reason, planned_end_at)
+             VALUES (:division, :started_by, :reason, :planned_end)',
+            [
+                'division'    => $divisionId,
+                'started_by'  => $this->userId(),
+                'reason'      => $reason,
+                'planned_end' => $until,
+            ]
+        );
+
+        $this->flash('Disaster Mode activated for ' . $division['name'] . '.');
+        $this->redirect('/admin/disaster');
+    }
+
+    /**
+     * POST /admin/disaster/deactivate
+     */
+    public function deactivateDisaster(): void
+    {
+        $divisionId = (int) $this->posted('division_id');
+
+        if ($divisionId <= 0) {
+            $this->flash('Please select a division to deactivate Disaster Mode.', 'error');
+            $this->redirect('/admin/disaster');
+            return;
+        }
+
+        $division = (new GnDivision($this->pdo))->findBasic($divisionId);
+        if ($division === null) {
+            $this->notice(404, 'Division not found', 'Return to the disaster control page to choose another.');
+            return;
+        }
+
+        (new GnDivision($this->pdo))->setDisasterMode($divisionId, false, null);
+
+        (new DisasterEvent($this->pdo))->execute(
+            'UPDATE disaster_events
+                SET ended_at = CURRENT_TIMESTAMP
+              WHERE gn_division_id = :division AND ended_at IS NULL',
+            ['division' => $divisionId]
+        );
+
+        $this->flash('Disaster Mode deactivated for ' . $division['name'] . '.');
+        $this->redirect('/admin/disaster');
+    }
+
     private function divisionInput(): Validator
     {
         $validator = (new Validator($_POST))
