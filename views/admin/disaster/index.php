@@ -20,6 +20,8 @@ include __DIR__ . '/../../../partials/header.php';
     <h1 class="page-header__title">Disaster Mode control</h1>
 </header>
 
+<?php include __DIR__ . '/../../../partials/flash.php'; ?>
+
 <ul class="row-list">
     <?php foreach ($divisions as $div): ?>
         <li class="list-row">

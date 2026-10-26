@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 /**
- * Deactivate Disaster Mode modal. */
+ * Deactivate Disaster Mode modal.
+ */
 
 ?>
 <dialog aria-labelledby="modal-deactivate-disaster-title" class="modal modal--sm" id="modal-deactivate-disaster">
-    <div data-demo-form>
-        <p class="demo-note">Preview only. Saving is not available yet.</p>
+    <form method="POST" action="<?= base_url() ?>/admin/disaster/deactivate">
+        <?= csrf_field() ?>
+        <input type="hidden" name="division_id" data-modal-field="divisionId" value="">
+
         <div class="modal__head">
             <h2 class="modal__title" id="modal-deactivate-disaster-title">Deactivate Disaster Mode</h2>
             <button class="modal__close" type="button" aria-label="Close" data-modal-close>✕</button>
@@ -24,7 +27,7 @@ declare(strict_types=1);
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>
-            <button class="btn btn--primary" type="submit" disabled>Deactivate</button>
+            <button class="btn btn--primary" type="submit">Deactivate</button>
         </div>
-    </div>
+    </form>
 </dialog>
