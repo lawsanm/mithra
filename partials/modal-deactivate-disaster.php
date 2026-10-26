@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 ?>
 <dialog aria-labelledby="modal-deactivate-disaster-title" class="modal modal--sm" id="modal-deactivate-disaster">
-    <form method="POST" action="<?= base_url() ?>/admin/disaster/deactivate">
+    <form method="POST" action="<?= base_url() ?>/admin/disaster/deactivate" novalidate>
         <?= csrf_field() ?>
         <input type="hidden" name="division_id" data-modal-field="divisionId" value="">
 

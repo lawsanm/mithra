@@ -12,7 +12,7 @@ $divisions ??= [];
 
 ?>
 <dialog aria-labelledby="modal-activate-disaster-title" class="modal modal--sm" id="modal-activate-disaster">
-    <form method="POST" action="<?= base_url() ?>/admin/disaster/activate">
+    <form method="POST" action="<?= base_url() ?>/admin/disaster/activate" novalidate>
         <?= csrf_field() ?>
         <div class="modal__head">
             <h2 class="modal__title" id="modal-activate-disaster-title">Activate Disaster Mode</h2>
@@ -21,7 +21,7 @@ $divisions ??= [];
 
         <div class="field">
             <label class="field__label" for="disaster_division">Division</label>
-            <select class="input" id="disaster_division" data-modal-field="divisionId" name="division_id" required>
+            <select class="input" id="disaster_division" data-modal-field="divisionId" name="division_id">
                 <option value="">Select division...</option>
                 <?php foreach ($divisions as $d): ?>
                     <option value="<?= e((string) $d['id']) ?>"><?= e($d['name']) ?></option>
@@ -31,7 +31,7 @@ $divisions ??= [];
 
         <div class="field">
             <label class="field__label" for="disaster_type">Disaster type</label>
-            <select class="input" id="disaster_type" name="type" required>
+            <select class="input" id="disaster_type" name="type">
                 <option value="">Select type...</option>
                 <option value="flooding">Flooding</option>
                 <option value="fire">Fire</option>
