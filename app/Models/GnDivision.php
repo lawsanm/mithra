@@ -269,4 +269,22 @@ final class GnDivision extends BaseModel
             'moderator_id' => $row['moderator_id'] === null ? null : (int) $row['moderator_id'],
         ];
     }
+    /**
+     * Activate or deactivate Disaster Mode for a division.
+     */
+    public function setDisasterMode(int $id, bool $active, ?string $until = null): void
+    {
+        $this->execute(
+            'UPDATE gn_divisions
+                SET disaster_mode_active = :active,
+                    disaster_mode_until  = :until
+              WHERE id = :id',
+            [
+                'id'     => $id,
+                'active' => $active ? 1 : 0,
+                'until'  => $active ? $until : null,
+            ]
+        );
+    }
+
 }
