@@ -260,6 +260,19 @@ final class AdminController extends Controller
             ]
         );
 
+        // Notify every active sponsor and sponsor liaison.
+        $users   = new User($this->pdo);
+        $notif   = new Notification($this->pdo);
+        $payload = [
+            'title'  => 'Disaster Mode activated: ' . $division['name'],
+            'detail' => $reason . ($until !== null ? ' · planned end ' . date('j M Y', strtotime($until)) : ''),
+            'icon'   => 'alert',
+            'href'   => '/sponsor/disasters',
+        ];
+        foreach (array_merge($users->idsInRole('sponsor'), $users->idsInRole('sponsor_liaison')) as $uid) {
+            $notif->push($uid, 'disaster_alert', $payload);
+        }
+
         $this->flash('Disaster Mode activated for ' . $division['name'] . '.');
         $this->redirect('/admin/disaster');
     }
@@ -291,6 +304,19 @@ final class AdminController extends Controller
               WHERE gn_division_id = :division AND ended_at IS NULL',
             ['division' => $divisionId]
         );
+
+        // Notify every active sponsor and sponsor liaison.
+        $users   = new User($this->pdo);
+        $notif   = new Notification($this->pdo);
+        $payload = [
+            'title'  => 'Disaster Mode ended: ' . $division['name'],
+            'detail' => 'The emergency in ' . $division['name'] . ' has been resolved.',
+            'icon'   => 'check',
+            'href'   => '/sponsor/disasters',
+        ];
+        foreach (array_merge($users->idsInRole('sponsor'), $users->idsInRole('sponsor_liaison')) as $uid) {
+            $notif->push($uid, 'disaster_resolved', $payload);
+        }
 
         $this->flash('Disaster Mode deactivated for ' . $division['name'] . '.');
         $this->redirect('/admin/disaster');
