@@ -249,29 +249,15 @@ final class AdminController extends Controller
 
         (new GnDivision($this->pdo))->setDisasterMode($divisionId, true, $until);
 
-        (new DisasterEvent($this->pdo))->execute(
-            'INSERT INTO disaster_events (gn_division_id, started_by, reason, planned_end_at)
-             VALUES (:division, :started_by, :reason, :planned_end)',
-            [
-                'division'    => $divisionId,
-                'started_by'  => $this->userId(),
-                'reason'      => $reason,
-                'planned_end' => $until,
-            ]
-        );
+        $eventId = (new DisasterEvent($this->pdo))->create($divisionId, $this->userId(), $reason, $until);
 
-        // Notify every active sponsor and sponsor liaison.
-        $users   = new User($this->pdo);
-        $notif   = new Notification($this->pdo);
-        $payload = [
-            'title'  => 'Disaster Mode activated: ' . $division['name'],
-            'detail' => $reason . ($until !== null ? ' · planned end ' . date('j M Y', strtotime($until)) : ''),
-            'icon'   => 'alert',
-            'href'   => '/sponsor/disasters',
-        ];
-        foreach (array_merge($users->idsInRole('sponsor'), $users->idsInRole('sponsor_liaison')) as $uid) {
-            $notif->push($uid, 'disaster_alert', $payload);
-        }
+        $this->notifyDisasterActors(
+            $eventId,
+            'disaster_alert',
+            'Disaster Mode activated: ' . $division['name'],
+            $reason . ($until !== null ? ' · planned end ' . date('j M Y', strtotime($until)) : ''),
+            'alert'
+        );
 
         $this->flash('Disaster Mode activated for ' . $division['name'] . '.');
         $this->redirect('/admin/disaster');
@@ -296,30 +282,48 @@ final class AdminController extends Controller
             return;
         }
 
+        $events = new DisasterEvent($this->pdo);
+        $activeEvent = $events->activeForDivision($divisionId);
+
         (new GnDivision($this->pdo))->setDisasterMode($divisionId, false, null);
 
-        (new DisasterEvent($this->pdo))->execute(
-            'UPDATE disaster_events
-                SET ended_at = CURRENT_TIMESTAMP
-              WHERE gn_division_id = :division AND ended_at IS NULL',
-            ['division' => $divisionId]
-        );
+        $events->endActiveForDivision($divisionId);
 
-        // Notify every active sponsor and sponsor liaison.
-        $users   = new User($this->pdo);
-        $notif   = new Notification($this->pdo);
-        $payload = [
-            'title'  => 'Disaster Mode ended: ' . $division['name'],
-            'detail' => 'The emergency in ' . $division['name'] . ' has been resolved.',
-            'icon'   => 'check',
-            'href'   => '/sponsor/disasters',
-        ];
-        foreach (array_merge($users->idsInRole('sponsor'), $users->idsInRole('sponsor_liaison')) as $uid) {
-            $notif->push($uid, 'disaster_resolved', $payload);
-        }
+        $this->notifyDisasterActors(
+            $activeEvent === null ? null : (int) $activeEvent['id'],
+            'disaster_resolved',
+            'Disaster Mode ended: ' . $division['name'],
+            'The emergency in ' . $division['name'] . ' has been resolved.',
+            'check'
+        );
 
         $this->flash('Disaster Mode deactivated for ' . $division['name'] . '.');
         $this->redirect('/admin/disaster');
+    }
+
+    private function notifyDisasterActors(?int $eventId, string $type, string $title, string $detail, string $icon): void
+    {
+        $notifications = new Notification($this->pdo);
+        $eventPath = $eventId === null ? null : '/sponsor/disasters/' . $eventId;
+        $liaisonPath = $eventId === null ? '/sponsor-liaison/dashboard' : '/sponsor-liaison/disasters/connection?event=' . $eventId;
+
+        foreach ((new User($this->pdo))->idsInRole('sponsor') as $userId) {
+            $notifications->push($userId, $type, [
+                'title' => $title,
+                'detail' => $detail,
+                'icon' => $icon,
+                'href' => $eventPath ?? '/sponsor/notifications',
+            ]);
+        }
+
+        foreach ((new User($this->pdo))->idsInRole('sponsor_liaison') as $userId) {
+            $notifications->push($userId, $type, [
+                'title' => $title,
+                'detail' => $detail,
+                'icon' => $icon,
+                'href' => $liaisonPath,
+            ]);
+        }
     }
 
     private function divisionInput(): Validator

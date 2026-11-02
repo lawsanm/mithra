@@ -24,6 +24,23 @@ final class DisasterEvent extends BaseModel
     }
 
     /**
+     * Start one disaster period and return its id for actor links/notifications.
+     */
+    public function create(int $divisionId, int $startedBy, string $reason, ?string $plannedEndAt): int
+    {
+        return $this->insert(
+            'INSERT INTO disaster_events (gn_division_id, started_by, reason, planned_end_at)
+             VALUES (:division, :started_by, :reason, :planned_end)',
+            [
+                'division' => $divisionId,
+                'started_by' => $startedBy,
+                'reason' => $reason,
+                'planned_end' => $plannedEndAt,
+            ]
+        );
+    }
+
+    /**
      * The division's current disaster, or null when Disaster Mode is off.
      *
      * @return array<string, mixed>|null
@@ -37,6 +54,17 @@ final class DisasterEvent extends BaseModel
               WHERE de.gn_division_id = :division AND de.ended_at IS NULL
               ORDER BY de.started_at DESC
               LIMIT 1',
+            ['division' => $divisionId]
+        );
+    }
+
+    /** End every open event for the division and return the number closed. */
+    public function endActiveForDivision(int $divisionId): int
+    {
+        return $this->execute(
+            'UPDATE disaster_events
+                SET ended_at = CURRENT_TIMESTAMP
+              WHERE gn_division_id = :division AND ended_at IS NULL',
             ['division' => $divisionId]
         );
     }
