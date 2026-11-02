@@ -42,7 +42,7 @@ $divisions ??= [];
         </div>
 
         <div class="field">
-            <label class="field__label" for="disaster_end">End date (optional)</label>
+            <label class="field__label" for="disaster_end">Planned end date</label>
             <input class="input" id="disaster_end" name="end_date" type="date">
         </div>
 
@@ -52,7 +52,7 @@ $divisions ??= [];
         </div>
 
         <div class="notice notice--warning notice--full">
-            Activating Disaster Mode fast-tracks aid vouching, alerts sponsors, and relaxes late fees in the affected division.
+            Sponsors will be alerted and connected with the division moderator. Relief is arranged off-platform; no points move.
         </div>
 
         <div class="modal__footer">

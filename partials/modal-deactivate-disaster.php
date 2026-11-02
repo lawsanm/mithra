@@ -19,7 +19,7 @@ declare(strict_types=1);
 
         <p class="list-row__meta u-mb-4">You are about to deactivate Disaster Mode for <strong id="deactivate-division-name" data-modal-field="divisionName"></strong>.</p>
 
-        <p class="list-row__meta u-mb-4">Late-fee relaxation and aid fast-tracking will end immediately. Existing vouched aid already in progress will not be reversed.</p>
+        <p class="list-row__meta u-mb-4">Sponsor alerts will stop. Verified contribution records remain available for CSR reporting and audit.</p>
 
         <div class="notice notice--warning notice--full">
             This action is logged and visible to sponsors and moderators.

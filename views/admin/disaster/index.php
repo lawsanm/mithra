@@ -40,7 +40,7 @@ include __DIR__ . '/../../../partials/header.php';
 </ul>
 
 <div class="notice notice--info notice--full">
-    Disaster Mode fast-tracks aid vouching, alerts sponsors, and relaxes late fees in the affected division. It auto-deactivates on the end date unless extended.
+    Disaster Mode alerts sponsors and connects them with the division moderator. Relief is arranged off-platform; no points move. Each activation records a planned end date.
 </div>
 
 <?php include __DIR__ . '/../../../partials/modal-activate-disaster.php'; ?>

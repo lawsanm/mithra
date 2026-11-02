@@ -215,51 +215,42 @@ final class AdminController extends Controller
      */
     public function activateDisaster(): void
     {
-        $divisionId = (int) $this->posted('division_id');
-        $type       = trim($this->posted('type'));
-        $endDate    = trim($this->posted('end_date'));
-        $notes      = trim($this->posted('notes'));
+        $validator = (new Validator($_POST))
+            ->required('division_id', 'Division')
+            ->integer('division_id', 'Division', 1)
+            ->required('type', 'Disaster type')
+            ->inList('type', 'Disaster type', array_keys(DisasterModeService::TYPES))
+            ->required('end_date', 'Planned end date')
+            ->date('end_date', 'Planned end date')
+            ->maxLength('notes', 'Notes', 220);
 
-        if ($divisionId <= 0) {
-            $this->flash('Please select a division to activate Disaster Mode.', 'error');
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
             $this->redirect('/admin/disaster');
+
             return;
         }
 
-        $division = (new GnDivision($this->pdo))->findBasic($divisionId);
-        if ($division === null) {
+        try {
+            $result = $this->disasterModeService()->activate(
+                (int) $validator->value('division_id'),
+                $this->userId(),
+                $validator->value('type'),
+                $validator->value('end_date'),
+                $validator->value('notes')
+            );
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        } catch (RecordNotFoundException $exception) {
             $this->notice(404, 'Division not found', 'Return to the disaster control page to choose another.');
+
             return;
         }
 
-        if ($division['status'] === 'archived') {
-            $this->flash('Cannot activate Disaster Mode for an archived division.', 'error');
-            $this->redirect('/admin/disaster');
-            return;
-        }
-
-        if ($type === '') {
-            $this->flash('Please select a disaster type.', 'error');
-            $this->redirect('/admin/disaster');
-            return;
-        }
-
-        $until  = $endDate !== '' ? $endDate . ' 23:59:59' : null;
-        $reason = ucfirst($type) . ($notes !== '' ? ' — ' . $notes : '');
-
-        (new GnDivision($this->pdo))->setDisasterMode($divisionId, true, $until);
-
-        $eventId = (new DisasterEvent($this->pdo))->create($divisionId, $this->userId(), $reason, $until);
-
-        $this->notifyDisasterActors(
-            $eventId,
-            'disaster_alert',
-            'Disaster Mode activated: ' . $division['name'],
-            $reason . ($until !== null ? ' · planned end ' . date('j M Y', strtotime($until)) : ''),
-            'alert'
-        );
-
-        $this->flash('Disaster Mode activated for ' . $division['name'] . '.');
+        $this->flash('Disaster Mode activated for ' . $result['division_name'] . '.');
         $this->redirect('/admin/disaster');
     }
 
@@ -350,6 +341,17 @@ final class AdminController extends Controller
     private function divisionService(): DivisionService
     {
         return new DivisionService(new GnDivision($this->pdo));
+    }
+
+    private function disasterModeService(): DisasterModeService
+    {
+        return new DisasterModeService(
+            $this->pdo,
+            new GnDivision($this->pdo),
+            new DisasterEvent($this->pdo),
+            new User($this->pdo),
+            new Notification($this->pdo)
+        );
     }
 
     // ── Dashboard ───────────────────────────────────────────────────────────
