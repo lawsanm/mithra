@@ -185,13 +185,32 @@ $reliefUrl = base_url() . '/moderator/disasters/relief';
         <div class="media__body">
             <h2 class="panel__title">Report a disaster</h2>
             <p class="panel__note">
-                Tell the Admin about a flood, landslide or fire in your division so they can activate Disaster Mode.
+                Tell the Admin about an emergency in your division so they can verify it and activate Disaster Mode.
             </p>
         </div>
-        <div class="actions panel__actions">
-            <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Report disaster</button><span class="demo-note">Not available in this demo</span></span>
-        </div>
     </div>
+    <?php if ($disaster === null): ?>
+        <form class="form-card form-card--wide" method="post" action="<?= base_url() ?>/moderator/disasters/report" novalidate>
+            <?= csrf_field() ?>
+            <div class="field">
+                <label class="field__label" for="disaster-report-type">Disaster type</label>
+                <select class="input" id="disaster-report-type" name="type">
+                    <?php foreach (DisasterModeService::TYPES as $type => $label): ?>
+                        <option value="<?= e($type) ?>"><?= e($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="field">
+                <label class="field__label" for="disaster-report-details">Incident details</label>
+                <textarea class="input" id="disaster-report-details" name="details" rows="3"></textarea>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn btn--ghost">Report disaster</button>
+            </div>
+        </form>
+    <?php else: ?>
+        <p class="panel__note">Disaster Mode is active in this division.</p>
+    <?php endif; ?>
 </section>
 
 <?php $pageScripts = ['confirm.js']; ?>
