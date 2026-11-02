@@ -817,6 +817,7 @@ final class AdminController extends Controller
                 'date_changes' => $changesByEvent[(int) $row['id']] ?? [],
             ], $eventRows),
             'disasterReports' => array_map(static fn (array $row): array => [
+                'id' => (int) $row['id'],
                 'title' => $row['title'],
                 'detail' => $row['detail'],
                 'reported_at' => date('j M Y, H:i', strtotime($row['created_at'])),
