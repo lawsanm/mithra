@@ -188,27 +188,29 @@ $reliefUrl = base_url() . '/moderator/disasters/relief';
                 Tell the Admin about an emergency in your division so they can verify it and activate Disaster Mode.
             </p>
         </div>
-        <?php if ($disaster === null): ?>
-        <form method="post" action="<?= base_url() ?>/moderator/disasters/report" class="panel__actions" novalidate>
+    </div>
+    <?php if ($disaster === null): ?>
+        <form class="form-card form-card--wide" method="post" action="<?= base_url() ?>/moderator/disasters/report" novalidate>
             <?= csrf_field() ?>
-            <label class="field">
-                <span class="field__label">Disaster type</span>
-                <select name="type">
+            <div class="field">
+                <label class="field__label" for="disaster-report-type">Disaster type</label>
+                <select class="input" id="disaster-report-type" name="type">
                     <?php foreach (DisasterModeService::TYPES as $type => $label): ?>
                         <option value="<?= e($type) ?>"><?= e($label) ?></option>
                     <?php endforeach; ?>
                 </select>
-            </label>
-            <label class="field">
-                <span class="field__label">Incident details</span>
-                <textarea name="details" rows="3"></textarea>
-            </label>
-            <button type="submit" class="btn btn--ghost">Report disaster</button>
+            </div>
+            <div class="field">
+                <label class="field__label" for="disaster-report-details">Incident details</label>
+                <textarea class="input" id="disaster-report-details" name="details" rows="3"></textarea>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn btn--ghost">Report disaster</button>
+            </div>
         </form>
-        <?php else: ?>
-            <p class="panel__actions">Disaster Mode is active in this division.</p>
-        <?php endif; ?>
-    </div>
+    <?php else: ?>
+        <p class="panel__note">Disaster Mode is active in this division.</p>
+    <?php endif; ?>
 </section>
 
 <?php $pageScripts = ['confirm.js']; ?>
