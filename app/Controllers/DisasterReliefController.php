@@ -67,6 +67,48 @@ final class DisasterReliefController extends Controller
 
     // ── Create ──────────────────────────────────────────────────────────────
 
+    /** POST /moderator/disasters/report — hand a division incident to Admin. */
+    public function reportDisaster(): void
+    {
+        $validator = (new Validator($_POST))
+            ->required('type', 'Disaster type')
+            ->inList('type', 'Disaster type', array_keys(DisasterModeService::TYPES))
+            ->required('details', 'Incident details')
+            ->maxLength('details', 'Incident details', 500)
+            ->words('details', 'Incident details');
+
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
+            $this->redirect('/moderator/disasters');
+
+            return;
+        }
+
+        try {
+            $this->disasterReportService()->report(
+                $this->userId(),
+                $validator->value('type'),
+                $validator->value('details')
+            );
+        } catch (AccessDeniedException $exception) {
+            $this->notice(403, 'No division here', 'This account does not moderate a division.');
+
+            return;
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Division not found', 'Contact an administrator about your moderator assignment.');
+
+            return;
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/moderator/disasters');
+
+            return;
+        }
+
+        $this->flash('Disaster report sent to the Admin team.');
+        $this->redirect('/moderator/disasters');
+    }
+
     /**
      * GET /moderator/disasters/relief/create.
      */
@@ -462,6 +504,16 @@ final class DisasterReliefController extends Controller
             new DisasterEvent($this->pdo),
             new DisasterReliefRecord($this->pdo),
             new Sponsor($this->pdo)
+        );
+    }
+
+    private function disasterReportService(): DisasterReportService
+    {
+        return new DisasterReportService(
+            $this->pdo,
+            new GnDivision($this->pdo),
+            new User($this->pdo),
+            new Notification($this->pdo)
         );
     }
 }

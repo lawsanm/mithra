@@ -172,6 +172,7 @@ return [
         '/moderator/verifications/{id}/reject'  => ['ModerationController', 'reject'],
         '/moderator/listing-approvals/{id}'     => ['ListingApprovalController', 'decide'],
         '/moderator/disasters/relief'             => ['DisasterReliefController', 'store'],
+        '/moderator/disasters/report'              => ['DisasterReliefController', 'reportDisaster'],
         '/moderator/disasters/relief/{id}'        => ['DisasterReliefController', 'update'],
         '/moderator/disasters/relief/{id}/delete' => ['DisasterReliefController', 'destroy'],
         '/admin/listing-approvals/{id}'         => ['ListingApprovalController', 'decide'],

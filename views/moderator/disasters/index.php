@@ -185,12 +185,29 @@ $reliefUrl = base_url() . '/moderator/disasters/relief';
         <div class="media__body">
             <h2 class="panel__title">Report a disaster</h2>
             <p class="panel__note">
-                Tell the Admin about a flood, landslide or fire in your division so they can activate Disaster Mode.
+                Tell the Admin about an emergency in your division so they can verify it and activate Disaster Mode.
             </p>
         </div>
-        <div class="actions panel__actions">
-            <span class="preview-action"><button type="button" disabled class="btn btn--ghost">Report disaster</button><span class="demo-note">Not available in this demo</span></span>
-        </div>
+        <?php if ($disaster === null): ?>
+        <form method="post" action="<?= base_url() ?>/moderator/disasters/report" class="panel__actions" novalidate>
+            <?= csrf_field() ?>
+            <label class="field">
+                <span class="field__label">Disaster type</span>
+                <select name="type">
+                    <?php foreach (DisasterModeService::TYPES as $type => $label): ?>
+                        <option value="<?= e($type) ?>"><?= e($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="field">
+                <span class="field__label">Incident details</span>
+                <textarea name="details" rows="3"></textarea>
+            </label>
+            <button type="submit" class="btn btn--ghost">Report disaster</button>
+        </form>
+        <?php else: ?>
+            <p class="panel__actions">Disaster Mode is active in this division.</p>
+        <?php endif; ?>
     </div>
 </section>
 

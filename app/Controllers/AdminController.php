@@ -803,6 +803,13 @@ final class AdminController extends Controller
                 'status_label' => $row['ended_at'] === null ? 'Active' : 'Ended',
                 'date_changes' => $changesByEvent[(int) $row['id']] ?? [],
             ], $eventRows),
+            'disasterReports' => array_map(static fn (array $row): array => [
+                'title' => $row['title'],
+                'detail' => $row['detail'],
+                'reported_at' => date('j M Y, H:i', strtotime($row['created_at'])),
+                'division_id' => $row['division_id'],
+                'type' => $row['disaster_type'],
+            ], (new Notification($this->pdo))->disasterReportsForAdmin($this->userId())),
             'page' => $page,
             'hasNextPage' => $events->countAll() > $page * DisasterEvent::ADMIN_PAGE_SIZE,
         ];

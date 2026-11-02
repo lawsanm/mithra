@@ -31,7 +31,7 @@ $divisions ??= [];
 
         <div class="field">
             <label class="field__label" for="disaster_type">Disaster type</label>
-            <select class="input" id="disaster_type" name="type">
+            <select class="input" id="disaster_type" data-modal-field="type" name="type">
                 <option value="">Select type...</option>
                 <option value="flooding">Flooding</option>
                 <option value="fire">Fire</option>

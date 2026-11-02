@@ -22,6 +22,36 @@ include __DIR__ . '/../../../partials/header.php';
 
 <?php include __DIR__ . '/../../../partials/flash.php'; ?>
 
+<section class="panel">
+    <h2 class="section-title">Moderator disaster reports</h2>
+    <p class="page-intro__meta">Review reported incidents and verify them before activating Disaster Mode for the division.</p>
+    <?php if (($disasterReports ?? []) === []): ?>
+        <p class="empty-state__body">No moderator reports have been received.</p>
+    <?php else: ?>
+        <ul class="row-list">
+            <?php foreach ($disasterReports as $report): ?>
+                <li class="list-row">
+                    <span class="list-row__icon" aria-hidden="true">!</span>
+                    <div class="list-row__body">
+                        <span class="list-row__title"><?= e($report['title']) ?></span>
+                        <span class="list-row__meta"><?= e($report['detail']) ?></span>
+                    </div>
+                    <span class="list-row__time"><?= e($report['reported_at']) ?></span>
+                    <?php if ($report['division_id'] > 0 && isset(DisasterModeService::TYPES[$report['type']])): ?>
+                        <button
+                            class="btn btn--primary"
+                            type="button"
+                            data-modal-open="modal-activate-disaster"
+                            data-division-id="<?= e((string) $report['division_id']) ?>"
+                            data-type="<?= e($report['type']) ?>"
+                        >Review and activate</button>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+</section>
+
 <ul class="row-list">
     <?php foreach ($divisions as $div): ?>
         <li class="list-row">

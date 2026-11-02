@@ -224,4 +224,27 @@ final class Notification extends BaseModel
             ['user' => $userId, 'type' => $type, 'payload' => json_encode($payload, JSON_THROW_ON_ERROR)]
         );
     }
+
+    /** @return list<array{title: string, detail: string, created_at: string, division_id: int, disaster_type: string}> */
+    public function disasterReportsForAdmin(int $adminId): array
+    {
+        $rows = $this->select(
+            "SELECT payload, created_at FROM notifications
+              WHERE user_id = :admin AND type = 'disaster_report'
+              ORDER BY created_at DESC, id DESC LIMIT 20",
+            ['admin' => $adminId]
+        );
+
+        return array_map(static function (array $row): array {
+            $payload = is_array($row['payload']) ? $row['payload'] : json_decode((string) $row['payload'], true, 512, JSON_THROW_ON_ERROR);
+
+            return [
+                'title' => (string) ($payload['title'] ?? 'Disaster reported'),
+                'detail' => (string) ($payload['detail'] ?? ''),
+                'created_at' => (string) $row['created_at'],
+                'division_id' => (int) ($payload['division_id'] ?? 0),
+                'disaster_type' => (string) ($payload['disaster_type'] ?? ''),
+            ];
+        }, $rows);
+    }
 }
