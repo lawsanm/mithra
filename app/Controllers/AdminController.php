@@ -324,6 +324,19 @@ final class AdminController extends Controller
         $this->redirect('/admin/disaster');
     }
 
+    /** POST /admin/disaster/reports/{id}/reviewed. */
+    public function reviewDisasterReport(int $id): void
+    {
+        if (!(new Notification($this->pdo))->markDisasterReportReviewed($this->userId(), $id)) {
+            $this->notice(404, 'Report not found', 'This report was already reviewed or is no longer available.');
+
+            return;
+        }
+
+        $this->flash('Moderator report marked as reviewed.');
+        $this->redirect('/admin/disaster');
+    }
+
     private function divisionInput(): Validator
     {
         $validator = (new Validator($_POST))

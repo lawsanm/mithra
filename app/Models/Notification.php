@@ -228,12 +228,17 @@ final class Notification extends BaseModel
         );
     }
 
-    /** @return list<array{title: string, detail: string, created_at: string, division_id: int, disaster_type: string}> */
+    /** @return list<array{id: int, title: string, detail: string, created_at: string, division_id: int, disaster_type: string}> */
     public function disasterReportsForAdmin(int $adminId): array
     {
         $rows = $this->select(
-            "SELECT payload, created_at FROM notifications
-              WHERE user_id = :admin AND type = 'disaster_report'
+            "SELECT id, payload, created_at FROM notifications n
+              WHERE user_id = :admin AND type = 'disaster_report' AND read_at IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM disaster_events de
+                     WHERE de.gn_division_id = CAST(JSON_UNQUOTE(JSON_EXTRACT(n.payload, '$.division_id')) AS UNSIGNED)
+                       AND de.started_at >= n.created_at
+                )
               ORDER BY created_at DESC, id DESC LIMIT 20",
             ['admin' => $adminId]
         );
@@ -242,6 +247,7 @@ final class Notification extends BaseModel
             $payload = is_array($row['payload']) ? $row['payload'] : json_decode((string) $row['payload'], true, 512, JSON_THROW_ON_ERROR);
 
             return [
+                'id' => (int) $row['id'],
                 'title' => (string) ($payload['title'] ?? 'Disaster reported'),
                 'detail' => (string) ($payload['detail'] ?? ''),
                 'created_at' => (string) $row['created_at'],
@@ -249,5 +255,14 @@ final class Notification extends BaseModel
                 'disaster_type' => (string) ($payload['disaster_type'] ?? ''),
             ];
         }, $rows);
+    }
+
+    public function markDisasterReportReviewed(int $adminId, int $notificationId): bool
+    {
+        return $this->execute(
+            "UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+              WHERE id = :id AND user_id = :admin AND type = 'disaster_report' AND read_at IS NULL",
+            ['id' => $notificationId, 'admin' => $adminId]
+        ) === 1;
     }
 }

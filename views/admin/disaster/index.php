@@ -23,10 +23,10 @@ include __DIR__ . '/../../../partials/header.php';
 <?php include __DIR__ . '/../../../partials/flash.php'; ?>
 
 <section class="panel">
-    <h2 class="section-title">Moderator disaster reports</h2>
+    <h2 class="section-title">Disaster reports from the Moderator</h2>
     <p class="page-intro__meta">Review reported incidents and verify them before activating Disaster Mode for the division.</p>
     <?php if (($disasterReports ?? []) === []): ?>
-        <p class="empty-state__body">No moderator reports have been received.</p>
+        <p class="empty-state__body">There are no unreviewed disaster reports.</p>
     <?php else: ?>
         <ul class="row-list">
             <?php foreach ($disasterReports as $report): ?>
@@ -46,6 +46,10 @@ include __DIR__ . '/../../../partials/header.php';
                             data-type="<?= e($report['type']) ?>"
                         >Review and activate</button>
                     <?php endif; ?>
+                    <form method="post" action="<?= base_url() ?>/admin/disaster/reports/<?= e((string) $report['id']) ?>/reviewed" novalidate>
+                        <?= csrf_field() ?>
+                        <button class="btn btn--ghost" type="submit">Mark reviewed</button>
+                    </form>
                 </li>
             <?php endforeach; ?>
         </ul>
