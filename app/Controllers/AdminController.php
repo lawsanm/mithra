@@ -259,62 +259,32 @@ final class AdminController extends Controller
      */
     public function deactivateDisaster(): void
     {
-        $divisionId = (int) $this->posted('division_id');
+        $validator = (new Validator($_POST))
+            ->required('division_id', 'Division')
+            ->integer('division_id', 'Division', 1);
 
-        if ($divisionId <= 0) {
-            $this->flash('Please select a division to deactivate Disaster Mode.', 'error');
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
             $this->redirect('/admin/disaster');
+
             return;
         }
 
-        $division = (new GnDivision($this->pdo))->findBasic($divisionId);
-        if ($division === null) {
+        try {
+            $divisionName = $this->disasterModeService()->deactivate((int) $validator->value('division_id'));
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        } catch (RecordNotFoundException $exception) {
             $this->notice(404, 'Division not found', 'Return to the disaster control page to choose another.');
+
             return;
         }
 
-        $events = new DisasterEvent($this->pdo);
-        $activeEvent = $events->activeForDivision($divisionId);
-
-        (new GnDivision($this->pdo))->setDisasterMode($divisionId, false, null);
-
-        $events->endActiveForDivision($divisionId);
-
-        $this->notifyDisasterActors(
-            $activeEvent === null ? null : (int) $activeEvent['id'],
-            'disaster_resolved',
-            'Disaster Mode ended: ' . $division['name'],
-            'The emergency in ' . $division['name'] . ' has been resolved.',
-            'check'
-        );
-
-        $this->flash('Disaster Mode deactivated for ' . $division['name'] . '.');
+        $this->flash('Disaster Mode deactivated for ' . $divisionName . '.');
         $this->redirect('/admin/disaster');
-    }
-
-    private function notifyDisasterActors(?int $eventId, string $type, string $title, string $detail, string $icon): void
-    {
-        $notifications = new Notification($this->pdo);
-        $eventPath = $eventId === null ? null : '/sponsor/disasters/' . $eventId;
-        $liaisonPath = $eventId === null ? '/sponsor-liaison/dashboard' : '/sponsor-liaison/disasters/connection?event=' . $eventId;
-
-        foreach ((new User($this->pdo))->idsInRole('sponsor') as $userId) {
-            $notifications->push($userId, $type, [
-                'title' => $title,
-                'detail' => $detail,
-                'icon' => $icon,
-                'href' => $eventPath ?? '/sponsor/notifications',
-            ]);
-        }
-
-        foreach ((new User($this->pdo))->idsInRole('sponsor_liaison') as $userId) {
-            $notifications->push($userId, $type, [
-                'title' => $title,
-                'detail' => $detail,
-                'icon' => $icon,
-                'href' => $liaisonPath,
-            ]);
-        }
     }
 
     private function divisionInput(): Validator

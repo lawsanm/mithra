@@ -77,19 +77,54 @@ final class DisasterModeService
         });
     }
 
-    private function notifyActors(int $eventId, string $type, string $title, string $detail, string $icon): void
+    /**
+     * End a division's active disaster event and notify affected roles.
+     *
+     * @throws RecordNotFoundException|ValidationException
+     */
+    public function deactivate(int $divisionId): string
+    {
+        return Database::transaction($this->pdo, function () use ($divisionId): string {
+            $division = $this->divisions->lockForDisasterMode($divisionId)
+                ?? throw new RecordNotFoundException('No such division.');
+            $activeEvent = $this->events->activeForDivision($divisionId);
+
+            if (!$division['disaster_mode_active'] && $activeEvent === null) {
+                throw ValidationException::field('division_id', 'Disaster Mode is already inactive for this division.');
+            }
+
+            $this->divisions->setDisasterMode($divisionId, false);
+            $this->events->endActiveForDivision($divisionId);
+
+            $this->notifyActors(
+                $activeEvent === null ? null : (int) $activeEvent['id'],
+                'disaster_resolved',
+                'Disaster Mode ended: ' . $division['name'],
+                'The emergency in ' . $division['name'] . ' has been resolved.',
+                'check'
+            );
+
+            return $division['name'];
+        });
+    }
+
+    private function notifyActors(?int $eventId, string $type, string $title, string $detail, string $icon): void
     {
         $payload = ['title' => $title, 'detail' => $detail, 'icon' => $icon];
+        $sponsorPath = $eventId === null ? '/sponsor/notifications' : '/sponsor/disasters/' . $eventId;
+        $liaisonPath = $eventId === null
+            ? '/sponsor-liaison/dashboard'
+            : '/sponsor-liaison/disasters/connection?event=' . $eventId;
 
         foreach ($this->users->idsInRole('sponsor') as $userId) {
-            $this->notifications->push($userId, $type, $payload + ['href' => '/sponsor/disasters/' . $eventId]);
+            $this->notifications->push($userId, $type, $payload + ['href' => $sponsorPath]);
         }
 
         foreach ($this->users->idsInRole('sponsor_liaison') as $userId) {
             $this->notifications->push(
                 $userId,
                 $type,
-                $payload + ['href' => '/sponsor-liaison/disasters/connection?event=' . $eventId]
+                $payload + ['href' => $liaisonPath]
             );
         }
     }
