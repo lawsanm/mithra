@@ -21,7 +21,8 @@ final class DisasterModeService
         private GnDivision $divisions,
         private DisasterEvent $events,
         private User $users,
-        private Notification $notifications
+        private Notification $notifications,
+        private DisasterEventEndDateChange $endDateChanges
     ) {
     }
 
@@ -105,6 +106,61 @@ final class DisasterModeService
             );
 
             return $division['name'];
+        });
+    }
+
+    /**
+     * Extend the active event's end date and retain an immutable audit entry.
+     *
+     * @return array{division_name: string, planned_end: string}
+     *
+     * @throws RecordNotFoundException|ValidationException
+     */
+    public function extendPlannedEnd(int $eventId, int $adminId, string $endDate): array
+    {
+        if (!Validator::isDate($endDate) || $endDate < date('Y-m-d')) {
+            throw ValidationException::field('end_date', 'The planned end date must be today or a future date.');
+        }
+
+        return Database::transaction($this->pdo, function () use ($eventId, $adminId, $endDate): array {
+            $reference = $this->events->findWithDivision($eventId)
+                ?? throw new RecordNotFoundException('No such disaster event.');
+            $divisionId = (int) $reference['gn_division_id'];
+            $division = $this->divisions->lockForDisasterMode($divisionId)
+                ?? throw new RecordNotFoundException('No such division.');
+            $event = $this->events->lockOpenForUpdate($eventId, $divisionId)
+                ?? throw new RecordNotFoundException('This disaster event has already ended.');
+            $activeEvent = $this->events->activeForDivision($divisionId);
+
+            if (!$division['disaster_mode_active'] || $activeEvent === null || (int) $activeEvent['id'] !== $eventId) {
+                throw ValidationException::field('event_id', 'Only the active disaster event can be extended.');
+            }
+
+            $newEndAt = $endDate . ' 23:59:59';
+            $previousEndAt = $event['planned_end_at'] === null ? null : (string) $event['planned_end_at'];
+
+            if ($previousEndAt !== null && $endDate <= substr($previousEndAt, 0, 10)) {
+                throw ValidationException::field('end_date', 'Choose a date later than the current planned end date.');
+            }
+
+            if (!$this->events->updatePlannedEnd($eventId, $newEndAt)) {
+                throw ValidationException::field('event_id', 'This disaster event has already ended.');
+            }
+
+            $this->divisions->setDisasterMode($divisionId, true, $newEndAt);
+            $this->endDateChanges->record($eventId, $adminId, $previousEndAt, $newEndAt);
+
+            $previousLabel = $previousEndAt === null ? 'not set' : date('j M Y', strtotime($previousEndAt));
+            $newLabel = date('j M Y', strtotime($newEndAt));
+            $this->notifyActors(
+                $eventId,
+                'disaster_alert',
+                'Disaster Mode end date updated: ' . $division['name'],
+                'The planned end date changed from ' . $previousLabel . ' to ' . $newLabel . '.',
+                'alert'
+            );
+
+            return ['division_name' => $division['name'], 'planned_end' => $newLabel];
         });
     }
 

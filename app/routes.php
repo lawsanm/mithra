@@ -167,6 +167,7 @@ return [
         '/admin/divisions/{id}/archive'  => ['AdminController', 'archiveDivision'],
         '/admin/disaster/activate'       => ['AdminController', 'activateDisaster'],
         '/admin/disaster/deactivate'     => ['AdminController', 'deactivateDisaster'],
+        '/admin/disaster/events/end-date' => ['AdminController', 'updateDisasterEndDate'],
         '/moderator/verifications/{id}/approve' => ['ModerationController', 'approve'],
         '/moderator/verifications/{id}/reject'  => ['ModerationController', 'reject'],
         '/moderator/listing-approvals/{id}'     => ['ListingApprovalController', 'decide'],

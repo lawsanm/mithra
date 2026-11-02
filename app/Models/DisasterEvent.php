@@ -133,6 +133,29 @@ final class DisasterEvent extends BaseModel
         ) === 1;
     }
 
+    /** Lock an event only while it is still open in its expected division. */
+    public function lockOpenForUpdate(int $eventId, int $divisionId): ?array
+    {
+        return $this->selectOne(
+            'SELECT id, gn_division_id, planned_end_at, ended_at
+               FROM disaster_events
+              WHERE id = :id AND gn_division_id = :division AND ended_at IS NULL
+              FOR UPDATE',
+            ['id' => $eventId, 'division' => $divisionId]
+        );
+    }
+
+    /** Update only the current planned end of an open event. */
+    public function updatePlannedEnd(int $eventId, string $plannedEndAt): bool
+    {
+        return $this->execute(
+            'UPDATE disaster_events
+                SET planned_end_at = :planned_end
+              WHERE id = :id AND ended_at IS NULL',
+            ['id' => $eventId, 'planned_end' => $plannedEndAt]
+        ) === 1;
+    }
+
     /**
      * Every disaster in a division, newest first, for the report list.
      *

@@ -18,7 +18,8 @@ $service = new DisasterModeService(
     new GnDivision($pdo),
     new DisasterEvent($pdo),
     new User($pdo),
-    new Notification($pdo)
+    new Notification($pdo),
+    new DisasterEventEndDateChange($pdo)
 );
 
 exit((new CronJob(new CronRun($pdo)))->run(

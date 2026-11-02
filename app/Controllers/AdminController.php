@@ -287,6 +287,43 @@ final class AdminController extends Controller
         $this->redirect('/admin/disaster');
     }
 
+    /** POST /admin/disaster/events/end-date. */
+    public function updateDisasterEndDate(): void
+    {
+        $validator = (new Validator($_POST))
+            ->required('event_id', 'Disaster event')
+            ->integer('event_id', 'Disaster event', 1)
+            ->required('end_date', 'Planned end date')
+            ->date('end_date', 'Planned end date');
+
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        }
+
+        try {
+            $result = $this->disasterModeService()->extendPlannedEnd(
+                (int) $validator->value('event_id'),
+                $this->userId(),
+                $validator->value('end_date')
+            );
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Disaster event not found', 'Return to Disaster Mode control to choose an active event.');
+
+            return;
+        }
+
+        $this->flash('Planned end date for ' . $result['division_name'] . ' extended to ' . $result['planned_end'] . '.');
+        $this->redirect('/admin/disaster');
+    }
+
     private function divisionInput(): Validator
     {
         $validator = (new Validator($_POST))
@@ -320,7 +357,8 @@ final class AdminController extends Controller
             new GnDivision($this->pdo),
             new DisasterEvent($this->pdo),
             new User($this->pdo),
-            new Notification($this->pdo)
+            new Notification($this->pdo),
+            new DisasterEventEndDateChange($this->pdo)
         );
     }
 
@@ -717,6 +755,22 @@ final class AdminController extends Controller
     {
         $events = new DisasterEvent($this->pdo);
         $page = $this->page();
+        $eventRows = $events->adminPage($page);
+        $changesByEvent = [];
+
+        foreach ((new DisasterEventEndDateChange($this->pdo))->forEvents(array_map(
+            static fn (array $row): int => (int) $row['id'],
+            $eventRows
+        )) as $change) {
+            $changesByEvent[(int) $change['disaster_event_id']][] = [
+                'previous' => $change['previous_planned_end_at'] === null
+                    ? 'Not set'
+                    : date('j M Y', strtotime((string) $change['previous_planned_end_at'])),
+                'new' => date('j M Y', strtotime((string) $change['new_planned_end_at'])),
+                'changed_by' => (string) $change['changed_by_name'],
+                'changed_at' => date('j M Y, H:i', strtotime((string) $change['changed_at'])),
+            ];
+        }
 
         return [
             'divisions' => array_map(static fn (array $row): array => [
@@ -738,12 +792,17 @@ final class AdminController extends Controller
                 'planned_end' => $row['planned_end_at'] === null
                     ? 'Not set'
                     : date('j M Y', strtotime((string) $row['planned_end_at'])),
+                'planned_end_input' => $row['planned_end_at'] === null
+                    ? ''
+                    : date('Y-m-d', strtotime((string) $row['planned_end_at'])),
                 'ended_at' => $row['ended_at'] === null
                     ? '—'
                     : date('j M Y, H:i', strtotime((string) $row['ended_at'])),
+                'active' => $row['ended_at'] === null,
                 'status' => $row['ended_at'] === null ? 'warning' : 'neutral',
                 'status_label' => $row['ended_at'] === null ? 'Active' : 'Ended',
-            ], $events->adminPage($page)),
+                'date_changes' => $changesByEvent[(int) $row['id']] ?? [],
+            ], $eventRows),
             'page' => $page,
             'hasNextPage' => $events->countAll() > $page * DisasterEvent::ADMIN_PAGE_SIZE,
         ];

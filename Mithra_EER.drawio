@@ -2558,6 +2558,63 @@
         <mxCell id="edge41" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;fontSize=10;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;strokeColor=#5C6670;labelBackgroundColor=#FFFFFF;fontColor=#444444;" parent="1" edge="1" source="users" target="gift_usage_counters">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
+        <mxCell id="disaster_event_end_date_changes" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;html=1;fontSize=13;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" value="disaster_event_end_date_changes" vertex="1">
+          <mxGeometry as="geometry" x="2010" y="1340" width="300" height="174" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__row0" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="disaster_event_end_date_changes">
+          <mxGeometry y="30" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__k0" value="PK" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontSize=9;fontStyle=1;fontColor=#666666;html=1;" vertex="1" parent="disaster_event_end_date_changes__row0">
+          <mxGeometry width="34" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__c0" value="id INT" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=4;fontSize=11;fontStyle=4;html=1;" vertex="1" parent="disaster_event_end_date_changes__row0">
+          <mxGeometry x="34" width="266" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__row1" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="disaster_event_end_date_changes">
+          <mxGeometry y="54" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__k1" value="FK" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontSize=9;fontStyle=1;fontColor=#666666;html=1;" vertex="1" parent="disaster_event_end_date_changes__row1">
+          <mxGeometry width="34" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__c1" value="disaster_event_id INT" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=4;fontSize=11;fontStyle=2;html=1;" vertex="1" parent="disaster_event_end_date_changes__row1">
+          <mxGeometry x="34" width="266" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__row2" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="disaster_event_end_date_changes">
+          <mxGeometry y="78" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__k2" value="FK" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontSize=9;fontStyle=1;fontColor=#666666;html=1;" vertex="1" parent="disaster_event_end_date_changes__row2">
+          <mxGeometry width="34" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__c2" value="changed_by INT" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=4;fontSize=11;fontStyle=2;html=1;" vertex="1" parent="disaster_event_end_date_changes__row2">
+          <mxGeometry x="34" width="266" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__row3" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="disaster_event_end_date_changes">
+          <mxGeometry y="102" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__k3" value="" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontSize=9;fontStyle=1;fontColor=#666666;html=1;" vertex="1" parent="disaster_event_end_date_changes__row3">
+          <mxGeometry width="34" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__c3" value="previous_planned_end_at DATETIME NULL" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=4;fontSize=11;fontStyle=0;html=1;" vertex="1" parent="disaster_event_end_date_changes__row3">
+          <mxGeometry x="34" width="266" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__row4" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="disaster_event_end_date_changes">
+          <mxGeometry y="126" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__k4" value="" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontSize=9;fontStyle=1;fontColor=#666666;html=1;" vertex="1" parent="disaster_event_end_date_changes__row4">
+          <mxGeometry width="34" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__c4" value="new_planned_end_at DATETIME" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=4;fontSize=11;fontStyle=0;html=1;" vertex="1" parent="disaster_event_end_date_changes__row4">
+          <mxGeometry x="34" width="266" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__row5" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;" vertex="1" parent="disaster_event_end_date_changes">
+          <mxGeometry y="150" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__k5" value="" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontSize=9;fontStyle=1;fontColor=#666666;html=1;" vertex="1" parent="disaster_event_end_date_changes__row5">
+          <mxGeometry width="34" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="disaster_event_end_date_changes__c5" value="changed_at DATETIME" style="shape=partialRectangle;overflow=hidden;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=4;fontSize=11;fontStyle=0;html=1;" vertex="1" parent="disaster_event_end_date_changes__row5">
+          <mxGeometry x="34" width="266" height="24" as="geometry" />
+        </mxCell>
         <mxCell id="edge42" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;fontSize=10;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;strokeColor=#5C6670;labelBackgroundColor=#FFFFFF;fontColor=#444444;" parent="1" value="member" edge="1" source="users" target="aid_grants">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
@@ -2580,6 +2637,12 @@
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
         <mxCell id="edge49" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;fontSize=10;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;strokeColor=#5C6670;labelBackgroundColor=#FFFFFF;fontColor=#444444;" parent="1" edge="1" source="sponsors" target="disaster_contributions">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge50" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;fontSize=10;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;strokeColor=#5C6670;labelBackgroundColor=#FFFFFF;fontColor=#444444;" parent="1" edge="1" source="disaster_events" target="disaster_event_end_date_changes">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge51" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;fontSize=10;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;strokeColor=#5C6670;labelBackgroundColor=#FFFFFF;fontColor=#444444;" parent="1" edge="1" source="users" target="disaster_event_end_date_changes">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
         <mxCell id="title" style="text;html=1;fontSize=22;fontStyle=1;align=left;" parent="1" value="Mithra — EER Diagram (MySQL 8.x / InnoDB / utf8mb4)" vertex="1">

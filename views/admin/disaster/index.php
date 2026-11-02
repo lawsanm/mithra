@@ -55,6 +55,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <th>Planned end</th>
                     <th>Ended</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,9 +67,34 @@ include __DIR__ . '/../../../partials/header.php';
                         </td>
                         <td><?= e($event['started_by']) ?></td>
                         <td><?= e($event['started_at']) ?></td>
-                        <td><?= e($event['planned_end']) ?></td>
+                        <td>
+                            <?= e($event['planned_end']) ?>
+                            <?php if ($event['date_changes'] !== []): ?>
+                                <details>
+                                    <summary><?= count($event['date_changes']) ?> date change<?= count($event['date_changes']) === 1 ? '' : 's' ?></summary>
+                                    <ul>
+                                        <?php foreach ($event['date_changes'] as $change): ?>
+                                            <li><?= e($change['previous']) ?> → <?= e($change['new']) ?> · <?= e($change['changed_by']) ?> · <?= e($change['changed_at']) ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </details>
+                            <?php endif; ?>
+                        </td>
                         <td><?= e($event['ended_at']) ?></td>
                         <td><span class="badge badge--<?= e($event['status']) ?>"><?= e($event['status_label']) ?></span></td>
+                        <td>
+                            <?php if ($event['active']): ?>
+                                <button
+                                    class="btn btn--ghost"
+                                    type="button"
+                                    data-modal-open="modal-extend-disaster"
+                                    data-event-id="<?= e((string) $event['id']) ?>"
+                                    data-planned-end-date="<?= e($event['planned_end_input']) ?>"
+                                >Extend</button>
+                            <?php else: ?>
+                                —
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -81,6 +107,8 @@ include __DIR__ . '/../../../partials/header.php';
         ?>
     <?php endif; ?>
 </section>
+
+<?php include __DIR__ . '/../../../partials/modal-extend-disaster.php'; ?>
 
 <div class="notice notice--info notice--full">
     Disaster Mode alerts sponsors and connects them with the division moderator. Relief is arranged off-platform; no points move. Each activation records a planned end date.
