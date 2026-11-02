@@ -69,6 +69,47 @@ final class DisasterEvent extends BaseModel
         );
     }
 
+    /** @return list<array{id: int, gn_division_id: int}> */
+    public function dueForExpiry(): array
+    {
+        return array_map(
+            static fn (array $row): array => [
+                'id' => (int) $row['id'],
+                'gn_division_id' => (int) $row['gn_division_id'],
+            ],
+            $this->select(
+                'SELECT id, gn_division_id
+                   FROM disaster_events
+                  WHERE ended_at IS NULL AND planned_end_at <= CURRENT_TIMESTAMP
+                  ORDER BY planned_end_at, id'
+            )
+        );
+    }
+
+    /** Recheck and lock one due event after its division row has been locked. */
+    public function lockDueEvent(int $eventId, int $divisionId): ?array
+    {
+        return $this->selectOne(
+            'SELECT id, reason, planned_end_at
+               FROM disaster_events
+              WHERE id = :id AND gn_division_id = :division
+                AND ended_at IS NULL AND planned_end_at <= CURRENT_TIMESTAMP
+              FOR UPDATE',
+            ['id' => $eventId, 'division' => $divisionId]
+        );
+    }
+
+    /** End one event only if it remains due and open. */
+    public function endIfDue(int $eventId): bool
+    {
+        return $this->execute(
+            'UPDATE disaster_events
+                SET ended_at = CURRENT_TIMESTAMP
+              WHERE id = :id AND ended_at IS NULL AND planned_end_at <= CURRENT_TIMESTAMP',
+            ['id' => $eventId]
+        ) === 1;
+    }
+
     /**
      * Every disaster in a division, newest first, for the report list.
      *

@@ -108,6 +108,56 @@ final class DisasterModeService
         });
     }
 
+    /**
+     * End events whose planned end date has arrived. Safe to run repeatedly.
+     */
+    public function expirePlannedEvents(): string
+    {
+        $expired = 0;
+
+        foreach ($this->events->dueForExpiry() as $candidate) {
+            $didExpire = Database::transaction($this->pdo, function () use ($candidate): bool {
+                $divisionId = $candidate['gn_division_id'];
+                $division = $this->divisions->lockForDisasterMode($divisionId);
+
+                if ($division === null) {
+                    return false;
+                }
+
+                $event = $this->events->lockDueEvent($candidate['id'], $divisionId);
+
+                if ($event === null || !$this->events->endIfDue($candidate['id'])) {
+                    return false;
+                }
+
+                $remainingEvent = $this->events->activeForDivision($divisionId);
+                $this->divisions->setDisasterMode(
+                    $divisionId,
+                    $remainingEvent !== null,
+                    $remainingEvent['planned_end_at'] ?? null
+                );
+
+                if ($remainingEvent === null) {
+                    $this->notifyActors(
+                        (int) $event['id'],
+                        'disaster_resolved',
+                        'Disaster Mode ended: ' . $division['name'],
+                        'The planned end date for this emergency has arrived.',
+                        'check'
+                    );
+                }
+
+                return true;
+            });
+
+            if ($didExpire) {
+                $expired++;
+            }
+        }
+
+        return $expired . ' disaster event(s) ended.';
+    }
+
     private function notifyActors(?int $eventId, string $type, string $title, string $detail, string $icon): void
     {
         $payload = ['title' => $title, 'detail' => $detail, 'icon' => $icon];
