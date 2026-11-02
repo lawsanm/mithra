@@ -33,7 +33,10 @@ final class Notification extends BaseModel
             'listing_approved', 'listing_adjusted', 'listing_rejected', 'account_notice',
             'community_application', 'community_approved', 'community_rejected', 'community_expiring',
             'community_paused', 'community_expired',
-            'disaster_alert', 'disaster_resolved',
+            'disaster_alert', 'disaster_resolved', 'disaster_report',
+            'disaster_contribution_recorded', 'disaster_contribution_updated',
+            'disaster_contribution_confirmed', 'disaster_contribution_queried',
+            'disaster_contribution_verified',
         ],
     ];
 

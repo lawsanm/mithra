@@ -182,7 +182,7 @@ final class DisasterEvent extends BaseModel
     {
         return $this->selectOne(
             'SELECT de.id, de.gn_division_id, de.reason, de.started_at, de.planned_end_at, de.ended_at,
-                    d.name AS division_name
+                    d.name AS division_name, d.moderator_id
                FROM disaster_events de
                JOIN gn_divisions d ON d.id = de.gn_division_id
               WHERE de.id = :id',
