@@ -8,6 +8,8 @@ declare(strict_types=1);
  */
 final class DisasterEvent extends BaseModel
 {
+    public const ADMIN_PAGE_SIZE = 20;
+
     protected string $table = 'disaster_events';
     protected string $columns = 'id, gn_division_id, started_by, reason, started_at, planned_end_at, ended_at';
 
@@ -21,6 +23,27 @@ final class DisasterEvent extends BaseModel
                JOIN users u ON u.id = de.started_by
               ORDER BY de.started_at DESC, de.id DESC'
         );
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function adminPage(int $page): array
+    {
+        return $this->selectPage(
+            'SELECT de.id, de.reason, de.started_at, de.planned_end_at, de.ended_at,
+                    d.name AS division_name, u.full_name AS started_by_name
+               FROM disaster_events de
+               JOIN gn_divisions d ON d.id = de.gn_division_id
+               JOIN users u ON u.id = de.started_by
+              ORDER BY de.started_at DESC, de.id DESC',
+            [],
+            $page,
+            self::ADMIN_PAGE_SIZE
+        );
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->selectValue('SELECT COUNT(*) FROM disaster_events');
     }
 
     /**

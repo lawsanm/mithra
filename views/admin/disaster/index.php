@@ -39,6 +39,49 @@ include __DIR__ . '/../../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
+<section class="panel">
+    <h2 class="section-title">Disaster event history</h2>
+    <p class="page-intro__meta">Recent activations and closures. Event records remain available for reporting and audit.</p>
+
+    <?php if ($events === []): ?>
+        <p class="empty-state__body">No disaster events have been recorded.</p>
+    <?php else: ?>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Division and event</th>
+                    <th>Started by</th>
+                    <th>Started</th>
+                    <th>Planned end</th>
+                    <th>Ended</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($events as $event): ?>
+                    <tr>
+                        <td>
+                            <strong><?= e($event['division']) ?></strong>
+                            <span class="text-muted"><?= e($event['reason']) ?></span>
+                        </td>
+                        <td><?= e($event['started_by']) ?></td>
+                        <td><?= e($event['started_at']) ?></td>
+                        <td><?= e($event['planned_end']) ?></td>
+                        <td><?= e($event['ended_at']) ?></td>
+                        <td><span class="badge badge--<?= e($event['status']) ?>"><?= e($event['status_label']) ?></span></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <?php
+        $pageUrl = static fn (int $target): string => base_url() . '/admin/disaster?page=' . $target;
+        $pagerLabels = ['Newer', 'Older'];
+        include __DIR__ . '/../../../partials/pager.php';
+        ?>
+    <?php endif; ?>
+</section>
+
 <div class="notice notice--info notice--full">
     Disaster Mode alerts sponsors and connects them with the division moderator. Relief is arranged off-platform; no points move. Each activation records a planned end date.
 </div>

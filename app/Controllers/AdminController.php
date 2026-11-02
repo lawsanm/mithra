@@ -715,6 +715,9 @@ final class AdminController extends Controller
     /** @return array<string, mixed> */
     private function disaster(): array
     {
+        $events = new DisasterEvent($this->pdo);
+        $page = $this->page();
+
         return [
             'divisions' => array_map(static fn (array $row): array => [
                 'id'           => (int) $row['id'],
@@ -726,6 +729,23 @@ final class AdminController extends Controller
                 'status'       => $row['disaster_mode_active'] ? 'error' : 'success',
                 'status_label' => $row['disaster_mode_active'] ? 'Active' : 'Normal',
             ], (new GnDivision($this->pdo))->allWithStaff()),
+            'events' => array_map(static fn (array $row): array => [
+                'id' => (int) $row['id'],
+                'division' => (string) $row['division_name'],
+                'reason' => (string) $row['reason'],
+                'started_by' => (string) $row['started_by_name'],
+                'started_at' => date('j M Y, H:i', strtotime((string) $row['started_at'])),
+                'planned_end' => $row['planned_end_at'] === null
+                    ? 'Not set'
+                    : date('j M Y', strtotime((string) $row['planned_end_at'])),
+                'ended_at' => $row['ended_at'] === null
+                    ? '—'
+                    : date('j M Y, H:i', strtotime((string) $row['ended_at'])),
+                'status' => $row['ended_at'] === null ? 'warning' : 'neutral',
+                'status_label' => $row['ended_at'] === null ? 'Active' : 'Ended',
+            ], $events->adminPage($page)),
+            'page' => $page,
+            'hasNextPage' => $events->countAll() > $page * DisasterEvent::ADMIN_PAGE_SIZE,
         ];
     }
 
