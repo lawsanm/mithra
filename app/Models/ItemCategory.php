@@ -20,6 +20,15 @@ final class ItemCategory extends BaseModel
         );
     }
 
+    /** @return array<string, mixed>|null */
+    public function findCategory(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT id, name, active FROM item_categories WHERE id = :id',
+            ['id' => $id]
+        );
+    }
+
     /**
      * Admin categories screen: every category with how many live listings use it.
      *
