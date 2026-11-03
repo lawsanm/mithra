@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 ?>
 <dialog aria-labelledby="category-modal-title" class="modal modal--sm" id="modal-edit-category"<?= $categoryModalOpen ? ' open' : '' ?>>
-    <form id="form-edit-category" method="post" action="<?= base_url() ?>/admin/categories" novalidate>
+    <form id="form-edit-category" class="stack" method="post" action="<?= base_url() ?>/admin/categories" novalidate>
         <?= csrf_field() ?>
         <input type="hidden" name="category_id" value="<?= e($categoryDraft['category_id'] ?? '0') ?>" data-modal-field="categoryId">
         <div class="modal__head">
