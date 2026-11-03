@@ -386,6 +386,10 @@ final class AdminController extends Controller
         $labels    = [1 => 'Admin-run division', 2 => 'First moderator appointment', 3 => 'Moderator management'];
 
         $candidates = $this->candidateRows($id);
+        $eligibleCandidates = array_values(array_filter(
+            $candidates,
+            static fn (array $candidate): bool => $candidate['eligible']
+        ));
         $active     = array_values(array_filter(
             (new Moderator($this->pdo))->allActive(),
             static fn (array $row): bool => (int) $row['division_id'] === $id
@@ -407,7 +411,7 @@ final class AdminController extends Controller
             ],
             'candidates'      => $candidates,
             'verifiedMembers' => $candidates,
-            'eligibilityPool' => $candidates,
+            'eligibilityPool' => $eligibleCandidates,
             'pendingMembers'  => array_map(fn (array $member): array => $this->applicantRow($member), $divisions->pendingApprovals($id)),
             'activeMods'      => array_map(static fn (array $row): array => [
                 'initials'         => User::initials((string) $row['full_name']),
@@ -457,9 +461,12 @@ final class AdminController extends Controller
         $candidates = $this->candidateRows($divisionId);
         $chosen     = (int) $this->queryValue('member');
         $selected   = null;
+        $isLaunch   = $row['moderator_id'] === null;
 
         foreach ($candidates as $candidate) {
-            if ($candidate['id'] === $chosen) {
+            $ready = $isLaunch ? $candidate['launch_ready'] : $candidate['eligible'];
+
+            if ($candidate['id'] === $chosen && $ready) {
                 $selected = $candidate;
             }
         }
@@ -527,24 +534,71 @@ final class AdminController extends Controller
      */
     private function candidateRows(int $divisionId): array
     {
-        $rows = (new Moderator($this->pdo))->eligibleCandidates($divisionId);
+        $rows = (new ModeratorCandidate($this->pdo))->candidatesForDivision($divisionId);
 
-        return array_map(static fn (array $row, int $index): array => [
-            'id'           => (int) $row['id'],
-            'name'         => (string) $row['full_name'],
-            'initials'     => User::initials((string) $row['full_name']),
-            'trust_score'  => (int) $row['trust_score'],
-            'address'      => (string) $row['address'],
-            'verified_at'  => (string) ($row['verified_at'] ?? ''),
-            'member_since' => $row['joined_at'] === null ? '' : date('M Y', strtotime((string) $row['joined_at'])),
-            'months'       => $row['joined_at'] === null ? 0 : max(1, (int) round((time() - strtotime((string) $row['joined_at'])) / (30 * 86400))),
-            'transactions' => (int) $row['completed_bookings'],
-            'record'       => (int) $row['disputes'] === 0 ? 'Clean' : $row['disputes'] . ' disputes',
-            'gn_endorsed'  => (bool) $row['gn_endorsed'],
-            // Conflict-of-interest checks are not built yet, so none is reported.
-            'conflict'     => null,
-            'recommended'  => $index === 0,
-        ], $rows, array_keys($rows));
+        $candidates = array_map(static function (array $row): array {
+            $joinedAt = $row['joined_at'] === null ? null : new DateTimeImmutable((string) $row['joined_at']);
+            $now      = new DateTimeImmutable();
+            $tenure   = $joinedAt === null ? null : $joinedAt->diff($now);
+            $months   = $tenure === null ? 0 : ($tenure->y * 12) + $tenure->m;
+            $clean    = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
+            $declared = (bool) $row['declaration_signed'];
+            $evaluated = $row['candidate_status'] === 'evaluated';
+            $launchReady = (bool) $row['gn_endorsed']
+                && (bool) $row['nic_verified']
+                && (bool) $row['residence_verified']
+                && trim((string) ($row['reference_1'] ?? '')) !== ''
+                && trim((string) ($row['reference_2'] ?? '')) !== ''
+                && trim((string) $row['reference_1']) !== trim((string) $row['reference_2'])
+                && $declared
+                && $evaluated
+                && $row['interview_score'] !== null
+                && $row['involvement_score'] !== null
+                && $row['references_score'] !== null
+                && $row['competency_score'] !== null
+                && $row['total_score'] !== null;
+            $eligible = $months >= 6
+                && (int) $row['trust_score'] >= 70
+                && (int) $row['completed_transactions'] >= 10
+                && $clean
+                && $declared
+                && $evaluated
+                && $row['competency_score'] !== null;
+
+            return [
+                'id'                => (int) $row['id'],
+                'name'              => (string) $row['full_name'],
+                'initials'          => User::initials((string) $row['full_name']),
+                'trust_score'       => (int) $row['trust_score'],
+                'address'           => (string) $row['address'],
+                'verified_at'       => (string) ($row['verified_at'] ?? ''),
+                'member_since'      => $joinedAt === null ? '' : $joinedAt->format('M Y'),
+                'months'            => $months,
+                'transactions'      => (int) $row['completed_transactions'],
+                'upheld_claims'     => (int) $row['upheld_claims'],
+                'has_suspension'    => (bool) $row['has_suspension'],
+                'record'            => $clean ? 'Clean' : 'Review required',
+                'gn_endorsed'       => (bool) $row['gn_endorsed'],
+                'nic_verified'      => (bool) $row['nic_verified'],
+                'residence_verified'=> (bool) $row['residence_verified'],
+                'reference_1'       => (string) ($row['reference_1'] ?? ''),
+                'reference_2'       => (string) ($row['reference_2'] ?? ''),
+                'declaration_signed'=> $declared,
+                'launch_ready'      => $launchReady,
+                'eligible'          => $eligible,
+                'conflict'          => $declared ? null : 'Declaration not recorded',
+                'recommended'       => false,
+            ];
+        }, $rows);
+
+        foreach ($candidates as $index => $candidate) {
+            if ($candidate['eligible']) {
+                $candidates[$index]['recommended'] = true;
+                break;
+            }
+        }
+
+        return $candidates;
     }
 
     /**

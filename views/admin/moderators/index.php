@@ -141,12 +141,14 @@ include __DIR__ . '/../../../partials/header.php';
                             <?php if ($member['conflict'] !== null): ?>
                                 <span class="badge badge--warning">! <?= e($member['conflict']) ?></span>
                             <?php else: ?>
-                                <span class="badge badge--success">None</span>
+                                <span class="badge badge--success">Declaration signed</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($member['conflict'] === null): ?>
+                            <?php if ($member['launch_ready']): ?>
                                 <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
+                            <?php else: ?>
+                                <span class="badge badge--neutral">Checks incomplete</span>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -181,6 +183,9 @@ include __DIR__ . '/../../../partials/header.php';
                 </tr>
             </thead>
             <tbody>
+                <?php if ($eligibilityPool === []): ?>
+                    <tr><td colspan="7">No members currently meet the recorded normal-operation eligibility criteria.</td></tr>
+                <?php endif; ?>
                 <?php foreach ($eligibilityPool as $member): ?>
                     <tr<?= $member['recommended'] ? ' class="list-row--highlighted"' : '' ?>>
                         <td>
@@ -197,7 +202,15 @@ include __DIR__ . '/../../../partials/header.php';
                         <td><strong style="color: var(--color-primary);"><?= e((string) $member['trust_score']) ?></strong></td>
                         <td><?= e((string) $member['months']) ?></td>
                         <td><?= e((string) $member['transactions']) ?></td>
-                        <td><span class="badge badge--<?= $member['record'] === 'Clean' ? 'success' : 'warning' ?>"><?= e($member['record']) ?></span></td>
+                        <td>
+                            <span class="badge badge--<?= $member['record'] === 'Clean' ? 'success' : 'warning' ?>"><?= e($member['record']) ?></span>
+                            <?php if ($member['upheld_claims'] > 0): ?>
+                                <span class="list-row__meta"><?= e((string) $member['upheld_claims']) ?> resolved claim(s)</span>
+                            <?php endif; ?>
+                            <?php if ($member['has_suspension']): ?>
+                                <span class="list-row__meta">Suspension on record</span>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <?php if ($member['gn_endorsed']): ?>
                                 <span class="badge badge--success">✓</span>
