@@ -36,4 +36,37 @@ final class ItemCategory extends BaseModel
               ORDER BY c.display_order"
         );
     }
+
+    public function nameTaken(string $name, int $exceptId = 0): bool
+    {
+        $sql = 'SELECT 1 FROM item_categories WHERE name = :name';
+        $params = ['name' => $name];
+
+        if ($exceptId > 0) {
+            $sql .= ' AND id <> :except_id';
+            $params['except_id'] = $exceptId;
+        }
+
+        return $this->selectValue($sql . ' LIMIT 1', $params) !== false;
+    }
+
+    public function createCategory(string $name, bool $active): int
+    {
+        $displayOrder = (int) $this->selectValue(
+            'SELECT COALESCE(MAX(display_order), 0) + 1 FROM item_categories'
+        );
+
+        return $this->insert(
+            'INSERT INTO item_categories (name, display_order, active) VALUES (:name, :display_order, :active)',
+            ['name' => $name, 'display_order' => $displayOrder, 'active' => $active ? 1 : 0]
+        );
+    }
+
+    public function updateCategory(int $id, string $name, bool $active): void
+    {
+        $this->execute(
+            'UPDATE item_categories SET name = :name, active = :active WHERE id = :id',
+            ['name' => $name, 'active' => $active ? 1 : 0, 'id' => $id]
+        );
+    }
 }
