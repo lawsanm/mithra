@@ -210,6 +210,33 @@ final class AdminController extends Controller
         $this->redirect('/admin/divisions');
     }
 
+    /** POST /admin/moderators/candidates. */
+    public function createModeratorNomination(): void
+    {
+        $validator = (new Validator($_POST))
+            ->required('division_id', 'Division')->integer('division_id', 'Division', 1)
+            ->required('candidate_id', 'Candidate')->integer('candidate_id', 'Candidate', 1)
+            ->required('nominated_by', 'Nominator')->integer('nominated_by', 'Nominator', 1);
+        $divisionId = (int) $validator->value('division_id');
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $this->moderatorCandidateService()->nominate(
+                $divisionId,
+                (int) $validator->value('candidate_id'),
+                (int) $validator->value('nominated_by')
+            );
+            $this->flash('Moderator nomination recorded. Complete the checks and evaluation before appointment.');
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        }
+
+        $this->redirect('/admin/moderators?division=' . $divisionId);
+    }
+
     private function divisionInput(): Validator
     {
         $validator = (new Validator($_POST))
@@ -234,6 +261,14 @@ final class AdminController extends Controller
     private function divisionService(): DivisionService
     {
         return new DivisionService(new GnDivision($this->pdo));
+    }
+
+    private function moderatorCandidateService(): ModeratorCandidateService
+    {
+        return new ModeratorCandidateService(
+            new GnDivision($this->pdo),
+            new ModeratorCandidate($this->pdo)
+        );
     }
 
     // ── Dashboard ───────────────────────────────────────────────────────────

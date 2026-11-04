@@ -47,4 +47,66 @@ final class ModeratorCandidate extends BaseModel
             ['division' => $divisionId, 'candidate_division' => $divisionId]
         );
     }
+
+    public function isActiveHomeMember(int $userId, int $divisionId): bool
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*)
+               FROM users u
+               JOIN roles r ON r.id = u.role_id AND r.code = 'member'
+               JOIN user_divisions ud ON ud.user_id = u.id
+                    AND ud.gn_division_id = :division
+                    AND ud.membership_type = 'home'
+                    AND ud.status = 'active'
+              WHERE u.id = :user AND u.status = 'active'",
+            ['division' => $divisionId, 'user' => $userId]
+        ) === 1;
+    }
+
+    public function hasOpenNomination(int $userId, int $divisionId): bool
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM moderator_candidates
+              WHERE user_id = :user AND gn_division_id = :division
+                AND status IN ('nominated', 'checks_passed', 'evaluated', 'provisional')",
+            ['user' => $userId, 'division' => $divisionId]
+        ) > 0;
+    }
+
+    public function createNomination(int $divisionId, int $userId, int $nominatorId): int
+    {
+        $inserted = $this->execute(
+            "INSERT INTO moderator_candidates (gn_division_id, user_id, candidate_name, nominated_by, status)
+             SELECT :division, u.id, u.full_name, :nominator, 'nominated'
+               FROM users u
+               JOIN roles r ON r.id = u.role_id AND r.code = 'member'
+               JOIN user_divisions ud ON ud.user_id = u.id
+                    AND ud.gn_division_id = :member_division
+                    AND ud.membership_type = 'home'
+                    AND ud.status = 'active'
+              WHERE u.id = :user AND u.status = 'active'
+                AND EXISTS (
+                    SELECT 1 FROM users nominator
+                    JOIN roles nr ON nr.id = nominator.role_id AND nr.code = 'member'
+                    JOIN user_divisions nud ON nud.user_id = nominator.id
+                         AND nud.gn_division_id = :nominator_division
+                         AND nud.membership_type = 'home'
+                         AND nud.status = 'active'
+                    WHERE nominator.id = :nominator AND nominator.status = 'active'
+                )",
+            [
+                'division' => $divisionId,
+                'nominator' => $nominatorId,
+                'member_division' => $divisionId,
+                'nominator_division' => $divisionId,
+                'user' => $userId,
+            ]
+        );
+
+        if ($inserted !== 1) {
+            throw ValidationException::field('candidate_id', 'The nominee or nominator is no longer active in this division. Reload and try again.');
+        }
+
+        return (int) $this->pdo->lastInsertId();
+    }
 }

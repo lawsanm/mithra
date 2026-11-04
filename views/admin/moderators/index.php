@@ -29,6 +29,10 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Moderator management</h1>
+    <button class="btn btn--primary page-header__action" type="button" data-modal-open="modal-create-moderator-candidate">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
+        Record nomination
+    </button>
 </header>
 
 <ul class="filter-pills">
@@ -280,4 +284,5 @@ include __DIR__ . '/../../../partials/header.php';
     <?php endif; ?>
 </section>
 
-<?php include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php include __DIR__ . '/../../../partials/modal-create-moderator-candidate.php'; ?>
+<?php $pageScripts = ['modal.js']; include __DIR__ . '/../../../partials/footer.php'; ?>
