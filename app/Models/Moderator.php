@@ -122,4 +122,29 @@ final class Moderator extends BaseModel
             ['user' => $userId, 'division' => $divisionId, 'admin' => $adminId]
         );
     }
+
+    public function lifecycle(int $id, bool $lock = false): ?array
+    {
+        $sql = 'SELECT ma.id, ma.user_id, ma.gn_division_id, ma.status, ma.bond_points, ma.bond_status,
+                       ma.objection_window_ends, ma.trial_ends_at, ma.confirmed_at, ma.ended_at, ma.end_reason,
+                       u.full_name, d.name AS division_name
+                  FROM moderator_assignments ma JOIN users u ON u.id = ma.user_id
+                  JOIN gn_divisions d ON d.id = ma.gn_division_id WHERE ma.id = :id';
+        return $this->selectOne($lock ? $sql . ' FOR UPDATE' : $sql, ['id' => $id]);
+    }
+
+    public function confirmTrial(int $id): void
+    {
+        $this->execute("UPDATE moderator_assignments SET status = 'active', confirmed_at = NOW() WHERE id = :id AND status = 'trial'", ['id' => $id]);
+    }
+
+    public function endAppointment(int $id, string $status, string $bondStatus, string $reason): void
+    {
+        $this->execute('UPDATE moderator_assignments SET status = :status, bond_status = :bond, ended_at = NOW(), end_reason = :reason WHERE id = :id', ['id' => $id, 'status' => $status, 'bond' => $bondStatus, 'reason' => $reason]);
+    }
+
+    public function historyPage(int $page): array
+    {
+        return $this->selectPage('SELECT ma.id, ma.status, ma.appointed_at, ma.ended_at, ma.end_reason, ma.bond_status, u.full_name, d.name AS division_name FROM moderator_assignments ma JOIN users u ON u.id = ma.user_id JOIN gn_divisions d ON d.id = ma.gn_division_id ORDER BY ma.id DESC', [], $page, 20);
+    }
 }

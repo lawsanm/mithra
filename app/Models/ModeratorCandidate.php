@@ -4,6 +4,16 @@ declare(strict_types=1);
 
 final class ModeratorCandidate extends BaseModel
 {
+    public function closeAppointmentNomination(int $userId, int $divisionId, string $status): void
+    {
+        $this->execute("UPDATE moderator_candidates SET status = :status WHERE user_id = :user AND gn_division_id = :division AND status IN ('provisional','appointed')", ['user' => $userId, 'division' => $divisionId, 'status' => $status]);
+    }
+
+    public function withdraw(int $id): bool
+    {
+        return $this->execute("UPDATE moderator_candidates SET status = 'withdrawn' WHERE id = :id AND status IN ('nominated','checks_passed','evaluated')", ['id' => $id]) === 1;
+    }
+
     protected string $table = 'moderator_candidates';
     protected string $columns = 'id, gn_division_id, user_id, candidate_name, nominated_by, endorsement, nic_verified, residence_verified, reference_1, reference_2, declaration_signed, interview_score, involvement_score, references_score, competency_score, total_score, status, created_at, updated_at';
 
@@ -155,13 +165,14 @@ final class ModeratorCandidate extends BaseModel
                          AND nud.gn_division_id = :nominator_division
                          AND nud.membership_type = 'home'
                          AND nud.status = 'active'
-                    WHERE nominator.id = :nominator AND nominator.status = 'active'
+                    WHERE nominator.id = :nominator_user AND nominator.status = 'active'
                 )",
             [
                 'division' => $divisionId,
                 'nominator' => $nominatorId,
                 'member_division' => $divisionId,
                 'nominator_division' => $divisionId,
+                'nominator_user' => $nominatorId,
                 'user' => $userId,
             ]
         );

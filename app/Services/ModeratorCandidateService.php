@@ -32,16 +32,23 @@ final class ModeratorCandidateService
         return $this->candidates->createNomination($divisionId, $candidateId, $nominatorId);
     }
 
+    public function withdraw(int $id): void
+    {
+        if (!$this->candidates->withdraw($id)) {
+            throw ValidationException::field('candidate_id', 'Only an open nomination can be withdrawn. Appointed candidates must use the appointment review.');
+        }
+    }
+
     /** @return list<array<string, mixed>> */
     public function selectionPool(int $divisionId): array
     {
         $rows = $this->candidates->candidatesForDivision($divisionId);
 
         $candidates = array_map(static function (array $row): array {
-            $joinedAt = $row['joined_at'] === null ? null : new DateTimeImmutable((string) $row['joined_at']);
+            $joinedAt = $row['verified_at'] === null ? null : new DateTimeImmutable((string) $row['verified_at']);
             $now = new DateTimeImmutable();
             $tenure = $joinedAt === null ? null : $joinedAt->diff($now);
-            $months = $tenure === null ? 0 : ($tenure->y * 12) + $tenure->m;
+            $months = $tenure === null || $tenure->invert === 1 ? 0 : ($tenure->y * 12) + $tenure->m;
             $clean = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
             $declared = (bool) $row['declaration_signed'];
             $status = (string) ($row['candidate_status'] ?? '');
@@ -62,6 +69,8 @@ final class ModeratorCandidateService
                 && $row['competency_score'] !== null
                 && $row['total_score'] !== null;
             $eligible = $months >= 6
+                && (bool) $row['nic_verified']
+                && (bool) $row['residence_verified']
                 && (int) $row['trust_score'] >= 70
                 && (int) $row['completed_transactions'] >= 10
                 && $clean

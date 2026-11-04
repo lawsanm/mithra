@@ -308,4 +308,9 @@ final class GnDivision extends BaseModel
             ['user' => $userId, 'id' => $id]
         ) === 1;
     }
+
+    public function releaseModerator(int $id, int $userId): bool
+    {
+        return $this->execute('UPDATE gn_divisions SET moderator_id = NULL WHERE id = :id AND moderator_id = :user', ['id' => $id, 'user' => $userId]) === 1;
+    }
 }

@@ -7,6 +7,41 @@ declare(strict_types=1);
  */
 final class User extends BaseModel
 {
+    public function demoteModerator(int $id): bool
+    {
+        return $this->execute("UPDATE users u JOIN roles old_role ON old_role.id = u.role_id AND old_role.code = 'moderator' JOIN roles member_role ON member_role.code = 'member' SET u.role_id = member_role.id WHERE u.id = :id", ['id' => $id]) === 1;
+    }
+
+    public function liaisonAssignmentAccounts(int $page): array
+    {
+        return $this->selectPage("SELECT u.id, u.full_name, u.email, r.code AS role_code FROM users u JOIN roles r ON r.id = u.role_id WHERE u.status = 'active' AND r.code IN ('member','sponsor_liaison') AND (r.code = 'sponsor_liaison' OR NOT EXISTS (SELECT 1 FROM user_divisions ud WHERE ud.user_id = u.id AND ud.status IN ('active','pending','paused'))) ORDER BY r.code DESC, u.full_name, u.id", [], $page, 20);
+    }
+
+    public function lockLiaisonRole(): void
+    {
+        $this->selectOne("SELECT id FROM roles WHERE code = 'sponsor_liaison' FOR UPDATE");
+    }
+
+    public function lockStaffAccount(int $id): ?array
+    {
+        return $this->selectOne('SELECT u.id, u.status, r.code AS role_code FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = :id FOR UPDATE', ['id' => $id]);
+    }
+
+    public function hasMemberCommitments(int $id): bool
+    {
+        return (bool) $this->selectValue("SELECT EXISTS (SELECT 1 FROM user_divisions WHERE user_id = :membership_user AND status IN ('active','pending','paused')) OR EXISTS (SELECT 1 FROM member_wallets WHERE user_id = :wallet_user AND (balance > 0 OR bond_locked > 0)) OR EXISTS (SELECT 1 FROM items WHERE owner_id = :item_user AND status NOT IN ('archived','rejected')) OR EXISTS (SELECT 1 FROM bookings WHERE (borrower_id = :borrower OR lender_id = :lender) AND status NOT IN ('completed','cancelled','declined','expired'))", ['membership_user' => $id, 'wallet_user' => $id, 'item_user' => $id, 'borrower' => $id, 'lender' => $id]);
+    }
+
+    public function activeLiaisonCount(): int
+    {
+        return (int) $this->selectValue("SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE r.code = 'sponsor_liaison' AND u.status = 'active'");
+    }
+
+    public function assignLiaisonRole(int $id, bool $grant): void
+    {
+        $this->execute('UPDATE users u JOIN roles r ON r.code = :role SET u.role_id = r.id WHERE u.id = :id', ['id' => $id, 'role' => $grant ? 'sponsor_liaison' : 'member']);
+    }
+
     /**
      * The columns one login attempt is allowed to see, shared by the two
      * finders below so email and mobile can never drift apart.
