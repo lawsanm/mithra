@@ -91,4 +91,8 @@ declare(strict_types=1);
             <button class="btn btn--primary" type="submit">Save candidate review</button>
         </div>
     </form>
+    <form class="modal__content" method="post" action="<?= base_url() ?>/admin/moderators/candidates/<?= e((string) $nomination['candidate_id']) ?>/withdraw" novalidate>
+        <?= csrf_field() ?>
+        <details class="disclosure"><summary>Withdraw this nomination</summary><p>The nomination and its review will be retained. It will no longer be considered for appointment.</p><button class="btn btn--danger" type="submit">Withdraw nomination</button></details>
+    </form>
 </dialog>

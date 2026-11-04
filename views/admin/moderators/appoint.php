@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 $pageTitle = 'Appoint moderator';
 $navActive = 'moderators';
+$errors = $errors ?? [];
+$values = $values ?? [];
 
 $chrome = 'admin';
 include __DIR__ . '/../../../partials/header.php';
@@ -37,6 +39,7 @@ include __DIR__ . '/../../../partials/header.php';
     <h1 class="page-header__title">Appoint moderator</h1>
     <p class="page-intro__meta"><?= e($division['name']) ?> GN Division</p>
 </header>
+<?php foreach ($errors as $field => $error): ?><?php if ($field !== 'acknowledged'): ?><p class="notice notice--error"><?= e($error) ?></p><?php endif; ?><?php endforeach; ?>
 
 <!-- Step indicator -->
 <div class="step-indicator" aria-label="Appointment steps">
@@ -136,7 +139,7 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
             <div class="line-item">
                 <span class="line-item__label">Platform competency</span>
-                <span class="badge badge--success">Score <?= e((string) ($selected['competency_score'] ?? '')) ?>/10</span>
+                <span class="badge badge--success">Score <?= e((string) ($selected['competency_score'] ?? '')) ?>/100</span>
             </div>
             <div class="line-item">
                 <span class="line-item__label">Conflict declaration</span>
@@ -144,17 +147,17 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
             <div class="line-item" id="review-gn-row">
                 <span class="line-item__label" id="review-gn-label">GN Officer endorsement</span>
-                <span class="badge badge--success" id="review-gn-badge">Recorded</span>
+                <span class="badge badge--neutral" id="review-gn-badge"><?= !empty($selected['gn_endorsed']) ? 'Recorded' : 'Not recorded' ?></span>
             </div>
             <?php if ($isLaunch): ?>
                 <div class="line-item">
                     <span class="line-item__label">Weighted evaluation score</span>
-                    <strong><?= e((string) $selected['total_score']) ?>/100</strong>
+                    <strong><?= e((string) ($selected['total_score'] ?? '')) ?>/100</strong>
                 </div>
             <?php else: ?>
                 <div class="line-item">
                     <span class="line-item__label">Completed transactions · membership</span>
-                    <strong><?= e((string) $selected['transactions']) ?> · <?= e((string) $selected['months']) ?> months</strong>
+                    <strong><?= e((string) ($selected['transactions'] ?? '')) ?> · <?= e((string) ($selected['months'] ?? '')) ?> months</strong>
                 </div>
             <?php endif; ?>
         </div>
@@ -193,69 +196,10 @@ include __DIR__ . '/../../../partials/header.php';
                 <?= csrf_field() ?>
                 <input type="hidden" name="division_id" value="<?= e((string) $division['id']) ?>">
                 <input type="hidden" name="candidate_user_id" value="<?= e((string) $selected['id']) ?>">
+                <div class="field"><label class="field__label" for="appointment-acknowledged"><input type="checkbox" id="appointment-acknowledged" name="acknowledged" value="1" <?= ($values['acknowledged'] ?? '') === '1' ? 'checked' : '' ?>> I have verified the candidate’s signed acknowledgement that misconduct leads to removal, bond forfeiture and a permanent conduct record.</label><?php if (isset($errors['acknowledged'])): ?><p class="field__error"><?= e($errors['acknowledged']) ?></p><?php endif; ?></div>
                 <button class="btn btn--primary" type="submit">Appoint and start objection window</button>
             </form>
         <?php endif; ?>
-    </div>
-</div>
-
-<!-- ── Step 3: Objection window ── -->
-<div class="step-content" id="step-3" style="display: none;">
-    <div class="notice notice--success notice--full">
-        Appointment announced to all <?= e($division['name']) ?> members. 7-day objection window has started.
-    </div>
-
-    <div class="stat-grid stat-grid--3" style="margin-bottom: var(--space-6);">
-        <div class="stat-card">
-            <span class="stat-card__label">Time remaining</span>
-            <strong class="stat-card__value">
-                <span class="badge badge--warning" style="font-size: var(--text-ui-label);">⏱ <?= e($countdown) ?></span>
-            </strong>
-        </div>
-        <div class="stat-card">
-            <span class="stat-card__label">Objections raised</span>
-            <strong class="stat-card__value"><?= e((string) count($objections)) ?></strong>
-        </div>
-        <div class="stat-card">
-            <span class="stat-card__label">Status</span>
-            <strong class="stat-card__value"><span class="badge badge--warning">In progress</span></strong>
-        </div>
-    </div>
-
-    <section class="section">
-        <h2 class="section__title">Objections</h2>
-
-        <?php if ($objections === []): ?>
-            <div class="empty-state">
-                <p class="empty-state__title">No objections raised</p>
-                <p class="empty-state__body">If no objections are raised during the 7-day window, the appointment is confirmed automatically.</p>
-            </div>
-        <?php else: ?>
-            <ul class="row-list">
-                <?php foreach ($objections as $obj): ?>
-                    <li class="list-row">
-                        <span class="avatar"><?= e($obj['initials']) ?></span>
-                        <div class="list-row__body">
-                            <span class="list-row__title"><?= e($obj['name']) ?></span>
-                            <span class="list-row__meta"><?= e($obj['reason']) ?></span>
-                            <span class="list-row__meta"><?= e($obj['date']) ?></span>
-                        </div>
-                        <div class="preview-action" data-demo-form>
-                            <div class="actions">
-                                <button class="btn btn--ghost" type="button" disabled>Dismiss</button>
-                                <button class="btn btn--danger" type="button" disabled>Uphold</button>
-                            </div>
-                            <span class="demo-note">Not available in this demo</span>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    </section>
-
-    <div class="u-mt-6">
-        <?php // Objection details belong to an appointment record, which this preview never saves. ?>
-        <span class="preview-action"><button type="button" disabled class="btn btn--ghost">View objection details</button><span class="demo-note">Not available in this demo</span></span>
     </div>
 </div>
 

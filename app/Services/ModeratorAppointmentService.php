@@ -16,12 +16,16 @@ final class ModeratorAppointmentService
         private User $users,
         private Wallet $wallets,
         private LedgerService $ledger,
-        private Notification $notifications
+        private Notification $notifications,
+        private ModeratorConductHistory $history
     ) {
     }
 
-    public function appoint(int $divisionId, int $candidateUserId, int $adminId): int
+    public function appoint(int $divisionId, int $candidateUserId, int $adminId, bool $acknowledged = false): int
     {
+        if (!$acknowledged) {
+            throw ValidationException::field('acknowledged', 'Record the candidate’s signed misconduct acknowledgement before appointment.');
+        }
         return Database::transaction($this->pdo, function () use ($divisionId, $candidateUserId, $adminId): int {
             $division = $this->divisions->lockForAppointment($divisionId);
 
@@ -112,6 +116,7 @@ final class ModeratorAppointmentService
             }
 
             $assignmentId = $this->moderators->createProvisional($candidateUserId, $divisionId, $adminId);
+            $this->history->record($candidateUserId, $adminId, 'appointment_acknowledgement', 'Appointment #' . $assignmentId . ': Admin verified the signed acknowledgement of removal, bond forfeiture and permanent conduct history for misconduct.');
 
             if (!$this->divisions->assignModerator($divisionId, $candidateUserId)) {
                 throw ValidationException::field('candidate_user_id', 'Another appointment was recorded for this division. Nothing was saved.');

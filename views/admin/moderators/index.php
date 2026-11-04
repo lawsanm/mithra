@@ -29,10 +29,14 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Moderator management</h1>
+    <div class="actions">
+    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/history">Appointment history</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/liaison">Liaison assignment</a>
     <button class="btn btn--primary page-header__action" type="button" data-modal-open="modal-create-moderator-candidate">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
         Record nomination
     </button>
+    </div>
 </header>
 
 <ul class="filter-pills">

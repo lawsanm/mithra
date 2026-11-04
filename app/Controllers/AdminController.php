@@ -278,7 +278,8 @@ final class AdminController extends Controller
     {
         $validator = (new Validator($_POST))
             ->required('division_id', 'Division')->integer('division_id', 'Division', 1)
-            ->required('candidate_user_id', 'Candidate')->integer('candidate_user_id', 'Candidate', 1);
+            ->required('candidate_user_id', 'Candidate')->integer('candidate_user_id', 'Candidate', 1)
+            ->inList('acknowledged', 'Signed misconduct acknowledgement', ['1']);
         $divisionId = (int) $validator->value('division_id');
 
         try {
@@ -289,17 +290,30 @@ final class AdminController extends Controller
             $assignmentId = $this->moderatorAppointmentService()->appoint(
                 $divisionId,
                 (int) $validator->value('candidate_user_id'),
-                $this->userId()
+                $this->userId(),
+                $validator->value('acknowledged') === '1'
             );
             $this->flash('Provisional moderator appointed. The 7-day objection window and six-month trial have started.');
             $this->redirect('/admin/moderators/objections/' . $assignmentId);
 
             return;
         } catch (ValidationException $exception) {
-            $this->flash(implode(' ', $exception->errors()), 'error');
+            $data = $this->appointment($divisionId, (int) $validator->value('candidate_user_id'));
+            if ($data === null) {
+                $this->notice(404, 'Division not found', 'Choose a division from Moderator management.');
+                return;
+            }
+            http_response_code(422);
+            $this->render('admin/moderators/appoint', $data + ['errors' => $exception->errors(), 'values' => $validator->values()]);
         }
+    }
 
-        $this->redirect('/admin/moderators?division=' . $divisionId);
+    public function withdrawModeratorNomination(int $id): void
+    {
+        $this->attempt(function () use ($id): string {
+            $this->moderatorCandidateService()->withdraw($id);
+            return 'Nomination withdrawn. Its review history has been retained.';
+        }, '/admin/moderators', ['Nomination not found', 'Choose a nomination from Moderator management.']);
     }
 
     private function moderatorCandidateReviewInput(): Validator
@@ -370,7 +384,8 @@ final class AdminController extends Controller
             new User($this->pdo),
             new Wallet($this->pdo),
             self::ledgerService($this->pdo),
-            new Notification($this->pdo)
+            new Notification($this->pdo),
+            new ModeratorConductHistory($this->pdo)
         );
     }
 
@@ -614,7 +629,7 @@ final class AdminController extends Controller
     }
 
     /** @return array<string, mixed>|null */
-    private function appointment(int $divisionId): ?array
+    private function appointment(int $divisionId, ?int $chosenUserId = null): ?array
     {
         $row = (new GnDivision($this->pdo))->findWithStaff($divisionId);
 
@@ -645,7 +660,7 @@ final class AdminController extends Controller
             $candidate['recommended'] = $index === 0;
         }
         unset($candidate);
-        $chosen   = (int) $this->queryValue('member');
+        $chosen   = $chosenUserId ?? (int) $this->queryValue('member');
         $selected   = null;
         foreach ($candidates as $candidate) {
             if ($candidate['id'] === $chosen && $canAppoint) {
@@ -688,6 +703,7 @@ final class AdminController extends Controller
 
         return [
             'moderator' => [
+                'assignment_id'    => (int) $row['id'],
                 'initials'     => User::initials((string) $row['full_name']),
                 'name'         => (string) $row['full_name'],
                 'division'     => (string) $row['division_name'],
