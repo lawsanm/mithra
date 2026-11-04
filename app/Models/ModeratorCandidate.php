@@ -113,6 +113,29 @@ final class ModeratorCandidate extends BaseModel
         ) === 1;
     }
 
+    /** @return array<string, mixed>|null */
+    public function lockForAppointment(int $candidateId, int $divisionId): ?array
+    {
+        return $this->selectOne(
+            "SELECT id, user_id, status
+               FROM moderator_candidates
+              WHERE id = :id AND gn_division_id = :division
+                AND status IN ('nominated', 'checks_passed', 'evaluated')
+              FOR UPDATE",
+            ['id' => $candidateId, 'division' => $divisionId]
+        );
+    }
+
+    public function markProvisional(int $candidateId, int $divisionId): bool
+    {
+        return $this->execute(
+            "UPDATE moderator_candidates SET status = 'provisional'
+              WHERE id = :id AND gn_division_id = :division
+                AND status IN ('nominated', 'checks_passed', 'evaluated')",
+            ['id' => $candidateId, 'division' => $divisionId]
+        ) === 1;
+    }
+
     public function createNomination(int $divisionId, int $userId, int $nominatorId): int
     {
         $inserted = $this->execute(

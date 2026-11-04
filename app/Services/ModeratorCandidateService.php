@@ -32,6 +32,87 @@ final class ModeratorCandidateService
         return $this->candidates->createNomination($divisionId, $candidateId, $nominatorId);
     }
 
+    /** @return list<array<string, mixed>> */
+    public function selectionPool(int $divisionId): array
+    {
+        $rows = $this->candidates->candidatesForDivision($divisionId);
+
+        $candidates = array_map(static function (array $row): array {
+            $joinedAt = $row['joined_at'] === null ? null : new DateTimeImmutable((string) $row['joined_at']);
+            $now = new DateTimeImmutable();
+            $tenure = $joinedAt === null ? null : $joinedAt->diff($now);
+            $months = $tenure === null ? 0 : ($tenure->y * 12) + $tenure->m;
+            $clean = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
+            $declared = (bool) $row['declaration_signed'];
+            $status = (string) ($row['candidate_status'] ?? '');
+            $evaluated = $status === 'evaluated';
+            $referenceOne = trim((string) ($row['reference_1'] ?? ''));
+            $referenceTwo = trim((string) ($row['reference_2'] ?? ''));
+            $launchReady = (bool) $row['gn_endorsed']
+                && (bool) $row['nic_verified']
+                && (bool) $row['residence_verified']
+                && $referenceOne !== ''
+                && $referenceTwo !== ''
+                && mb_strtolower($referenceOne) !== mb_strtolower($referenceTwo)
+                && $declared
+                && $evaluated
+                && $row['interview_score'] !== null
+                && $row['involvement_score'] !== null
+                && $row['references_score'] !== null
+                && $row['competency_score'] !== null
+                && $row['total_score'] !== null;
+            $eligible = $months >= 6
+                && (int) $row['trust_score'] >= 70
+                && (int) $row['completed_transactions'] >= 10
+                && $clean
+                && $declared
+                && in_array($status, ['nominated', 'checks_passed', 'evaluated'], true)
+                && $row['competency_score'] !== null;
+
+            return [
+                'id'                 => (int) $row['id'],
+                'candidate_id'       => $row['candidate_id'] === null ? null : (int) $row['candidate_id'],
+                'candidate_status'   => $status,
+                'name'               => (string) $row['full_name'],
+                'initials'           => User::initials((string) $row['full_name']),
+                'trust_score'        => (int) $row['trust_score'],
+                'address'            => (string) $row['address'],
+                'verified_at'        => (string) ($row['verified_at'] ?? ''),
+                'member_since'       => $joinedAt === null ? '' : $joinedAt->format('M Y'),
+                'months'             => $months,
+                'transactions'       => (int) $row['completed_transactions'],
+                'upheld_claims'      => (int) $row['upheld_claims'],
+                'has_suspension'     => (bool) $row['has_suspension'],
+                'record'             => $clean ? 'Clean' : 'Review required',
+                'gn_endorsed'        => (bool) $row['gn_endorsed'],
+                'nic_verified'       => (bool) $row['nic_verified'],
+                'residence_verified' => (bool) $row['residence_verified'],
+                'reference_1'        => (string) ($row['reference_1'] ?? ''),
+                'reference_2'        => (string) ($row['reference_2'] ?? ''),
+                'declaration_signed' => $declared,
+                'endorsement'        => (string) ($row['endorsement'] ?? ''),
+                'interview_score'    => $row['interview_score'] === null ? '' : (string) $row['interview_score'],
+                'involvement_score'  => $row['involvement_score'] === null ? '' : (string) $row['involvement_score'],
+                'references_score'   => $row['references_score'] === null ? '' : (string) $row['references_score'],
+                'competency_score'   => $row['competency_score'] === null ? '' : (string) $row['competency_score'],
+                'total_score'        => $row['total_score'] === null ? '' : (string) $row['total_score'],
+                'launch_ready'       => $launchReady,
+                'eligible'           => $eligible,
+                'conflict'           => $declared ? null : 'Declaration not recorded',
+                'recommended'        => false,
+            ];
+        }, $rows);
+
+        foreach ($candidates as $index => $candidate) {
+            if ($candidate['eligible']) {
+                $candidates[$index]['recommended'] = true;
+                break;
+            }
+        }
+
+        return $candidates;
+    }
+
     /**
      * @param array{
      *     endorsement:?string,

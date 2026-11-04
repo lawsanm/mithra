@@ -269,4 +269,43 @@ final class GnDivision extends BaseModel
             'moderator_id' => $row['moderator_id'] === null ? null : (int) $row['moderator_id'],
         ];
     }
+
+    /** Lock the division row while a provisional moderator is being appointed. */
+    public function lockForAppointment(int $id): ?array
+    {
+        $row = $this->selectOne(
+            'SELECT id, name, status, moderator_id
+               FROM gn_divisions WHERE id = :id FOR UPDATE',
+            ['id' => $id]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'id'           => (int) $row['id'],
+            'name'         => (string) $row['name'],
+            'status'       => (string) $row['status'],
+            'moderator_id' => $row['moderator_id'] === null ? null : (int) $row['moderator_id'],
+        ];
+    }
+
+    public function activeMemberCount(int $id): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM user_divisions
+              WHERE gn_division_id = :id AND status = 'active'",
+            ['id' => $id]
+        );
+    }
+
+    public function assignModerator(int $id, int $userId): bool
+    {
+        return $this->execute(
+            "UPDATE gn_divisions SET moderator_id = :user
+              WHERE id = :id AND status = 'active' AND moderator_id IS NULL",
+            ['user' => $userId, 'id' => $id]
+        ) === 1;
+    }
 }

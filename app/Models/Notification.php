@@ -32,6 +32,7 @@ final class Notification extends BaseModel
         'system'    => [
             'listing_approved', 'listing_adjusted', 'listing_rejected', 'account_notice',
             'community_application', 'community_approved', 'community_rejected', 'community_expiring',
+            'moderator_appointed',
             'community_paused', 'community_expired',
         ],
     ];
@@ -221,6 +222,23 @@ final class Notification extends BaseModel
         $this->execute(
             'INSERT INTO notifications (user_id, type, payload) VALUES (:user, :type, :payload)',
             ['user' => $userId, 'type' => $type, 'payload' => json_encode($payload, JSON_THROW_ON_ERROR)]
+        );
+    }
+
+    /** Announce a provisional moderator appointment to active division members. */
+    public function pushToDivisionMembers(int $divisionId, string $type, array $payload): int
+    {
+        return $this->execute(
+            "INSERT INTO notifications (user_id, type, payload)
+             SELECT DISTINCT ud.user_id, :type, :payload
+               FROM user_divisions ud
+               JOIN users u ON u.id = ud.user_id AND u.status = 'active'
+              WHERE ud.gn_division_id = :division AND ud.status = 'active'",
+            [
+                'type' => $type,
+                'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
+                'division' => $divisionId,
+            ]
         );
     }
 }

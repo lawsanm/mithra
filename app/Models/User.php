@@ -160,6 +160,22 @@ final class User extends BaseModel
         return $id === false || $id === null ? null : (int) $id;
     }
 
+    /** Promote an active member only when the role transition still applies. */
+    public function promoteActiveMemberToModerator(int $id): bool
+    {
+        return $this->execute(
+            "UPDATE users u
+               JOIN roles target_role ON target_role.code = 'moderator'
+                SET u.role_id = target_role.id
+              WHERE u.id = :id AND u.status = 'active'
+                AND EXISTS (
+                    SELECT 1 FROM roles member_role
+                     WHERE member_role.id = u.role_id AND member_role.code = 'member'
+                )",
+            ['id' => $id]
+        ) === 1;
+    }
+
     /**
      * Headline figures for a public profile.
      *

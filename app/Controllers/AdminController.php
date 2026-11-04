@@ -273,6 +273,35 @@ final class AdminController extends Controller
         $this->redirect('/admin/moderators?division=' . $divisionId);
     }
 
+    /** POST /admin/moderators/appoint. */
+    public function appointModerator(): void
+    {
+        $validator = (new Validator($_POST))
+            ->required('division_id', 'Division')->integer('division_id', 'Division', 1)
+            ->required('candidate_user_id', 'Candidate')->integer('candidate_user_id', 'Candidate', 1);
+        $divisionId = (int) $validator->value('division_id');
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $assignmentId = $this->moderatorAppointmentService()->appoint(
+                $divisionId,
+                (int) $validator->value('candidate_user_id'),
+                $this->userId()
+            );
+            $this->flash('Provisional moderator appointed. The 7-day objection window and six-month trial have started.');
+            $this->redirect('/admin/moderators/objections/' . $assignmentId);
+
+            return;
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        }
+
+        $this->redirect('/admin/moderators?division=' . $divisionId);
+    }
+
     private function moderatorCandidateReviewInput(): Validator
     {
         return (new Validator($_POST))
@@ -325,6 +354,23 @@ final class AdminController extends Controller
         return new ModeratorCandidateService(
             new GnDivision($this->pdo),
             new ModeratorCandidate($this->pdo)
+        );
+    }
+
+    private function moderatorAppointmentService(): ModeratorAppointmentService
+    {
+        $candidateRecords = new ModeratorCandidate($this->pdo);
+
+        return new ModeratorAppointmentService(
+            $this->pdo,
+            new GnDivision($this->pdo),
+            $candidateRecords,
+            new ModeratorCandidateService(new GnDivision($this->pdo), $candidateRecords),
+            new Moderator($this->pdo),
+            new User($this->pdo),
+            new Wallet($this->pdo),
+            self::ledgerService($this->pdo),
+            new Notification($this->pdo)
         );
     }
 
@@ -474,26 +520,46 @@ final class AdminController extends Controller
         $id        = in_array($requested, $ids, true) ? $requested : $ids[0];
         $selected  = $rows[array_search($id, $ids, true)];
         $members   = (int) $selected['member_count'];
-        $phase     = $selected['moderator_name'] !== null ? 3 : ($members < 10 ? 1 : 2);
-        $labels    = [1 => 'Admin-run division', 2 => 'First moderator appointment', 3 => 'Moderator management'];
+        $moderatorModel = new Moderator($this->pdo);
+        $hasHistory = $moderatorModel->hasAppointmentHistory($id);
+        $hasModerator = $selected['moderator_name'] !== null;
+        $phase = $hasModerator ? 3 : (!$hasHistory && $members < 10 ? 1 : 2);
+        $labels = [1 => 'Admin-run division', 2 => $hasHistory ? 'Moderator replacement' : 'First moderator appointment', 3 => 'Moderator management'];
 
         $candidates = $this->candidateRows($id);
         $eligibleCandidates = array_values(array_filter(
             $candidates,
             static fn (array $candidate): bool => $candidate['eligible']
         ));
+        $rankedPool = array_values(array_filter(
+            $candidates,
+            static fn (array $candidate): bool => $hasHistory ? $candidate['eligible'] : $candidate['launch_ready']
+        ));
+        usort($rankedPool, static function (array $left, array $right) use ($hasHistory): int {
+            if (!$hasHistory) {
+                $scoreOrder = (float) $right['total_score'] <=> (float) $left['total_score'];
+                if ($scoreOrder !== 0) {
+                    return $scoreOrder;
+                }
+            }
+            return $right['trust_score'] <=> $left['trust_score'];
+        });
+        $recommendedCandidateId = $rankedPool[0]['id'] ?? null;
         $nominations = array_values(array_filter(
             $candidates,
             static fn (array $candidate): bool => $candidate['candidate_id'] !== null
         ));
         $active     = array_values(array_filter(
-            (new Moderator($this->pdo))->allActive(),
+            $moderatorModel->allActive(),
             static fn (array $row): bool => (int) $row['division_id'] === $id
         ));
 
         return [
             'selectedDivision' => $id,
             'division'         => ['id' => $id, 'name' => (string) $selected['name']],
+            'hasModerator'     => $hasModerator,
+            'hasAppointmentHistory' => $hasHistory,
+            'recommendedCandidateId' => $recommendedCandidateId,
             'divisions'        => array_map(static fn (array $row): array => $row + ['active' => (int) $row['id'] === $id], $rows),
             'phase'            => [
                 'number'      => $phase,
@@ -555,15 +621,33 @@ final class AdminController extends Controller
             return null;
         }
 
-        $candidates = $this->candidateRows($divisionId);
-        $chosen     = (int) $this->queryValue('member');
+        $moderators = new Moderator($this->pdo);
+        $hasHistory = $moderators->hasAppointmentHistory($divisionId);
+        $isLaunch = !$hasHistory;
+        $canAppoint = $row['moderator_id'] === null
+            && $row['status'] === 'active'
+            && (!$isLaunch || (new GnDivision($this->pdo))->activeMemberCount($divisionId) >= 10);
+        $candidates = array_values(array_filter(
+            $this->candidateRows($divisionId),
+            static fn (array $candidate): bool => $isLaunch ? $candidate['launch_ready'] : $candidate['eligible']
+        ));
+        usort($candidates, static function (array $left, array $right) use ($isLaunch): int {
+            if ($isLaunch) {
+                $scoreOrder = (float) $right['total_score'] <=> (float) $left['total_score'];
+                if ($scoreOrder !== 0) {
+                    return $scoreOrder;
+                }
+            }
+            return $right['trust_score'] <=> $left['trust_score'];
+        });
+        foreach ($candidates as $index => &$candidate) {
+            $candidate['recommended'] = $index === 0;
+        }
+        unset($candidate);
+        $chosen   = (int) $this->queryValue('member');
         $selected   = null;
-        $isLaunch   = $row['moderator_id'] === null;
-
         foreach ($candidates as $candidate) {
-            $ready = $isLaunch ? $candidate['launch_ready'] : $candidate['eligible'];
-
-            if ($candidate['id'] === $chosen && $ready) {
+            if ($candidate['id'] === $chosen && $canAppoint) {
                 $selected = $candidate;
             }
         }
@@ -573,6 +657,9 @@ final class AdminController extends Controller
             'candidates'  => $candidates,
             'selected'    => $selected,
             'currentStep' => $selected === null ? 1 : 2,
+            'canAppoint'  => $canAppoint,
+            'isLaunch'    => $isLaunch,
+            'activeModerator' => $row['moderator_name'],
             // The objection window only opens once an appointment is made.
             'objections'  => [],
             'countdown'   => 'Opens when the appointment is made',
@@ -631,80 +718,7 @@ final class AdminController extends Controller
      */
     private function candidateRows(int $divisionId): array
     {
-        $rows = (new ModeratorCandidate($this->pdo))->candidatesForDivision($divisionId);
-
-        $candidates = array_map(static function (array $row): array {
-            $joinedAt = $row['joined_at'] === null ? null : new DateTimeImmutable((string) $row['joined_at']);
-            $now      = new DateTimeImmutable();
-            $tenure   = $joinedAt === null ? null : $joinedAt->diff($now);
-            $months   = $tenure === null ? 0 : ($tenure->y * 12) + $tenure->m;
-            $clean    = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
-            $declared = (bool) $row['declaration_signed'];
-            $candidateStatus = (string) ($row['candidate_status'] ?? '');
-            $evaluated = $candidateStatus === 'evaluated';
-            $launchReady = (bool) $row['gn_endorsed']
-                && (bool) $row['nic_verified']
-                && (bool) $row['residence_verified']
-                && trim((string) ($row['reference_1'] ?? '')) !== ''
-                && trim((string) ($row['reference_2'] ?? '')) !== ''
-                && trim((string) $row['reference_1']) !== trim((string) $row['reference_2'])
-                && $declared
-                && $evaluated
-                && $row['interview_score'] !== null
-                && $row['involvement_score'] !== null
-                && $row['references_score'] !== null
-                && $row['competency_score'] !== null
-                && $row['total_score'] !== null;
-            $eligible = $months >= 6
-                && (int) $row['trust_score'] >= 70
-                && (int) $row['completed_transactions'] >= 10
-                && $clean
-                && $declared
-                && in_array($candidateStatus, ['nominated', 'checks_passed', 'evaluated'], true)
-                && $row['competency_score'] !== null;
-
-            return [
-                'id'                => (int) $row['id'],
-                'candidate_id'      => $row['candidate_id'] === null ? null : (int) $row['candidate_id'],
-                'candidate_status'  => $candidateStatus,
-                'name'              => (string) $row['full_name'],
-                'initials'          => User::initials((string) $row['full_name']),
-                'trust_score'       => (int) $row['trust_score'],
-                'address'           => (string) $row['address'],
-                'verified_at'       => (string) ($row['verified_at'] ?? ''),
-                'member_since'      => $joinedAt === null ? '' : $joinedAt->format('M Y'),
-                'months'            => $months,
-                'transactions'      => (int) $row['completed_transactions'],
-                'upheld_claims'     => (int) $row['upheld_claims'],
-                'has_suspension'    => (bool) $row['has_suspension'],
-                'record'            => $clean ? 'Clean' : 'Review required',
-                'gn_endorsed'       => (bool) $row['gn_endorsed'],
-                'nic_verified'      => (bool) $row['nic_verified'],
-                'residence_verified'=> (bool) $row['residence_verified'],
-                'reference_1'       => (string) ($row['reference_1'] ?? ''),
-                'reference_2'       => (string) ($row['reference_2'] ?? ''),
-                'declaration_signed'=> $declared,
-                'endorsement'       => (string) ($row['endorsement'] ?? ''),
-                'interview_score'   => $row['interview_score'] === null ? '' : (string) $row['interview_score'],
-                'involvement_score' => $row['involvement_score'] === null ? '' : (string) $row['involvement_score'],
-                'references_score'  => $row['references_score'] === null ? '' : (string) $row['references_score'],
-                'competency_score'  => $row['competency_score'] === null ? '' : (string) $row['competency_score'],
-                'total_score'       => $row['total_score'] === null ? '' : (string) $row['total_score'],
-                'launch_ready'      => $launchReady,
-                'eligible'          => $eligible,
-                'conflict'          => $declared ? null : 'Declaration not recorded',
-                'recommended'       => false,
-            ];
-        }, $rows);
-
-        foreach ($candidates as $index => $candidate) {
-            if ($candidate['eligible']) {
-                $candidates[$index]['recommended'] = true;
-                break;
-            }
-        }
-
-        return $candidates;
+        return $this->moderatorCandidateService()->selectionPool($divisionId);
     }
 
     /**

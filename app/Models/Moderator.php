@@ -101,4 +101,25 @@ final class Moderator extends BaseModel
             ['id' => $userId]
         );
     }
+
+    public function hasAppointmentHistory(int $divisionId): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM moderator_assignments WHERE gn_division_id = :division',
+            ['division' => $divisionId]
+        ) > 0;
+    }
+
+    public function createProvisional(int $userId, int $divisionId, int $adminId): int
+    {
+        return $this->insert(
+            'INSERT INTO moderator_assignments
+                (user_id, gn_division_id, appointed_by, objection_window_ends, trial_ends_at,
+                 bond_points, bond_status, status)
+             VALUES
+                (:user, :division, :admin, NOW() + INTERVAL 7 DAY, NOW() + INTERVAL 6 MONTH,
+                 500, \'held\', \'trial\')',
+            ['user' => $userId, 'division' => $divisionId, 'admin' => $adminId]
+        );
+    }
 }
