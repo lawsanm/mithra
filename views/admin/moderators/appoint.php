@@ -10,11 +10,13 @@ declare(strict_types=1);
  * Step 3: Objection window (7 days).
  *
  * @var array  $division    id, name
- * @var array  $candidates  initials, name, trust_score, member_since, transactions, months, record, gn_endorsed(bool), recommended(bool)
+ * @var array  $candidates  eligible candidate rows sorted by proposal ranking
  * @var array  $selected    initials, name, division, trust_score, member_since (pre-filled if coming from index page)
  * @var array  $objections  initials, name, reason, date, status
  * @var int    $currentStep 1|2|3
  * @var string $countdown   remaining time text
+ * @var bool   $canAppoint  whether this division currently accepts an appointment
+ * @var bool   $isLaunch    whether this is the division's first appointment
  */
 
 $pageTitle = 'Appoint moderator';
@@ -57,8 +59,22 @@ include __DIR__ . '/../../../partials/header.php';
 <!-- ── Step 1: Select member ── -->
 <div class="step-content" id="step-1" <?= $currentStep === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
-        Select a member from the eligibility pool below. Members are sorted by trust score — the highest-scoring member is recommended.
+        <?php if ($isLaunch): ?>
+            Select the highest weighted-score candidate who completed the launch checks. Trust score breaks a tie.
+        <?php else: ?>
+            Select the highest-trust member who meets the normal-operation eligibility criteria.
+        <?php endif; ?>
     </div>
+
+    <?php if (!$canAppoint): ?>
+        <div class="notice notice--warning notice--full">
+            <?php if ($activeModerator !== null): ?>
+                <?= e((string) $activeModerator) ?> currently holds this division's moderator appointment. A replacement can be selected after that appointment ends.
+            <?php else: ?>
+                This division is not currently available for appointment. Confirm it is active and, for a first appointment, has at least 10 active members.
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="field" style="margin-bottom: var(--space-5);">
         <label class="label" for="member-search">Search members</label>
@@ -75,7 +91,7 @@ include __DIR__ . '/../../../partials/header.php';
                         <?= e($candidate['name']) ?>
                         <span class="badge badge--info u-ml-2">Trust <?= e((string) $candidate['trust_score']) ?></span>
                         <?php if ($candidate['recommended']): ?>
-                            <span class="badge badge--warning u-ml-2">Recommended — highest trust score</span>
+                            <span class="badge badge--warning u-ml-2"><?= $isLaunch ? 'Recommended — highest weighted score' : 'Recommended — highest trust score' ?></span>
                         <?php endif; ?>
                     </span>
                     <span class="list-row__meta">Member since <?= e($candidate['member_since']) ?></span>
@@ -86,7 +102,11 @@ include __DIR__ . '/../../../partials/header.php';
                         <span class="pill" style="<?= $candidate['gn_endorsed'] ? 'background-color: var(--color-success-tint); color: var(--color-success-text); border-color: var(--color-success-tint);' : '' ?>">GN endorsed: <?= $candidate['gn_endorsed'] ? '✓' : '✕' ?></span>
                     </div>
                 </div>
-                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>?member=<?= e((string) $candidate['id']) ?>">Select this member</a>
+                <?php if ($candidate['recommended'] && $canAppoint): ?>
+                    <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>?member=<?= e((string) $candidate['id']) ?>">Review recommended member</a>
+                <?php else: ?>
+                    <span class="badge badge--neutral"><?= $canAppoint ? 'Lower-ranked candidate' : 'Not available' ?></span>
+                <?php endif; ?>
             </li>
         <?php endforeach; ?>
     </ul>
@@ -111,21 +131,32 @@ include __DIR__ . '/../../../partials/header.php';
             <h3 style="font-size: var(--text-ui-label); font-weight: var(--weight-semibold); margin-bottom: var(--space-3);">Appointment criteria</h3>
 
             <div class="line-item">
-                <span class="line-item__label">✓ Verified resident</span>
-                <span class="badge badge--neutral">To verify</span>
+                <span class="line-item__label">Verified identity and residence</span>
+                <span class="badge badge--success">Recorded</span>
             </div>
             <div class="line-item">
-                <span class="line-item__label">✓ Platform capable</span>
-                <span class="badge badge--neutral">To verify</span>
+                <span class="line-item__label">Platform competency</span>
+                <span class="badge badge--success">Score <?= e((string) ($selected['competency_score'] ?? '')) ?>/10</span>
             </div>
             <div class="line-item">
-                <span class="line-item__label">✓ No conflict of interest</span>
-                <span class="badge badge--neutral">To verify</span>
+                <span class="line-item__label">Conflict declaration</span>
+                <span class="badge badge--success">Signed</span>
             </div>
             <div class="line-item" id="review-gn-row">
                 <span class="line-item__label" id="review-gn-label">GN Officer endorsement</span>
-                <span class="badge" id="review-gn-badge">To verify</span>
+                <span class="badge badge--success" id="review-gn-badge">Recorded</span>
             </div>
+            <?php if ($isLaunch): ?>
+                <div class="line-item">
+                    <span class="line-item__label">Weighted evaluation score</span>
+                    <strong><?= e((string) $selected['total_score']) ?>/100</strong>
+                </div>
+            <?php else: ?>
+                <div class="line-item">
+                    <span class="line-item__label">Completed transactions · membership</span>
+                    <strong><?= e((string) $selected['transactions']) ?> · <?= e((string) $selected['months']) ?> months</strong>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="form-card form-card--wide">
@@ -140,27 +171,31 @@ include __DIR__ . '/../../../partials/header.php';
                     <span class="timeline__date">Any member can raise a concern</span>
                 </div>
                 <div class="timeline__item">
-                    <p class="timeline__title">Appointment confirmed</p>
-                    <span class="timeline__date">If no valid objections after 7 days</span>
+                    <p class="timeline__title">Objections reviewed</p>
+                    <span class="timeline__date">Admin reviews any concerns before confirmation</span>
                 </div>
                 <div class="timeline__item">
-                    <p class="timeline__title">Conduct bond activated</p>
-                    <span class="timeline__date">500-point bond deposited</span>
+                    <p class="timeline__title">Six-month trial and conduct bond</p>
+                    <span class="timeline__date">Both start on appointment day; 500 points are held</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="notice notice--warning notice--full">
-        After confirmation, the appointment is posted publicly for 7 days. If a resident raises a serious, specific concern, you will review it before the appointment is finalised.
+        Appointing starts the 7-day public objection window and the six-month trial. The 500-point conduct bond is held from day one.
     </div>
 
     <div class="actions" style="margin-top: var(--space-5);">
         <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Back to selection</a>
-        <div class="preview-action" data-demo-form>
-            <button class="btn btn--primary" type="button" id="btn-confirm-appointment" disabled>Confirm and start objection window</button>
-            <span class="demo-note">Not available in this demo</span>
-        </div>
+        <?php if ($canAppoint && $selected !== null): ?>
+            <form method="post" action="<?= base_url() ?>/admin/moderators/appoint" novalidate>
+                <?= csrf_field() ?>
+                <input type="hidden" name="division_id" value="<?= e((string) $division['id']) ?>">
+                <input type="hidden" name="candidate_user_id" value="<?= e((string) $selected['id']) ?>">
+                <button class="btn btn--primary" type="submit">Appoint and start objection window</button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 

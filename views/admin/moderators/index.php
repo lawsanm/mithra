@@ -98,7 +98,7 @@ include __DIR__ . '/../../../partials/header.php';
     <?php endif; ?>
 </section>
 
-<!-- ── Phase 1 content (Battaramulla sample — 6 members, no moderator) ── -->
+<!-- ── Phase 1 content: first appointment waits for the minimum membership ── -->
 <section class="section" id="phase-1-content" <?= $phase['number'] === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
         You are handling member registrations directly. No moderator is needed until approximately 10 members are registered in this division.
@@ -143,10 +143,16 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 </section>
 
-<!-- ── Phase 2 content (Maharagama South — 11 members, no moderator yet) ── -->
+<!-- ── Phase 2 content: first appointment or replacement ── -->
 <section class="section" id="phase-2-content" <?= $phase['number'] === 2 ? '' : 'hidden' ?>>
     <div class="notice notice--warning notice--full">
-        The division has reached the member threshold. Select and appoint the first moderator from the verified members below. The appointment is announced publicly with a 7-day objection window before it is finalised.
+        <?php if ($hasModerator): ?>
+            This division already has an active or trial moderator. End that appointment before selecting a replacement.
+        <?php elseif ($hasAppointmentHistory): ?>
+            The division has a vacancy after a previous appointment. Select the highest-trust member who meets normal-operation eligibility. A 7-day objection window starts when appointed; the six-month trial and 500-point bond start on day one.
+        <?php else: ?>
+            The division has reached the member threshold. Select the highest-scoring fully reviewed candidate. A 7-day objection window starts when appointed; the six-month trial and 500-point bond start on day one.
+        <?php endif; ?>
     </div>
 
     <div class="section__head">
@@ -189,8 +195,14 @@ include __DIR__ . '/../../../partials/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($member['launch_ready']): ?>
+                            <?php if (!$hasModerator && !$hasAppointmentHistory && $member['launch_ready'] && $member['id'] === $recommendedCandidateId): ?>
                                 <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
+                            <?php elseif ($hasModerator): ?>
+                                <span class="badge badge--neutral">Current moderator must leave first</span>
+                            <?php elseif ($hasAppointmentHistory && $member['eligible'] && $member['id'] === $recommendedCandidateId): ?>
+                                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
+                            <?php elseif ((!$hasAppointmentHistory && $member['launch_ready']) || ($hasAppointmentHistory && $member['eligible'])): ?>
+                                <span class="badge badge--neutral">Lower-ranked candidate</span>
                             <?php else: ?>
                                 <span class="badge badge--neutral">Checks incomplete</span>
                             <?php endif; ?>
@@ -205,7 +217,11 @@ include __DIR__ . '/../../../partials/header.php';
 <!-- ── Phase 3 content (Kaduwela West — 142 members, data-driven pool) ── -->
 <section class="section" id="phase-3-content" <?= $phase['number'] === 3 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
-        Data-driven eligibility pool active. Members qualifying: 6+ months verified, trust score 70+, 10+ completed transactions, clean record, no conflict of interest.
+        <?php if ($hasModerator): ?>
+            This division already has an active or trial moderator. End that appointment before selecting a replacement.
+        <?php else: ?>
+            Data-driven eligibility pool active. Members qualifying: 6+ months verified, trust score 70+, 10+ completed transactions, clean record, and signed conflict declaration.
+        <?php endif; ?>
     </div>
 
     <div class="section__head">
@@ -263,7 +279,15 @@ include __DIR__ . '/../../../partials/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <a class="btn btn--<?= $member['recommended'] ? 'primary' : 'ghost' ?>" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
+                            <?php if ($hasModerator): ?>
+                                <span class="badge badge--neutral">Current moderator must leave first</span>
+                            <?php else: ?>
+                                <?php if ($member['recommended']): ?>
+                                    <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select recommended</a>
+                                <?php else: ?>
+                                    <span class="badge badge--neutral">Lower trust score</span>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
