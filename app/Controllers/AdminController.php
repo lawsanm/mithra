@@ -237,6 +237,63 @@ final class AdminController extends Controller
         $this->redirect('/admin/moderators?division=' . $divisionId);
     }
 
+    /** POST /admin/moderators/candidates/{id}/review. */
+    public function updateModeratorCandidate(int $id): void
+    {
+        $validator = $this->moderatorCandidateReviewInput();
+        $divisionId = (int) $validator->value('division_id');
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $values = $validator->values();
+            $this->moderatorCandidateService()->review($divisionId, $id, [
+                'endorsement'        => Validator::optional($values, 'endorsement'),
+                'nic_verified'       => $validator->value('nic_verified') === '1',
+                'residence_verified' => $validator->value('residence_verified') === '1',
+                'reference_1'        => Validator::optional($values, 'reference_1'),
+                'reference_2'        => Validator::optional($values, 'reference_2'),
+                'declaration_signed' => $validator->value('declaration_signed') === '1',
+                'interview_score'    => self::optionalInteger($validator->value('interview_score')),
+                'involvement_score'  => self::optionalInteger($validator->value('involvement_score')),
+                'references_score'   => self::optionalInteger($validator->value('references_score')),
+                'competency_score'   => self::optionalInteger($validator->value('competency_score')),
+            ]);
+            $this->flash('Candidate checks and evaluation saved.');
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Nomination not found', 'Return to Moderator management to choose an editable nomination.');
+
+            return;
+        }
+
+        $this->redirect('/admin/moderators?division=' . $divisionId);
+    }
+
+    private function moderatorCandidateReviewInput(): Validator
+    {
+        return (new Validator($_POST))
+            ->required('division_id', 'Division')->integer('division_id', 'Division', 1)
+            ->maxLength('endorsement', 'Endorsement', 255)
+            ->inList('nic_verified', 'NIC verification', ['', '1'])
+            ->inList('residence_verified', 'Residence verification', ['', '1'])
+            ->maxLength('reference_1', 'First reference', 150)
+            ->maxLength('reference_2', 'Second reference', 150)
+            ->inList('declaration_signed', 'Declaration', ['', '1'])
+            ->integer('interview_score', 'Interview score', 0, 100)
+            ->integer('involvement_score', 'Community involvement score', 0, 100)
+            ->integer('references_score', 'References score', 0, 100)
+            ->integer('competency_score', 'Platform competency score', 0, 100);
+    }
+
+    private static function optionalInteger(string $value): ?int
+    {
+        return $value === '' ? null : (int) $value;
+    }
+
     private function divisionInput(): Validator
     {
         $validator = (new Validator($_POST))
@@ -425,6 +482,10 @@ final class AdminController extends Controller
             $candidates,
             static fn (array $candidate): bool => $candidate['eligible']
         ));
+        $nominations = array_values(array_filter(
+            $candidates,
+            static fn (array $candidate): bool => $candidate['candidate_id'] !== null
+        ));
         $active     = array_values(array_filter(
             (new Moderator($this->pdo))->allActive(),
             static fn (array $row): bool => (int) $row['division_id'] === $id
@@ -445,6 +506,7 @@ final class AdminController extends Controller
                 ['label' => 'Candidates',        'value' => (string) count($candidates)],
             ],
             'candidates'      => $candidates,
+            'nominations'     => $nominations,
             'verifiedMembers' => $candidates,
             'eligibilityPool' => $eligibleCandidates,
             'pendingMembers'  => array_map(fn (array $member): array => $this->applicantRow($member), $divisions->pendingApprovals($id)),
@@ -578,7 +640,8 @@ final class AdminController extends Controller
             $months   = $tenure === null ? 0 : ($tenure->y * 12) + $tenure->m;
             $clean    = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
             $declared = (bool) $row['declaration_signed'];
-            $evaluated = $row['candidate_status'] === 'evaluated';
+            $candidateStatus = (string) ($row['candidate_status'] ?? '');
+            $evaluated = $candidateStatus === 'evaluated';
             $launchReady = (bool) $row['gn_endorsed']
                 && (bool) $row['nic_verified']
                 && (bool) $row['residence_verified']
@@ -597,11 +660,13 @@ final class AdminController extends Controller
                 && (int) $row['completed_transactions'] >= 10
                 && $clean
                 && $declared
-                && $evaluated
+                && in_array($candidateStatus, ['nominated', 'checks_passed', 'evaluated'], true)
                 && $row['competency_score'] !== null;
 
             return [
                 'id'                => (int) $row['id'],
+                'candidate_id'      => $row['candidate_id'] === null ? null : (int) $row['candidate_id'],
+                'candidate_status'  => $candidateStatus,
                 'name'              => (string) $row['full_name'],
                 'initials'          => User::initials((string) $row['full_name']),
                 'trust_score'       => (int) $row['trust_score'],
@@ -619,6 +684,12 @@ final class AdminController extends Controller
                 'reference_1'       => (string) ($row['reference_1'] ?? ''),
                 'reference_2'       => (string) ($row['reference_2'] ?? ''),
                 'declaration_signed'=> $declared,
+                'endorsement'       => (string) ($row['endorsement'] ?? ''),
+                'interview_score'   => $row['interview_score'] === null ? '' : (string) $row['interview_score'],
+                'involvement_score' => $row['involvement_score'] === null ? '' : (string) $row['involvement_score'],
+                'references_score'  => $row['references_score'] === null ? '' : (string) $row['references_score'],
+                'competency_score'  => $row['competency_score'] === null ? '' : (string) $row['competency_score'],
+                'total_score'       => $row['total_score'] === null ? '' : (string) $row['total_score'],
                 'launch_ready'      => $launchReady,
                 'eligible'          => $eligible,
                 'conflict'          => $declared ? null : 'Declaration not recorded',

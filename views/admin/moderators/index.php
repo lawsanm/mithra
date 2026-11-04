@@ -58,6 +58,46 @@ include __DIR__ . '/../../../partials/header.php';
     <p class="phase-card__meta"><?= e($phase['description']) ?></p>
 </div>
 
+<section class="section">
+    <div class="section__head">
+        <h2 class="section__title">Nominations and candidate checks</h2>
+    </div>
+
+    <?php if ($nominations === []): ?>
+        <div class="empty-state">
+            <p class="empty-state__title">No nominations recorded</p>
+            <p class="empty-state__body">Record a community nomination to begin candidate checks and evaluation.</p>
+        </div>
+    <?php else: ?>
+        <div class="scroll-x">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Candidate</th><th>Status</th><th>Weighted score</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($nominations as $nomination): ?>
+                        <tr>
+                            <td>
+                                <div class="cluster">
+                                    <span class="avatar"><?= e($nomination['initials']) ?></span>
+                                    <strong><?= e($nomination['name']) ?></strong>
+                                </div>
+                            </td>
+                            <td><span class="badge badge--info"><?= e(ucfirst(str_replace('_', ' ', $nomination['candidate_status']))) ?></span></td>
+                            <td><?= $nomination['total_score'] === '' ? 'Not evaluated' : e($nomination['total_score']) . ' / 100' ?></td>
+                            <td>
+                                <button class="btn btn--ghost" type="button" data-modal-open="modal-review-moderator-candidate-<?= e((string) $nomination['candidate_id']) ?>">
+                                    Review checks
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</section>
+
 <!-- ── Phase 1 content (Battaramulla sample — 6 members, no moderator) ── -->
 <section class="section" id="phase-1-content" <?= $phase['number'] === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
@@ -284,5 +324,8 @@ include __DIR__ . '/../../../partials/header.php';
     <?php endif; ?>
 </section>
 
+<?php foreach ($nominations as $nomination): ?>
+    <?php include __DIR__ . '/../../../partials/modal-review-moderator-candidate.php'; ?>
+<?php endforeach; ?>
 <?php include __DIR__ . '/../../../partials/modal-create-moderator-candidate.php'; ?>
 <?php $pageScripts = ['modal.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

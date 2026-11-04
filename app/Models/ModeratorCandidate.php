@@ -22,7 +22,9 @@ final class ModeratorCandidate extends BaseModel
                        JOIN bookings cb ON cb.id = dc.booking_id
                       WHERE cb.borrower_id = u.id AND dc.status = \'resolved\') AS upheld_claims,
                     EXISTS (SELECT 1 FROM account_suspensions susp WHERE susp.user_id = u.id) AS has_suspension,
+                    mc.id AS candidate_id,
                     (mc.endorsement IS NOT NULL AND mc.endorsement <> \'\') AS gn_endorsed,
+                    mc.endorsement,
                     mc.nic_verified, mc.residence_verified, mc.reference_1, mc.reference_2,
                     mc.declaration_signed, mc.interview_score, mc.involvement_score,
                     mc.references_score, mc.competency_score, mc.total_score,
@@ -71,6 +73,44 @@ final class ModeratorCandidate extends BaseModel
                 AND status IN ('nominated', 'checks_passed', 'evaluated', 'provisional')",
             ['user' => $userId, 'division' => $divisionId]
         ) > 0;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findForReview(int $candidateId, int $divisionId): ?array
+    {
+        return $this->selectOne(
+            "SELECT id, gn_division_id, user_id, candidate_name, endorsement,
+                    nic_verified, residence_verified, reference_1, reference_2,
+                    declaration_signed, interview_score, involvement_score,
+                    references_score, competency_score, total_score, status
+               FROM moderator_candidates
+              WHERE id = :id AND gn_division_id = :division
+                AND status IN ('nominated', 'checks_passed', 'evaluated')",
+            ['id' => $candidateId, 'division' => $divisionId]
+        );
+    }
+
+    /** @param array<string, mixed> $review */
+    public function updateReview(int $candidateId, int $divisionId, array $review): bool
+    {
+        return $this->execute(
+            "UPDATE moderator_candidates
+                SET endorsement = :endorsement,
+                    nic_verified = :nic_verified,
+                    residence_verified = :residence_verified,
+                    reference_1 = :reference_1,
+                    reference_2 = :reference_2,
+                    declaration_signed = :declaration_signed,
+                    interview_score = :interview_score,
+                    involvement_score = :involvement_score,
+                    references_score = :references_score,
+                    competency_score = :competency_score,
+                    total_score = :total_score,
+                    status = :status
+              WHERE id = :id AND gn_division_id = :division
+                AND status IN ('nominated', 'checks_passed', 'evaluated')",
+            $review + ['id' => $candidateId, 'division' => $divisionId]
+        ) === 1;
     }
 
     public function createNomination(int $divisionId, int $userId, int $nominatorId): int
