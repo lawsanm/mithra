@@ -586,6 +586,7 @@ final class AdminController extends Controller
                 'trust_score'      => (int) $row['trust_score'],
                 'bond'             => $row['bond_points'] . ' pts',
                 'href'             => base_url() . '/admin/moderators/' . $row['user_id'],
+                'objections_href'  => base_url() . '/admin/moderators/objections/' . $row['id'],
             ], $active),
         ];
     }

@@ -339,6 +339,7 @@ include __DIR__ . '/../../../partials/header.php';
                             <td><?= e($mod['bond']) ?></td>
                             <td>
                                 <a class="btn btn--ghost" href="<?= e($mod['href']) ?>">View profile</a>
+                                <a class="btn btn--ghost" href="<?= e($mod['objections_href']) ?>">View objections</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
