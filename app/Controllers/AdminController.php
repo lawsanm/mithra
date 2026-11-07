@@ -363,6 +363,19 @@ final class AdminController extends Controller
         return new DivisionService(new GnDivision($this->pdo));
     }
 
+    private function verificationService(): VerificationService
+    {
+        return new VerificationService(
+            $this->pdo,
+            new User($this->pdo),
+            new UserDivision($this->pdo),
+            new GnDivision($this->pdo),
+            new Wallet($this->pdo),
+            self::ledgerService($this->pdo),
+            new Notification($this->pdo)
+        );
+    }
+
     private function moderatorCandidateService(): ModeratorCandidateService
     {
         return new ModeratorCandidateService(
@@ -455,14 +468,15 @@ final class AdminController extends Controller
 
         return [
             'division' => [
-                'id'              => (int) $row['id'],
-                'name'            => (string) $row['name'],
-                'province'        => (string) $row['province'],
-                'district'        => (string) $row['district'],
-                'postal_code'     => (string) ($row['postal_code'] ?? ''),
-                'archived'        => $row['status'] === 'archived',
-                'moderator_name'  => $row['moderator_name'],
-                'moderator_since' => $row['moderator_since'] === null ? '' : date('j M Y', strtotime((string) $row['moderator_since'])),
+                'id'                => (int) $row['id'],
+                'name'              => (string) $row['name'],
+                'province'          => (string) $row['province'],
+                'district'           => (string) $row['district'],
+                'postal_code'        => (string) ($row['postal_code'] ?? ''),
+                'archived'           => $row['status'] === 'archived',
+                'moderator_name'     => $row['moderator_name'],
+                'moderator_since'    => $row['moderator_since'] === null ? '' : date('j M Y', strtotime((string) $row['moderator_since'])),
+                'pending_approvals' => $divisions->approvalStats($id)['pending'],
             ] + $this->divisionBadge($row),
             'stats' => [
                 ['label' => 'Members',         'value' => (string) $stats['members'],      'note' => 'verified residents'],
@@ -482,6 +496,10 @@ final class AdminController extends Controller
             return null;
         }
 
+        if ($row['status'] !== 'active' || $row['moderator_id'] !== null) {
+            return null;
+        }
+
         $counts = $divisions->approvalStats($id);
 
         return [
@@ -496,6 +514,51 @@ final class AdminController extends Controller
                 $divisions->pendingApprovals($id)
             ),
         ];
+    }
+
+    /** POST /admin/registrations/{id}/approve. */
+    public function approveInitialRegistration(int $id): void
+    {
+        $this->decideInitialRegistration($id, true);
+    }
+
+    /** POST /admin/registrations/{id}/reject. */
+    public function rejectInitialRegistration(int $id): void
+    {
+        $validator = (new Validator($_POST))->maxLength('reason', 'Reason', 255);
+
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
+            $this->redirect('/admin/divisions');
+
+            return;
+        }
+
+        $this->decideInitialRegistration($id, false, $validator->value('reason'));
+    }
+
+    private function decideInitialRegistration(int $id, bool $approve, ?string $reason = null): void
+    {
+        $verifications = $this->verificationService();
+        $divisionId = 0;
+
+        try {
+            $application = $verifications->reviewInitialByAdmin($id);
+            $divisionId  = (int) $application['gn_division_id'];
+            $name        = $approve
+                ? $verifications->approveInitialByAdmin($id, $this->userId())
+                : $verifications->rejectInitialByAdmin($id, $this->userId(), $reason);
+
+            $this->flash($approve ? $name . ' was approved.' : $name . ' was rejected.');
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+        } catch (RecordNotFoundException | AccessDeniedException $exception) {
+            $this->notice(404, 'Registration unavailable', 'It may have been decided, or a moderator may now handle this division. Return to Division management.');
+
+            return;
+        }
+
+        $this->redirect($divisionId > 0 ? '/admin/divisions/' . $divisionId . '/approvals' : '/admin/divisions');
     }
 
     /**
@@ -746,12 +809,16 @@ final class AdminController extends Controller
     private function applicantRow(array $member): array
     {
         return [
-            'id'          => (int) $member['id'],
+            'id'          => (int) $member['application_id'],
             'initials'    => User::initials((string) $member['full_name']),
             'name'        => (string) $member['full_name'],
             'nic_ending'  => substr((string) $member['nic'], -4),
             'address'     => (string) $member['address'],
             'applied_ago' => 'Applied ' . date('j M Y', strtotime((string) $member['applied_at'])),
+            'documents'   => array_values(array_filter([
+                empty($member['nic_photo_path']) ? null : ['label' => 'NIC photograph', 'url' => photo_url((string) $member['nic_photo_path'])],
+                empty($member['proof_file_path']) ? null : ['label' => 'Proof of address', 'url' => photo_url((string) $member['proof_file_path'])],
+            ])),
         ];
     }
 
@@ -1167,11 +1234,13 @@ final class AdminController extends Controller
         $divisions = new GnDivision($this->pdo);
 
         foreach ($divisions->recentPendingApprovals(5) as $row) {
+            $adminInitialReview = $row['membership_type'] === 'home' && $row['moderator_id'] === null;
             $notices[] = [
                 'icon'       => '📋',
                 'category'   => 'users',
                 'title'      => 'New verification pending — ' . $row['full_name'],
-                'meta'       => $row['division_name'] . ' · awaiting moderator approval',
+                'meta'       => $row['division_name'] . ($adminInitialReview ? ' · awaiting Admin review' : ' · awaiting moderator approval'),
+                'href'       => $adminInitialReview ? base_url() . '/admin/divisions/' . (int) $row['division_id'] . '/approvals' : null,
                 'created_at' => (string) $row['created_at'],
                 'read'       => false,
             ];

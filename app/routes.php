@@ -168,6 +168,8 @@ return [
         '/admin/divisions'    => ['AdminController', 'createDivision'],
         '/admin/divisions/{id}'          => ['AdminController', 'updateDivision'],
         '/admin/divisions/{id}/archive'  => ['AdminController', 'archiveDivision'],
+        '/admin/registrations/{id}/approve' => ['AdminController', 'approveInitialRegistration'],
+        '/admin/registrations/{id}/reject'  => ['AdminController', 'rejectInitialRegistration'],
         '/admin/moderators/candidates'  => ['AdminController', 'createModeratorNomination'],
         '/admin/moderators/candidates/{id}/review' => ['AdminController', 'updateModeratorCandidate'],
         '/admin/moderators/appoint' => ['AdminController', 'appointModerator'],

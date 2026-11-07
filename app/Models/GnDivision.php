@@ -92,12 +92,12 @@ final class GnDivision extends BaseModel
         return [
             'pending' => (int) $this->selectValue(
                 'SELECT COUNT(*) FROM user_divisions
-                  WHERE gn_division_id = :id AND status = \'pending\'',
+                  WHERE gn_division_id = :id AND membership_type = \'home\' AND status = \'pending\'',
                 ['id' => $id]
             ),
             'approved' => (int) $this->selectValue(
                 'SELECT COUNT(*) FROM user_divisions
-                  WHERE gn_division_id = :id AND status = \'active\'',
+                  WHERE gn_division_id = :id AND membership_type = \'home\' AND status = \'active\'',
                 ['id' => $id]
             ),
         ];
@@ -162,19 +162,20 @@ final class GnDivision extends BaseModel
     }
 
     /**
-     * Most recent pending member approvals across every division, for the
-     * admin notification feed.
+     * Most recent pending memberships across every division, for the Admin feed.
      *
      * @return list<array<string, mixed>>
      */
     public function recentPendingApprovals(int $limit = 5): array
     {
         return $this->selectPage(
-            "SELECT ud.created_at, u.full_name, d.name AS division_name
+            "SELECT ud.created_at, ud.membership_type, u.full_name, d.id AS division_id,
+                    d.name AS division_name, d.moderator_id
                FROM user_divisions ud
                JOIN users u ON u.id = ud.user_id
                JOIN gn_divisions d ON d.id = ud.gn_division_id
               WHERE ud.status = 'pending'
+                AND ud.membership_type = 'home'
               ORDER BY ud.created_at DESC",
             [],
             1,
@@ -200,11 +201,13 @@ final class GnDivision extends BaseModel
     public function pendingApprovals(int $divisionId): array
     {
         return $this->select(
-            'SELECT u.id, u.full_name, u.nic, u.address, u.created_at AS applied_at
+            'SELECT ud.id AS application_id, ud.user_id, u.full_name, u.nic, u.nic_photo_path,
+                    u.address, ud.proof_file_path, ud.created_at AS applied_at
                FROM users u
                JOIN user_divisions ud ON ud.user_id = u.id AND ud.gn_division_id = :div
-              WHERE ud.status = \'pending\'
-              ORDER BY u.created_at ASC',
+              WHERE ud.membership_type = \'home\' AND ud.status = \'pending\'
+              ORDER BY ud.created_at ASC
+              LIMIT 100',
             ['div' => $divisionId]
         );
     }
@@ -295,7 +298,7 @@ final class GnDivision extends BaseModel
     {
         return (int) $this->selectValue(
             "SELECT COUNT(*) FROM user_divisions
-              WHERE gn_division_id = :id AND status = 'active'",
+              WHERE gn_division_id = :id AND membership_type = 'home' AND status = 'active'",
             ['id' => $id]
         );
     }
