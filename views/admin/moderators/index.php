@@ -76,7 +76,7 @@ include __DIR__ . '/../../../partials/header.php';
         <div class="scroll-x">
             <table class="data-table">
                 <thead>
-                    <tr><th>Candidate</th><th>Status</th><th>Weighted score</th><th></th></tr>
+                    <tr><th>Candidate</th><th>Status</th><th>Platform capability</th><th></th></tr>
                 </thead>
                 <tbody>
                     <?php foreach ($nominations as $nomination): ?>
@@ -88,7 +88,7 @@ include __DIR__ . '/../../../partials/header.php';
                                 </div>
                             </td>
                             <td><span class="badge badge--info"><?= e(ucfirst(str_replace('_', ' ', $nomination['candidate_status']))) ?></span></td>
-                            <td><?= $nomination['total_score'] === '' ? 'Not evaluated' : e($nomination['total_score']) . ' / 100' ?></td>
+                            <td><?= (int) $nomination['competency_score'] > 0 ? 'Demonstrated' : 'Pending' ?></td>
                             <td>
                                 <button class="btn btn--ghost" type="button" data-modal-open="modal-review-moderator-candidate-<?= e((string) $nomination['candidate_id']) ?>">
                                     Review checks
@@ -153,9 +153,9 @@ include __DIR__ . '/../../../partials/header.php';
         <?php if ($hasModerator): ?>
             This division already has an active or trial moderator. End that appointment before selecting a replacement.
         <?php elseif ($hasAppointmentHistory): ?>
-            The division has a vacancy after a previous appointment. Select the highest-trust member who meets normal-operation eligibility. A 7-day objection window starts when appointed; the six-month trial and 500-point bond start on day one.
+            The division has a vacancy after a previous appointment. Select the highest-trust member who meets normal-operation eligibility. A 7-day objection window starts when appointed; the three-month trial and 500-point bond start on day one.
         <?php else: ?>
-            The division has reached the member threshold. Select the highest-scoring fully reviewed candidate. A 7-day objection window starts when appointed; the six-month trial and 500-point bond start on day one.
+            The division has reached the member threshold. Select the approved resident who best meets the bootstrap criteria. A 7-day objection window starts when appointed; the three-month trial and 500-point bond start on day one.
         <?php endif; ?>
     </div>
 
@@ -199,7 +199,7 @@ include __DIR__ . '/../../../partials/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if (!$hasModerator && !$hasAppointmentHistory && $member['launch_ready'] && $member['id'] === $recommendedCandidateId): ?>
+                            <?php if (!$hasModerator && !$hasAppointmentHistory && $member['launch_ready']): ?>
                                 <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
                             <?php elseif ($hasModerator): ?>
                                 <span class="badge badge--neutral">Current moderator must leave first</span>

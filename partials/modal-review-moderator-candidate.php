@@ -20,7 +20,7 @@ declare(strict_types=1);
         </div>
 
         <p class="page-intro__meta u-mb-4">
-            Confirm each document and reference in person. The two references must be from different households. Score each area from 0 to 100; the weighted total is calculated when all checks and scores are complete.
+            Review verified residency, independent platform use and the signed conflict declaration. Endorsement is preferred.
         </p>
 
         <div class="field">
@@ -53,38 +53,11 @@ declare(strict_types=1);
         </fieldset>
 
         <div class="field">
-            <label class="field__label" for="candidate-reference-one-<?= e((string) $nomination['candidate_id']) ?>">First character reference</label>
-            <input class="input" id="candidate-reference-one-<?= e((string) $nomination['candidate_id']) ?>" name="reference_1" type="text" value="<?= e($nomination['reference_1']) ?>">
+            <label for="capability-<?= e((string) $nomination['candidate_id']) ?>">
+                <input type="checkbox" id="capability-<?= e((string) $nomination['candidate_id']) ?>" name="competency_score" value="100" <?= (int) $nomination['competency_score'] > 0 ? 'checked' : '' ?>>
+                Demonstrated independent platform use during registration
+            </label>
         </div>
-
-        <div class="field">
-            <label class="field__label" for="candidate-reference-two-<?= e((string) $nomination['candidate_id']) ?>">Second character reference, from another household</label>
-            <input class="input" id="candidate-reference-two-<?= e((string) $nomination['candidate_id']) ?>" name="reference_2" type="text" value="<?= e($nomination['reference_2']) ?>">
-        </div>
-
-        <fieldset class="field">
-            <legend class="field__label">Structured evaluation scores</legend>
-            <div class="field-row">
-                <div class="field">
-                    <label class="field__label" for="candidate-interview-<?= e((string) $nomination['candidate_id']) ?>">Interview · 35%</label>
-                    <input class="input" id="candidate-interview-<?= e((string) $nomination['candidate_id']) ?>" name="interview_score" type="number" inputmode="numeric" value="<?= e($nomination['interview_score']) ?>">
-                </div>
-                <div class="field">
-                    <label class="field__label" for="candidate-involvement-<?= e((string) $nomination['candidate_id']) ?>">Community involvement · 35%</label>
-                    <input class="input" id="candidate-involvement-<?= e((string) $nomination['candidate_id']) ?>" name="involvement_score" type="number" inputmode="numeric" value="<?= e($nomination['involvement_score']) ?>">
-                </div>
-            </div>
-            <div class="field-row">
-                <div class="field">
-                    <label class="field__label" for="candidate-references-score-<?= e((string) $nomination['candidate_id']) ?>">References · 20%</label>
-                    <input class="input" id="candidate-references-score-<?= e((string) $nomination['candidate_id']) ?>" name="references_score" type="number" inputmode="numeric" value="<?= e($nomination['references_score']) ?>">
-                </div>
-                <div class="field">
-                    <label class="field__label" for="candidate-competency-<?= e((string) $nomination['candidate_id']) ?>">Smartphone competency · 10%</label>
-                    <input class="input" id="candidate-competency-<?= e((string) $nomination['candidate_id']) ?>" name="competency_score" type="number" inputmode="numeric" value="<?= e($nomination['competency_score']) ?>">
-                </div>
-            </div>
-        </fieldset>
 
         <div class="modal__footer">
             <button class="btn btn--ghost" type="button" data-modal-close>Cancel</button>

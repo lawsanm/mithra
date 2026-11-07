@@ -51,25 +51,19 @@ final class ModeratorAppointmentService
                     : $candidate['eligible']
             ));
 
-            usort($qualified, static function (array $left, array $right) use ($initialAppointment): int {
-                if ($initialAppointment) {
-                    $scoreOrder = (float) $right['total_score'] <=> (float) $left['total_score'];
-
-                    if ($scoreOrder !== 0) {
-                        return $scoreOrder;
-                    }
+            $selected = null;
+            foreach ($qualified as $candidate) {
+                if ($candidate['id'] === $candidateUserId && ($initialAppointment || $candidate['trust_score'] === $qualified[0]['trust_score'])) {
+                    $selected = $candidate;
+                    break;
                 }
-
-                return $right['trust_score'] <=> $left['trust_score'];
-            });
-
-            $selected = $qualified[0] ?? null;
+            }
 
             if ($selected === null || $selected['id'] !== $candidateUserId) {
                 throw ValidationException::field(
                     'candidate_user_id',
                     $initialAppointment
-                        ? 'Select the highest-scoring candidate with all launch checks complete.'
+                        ? 'Select an approved resident with demonstrated capability and a signed declaration.'
                         : 'Select the highest-trust eligible member for this division.'
                 );
             }
@@ -124,7 +118,7 @@ final class ModeratorAppointmentService
 
             $this->notifications->pushToDivisionMembers($divisionId, 'moderator_appointed', [
                 'title'  => 'Provisional moderator appointed: ' . $selected['name'],
-                'detail' => 'A 7-day community objection window is open. The six-month trial and 500-point conduct bond have started.',
+                'detail' => 'A 7-day community objection window is open. The three-month trial and 500-point conduct bond have started.',
                 'icon'   => 'users',
                 'href'   => '/notifications',
             ]);

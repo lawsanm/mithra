@@ -52,22 +52,11 @@ final class ModeratorCandidateService
             $clean = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
             $declared = (bool) $row['declaration_signed'];
             $status = (string) ($row['candidate_status'] ?? '');
-            $evaluated = $status === 'evaluated';
-            $referenceOne = trim((string) ($row['reference_1'] ?? ''));
-            $referenceTwo = trim((string) ($row['reference_2'] ?? ''));
-            $launchReady = (bool) $row['gn_endorsed']
-                && (bool) $row['nic_verified']
+            $launchReady = $row['verified_at'] !== null
                 && (bool) $row['residence_verified']
-                && $referenceOne !== ''
-                && $referenceTwo !== ''
-                && mb_strtolower($referenceOne) !== mb_strtolower($referenceTwo)
                 && $declared
-                && $evaluated
-                && $row['interview_score'] !== null
-                && $row['involvement_score'] !== null
-                && $row['references_score'] !== null
-                && $row['competency_score'] !== null
-                && $row['total_score'] !== null;
+                && (int) $row['competency_score'] > 0
+                && in_array($status, ['nominated', 'checks_passed', 'evaluated'], true);
             $eligible = $months >= 6
                 && (bool) $row['nic_verified']
                 && (bool) $row['residence_verified']
@@ -76,7 +65,7 @@ final class ModeratorCandidateService
                 && $clean
                 && $declared
                 && in_array($status, ['nominated', 'checks_passed', 'evaluated'], true)
-                && $row['competency_score'] !== null;
+                && (int) $row['competency_score'] > 0;
 
             return [
                 'id'                 => (int) $row['id'],
@@ -144,48 +133,22 @@ final class ModeratorCandidateService
             throw new RecordNotFoundException('No editable nomination exists in this division.');
         }
 
-        $referenceOne = self::optionalText($input['reference_1']);
-        $referenceTwo = self::optionalText($input['reference_2']);
-
-        if ($referenceOne !== null && $referenceTwo !== null
-            && mb_strtolower($referenceOne) === mb_strtolower($referenceTwo)) {
-            throw ValidationException::field('reference_2', 'Record two different references from separate households.');
-        }
-
         $endorsement = self::optionalText($input['endorsement']);
-        $checksPassed = $endorsement !== null
-            && $input['nic_verified']
-            && $input['residence_verified']
-            && $referenceOne !== null
-            && $referenceTwo !== null
-            && $input['declaration_signed'];
-        $scoresComplete = $input['interview_score'] !== null
-            && $input['involvement_score'] !== null
-            && $input['references_score'] !== null
-            && $input['competency_score'] !== null;
-        $status = $checksPassed ? ($scoresComplete ? 'evaluated' : 'checks_passed') : 'nominated';
-        $totalScore = $checksPassed && $scoresComplete
-            ? round(
-                $input['interview_score'] * 0.35
-                + $input['involvement_score'] * 0.35
-                + $input['references_score'] * 0.20
-                + $input['competency_score'] * 0.10,
-                2
-            )
-            : null;
+        $ready = $input['residence_verified'] && $input['declaration_signed'] && (int) $input['competency_score'] > 0;
+        $status = $ready ? 'checks_passed' : 'nominated';
 
         $updated = $this->candidates->updateReview($candidateId, $divisionId, [
             'endorsement'        => $endorsement,
             'nic_verified'       => (int) $input['nic_verified'],
             'residence_verified' => (int) $input['residence_verified'],
-            'reference_1'        => $referenceOne,
-            'reference_2'        => $referenceTwo,
+            'reference_1'        => $candidate['reference_1'],
+            'reference_2'        => $candidate['reference_2'],
             'declaration_signed' => (int) $input['declaration_signed'],
-            'interview_score'    => $input['interview_score'],
-            'involvement_score'  => $input['involvement_score'],
-            'references_score'  => $input['references_score'],
+            'interview_score'    => $candidate['interview_score'],
+            'involvement_score'  => $candidate['involvement_score'],
+            'references_score'  => $candidate['references_score'],
             'competency_score'   => $input['competency_score'],
-            'total_score'        => $totalScore,
+            'total_score'        => $candidate['total_score'],
             'status'             => $status,
         ]);
 

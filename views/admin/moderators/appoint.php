@@ -63,7 +63,7 @@ include __DIR__ . '/../../../partials/header.php';
 <div class="step-content" id="step-1" <?= $currentStep === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
         <?php if ($isLaunch): ?>
-            Select the highest weighted-score candidate who completed the launch checks. Trust score breaks a tie.
+            Choose the approved resident who best meets the bootstrap criteria. GN endorsement is preferred.
         <?php else: ?>
             Select the highest-trust member who meets the normal-operation eligibility criteria.
         <?php endif; ?>
@@ -93,7 +93,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <span class="list-row__title">
                         <?= e($candidate['name']) ?>
                         <span class="badge badge--info u-ml-2">Trust <?= e((string) $candidate['trust_score']) ?></span>
-                        <?php if ($candidate['recommended']): ?>
+                        <?php if (!$isLaunch && $candidate['recommended']): ?>
                             <span class="badge badge--warning u-ml-2"><?= $isLaunch ? 'Recommended — highest weighted score' : 'Recommended — highest trust score' ?></span>
                         <?php endif; ?>
                     </span>
@@ -105,8 +105,8 @@ include __DIR__ . '/../../../partials/header.php';
                         <span class="pill" style="<?= $candidate['gn_endorsed'] ? 'background-color: var(--color-success-tint); color: var(--color-success-text); border-color: var(--color-success-tint);' : '' ?>">GN endorsed: <?= $candidate['gn_endorsed'] ? '✓' : '✕' ?></span>
                     </div>
                 </div>
-                <?php if ($candidate['recommended'] && $canAppoint): ?>
-                    <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>?member=<?= e((string) $candidate['id']) ?>">Review recommended member</a>
+                <?php if (($isLaunch || $candidate['recommended']) && $canAppoint): ?>
+                    <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>?member=<?= e((string) $candidate['id']) ?>">Review member</a>
                 <?php else: ?>
                     <span class="badge badge--neutral"><?= $canAppoint ? 'Lower-ranked candidate' : 'Not available' ?></span>
                 <?php endif; ?>
@@ -139,7 +139,7 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
             <div class="line-item">
                 <span class="line-item__label">Platform competency</span>
-                <span class="badge badge--success">Score <?= e((string) ($selected['competency_score'] ?? '')) ?>/100</span>
+                <span class="badge badge--success">Demonstrated</span>
             </div>
             <div class="line-item">
                 <span class="line-item__label">Conflict declaration</span>
@@ -151,8 +151,8 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
             <?php if ($isLaunch): ?>
                 <div class="line-item">
-                    <span class="line-item__label">Weighted evaluation score</span>
-                    <strong><?= e((string) ($selected['total_score'] ?? '')) ?>/100</strong>
+                    <span class="line-item__label">Bootstrap checks</span>
+                    <strong>Complete</strong>
                 </div>
             <?php else: ?>
                 <div class="line-item">
@@ -178,7 +178,7 @@ include __DIR__ . '/../../../partials/header.php';
                     <span class="timeline__date">Admin reviews any concerns before confirmation</span>
                 </div>
                 <div class="timeline__item">
-                    <p class="timeline__title">Six-month trial and conduct bond</p>
+                    <p class="timeline__title">Three-month trial and conduct bond</p>
                     <span class="timeline__date">Both start on appointment day; 500 points are held</span>
                 </div>
             </div>
@@ -186,7 +186,7 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 
     <div class="notice notice--warning notice--full">
-        Appointing starts the 7-day public objection window and the six-month trial. The 500-point conduct bond is held from day one.
+        Appointing starts the 7-day public objection window and the three-month trial. The 500-point conduct bond is held from day one.
     </div>
 
     <div class="actions" style="margin-top: var(--space-5);">
