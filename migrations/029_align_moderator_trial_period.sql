@@ -1,3 +1,5 @@
+USE mithra;
+
 -- Apply the three-month review date to ongoing trials created under the old rule.
 UPDATE moderator_assignments
    SET trial_ends_at = appointed_at + INTERVAL 3 MONTH
