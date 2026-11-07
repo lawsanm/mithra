@@ -63,7 +63,7 @@ include __DIR__ . '/../../../partials/header.php';
 <div class="step-content" id="step-1" <?= $currentStep === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
         <?php if ($isLaunch): ?>
-            Choose the approved resident who best meets the bootstrap criteria. GN endorsement is preferred.
+            Choose the approved resident who best meets the criteria for the first appointment. GN endorsement is preferred.
         <?php else: ?>
             Select the highest-trust member who meets the normal-operation eligibility criteria.
         <?php endif; ?>
@@ -151,7 +151,7 @@ include __DIR__ . '/../../../partials/header.php';
             </div>
             <?php if ($isLaunch): ?>
                 <div class="line-item">
-                    <span class="line-item__label">Bootstrap checks</span>
+                    <span class="line-item__label">First appointment checks</span>
                     <strong>Complete</strong>
                 </div>
             <?php else: ?>

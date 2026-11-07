@@ -155,7 +155,7 @@ include __DIR__ . '/../../../partials/header.php';
         <?php elseif ($hasAppointmentHistory): ?>
             The division has a vacancy after a previous appointment. Select the highest-trust member who meets normal-operation eligibility. A 7-day objection window starts when appointed; the three-month trial and 500-point bond start on day one.
         <?php else: ?>
-            The division has reached the member threshold. Select the approved resident who best meets the bootstrap criteria. A 7-day objection window starts when appointed; the three-month trial and 500-point bond start on day one.
+            The division has reached the member threshold. Select the approved resident who best meets the criteria for the first appointment. A 7-day objection window starts when appointed; the three-month trial and 500-point bond start on day one.
         <?php endif; ?>
     </div>
 
