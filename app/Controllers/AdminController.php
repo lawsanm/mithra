@@ -293,7 +293,7 @@ final class AdminController extends Controller
                 $this->userId(),
                 $validator->value('acknowledged') === '1'
             );
-            $this->flash('Provisional moderator appointed. The 7-day objection window and six-month trial have started.');
+            $this->flash('Provisional moderator appointed. The 7-day objection window and three-month trial have started.');
             $this->redirect('/admin/moderators/objections/' . $assignmentId);
 
             return;

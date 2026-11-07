@@ -14,7 +14,7 @@ include __DIR__ . '/../../../partials/header.php';
     <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/expenses/<?= e((string) $appointment['id']) ?>">Expense records</a>
     <p>Status: <strong><?= e(ucfirst($appointment['status'])) ?></strong></p>
     <p>Objection window ends: <?= e($appointment['objection_window_ends'] ?? 'Not recorded') ?></p>
-    <p>Six-month trial ends: <?= e($appointment['trial_ends_at'] ?? 'Not recorded') ?></p>
+    <p>Three-month trial ends: <?= e($appointment['trial_ends_at'] ?? 'Not recorded') ?></p>
     <p>Confirmed: <?= e($appointment['confirmed_at'] ?? 'Not yet confirmed') ?></p>
     <p>Bond: <?= e((string) $appointment['bond_points']) ?> points · <?= e($appointment['bond_status']) ?></p>
     <?php if ($appointment['ended_at'] !== null): ?><p>Ended: <?= e($appointment['ended_at']) ?> · <?= e($appointment['end_reason']) ?></p><?php endif; ?>
@@ -31,7 +31,7 @@ include __DIR__ . '/../../../partials/header.php';
 <?php if ($appointment['ended_at'] === null): ?>
 <section class="form-card form-card--wide">
     <h2 class="form-card__legend">Record Admin decision</h2>
-    <p class="notice notice--info">Confirm the appointment only after reviewing performance at the end of the six-month trial and resolving all objections. Upholding an objection ends the appointment immediately. Choose bond forfeiture only when removal is for cause.</p>
+    <p class="notice notice--info">Confirm the appointment only after reviewing performance at the end of the three-month trial and resolving all objections. Upholding an objection ends the appointment immediately. Choose bond forfeiture only when removal is for cause.</p>
     <form method="post" action="<?= base_url() ?>/admin/moderators/appointments/<?= e((string) $appointment['id']) ?>?page=<?= e((string) $page) ?>" novalidate>
         <?= csrf_field() ?>
         <div class="field"><label class="field__label" for="decision-action">Action</label><select class="input" name="action" id="decision-action">

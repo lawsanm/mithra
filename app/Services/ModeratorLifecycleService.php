@@ -94,7 +94,7 @@ final class ModeratorLifecycleService
         if ($row['trial_ends_at'] === null || $row['objection_window_ends'] === null
             || new DateTimeImmutable($row['trial_ends_at']) > $now
             || new DateTimeImmutable($row['objection_window_ends']) > $now) {
-            throw ValidationException::field('action', 'Both the objection window and six-month trial must end before confirmation.');
+            throw ValidationException::field('action', 'Both the objection window and three-month trial must end before confirmation.');
         }
         if ($unresolved > 0) {
             throw ValidationException::field('action', 'All objections must be dismissed before confirming the trial.');

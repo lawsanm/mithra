@@ -117,7 +117,7 @@ final class Moderator extends BaseModel
                 (user_id, gn_division_id, appointed_by, objection_window_ends, trial_ends_at,
                  bond_points, bond_status, status)
              VALUES
-                (:user, :division, :admin, NOW() + INTERVAL 7 DAY, NOW() + INTERVAL 6 MONTH,
+                (:user, :division, :admin, NOW() + INTERVAL 7 DAY, NOW() + INTERVAL 3 MONTH,
                  500, \'held\', \'trial\')',
             ['user' => $userId, 'division' => $divisionId, 'admin' => $adminId]
         );
