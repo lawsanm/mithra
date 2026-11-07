@@ -51,7 +51,7 @@ include __DIR__ . '/../../partials/header.php';
 <h1 class="auth-title"><?= $step === 1 ? 'Create your account' : 'Verify your identity' ?></h1>
 
 <?php
-$wizardSteps = [1 => 'Personal & division info', 2 => 'Document upload', 3 => 'Moderator review'];
+$wizardSteps = [1 => 'Personal & division info', 2 => 'Document upload', 3 => 'Application review'];
 $wizardStep  = $step;
 $wizardClass = 'wizard--center';
 include __DIR__ . '/../../partials/wizard-steps.php';
@@ -224,8 +224,8 @@ include __DIR__ . '/../../partials/wizard-steps.php';
 
         <p class="notice notice--info">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-info"></use></svg>
-            Your <?= e($divisionName) ?> moderator reviews these documents and may arrange a brief
-            in-person verification. Only your division moderator and the Admin can see them.
+            Your <?= e($divisionName) ?> moderator reviews these documents, or the Admin does so
+            while the division has no moderator. Only your division moderator and the Admin can see them.
         </p>
 
         <div class="actions">

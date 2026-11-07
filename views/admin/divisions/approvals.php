@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @var array  $division       id, name
  * @var array  $approvalStats  label, value
- * @var array  $pendingMembers initials, name, nic_ending, address, applied_ago
+ * @var array  $pendingMembers id, initials, name, nic_ending, address, applied_ago, documents
  */
 
 $pageTitle = 'Member Approvals';
@@ -45,20 +45,32 @@ include __DIR__ . '/../../../partials/header.php';
 
     <ul class="row-list">
         <?php foreach ($pendingMembers as $member): ?>
+            <?php $hasRequiredDocuments = count($member['documents']) === 2; ?>
             <li class="list-row">
-                <span class="avatar"><?= e($member['initials']) ?></span>
                 <div class="list-row__body">
-                    <span class="list-row__title"><?= e($member['name']) ?></span>
+                    <span class="list-row__title">
+                        <span class="avatar"><?= e($member['initials']) ?></span>
+                        <?= e($member['name']) ?>
+                    </span>
                     <span class="list-row__meta">
                         NIC ending <?= e($member['nic_ending']) ?> · <?= e($member['address']) ?> · <?= e($member['applied_ago']) ?>
                     </span>
+                    <?php if ($member['documents'] !== []): ?>
+                        <?php $gridPhotos = $member['documents']; include __DIR__ . '/../../../partials/photo-grid.php'; ?>
+                    <?php endif; ?>
+                    <?php if (!$hasRequiredDocuments): ?>
+                        <span class="demo-note">One or more required documents are missing; approval is unavailable until both are on file.</span>
+                    <?php endif; ?>
                 </div>
-                <div class="preview-action" data-demo-form>
-                    <div class="actions">
-                        <button class="btn btn--ghost" type="button" disabled>Reject</button>
-                        <button class="btn btn--primary" type="button" disabled>Approve</button>
-                    </div>
-                    <span class="demo-note">Not available in this demo</span>
+                <div class="actions">
+                    <form method="post" action="<?= base_url() ?>/admin/registrations/<?= e((string) $member['id']) ?>/reject" data-confirm="Reject this registration? The member will remain unable to sign in." novalidate>
+                        <?= csrf_field() ?>
+                        <button class="btn btn--ghost" type="submit">Reject</button>
+                    </form>
+                    <form method="post" action="<?= base_url() ?>/admin/registrations/<?= e((string) $member['id']) ?>/approve" data-confirm="Approve this registration? This opens the account and credits the welcome bonus from the Sponsor Pool." novalidate>
+                        <?= csrf_field() ?>
+                        <button class="btn btn--primary" type="submit"<?= !$hasRequiredDocuments ? ' disabled' : '' ?>>Approve</button>
+                    </form>
                 </div>
             </li>
         <?php endforeach; ?>

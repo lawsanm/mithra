@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Sign-up, step 3: the application is waiting for the division moderator.
+ * Sign-up, step 3: the application is waiting for the division's reviewer.
  * Figma: Common → "Register — Pending Review" (93:240).
  *
  * A pending account cannot sign in (Plan §18.1), so this page is the end of
@@ -28,7 +28,7 @@ include __DIR__ . '/../../partials/header.php';
 ?>
 
 <?php
-$wizardSteps = [1 => 'Personal & division info', 2 => 'Document upload', 3 => 'Moderator review'];
+$wizardSteps = [1 => 'Personal & division info', 2 => 'Document upload', 3 => 'Application review'];
 $wizardStep  = 3;
 $wizardClass = 'wizard--center';
 include __DIR__ . '/../../partials/wizard-steps.php';
@@ -39,7 +39,7 @@ include __DIR__ . '/../../partials/wizard-steps.php';
         <svg class="icon"><use href="#icon-clock"></use></svg>
     </span>
 
-    <h1 class="form-card__title">Pending moderator review</h1>
+    <h1 class="form-card__title">Pending application review</h1>
 
     <p class="pending-card__lede">
         <?php if ($moderatorName !== null): ?>
@@ -47,8 +47,8 @@ include __DIR__ . '/../../partials/wizard-steps.php';
             moderator, has your application. Reviews finish within five days, and you can sign in
             as soon as yours is approved.
         <?php else: ?>
-            Thanks, <?= e($firstName) ?>! <?= e($divisionName) ?> has no moderator yet, so your
-            application waits until one is appointed. You can sign in as soon as it is approved.
+            Thanks, <?= e($firstName) ?>! <?= e($divisionName) ?> has no moderator yet, so the Admin
+            will review your application. You can sign in as soon as it is approved.
         <?php endif; ?>
     </p>
 
