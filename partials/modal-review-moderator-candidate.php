@@ -24,10 +24,33 @@ declare(strict_types=1);
         </p>
 
         <div class="field">
-            <label class="field__label" for="candidate-endorsement-<?= e((string) $nomination['candidate_id']) ?>">GN Officer or community organisation endorsement</label>
+            <label class="field__label" for="candidate-endorsement-<?= e((string) $nomination['candidate_id']) ?>">Optional endorsement — record the officer or organisation, date and how you verified it</label>
             <input class="input" id="candidate-endorsement-<?= e((string) $nomination['candidate_id']) ?>" name="endorsement" type="text" value="<?= e($nomination['endorsement']) ?>">
         </div>
 
+        <div class="field">
+            <strong>Registration evidence</strong>
+            <?php foreach (['nic_photo_path' => 'NIC photograph', 'proof_file_path' => 'Proof of address'] as $key => $label): ?>
+                <?php if (!empty($nomination[$key])): ?>
+                    <a class="link" href="<?= e(photo_url($nomination[$key])) ?>" target="_blank" rel="noopener"><?= e($label) ?></a>
+                <?php else: ?>
+                    <span><?= e($label) ?>: no upload on file</span>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+        <div class="field">
+            <label class="field__label">Signed declaration reference and date
+                <input class="input" name="declaration_reference" maxlength="255" value="<?= e($nomination['declaration_reference']) ?>">
+            </label>
+        </div>
+        <div class="field">
+            <label class="field__label">What did the resident do independently during registration?
+                <textarea class="input" name="capability_note" maxlength="255"><?= e($nomination['capability_note']) ?></textarea>
+            </label>
+        </div>
+        <?php if ($nomination['reviewed_at'] !== null): ?>
+            <p>Last reviewed by <?= e($nomination['reviewer_name'] ?? 'Former administrator') ?> on <?= e($nomination['reviewed_at']) ?>.</p>
+        <?php endif; ?>
         <fieldset class="field">
             <legend class="field__label">Required checks</legend>
             <ul class="checklist">
