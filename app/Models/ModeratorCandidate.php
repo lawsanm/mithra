@@ -22,7 +22,8 @@ final class ModeratorCandidate extends BaseModel
     {
         return $this->select(
             'SELECT u.id, u.full_name, u.trust_score, u.address, u.joined_at,
-                    ud.verified_at,
+                    ud.verified_at, u.nic_photo_path, ud.proof_file_path,
+                    mc.declaration_reference, mc.capability_note, mc.reviewed_at, reviewer.full_name AS reviewer_name,
                     (SELECT COUNT(*) FROM bookings b
                       WHERE (b.borrower_id = u.id OR b.lender_id = u.id)
                         AND b.status = \'completed\')
@@ -53,6 +54,7 @@ final class ModeratorCandidate extends BaseModel
                            GROUP BY user_id, gn_division_id
                       ) latest ON latest.latest_id = candidate.id
                ) mc ON mc.user_id = u.id AND mc.gn_division_id = :candidate_division
+              LEFT JOIN users reviewer ON reviewer.id = mc.reviewed_by
               WHERE r.code = \'member\'
                 AND u.status = \'active\'
               ORDER BY u.trust_score DESC, u.id',
@@ -105,7 +107,8 @@ final class ModeratorCandidate extends BaseModel
     {
         return $this->execute(
             "UPDATE moderator_candidates
-                SET endorsement = :endorsement,
+                SET endorsement = :endorsement, declaration_reference = :declaration_reference,
+                    capability_note = :capability_note, reviewed_by = :reviewed_by, reviewed_at = NOW(),
                     nic_verified = :nic_verified,
                     residence_verified = :residence_verified,
                     reference_1 = :reference_1,

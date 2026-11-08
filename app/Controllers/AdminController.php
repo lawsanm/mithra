@@ -250,6 +250,8 @@ final class AdminController extends Controller
 
             $values = $validator->values();
             $this->moderatorCandidateService()->review($divisionId, $id, [
+                'declaration_reference' => $validator->value('declaration_reference'),
+                'capability_note' => $validator->value('capability_note'),
                 'endorsement'        => Validator::optional($values, 'endorsement'),
                 'nic_verified'       => $validator->value('nic_verified') === '1',
                 'residence_verified' => $validator->value('residence_verified') === '1',
@@ -260,7 +262,7 @@ final class AdminController extends Controller
                 'involvement_score'  => self::optionalInteger($validator->value('involvement_score')),
                 'references_score'   => self::optionalInteger($validator->value('references_score')),
                 'competency_score'   => self::optionalInteger($validator->value('competency_score')),
-            ]);
+            ], $this->userId());
             $this->flash('Candidate checks and evaluation saved.');
         } catch (ValidationException $exception) {
             $this->flash(implode(' ', $exception->errors()), 'error');
@@ -320,6 +322,8 @@ final class AdminController extends Controller
     {
         return (new Validator($_POST))
             ->required('division_id', 'Division')->integer('division_id', 'Division', 1)
+            ->maxLength('declaration_reference', 'Declaration reference', 255)
+            ->maxLength('capability_note', 'Capability observation', 255)
             ->maxLength('endorsement', 'Endorsement', 255)
             ->inList('nic_verified', 'NIC verification', ['', '1'])
             ->inList('residence_verified', 'Residence verification', ['', '1'])

@@ -52,12 +52,13 @@ final class ModeratorCandidateService
             $clean = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
             $declared = (bool) $row['declaration_signed'];
             $status = (string) ($row['candidate_status'] ?? '');
-            $launchReady = $row['verified_at'] !== null
+            $documented = !empty($row['declaration_reference']) && !empty($row['capability_note']);
+            $launchReady = $documented && (bool) $row['nic_verified'] && $row['verified_at'] !== null
                 && (bool) $row['residence_verified']
                 && $declared
                 && (int) $row['competency_score'] > 0
                 && in_array($status, ['nominated', 'checks_passed', 'evaluated'], true);
-            $eligible = $months >= 6
+            $eligible = $documented && $months >= 6
                 && (bool) $row['nic_verified']
                 && (bool) $row['residence_verified']
                 && (int) $row['trust_score'] >= 70
@@ -69,6 +70,12 @@ final class ModeratorCandidateService
 
             return [
                 'id'                 => (int) $row['id'],
+                'nic_photo_path' => $row['nic_photo_path'],
+                'proof_file_path' => $row['proof_file_path'],
+                'declaration_reference' => $row['declaration_reference'] ?? '',
+                'capability_note' => $row['capability_note'] ?? '',
+                'reviewed_at' => $row['reviewed_at'],
+                'reviewer_name' => $row['reviewer_name'],
                 'candidate_id'       => $row['candidate_id'] === null ? null : (int) $row['candidate_id'],
                 'candidate_status'   => $status,
                 'name'               => (string) $row['full_name'],
@@ -125,7 +132,7 @@ final class ModeratorCandidateService
      *     competency_score:?int
      * } $input
      */
-    public function review(int $divisionId, int $candidateId, array $input): void
+    public function review(int $divisionId, int $candidateId, array $input, int $adminId): void
     {
         $candidate = $this->candidates->findForReview($candidateId, $divisionId);
 
@@ -134,10 +141,21 @@ final class ModeratorCandidateService
         }
 
         $endorsement = self::optionalText($input['endorsement']);
-        $ready = $input['residence_verified'] && $input['declaration_signed'] && (int) $input['competency_score'] > 0;
+        $reference = trim($input['declaration_reference'] ?? '');
+        $note = trim($input['capability_note'] ?? '');
+        if ($input['declaration_signed'] && $reference === '') {
+            throw ValidationException::field('declaration_reference', 'Identify the signed declaration you checked.');
+        }
+        if ((int) $input['competency_score'] > 0 && $note === '') {
+            throw ValidationException::field('capability_note', 'Describe how the resident demonstrated independent use.');
+        }
+        $ready = $input['nic_verified'] && $input['residence_verified'] && $input['declaration_signed'] && (int) $input['competency_score'] > 0;
         $status = $ready ? 'checks_passed' : 'nominated';
 
         $updated = $this->candidates->updateReview($candidateId, $divisionId, [
+            'declaration_reference' => $reference,
+            'capability_note' => $note,
+            'reviewed_by' => $adminId,
             'endorsement'        => $endorsement,
             'nic_verified'       => (int) $input['nic_verified'],
             'residence_verified' => (int) $input['residence_verified'],

@@ -97,7 +97,7 @@ try {
     $candidateRecords = new ModeratorCandidate($pdo);
     $candidateService = new ModeratorCandidateService(new GnDivision($pdo), $candidateRecords);
     $nomination = $candidateService->nominate($launchDivision, $userId, $nominator);
-    $candidateService->review($launchDivision, $nomination, ['endorsement' => 'GN confirmed', 'nic_verified' => true, 'residence_verified' => true, 'reference_1' => 'Household One', 'reference_2' => 'Household Two', 'declaration_signed' => true, 'interview_score' => 90, 'involvement_score' => 80, 'references_score' => 70, 'competency_score' => 100]);
+    $candidateService->review($launchDivision, $nomination, ['endorsement' => 'GN confirmed', 'nic_verified' => true, 'residence_verified' => true, 'reference_1' => 'Household One', 'reference_2' => 'Household Two', 'declaration_signed' => true, 'interview_score' => 90, 'involvement_score' => 80, 'references_score' => 70, 'competency_score' => 100, 'declaration_reference' => 'Test signed declaration', 'capability_note' => 'Completed registration independently'], $adminId);
     $appointments = new ModeratorAppointmentService($pdo, new GnDivision($pdo), $candidateRecords, $candidateService, $moderators, new User($pdo), $wallets, $ledger, new Notification($pdo), $history);
     $refused(fn () => $appointments->appoint($launchDivision, $userId, $adminId, false));
     $pdo->exec("UPDATE point_pools SET balance = balance + 500 WHERE pool_code = 'sponsor'");
