@@ -210,6 +210,133 @@ final class AdminController extends Controller
         $this->redirect('/admin/divisions');
     }
 
+        /**
+     * POST /admin/disaster/activate
+     */
+    public function activateDisaster(): void
+    {
+        $validator = (new Validator($_POST))
+            ->required('division_id', 'Division')
+            ->integer('division_id', 'Division', 1)
+            ->required('type', 'Disaster type')
+            ->inList('type', 'Disaster type', array_keys(DisasterModeService::TYPES))
+            ->required('end_date', 'Planned end date')
+            ->date('end_date', 'Planned end date')
+            ->maxLength('notes', 'Notes', 220);
+
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        }
+
+        try {
+            $result = $this->disasterModeService()->activate(
+                (int) $validator->value('division_id'),
+                $this->userId(),
+                $validator->value('type'),
+                $validator->value('end_date'),
+                $validator->value('notes')
+            );
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Division not found', 'Return to the disaster control page to choose another.');
+
+            return;
+        }
+
+        $this->flash('Disaster Mode activated for ' . $result['division_name'] . '.');
+        $this->redirect('/admin/disaster');
+    }
+
+    /**
+     * POST /admin/disaster/deactivate
+     */
+    public function deactivateDisaster(): void
+    {
+        $validator = (new Validator($_POST))
+            ->required('division_id', 'Division')
+            ->integer('division_id', 'Division', 1);
+
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        }
+
+        try {
+            $divisionName = $this->disasterModeService()->deactivate((int) $validator->value('division_id'));
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Division not found', 'Return to the disaster control page to choose another.');
+
+            return;
+        }
+
+        $this->flash('Disaster Mode deactivated for ' . $divisionName . '.');
+        $this->redirect('/admin/disaster');
+    }
+
+    /** POST /admin/disaster/events/end-date. */
+    public function updateDisasterEndDate(): void
+    {
+        $validator = (new Validator($_POST))
+            ->required('event_id', 'Disaster event')
+            ->integer('event_id', 'Disaster event', 1)
+            ->required('end_date', 'Planned end date')
+            ->date('end_date', 'Planned end date');
+
+        if (!$validator->passes()) {
+            $this->flash(implode(' ', $validator->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        }
+
+        try {
+            $result = $this->disasterModeService()->extendPlannedEnd(
+                (int) $validator->value('event_id'),
+                $this->userId(),
+                $validator->value('end_date')
+            );
+        } catch (ValidationException $exception) {
+            $this->flash(implode(' ', $exception->errors()), 'error');
+            $this->redirect('/admin/disaster');
+
+            return;
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Disaster event not found', 'Return to Disaster Mode control to choose an active event.');
+
+            return;
+        }
+
+        $this->flash('Planned end date for ' . $result['division_name'] . ' extended to ' . $result['planned_end'] . '.');
+        $this->redirect('/admin/disaster');
+    }
+
+    /** POST /admin/disaster/reports/{id}/reviewed. */
+    public function reviewDisasterReport(int $id): void
+    {
+        if (!(new Notification($this->pdo))->markDisasterReportReviewed($this->userId(), $id)) {
+            $this->notice(404, 'Report not found', 'This report was already reviewed or is no longer available.');
+
+            return;
+        }
+
+        $this->flash('Moderator report marked as reviewed.');
+        $this->redirect('/admin/disaster');
+    }
+
     private function divisionInput(): Validator
     {
         $validator = (new Validator($_POST))
@@ -234,6 +361,18 @@ final class AdminController extends Controller
     private function divisionService(): DivisionService
     {
         return new DivisionService(new GnDivision($this->pdo));
+    }
+
+    private function disasterModeService(): DisasterModeService
+    {
+        return new DisasterModeService(
+            $this->pdo,
+            new GnDivision($this->pdo),
+            new DisasterEvent($this->pdo),
+            new User($this->pdo),
+            new Notification($this->pdo),
+            new DisasterEventEndDateChange($this->pdo)
+        );
     }
 
     // ── Dashboard ───────────────────────────────────────────────────────────
@@ -627,6 +766,25 @@ final class AdminController extends Controller
     /** @return array<string, mixed> */
     private function disaster(): array
     {
+        $events = new DisasterEvent($this->pdo);
+        $page = $this->page();
+        $eventRows = $events->adminPage($page);
+        $changesByEvent = [];
+
+        foreach ((new DisasterEventEndDateChange($this->pdo))->forEvents(array_map(
+            static fn (array $row): int => (int) $row['id'],
+            $eventRows
+        )) as $change) {
+            $changesByEvent[(int) $change['disaster_event_id']][] = [
+                'previous' => $change['previous_planned_end_at'] === null
+                    ? 'Not set'
+                    : date('j M Y', strtotime((string) $change['previous_planned_end_at'])),
+                'new' => date('j M Y', strtotime((string) $change['new_planned_end_at'])),
+                'changed_by' => (string) $change['changed_by_name'],
+                'changed_at' => date('j M Y, H:i', strtotime((string) $change['changed_at'])),
+            ];
+        }
+
         return [
             'divisions' => array_map(static fn (array $row): array => [
                 'id'           => (int) $row['id'],
@@ -638,6 +796,36 @@ final class AdminController extends Controller
                 'status'       => $row['disaster_mode_active'] ? 'error' : 'success',
                 'status_label' => $row['disaster_mode_active'] ? 'Active' : 'Normal',
             ], (new GnDivision($this->pdo))->allWithStaff()),
+            'events' => array_map(static fn (array $row): array => [
+                'id' => (int) $row['id'],
+                'division' => (string) $row['division_name'],
+                'reason' => (string) $row['reason'],
+                'started_by' => (string) $row['started_by_name'],
+                'started_at' => date('j M Y, H:i', strtotime((string) $row['started_at'])),
+                'planned_end' => $row['planned_end_at'] === null
+                    ? 'Not set'
+                    : date('j M Y', strtotime((string) $row['planned_end_at'])),
+                'planned_end_input' => $row['planned_end_at'] === null
+                    ? ''
+                    : date('Y-m-d', strtotime((string) $row['planned_end_at'])),
+                'ended_at' => $row['ended_at'] === null
+                    ? '—'
+                    : date('j M Y, H:i', strtotime((string) $row['ended_at'])),
+                'active' => $row['ended_at'] === null,
+                'status' => $row['ended_at'] === null ? 'warning' : 'neutral',
+                'status_label' => $row['ended_at'] === null ? 'Active' : 'Ended',
+                'date_changes' => $changesByEvent[(int) $row['id']] ?? [],
+            ], $eventRows),
+            'disasterReports' => array_map(static fn (array $row): array => [
+                'id' => (int) $row['id'],
+                'title' => $row['title'],
+                'detail' => $row['detail'],
+                'reported_at' => date('j M Y, H:i', strtotime($row['created_at'])),
+                'division_id' => $row['division_id'],
+                'type' => $row['disaster_type'],
+            ], (new Notification($this->pdo))->disasterReportsForAdmin($this->userId())),
+            'page' => $page,
+            'hasNextPage' => $events->countAll() > $page * DisasterEvent::ADMIN_PAGE_SIZE,
         ];
     }
 

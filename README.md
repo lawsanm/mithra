@@ -89,6 +89,7 @@ C:\xampp\php\php.exe scripts\expire_booking_requests.php
 | `auto_cancel_handovers.php` | hourly | Auto-cancels and refunds bookings whose handover is unfinished 48 hours after the start date |
 | `flag_overdue_returns.php` | hourly | Tells the moderator about items 72 hours overdue; opens a total-loss claim at 7 days |
 | `escalate_unanswered_claims.php` | hourly | Sends simple-path claims the borrower has not answered in 48 hours to the moderator |
+| `expire_disaster_events.php` | hourly | Ends Disaster Mode events at their planned end date and alerts sponsors and the liaison |
 | `expire_temporary_memberships.php` | daily | Reminds 14 days before a temporary membership expires, pauses it at expiry, ends it after the 14-day grace |
 | `detect_gift_patterns.php` | daily | Reports pairs who trade gifts back and forth three times in 30 days |
 | `refresh_trust_scores.php` | nightly | Recalculates every member's trust score |
