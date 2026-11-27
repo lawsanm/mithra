@@ -40,12 +40,12 @@ declare(strict_types=1);
         </div>
         <div class="field">
             <label class="field__label">Signed declaration reference and date
-                <input class="input" name="declaration_reference" maxlength="255" value="<?= e($nomination['declaration_reference']) ?>">
+                <input class="input" name="declaration_reference" value="<?= e($nomination['declaration_reference']) ?>">
             </label>
         </div>
         <div class="field">
             <label class="field__label">What did the resident do independently during registration?
-                <textarea class="input" name="capability_note" maxlength="255"><?= e($nomination['capability_note']) ?></textarea>
+                <textarea class="input" name="capability_note"><?= e($nomination['capability_note']) ?></textarea>
             </label>
         </div>
         <?php if ($nomination['reviewed_at'] !== null): ?>
