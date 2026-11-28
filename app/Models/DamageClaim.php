@@ -165,6 +165,24 @@ final class DamageClaim extends BaseModel
         );
     }
 
+    /** Total-loss claims still awaiting the moderator seven days after opening. */
+    public function totalLossesDueForAdmin(): array
+    {
+        return $this->select(
+            "SELECT c.id, c.booking_id
+               FROM damage_claims c
+               JOIN bookings b ON b.id = c.booking_id
+              WHERE c.severity = 'total_loss' AND c.status = 'pending_moderator'
+                AND c.created_at <= NOW() - INTERVAL 7 DAY
+                AND b.status = 'pending_moderator'
+                AND NOT EXISTS (
+                    SELECT 1 FROM return_records r
+                     WHERE r.booking_id = b.id AND r.return_at IS NOT NULL
+                )
+              ORDER BY c.id LIMIT 500"
+        );
+    }
+
     /** One party's sign-off on the moderator's recorded resolution (§10.5). */
     public function signOff(int $resolutionId, string $side): void
     {
