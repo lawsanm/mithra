@@ -33,6 +33,10 @@ final class Notification extends BaseModel
             'listing_approved', 'listing_adjusted', 'listing_rejected', 'account_notice',
             'community_application', 'community_approved', 'community_rejected', 'community_expiring',
             'community_paused', 'community_expired',
+            'disaster_alert', 'disaster_resolved', 'disaster_report',
+            'disaster_contribution_recorded', 'disaster_contribution_updated',
+            'disaster_contribution_confirmed', 'disaster_contribution_queried',
+            'disaster_contribution_verified',
         ],
     ];
 
@@ -222,5 +226,43 @@ final class Notification extends BaseModel
             'INSERT INTO notifications (user_id, type, payload) VALUES (:user, :type, :payload)',
             ['user' => $userId, 'type' => $type, 'payload' => json_encode($payload, JSON_THROW_ON_ERROR)]
         );
+    }
+
+    /** @return list<array{id: int, title: string, detail: string, created_at: string, division_id: int, disaster_type: string}> */
+    public function disasterReportsForAdmin(int $adminId): array
+    {
+        $rows = $this->select(
+            "SELECT id, payload, created_at FROM notifications n
+              WHERE user_id = :admin AND type = 'disaster_report' AND read_at IS NULL
+                AND NOT EXISTS (
+                    SELECT 1 FROM disaster_events de
+                     WHERE de.gn_division_id = CAST(JSON_UNQUOTE(JSON_EXTRACT(n.payload, '$.division_id')) AS UNSIGNED)
+                       AND de.started_at >= n.created_at
+                )
+              ORDER BY created_at DESC, id DESC LIMIT 20",
+            ['admin' => $adminId]
+        );
+
+        return array_map(static function (array $row): array {
+            $payload = is_array($row['payload']) ? $row['payload'] : json_decode((string) $row['payload'], true, 512, JSON_THROW_ON_ERROR);
+
+            return [
+                'id' => (int) $row['id'],
+                'title' => (string) ($payload['title'] ?? 'Disaster reported'),
+                'detail' => (string) ($payload['detail'] ?? ''),
+                'created_at' => (string) $row['created_at'],
+                'division_id' => (int) ($payload['division_id'] ?? 0),
+                'disaster_type' => (string) ($payload['disaster_type'] ?? ''),
+            ];
+        }, $rows);
+    }
+
+    public function markDisasterReportReviewed(int $adminId, int $notificationId): bool
+    {
+        return $this->execute(
+            "UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+              WHERE id = :id AND user_id = :admin AND type = 'disaster_report' AND read_at IS NULL",
+            ['id' => $notificationId, 'admin' => $adminId]
+        ) === 1;
     }
 }
