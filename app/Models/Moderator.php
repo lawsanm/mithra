@@ -133,6 +133,43 @@ final class Moderator extends BaseModel
         return $this->selectOne($lock ? $sql . ' FOR UPDATE' : $sql, ['id' => $id]);
     }
 
+    /** Current moderator appointment for a booking-party user in its division. */
+    public function currentForUserAndDivision(int $userId, int $divisionId): ?array
+    {
+        return $this->selectOne(
+            "SELECT id, user_id, gn_division_id, bond_points, bond_status, status
+               FROM moderator_assignments
+              WHERE user_id = :user AND gn_division_id = :division
+                AND status IN ('trial', 'active', 'suspended') AND ended_at IS NULL
+              ORDER BY id DESC LIMIT 1 FOR UPDATE",
+            ['user' => $userId, 'division' => $divisionId]
+        );
+    }
+
+    public function endForAdminRuling(int $id, int $remainingBond, string $status): bool
+    {
+        if (!in_array($status, ['suspended', 'removed'], true)) {
+            throw new InvalidArgumentException('An Admin ruling can only suspend or remove an appointment.');
+        }
+
+        return $this->execute(
+            "UPDATE moderator_assignments
+                SET status = :status, bond_points = :bond, bond_status = 'forfeited',
+                    ended_at = NOW(), end_reason = 'Ended after a final Admin ruling on moderator misconduct.'
+              WHERE id = :id AND status IN ('trial', 'active', 'suspended') AND ended_at IS NULL",
+            ['status' => $status, 'bond' => $remainingBond, 'id' => $id]
+        ) === 1;
+    }
+
+    public function updateBondPoints(int $id, int $remainingBond): bool
+    {
+        return $this->execute(
+            "UPDATE moderator_assignments SET bond_points = :bond
+              WHERE id = :id AND status IN ('trial', 'active', 'suspended') AND ended_at IS NULL",
+            ['bond' => $remainingBond, 'id' => $id]
+        ) === 1;
+    }
+
     public function confirmTrial(int $id): void
     {
         $this->execute("UPDATE moderator_assignments SET status = 'active', confirmed_at = NOW() WHERE id = :id AND status = 'trial'", ['id' => $id]);

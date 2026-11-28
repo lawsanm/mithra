@@ -165,6 +165,42 @@ final class LedgerService
     }
 
     /**
+     * Apply a moderator penalty against the locked conduct bond first.
+     * Any remaining amount must be charged separately from spendable points.
+     */
+    public function bondToMember(int $fromId, int $toId, int $amount, string $reason, int $bookingId): int
+    {
+        $this->guard($amount);
+        if ($fromId === $toId) {
+            throw new LogicException('A transfer needs two different wallets.');
+        }
+
+        $this->lockMemberBalances([$fromId, $toId]);
+        $bond = $this->wallets->bondLocked($fromId);
+        $deducted = min($amount, $bond);
+        if ($deducted === 0) {
+            return 0;
+        }
+        if (!$this->wallets->adjustBondLocked($fromId, -$deducted)) {
+            throw new LogicException('The moderator conduct bond changed during settlement.');
+        }
+
+        $this->wallets->adjust($fromId, -$deducted);
+        $this->wallets->adjust($toId, $deducted);
+
+        $this->ledger->record([
+            'from_pool_code' => null,
+            'from_user_id'   => $fromId,
+            'to_pool_code'   => null,
+            'to_user_id'     => $toId,
+            'amount'         => $deducted,
+            'reason'         => $reason,
+        ] + ['booking_id' => $bookingId]);
+
+        return $deducted;
+    }
+
+    /**
      * Charge a member what they owe another member, without ever creating
      * debt (Plan §7.7): the payer gives what they have, and the Reserve Pool
      * pays the payee the rest as 'shortfall_cover', linked to the booking.

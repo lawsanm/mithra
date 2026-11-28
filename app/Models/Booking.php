@@ -288,8 +288,10 @@ final class Booking extends BaseModel
                     b.agreed_rate, b.rental_charge, b.late_buffer, b.moderator_involved, b.status,
                     b.requested_at, b.accepted_at, b.closed_at, b.overdue_flagged_at,
                     i.title AS item_title, i.declared_value, i.daily_rate, i.monthly_rate, i.gn_division_id,
-                    i.status AS item_status, i.listing_type
+                    i.status AS item_status, i.listing_type,
+                    d.moderator_id AS division_moderator_id
                FROM bookings b JOIN items i ON i.id = b.item_id
+               JOIN gn_divisions d ON d.id = i.gn_division_id
               WHERE b.id = :id
               FOR UPDATE',
             ['id' => $id]

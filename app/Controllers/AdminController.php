@@ -81,8 +81,6 @@ final class AdminController extends Controller
             'admin/moderators/appoint'     => $this->appointment($id),
             'admin/moderators/show'        => $this->moderator($id),
             'admin/moderators/objections'  => $this->objections($id),
-            'admin/disputes/index'         => $this->disputes(),
-            'admin/disputes/show'          => $this->dispute($id),
             'admin/disaster/index'         => $this->disaster(),
             'admin/categories/index'       => $this->categories(),
             'admin/pools/index'            => $this->pools(),
@@ -1003,59 +1001,6 @@ final class AdminController extends Controller
                 empty($member['nic_photo_path']) ? null : ['label' => 'NIC photograph', 'url' => photo_url((string) $member['nic_photo_path'])],
                 empty($member['proof_file_path']) ? null : ['label' => 'Proof of address', 'url' => photo_url((string) $member['proof_file_path'])],
             ])),
-        ];
-    }
-
-    // ── Disputes ────────────────────────────────────────────────────────────
-
-    /** @return array<string, mixed> */
-    private function disputes(): array
-    {
-        return [
-            'disputes' => array_map(fn (array $row): array => [
-                'title'        => (string) ($row['item_title'] ?? 'Dispute #' . $row['id']),
-                'case_number'  => $this->caseNumber((int) $row['id']),
-                'division'     => (string) ($row['division_name'] ?? ''),
-                'parties'      => ($row['lender_name'] ?? '') . ' vs ' . ($row['borrower_name'] ?? ''),
-                'escalated_at' => date('d M Y', strtotime((string) $row['created_at'])),
-                'reason'       => (int) $row['days_open'] . ' days open',
-                'status'       => (int) $row['days_open'] > 7 ? 'error' : 'warning',
-                'status_label' => (int) $row['days_open'] > 7 ? 'Past timer' : 'Open',
-                'href'         => base_url() . '/admin/disputes/' . $row['id'],
-            ], (new Dispute($this->pdo))->openList()),
-        ];
-    }
-
-    /** @return array<string, mixed>|null */
-    private function dispute(int $id): ?array
-    {
-        $row = (new Dispute($this->pdo))->findWithHistory($id);
-
-        if ($row === null) {
-            return null;
-        }
-
-        $history = [[
-            'text' => sprintf('Dispute raised: %s', $row['reason']),
-            'date' => date('j M Y', strtotime((string) $row['created_at'])),
-        ]];
-
-        if ($row['ruling_at'] !== null) {
-            $history[] = [
-                'text' => 'Ruling recorded: ' . ($row['resolution'] ?? ''),
-                'date' => date('j M Y', strtotime((string) $row['ruling_at'])),
-            ];
-        }
-
-        return [
-            'dispute' => [
-                'title'        => (string) ($row['item_title'] ?? 'Dispute'),
-                'case_number'  => $this->caseNumber($id),
-                'status'       => $row['status'] === 'open' ? 'error' : 'success',
-                'status_label' => ucfirst((string) $row['status']),
-            ],
-            'history'      => $history,
-            'proposed_pts' => '',
         ];
     }
 

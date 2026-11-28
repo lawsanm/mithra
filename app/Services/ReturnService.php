@@ -335,7 +335,41 @@ final class ReturnService
             });
         }
 
-        return sprintf('%d flagged as not returned, %d total-loss claims opened', $flagged, $opened);
+        $adminEscalated = 0;
+        foreach ($this->claims->totalLossesDueForAdmin() as $row) {
+            Database::transaction($this->pdo, function () use ($row, &$adminEscalated): void {
+                $claim = $this->claims->lockForUpdate((int) $row['id']);
+                $booking = $this->bookings->lockForUpdate((int) $row['booking_id']);
+
+                if ($claim === null || $booking === null || $claim['status'] !== 'pending_moderator'
+                    || $booking['status'] !== 'pending_moderator'
+                    || ($this->records->forBooking((int) $booking['id'], true)['return_at'] ?? null) !== null) {
+                    return;
+                }
+
+                $this->claims->move((int) $claim['id'], 'pending_moderator', 'escalated');
+                $this->bookings->move((int) $booking['id'], 'pending_moderator', 'escalated');
+                $disputeId = $this->disputes->open(
+                    (int) $booking['id'],
+                    (int) $claim['id'],
+                    (int) $booking['lender_id'],
+                    'The total-loss claim remains unresolved after 14 days without a return.'
+                );
+
+                foreach ($this->users->idsInRole('admin') as $admin) {
+                    $this->notifications->push($admin, 'dispute_opened', [
+                        'title'  => 'Total-loss dispute: ' . $booking['item_title'],
+                        'detail' => 'No return was recorded after 14 days. Review the evidence and make the final ruling.',
+                        'icon'   => 'alert-triangle',
+                        'href'   => '/admin/disputes/' . $disputeId,
+                    ]);
+                }
+
+                $adminEscalated++;
+            });
+        }
+
+        return sprintf('%d flagged as not returned, %d total-loss claims opened, %d sent to the Admin', $flagged, $opened, $adminEscalated);
     }
 
     /** Recheck a scheduled candidate after locking it; a return may have arrived meanwhile. */

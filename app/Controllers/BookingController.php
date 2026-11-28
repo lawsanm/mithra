@@ -462,6 +462,7 @@ final class BookingController extends Controller
                     default => 'Closed',
                 },
                 'ruling'    => (string) ($dispute['resolution'] ?? ''),
+                'ruling_points' => $dispute['ruling_points'] === null ? null : (int) $dispute['ruling_points'],
                 'raised_by' => (string) $dispute['raised_by_name'],
                 'mine'      => (int) $dispute['raised_by'] === $me,
                 'editable'  => (int) $dispute['raised_by'] === $me && $dispute['status'] === 'open' && $dispute['admin_id'] === null,
