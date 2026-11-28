@@ -792,6 +792,19 @@ final class ItemController extends Controller
         }
 
         [$badge, $glyph, $label] = $this->statusBadge((string) $row['status'], null);
+        $categories = $this->categories->allActive();
+        $currentCategoryId = (int) $row['category_id'];
+
+        if (!in_array($currentCategoryId, array_map(static fn (array $category): int => (int) $category['id'], $categories), true)) {
+            $currentCategory = $this->categories->findCategory($currentCategoryId);
+
+            if ($currentCategory !== null && !(bool) $currentCategory['active']) {
+                $categories[] = [
+                    'id' => $currentCategoryId,
+                    'name' => (string) $currentCategory['name'] . ' (Hidden — existing listing)',
+                ];
+            }
+        }
 
         $this->render('items/edit', [
             'item' => [
@@ -804,7 +817,7 @@ final class ItemController extends Controller
                 'can_pause'    => $row['status'] === 'active',
                 'can_resume'   => $row['status'] === 'paused',
             ],
-            'categories' => $this->categories->allActive(),
+            'categories' => $categories,
             'photos'     => $photos,
             'draft'      => $input,
             'errors'     => $errors,

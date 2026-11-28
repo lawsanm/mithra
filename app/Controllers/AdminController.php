@@ -210,6 +210,30 @@ final class AdminController extends Controller
         $this->redirect('/admin/divisions');
     }
 
+    public function saveCategory(): void
+    {
+        $validator = $this->categoryInput();
+        $id = (int) $validator->value('category_id', '0');
+
+        try {
+            if (!$validator->passes()) {
+                throw new ValidationException($validator->errors());
+            }
+
+            $this->categoryService()->save($id, $validator->value('name'), $validator->value('visibility') === 'active');
+        } catch (ValidationException $exception) {
+            $this->renderCategoryForm($exception->errors(), $validator->values());
+
+            return;
+        } catch (RecordNotFoundException $exception) {
+            $this->notice(404, 'Category not found', 'Return to category management to choose an available category.');
+            return;
+        }
+
+        $this->flash($id === 0 ? 'Category created.' : 'Category updated.');
+        $this->redirect('/admin/categories');
+    }
+
     /** POST /admin/moderators/candidates. */
     public function createModeratorNomination(): void
     {
@@ -481,9 +505,34 @@ final class AdminController extends Controller
         return $validator;
     }
 
+    private function categoryInput(): Validator
+    {
+        return (new Validator($_POST))
+            ->integer('category_id', 'Category', 0)
+            ->required('name', 'Category name')
+            ->maxLength('name', 'Category name', 80)
+            ->words('name', 'Category name')
+            ->required('visibility', 'Visibility')
+            ->inList('visibility', 'Visibility', ['active', 'hidden']);
+    }
+
+    private function renderCategoryForm(array $errors, array $draft): void
+    {
+        $this->render('admin/categories/index', $this->categories() + [
+            'categoryErrors' => $errors,
+            'categoryDraft' => $draft,
+            'categoryModalOpen' => true,
+        ]);
+    }
+
     private function divisionService(): DivisionService
     {
         return new DivisionService(new GnDivision($this->pdo));
+    }
+
+    private function categoryService(): CategoryService
+    {
+        return new CategoryService(new ItemCategory($this->pdo));
     }
 
     private function verificationService(): VerificationService

@@ -10,6 +10,9 @@ declare(strict_types=1);
 
 $pageTitle = 'Category management';
 $navActive = 'categories';
+$categoryDraft = $categoryDraft ?? ['category_id' => '0', 'name' => '', 'visibility' => 'active'];
+$categoryErrors = $categoryErrors ?? [];
+$categoryModalOpen = $categoryModalOpen ?? false;
 
 $chrome = 'admin';
 include __DIR__ . '/../../../partials/header.php';
@@ -18,11 +21,13 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Category management</h1>
-    <button class="btn btn--primary page-header__action" type="button" data-modal-open="modal-edit-category" data-modal-title="Add category">
+    <button class="btn btn--primary page-header__action" type="button" data-modal-open="modal-edit-category" data-modal-title="Add category" data-category-id="0" data-category-name="" data-category-visibility="active">
         <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
         Add category
     </button>
 </header>
+
+<?php include __DIR__ . '/../../../partials/flash.php'; ?>
 
 <ul class="row-list">
     <?php foreach ($categories as $cat): ?>
@@ -32,7 +37,7 @@ include __DIR__ . '/../../../partials/header.php';
                 <span class="list-row__meta"><?= e(number_format($cat['listing_count'])) ?> listings</span>
             </div>
             <span class="badge badge--<?= e($cat['status']) ?>"><?= e($cat['status_label']) ?></span>
-            <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-category" data-modal-title="Edit category" data-category-id="<?= e((string) $cat['id']) ?>" data-category-name="<?= e($cat['name']) ?>">Edit</button>
+            <button class="btn btn--ghost" type="button" data-modal-open="modal-edit-category" data-modal-title="Edit category" data-category-id="<?= e((string) $cat['id']) ?>" data-category-name="<?= e($cat['name']) ?>" data-category-visibility="<?= $cat['status'] === 'success' ? 'active' : 'hidden' ?>">Edit</button>
         </li>
     <?php endforeach; ?>
 </ul>

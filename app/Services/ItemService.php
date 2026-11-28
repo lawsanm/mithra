@@ -212,7 +212,7 @@ final class ItemService
         $input['value_proof_path'] = $newProof ?? $current['value_proof_path'];
 
         try {
-            $clean = $this->cleanFields($input, $photoPaths);
+            $clean = $this->cleanFields($input, $photoPaths, (int) $current['category_id']);
         } catch (ValidationException $exception) {
             $this->photos->delete(...array_filter([$newProof]));
 
@@ -335,13 +335,13 @@ final class ItemService
      *
      * @throws ValidationException
      */
-    private function cleanFields(array $input, array $photoPaths): array
+    private function cleanFields(array $input, array $photoPaths, int $allowedInactiveCategoryId = 0): array
     {
         $errors = [];
 
         $categoryId = (int) ($input['category'] ?? 0);
 
-        if (!$this->categoryExists($categoryId)) {
+        if (!$this->categoryExists($categoryId) && $categoryId !== $allowedInactiveCategoryId) {
             $errors['category'] = 'Choose a category from the list.';
         }
 
