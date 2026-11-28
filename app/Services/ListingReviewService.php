@@ -48,9 +48,10 @@ final class ListingReviewService
     {
         $filter = in_array($filter, self::FILTERS, true) ? $filter : '';
 
-        $rows = $role === 'admin'
-            ? $this->items->reviewQueue([], $filter)
-            : $this->items->reviewQueue([$this->divisions->moderatedByOrFail($reviewerId)], $filter);
+        $divisionIds = $role === 'admin'
+            ? []
+            : [$this->divisions->moderatedByOrFail($reviewerId)];
+        $rows = $this->items->reviewQueue($divisionIds, $filter, $reviewerId, $role);
 
         return array_values(array_filter(
             $rows,

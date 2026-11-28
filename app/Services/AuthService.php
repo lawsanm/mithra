@@ -122,14 +122,14 @@ final class AuthService
     private function refusalFor(string $status, ?string $membership): ?string
     {
         if ($membership === 'rejected') {
-            return 'Your division moderator could not verify this application. '
-                 . 'Speak to them about what is needed, then register again.';
+            return 'Your application was not approved. Speak with the Admin or your division moderator '
+                 . 'for next steps.';
         }
 
         return match ($status) {
             'active'    => null,
-            'pending'   => 'Your division moderator has not verified this account yet. '
-                         . 'You can sign in as soon as the review finishes.',
+            'pending'   => 'Your division has not verified this account yet. '
+                         . 'The Admin or moderator must finish the review before you can sign in.',
             'suspended' => 'This account is suspended. Your division moderator can tell you what happens next.',
             default     => 'This account has been closed.',
         };

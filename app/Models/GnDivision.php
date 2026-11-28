@@ -92,12 +92,12 @@ final class GnDivision extends BaseModel
         return [
             'pending' => (int) $this->selectValue(
                 'SELECT COUNT(*) FROM user_divisions
-                  WHERE gn_division_id = :id AND status = \'pending\'',
+                  WHERE gn_division_id = :id AND membership_type = \'home\' AND status = \'pending\'',
                 ['id' => $id]
             ),
             'approved' => (int) $this->selectValue(
                 'SELECT COUNT(*) FROM user_divisions
-                  WHERE gn_division_id = :id AND status = \'active\'',
+                  WHERE gn_division_id = :id AND membership_type = \'home\' AND status = \'active\'',
                 ['id' => $id]
             ),
         ];
@@ -162,19 +162,20 @@ final class GnDivision extends BaseModel
     }
 
     /**
-     * Most recent pending member approvals across every division, for the
-     * admin notification feed.
+     * Most recent pending memberships across every division, for the Admin feed.
      *
      * @return list<array<string, mixed>>
      */
     public function recentPendingApprovals(int $limit = 5): array
     {
         return $this->selectPage(
-            "SELECT ud.created_at, u.full_name, d.name AS division_name
+            "SELECT ud.created_at, ud.membership_type, u.full_name, d.id AS division_id,
+                    d.name AS division_name, d.moderator_id
                FROM user_divisions ud
                JOIN users u ON u.id = ud.user_id
                JOIN gn_divisions d ON d.id = ud.gn_division_id
               WHERE ud.status = 'pending'
+                AND ud.membership_type = 'home'
               ORDER BY ud.created_at DESC",
             [],
             1,
@@ -200,11 +201,13 @@ final class GnDivision extends BaseModel
     public function pendingApprovals(int $divisionId): array
     {
         return $this->select(
-            'SELECT u.id, u.full_name, u.nic, u.address, u.created_at AS applied_at
+            'SELECT ud.id AS application_id, ud.user_id, u.full_name, u.nic, u.nic_photo_path,
+                    u.address, ud.proof_file_path, ud.created_at AS applied_at
                FROM users u
                JOIN user_divisions ud ON ud.user_id = u.id AND ud.gn_division_id = :div
-              WHERE ud.status = \'pending\'
-              ORDER BY u.created_at ASC',
+              WHERE ud.membership_type = \'home\' AND ud.status = \'pending\'
+              ORDER BY ud.created_at ASC
+              LIMIT 100',
             ['div' => $divisionId]
         );
     }
@@ -270,18 +273,55 @@ final class GnDivision extends BaseModel
         ];
     }
 
-    /**
-     * Lock the division row while an Admin starts or ends its disaster event.
-     *
-     * @return array{id: int, name: string, status: string, moderator_id: ?int, disaster_mode_active: bool}|null
-     */
+    /** Lock the division row while a provisional moderator is being appointed. */
+    public function lockForAppointment(int $id): ?array
+    {
+        $row = $this->selectOne(
+            'SELECT id, name, status, moderator_id
+               FROM gn_divisions WHERE id = :id FOR UPDATE',
+            ['id' => $id]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'id'           => (int) $row['id'],
+            'name'         => (string) $row['name'],
+            'status'       => (string) $row['status'],
+            'moderator_id' => $row['moderator_id'] === null ? null : (int) $row['moderator_id'],
+        ];
+    }
+
+    public function activeMemberCount(int $id): int
+    {
+        return (int) $this->selectValue(
+            "SELECT COUNT(*) FROM user_divisions
+              WHERE gn_division_id = :id AND membership_type = 'home' AND status = 'active'",
+            ['id' => $id]
+        );
+    }
+
+    public function assignModerator(int $id, int $userId): bool
+    {
+        return $this->execute(
+            "UPDATE gn_divisions SET moderator_id = :user
+              WHERE id = :id AND status = 'active' AND moderator_id IS NULL",
+            ['user' => $userId, 'id' => $id]
+        ) === 1;
+    }
+
+    public function releaseModerator(int $id, int $userId): bool
+    {
+        return $this->execute('UPDATE gn_divisions SET moderator_id = NULL WHERE id = :id AND moderator_id = :user', ['id' => $id, 'user' => $userId]) === 1;
+    }
+    /** Lock the division row while an Admin starts or ends its disaster event. */
     public function lockForDisasterMode(int $id): ?array
     {
         $row = $this->selectOne(
             'SELECT id, name, status, moderator_id, disaster_mode_active
-               FROM gn_divisions
-              WHERE id = :id
-              FOR UPDATE',
+               FROM gn_divisions WHERE id = :id FOR UPDATE',
             ['id' => $id]
         );
 
@@ -298,9 +338,7 @@ final class GnDivision extends BaseModel
         ];
     }
 
-    /**
-     * Activate or deactivate Disaster Mode for a division.
-     */
+    /** Activate or deactivate Disaster Mode for a division. */
     public function setDisasterMode(int $id, bool $active, ?string $until = null): void
     {
         $this->execute(
@@ -308,12 +346,7 @@ final class GnDivision extends BaseModel
                 SET disaster_mode_active = :active,
                     disaster_mode_until  = :until
               WHERE id = :id',
-            [
-                'id'     => $id,
-                'active' => $active ? 1 : 0,
-                'until'  => $active ? $until : null,
-            ]
+            ['id' => $id, 'active' => $active ? 1 : 0, 'until' => $active ? $until : null]
         );
     }
-
 }

@@ -34,7 +34,7 @@ final class Wallet extends BaseModel
     public function balance(int $memberId): int
     {
         return (int) $this->selectValue(
-            'SELECT balance FROM member_wallets WHERE user_id = :id',
+            'SELECT balance - bond_locked FROM member_wallets WHERE user_id = :id',
             ['id' => $memberId]
         );
     }
@@ -129,7 +129,7 @@ final class Wallet extends BaseModel
     public function lockBalance(int $memberId): ?int
     {
         $balance = $this->selectValue(
-            'SELECT balance FROM member_wallets WHERE user_id = :id FOR UPDATE',
+            'SELECT balance - bond_locked FROM member_wallets WHERE user_id = :id FOR UPDATE',
             ['id' => $memberId]
         );
 
@@ -152,5 +152,16 @@ final class Wallet extends BaseModel
             'SELECT bond_locked FROM member_wallets WHERE user_id = :id',
             ['id' => $memberId]
         );
+    }
+
+    /** Change the non-spendable portion of a moderator's wallet inside a locked transaction. */
+    public function adjustBondLocked(int $memberId, int $delta): bool
+    {
+        return $this->execute(
+            'UPDATE member_wallets
+                SET bond_locked = bond_locked + :delta
+              WHERE user_id = :id AND bond_locked + :check_delta >= 0',
+            ['delta' => $delta, 'check_delta' => $delta, 'id' => $memberId]
+        ) === 1;
     }
 }
