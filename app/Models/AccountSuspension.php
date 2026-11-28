@@ -29,4 +29,46 @@ final class AccountSuspension extends BaseModel
             ['user' => $userId, 'admin' => $adminId, 'reason' => $reason]
         );
     }
+
+    /** Lock the current suspension row before an Admin reinstates its account. */
+    public function lockOpenForUser(int $userId): ?array
+    {
+        return $this->selectOne(
+            'SELECT id, reason, started_at
+               FROM account_suspensions
+              WHERE user_id = :user AND ended_at IS NULL
+              ORDER BY started_at DESC, id DESC LIMIT 1 FOR UPDATE',
+            ['user' => $userId]
+        );
+    }
+
+    public function hasOpenForUser(int $userId): bool
+    {
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM account_suspensions WHERE user_id = :user AND ended_at IS NULL',
+            ['user' => $userId]
+        ) > 0;
+    }
+
+    public function close(int $id): bool
+    {
+        return $this->execute(
+            'UPDATE account_suspensions SET ended_at = NOW()
+              WHERE id = :id AND ended_at IS NULL',
+            ['id' => $id]
+        ) === 1;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function historyFor(int $userId): array
+    {
+        return $this->select(
+            'SELECT s.reason, s.started_at, s.ended_at, admin.full_name AS admin_name
+               FROM account_suspensions s
+          LEFT JOIN users admin ON admin.id = s.suspended_by
+              WHERE s.user_id = :user
+              ORDER BY s.started_at DESC, s.id DESC',
+            ['user' => $userId]
+        );
+    }
 }

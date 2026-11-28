@@ -183,6 +183,7 @@ return [
         '/admin/disaster/events/end-date' => ['AdminController', 'updateDisasterEndDate'],
         '/admin/disaster/reports/{id}/reviewed' => ['AdminController', 'reviewDisasterReport'],
         '/admin/disputes/{id}'                  => ['AdminDisputeController', 'decide'],
+        '/admin/users/{id}/suspension'          => ['AdminUserController', 'changeSuspension'],
         '/moderator/verifications/{id}/approve' => ['ModerationController', 'approve'],
         '/moderator/verifications/{id}/reject'  => ['ModerationController', 'reject'],
         '/moderator/listing-approvals/{id}'     => ['ListingApprovalController', 'decide'],

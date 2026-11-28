@@ -197,6 +197,37 @@ final class User extends BaseModel
         ) === 1;
     }
 
+    /** Lock a member account before an Admin suspension or reinstatement. */
+    public function lockForAdminSuspension(int $id): ?array
+    {
+        return $this->selectOne(
+            'SELECT u.id, u.full_name, u.status, r.code AS role_code
+               FROM users u JOIN roles r ON r.id = u.role_id
+              WHERE u.id = :id FOR UPDATE',
+            ['id' => $id]
+        );
+    }
+
+    public function suspendMemberByAdmin(int $id): bool
+    {
+        return $this->execute(
+            "UPDATE users u JOIN roles r ON r.id = u.role_id
+                SET u.status = 'suspended'
+              WHERE u.id = :id AND u.status = 'active' AND r.code = 'member'",
+            ['id' => $id]
+        ) === 1;
+    }
+
+    public function reinstateMemberByAdmin(int $id): bool
+    {
+        return $this->execute(
+            "UPDATE users u JOIN roles r ON r.id = u.role_id
+                SET u.status = 'active'
+              WHERE u.id = :id AND u.status = 'suspended' AND r.code = 'member'",
+            ['id' => $id]
+        ) === 1;
+    }
+
     public function roleIdFor(string $code): ?int
     {
         $id = $this->selectValue('SELECT id FROM roles WHERE code = :code', ['code' => $code]);
