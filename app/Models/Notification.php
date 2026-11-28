@@ -24,7 +24,7 @@ final class Notification extends BaseModel
         'bookings'  => [
             'booking_requested', 'booking_accepted', 'booking_declined', 'booking_cancelled', 'booking_auto_cancelled',
             'handover_ready', 'handover_complete', 'return_started', 'return_due', 'return_overdue', 'booking_completed',
-            'claim_raised', 'dispute_opened',
+            'claim_raised', 'dispute_opened', 'dispute_ruled',
             'donation_requested', 'donation_selected', 'donation_declined', 'donation_withdrawn', 'donation_confirm',
             'donation_completed',
         ],

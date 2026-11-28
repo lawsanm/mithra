@@ -30,7 +30,7 @@ final class PointLedger extends BaseModel
         'escrow'  => ['rental_charge', 'buffer_hold', 'buffer_refund', 'rental_payout', 'booking_refund'],
         'gifts'   => ['gift'],
         'aid'     => ['aid_grant', 'aid_return', 'parting_gift'],
-        'fees'    => ['late_fee', 'damage_penalty'],
+        'fees'    => ['late_fee', 'damage_penalty', 'dispute_refund'],
         'sponsor' => ['sponsor_contribution', 'welcome_bonus', 'moderator_stipend', 'community_reward', 'bond_hold', 'bond_return'],
         'reserve' => ['shortfall_cover', 'reserve_topup', 'bond_forfeit'],
         'closures' => ['account_closure', 'parting_gift', 'recycle'],

@@ -9,6 +9,16 @@ final class ModeratorCandidate extends BaseModel
         $this->execute("UPDATE moderator_candidates SET status = :status WHERE user_id = :user AND gn_division_id = :division AND status IN ('provisional','appointed')", ['user' => $userId, 'division' => $divisionId, 'status' => $status]);
     }
 
+    public function closeAfterRuling(int $userId, int $divisionId): void
+    {
+        $this->execute(
+            "UPDATE moderator_candidates SET status = 'rejected'
+              WHERE user_id = :user AND gn_division_id = :division
+                AND status IN ('provisional', 'appointed')",
+            ['user' => $userId, 'division' => $divisionId]
+        );
+    }
+
     public function withdraw(int $id): bool
     {
         return $this->execute("UPDATE moderator_candidates SET status = 'withdrawn' WHERE id = :id AND status IN ('nominated','checks_passed','evaluated')", ['id' => $id]) === 1;

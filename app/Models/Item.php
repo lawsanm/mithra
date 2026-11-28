@@ -405,6 +405,15 @@ final class Item extends BaseModel
         $this->execute("UPDATE items SET status = 'active' WHERE id = :id AND status = 'borrowed'", ['id' => $id]);
     }
 
+    /** Archive an item the Admin has ruled to be a total loss. */
+    public function archiveAsLost(int $id): bool
+    {
+        return $this->execute(
+            "UPDATE items SET status = 'archived' WHERE id = :id AND status = 'borrowed'",
+            ['id' => $id]
+        ) === 1;
+    }
+
     /**
      * The WHERE clause Browse and its count share: other members' listable
      * items in one division, narrowed by the filters.

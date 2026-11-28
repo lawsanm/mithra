@@ -6,6 +6,8 @@ declare(strict_types=1);
  * Escalated disputes list — admin queue.
  *
  * @var array $disputes  rows: title, case_number, division, parties, escalated_at, reason, status, status_label, href
+ * @var int   $page
+ * @var bool  $hasNextPage
  */
 
 $pageTitle = 'Escalated disputes';
@@ -19,7 +21,7 @@ include __DIR__ . '/../../../partials/header.php';
 <header class="page-header">
     <div>
         <h1 class="page-header__title">Escalated disputes</h1>
-        <p class="page-intro__meta">Cases arrive here when a party refuses the moderator's resolution, after the 7-day sign-off timer.</p>
+        <p class="page-intro__meta">Review cases escalated from moderator mediation, including bookings involving the division moderator.</p>
     </div>
 </header>
 
@@ -38,8 +40,17 @@ include __DIR__ . '/../../../partials/header.php';
     <?php endforeach; ?>
 </ul>
 
+<?php if ($disputes === []): ?>
+    <p class="empty-state__body">There are no open disputes to review.</p>
+<?php endif; ?>
+
+<nav class="actions" aria-label="Dispute queue pagination">
+    <?php if ($page > 1): ?><a class="btn btn--ghost" href="?page=<?= e((string) ($page - 1)) ?>">Previous</a><?php endif; ?>
+    <?php if ($hasNextPage): ?><a class="btn btn--ghost" href="?page=<?= e((string) ($page + 1)) ?>">Next</a><?php endif; ?>
+</nav>
+
 <div class="notice notice--info notice--full">
-    Your ruling is final and recorded in the append-only ledger. Points move only after your decision is saved.
+    Review the parties’ accounts, the in-person moderator record, and the handover and return evidence before making a final ruling.
 </div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

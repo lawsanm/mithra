@@ -313,7 +313,10 @@ include __DIR__ . '/../../partials/header.php';
             </dl>
             <p class="record-card__quote">“<?= e($record['reason']) ?>”</p>
             <?php if ($record['ruling'] !== ''): ?>
-                <p class="notice notice--info"><?= e($record['ruling']) ?></p>
+                <p class="notice notice--info">
+                    Admin final ruling: <?= e(number_format((int) ($record['ruling_points'] ?? 0))) ?> points awarded to the lender.
+                    <?= e($record['ruling']) ?>
+                </p>
             <?php endif; ?>
             <?php if ($record['editable']): ?>
                 <form class="field-row" method="post" action="<?= base_url() ?>/disputes/<?= e((string) $record['id']) ?>" novalidate>

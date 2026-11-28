@@ -188,6 +188,15 @@ final class User extends BaseModel
         );
     }
 
+    /** Suspend an active member after an Admin ruling on a confirmed total loss. */
+    public function suspendForTotalLoss(int $id): bool
+    {
+        return $this->execute(
+            "UPDATE users SET status = 'suspended' WHERE id = :id AND status = 'active'",
+            ['id' => $id]
+        ) === 1;
+    }
+
     public function roleIdFor(string $code): ?int
     {
         $id = $this->selectValue('SELECT id FROM roles WHERE code = :code', ['code' => $code]);

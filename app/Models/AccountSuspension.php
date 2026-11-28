@@ -19,4 +19,14 @@ final class AccountSuspension extends BaseModel
             ['user' => $userId]
         );
     }
+
+    /** Record an Admin suspension in the account's append-only history. */
+    public function record(int $userId, int $adminId, string $reason): void
+    {
+        $this->insert(
+            'INSERT INTO account_suspensions (user_id, suspended_by, reason)
+             VALUES (:user, :admin, :reason)',
+            ['user' => $userId, 'admin' => $adminId, 'reason' => $reason]
+        );
+    }
 }
