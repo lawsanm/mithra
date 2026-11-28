@@ -39,7 +39,13 @@ include __DIR__ . '/../../../partials/header.php';
         <li class="list-row<?= !$notice['read'] ? ' list-row--unread' : '' ?>">
             <span class="list-row__icon" aria-hidden="true"><?= e($notice['icon']) ?></span>
             <div class="list-row__body">
-                <span class="list-row__title"><?= e($notice['title']) ?></span>
+                <span class="list-row__title">
+                    <?php if (!empty($notice['href'])): ?>
+                        <a class="link" href="<?= e($notice['href']) ?>"><?= e($notice['title']) ?></a>
+                    <?php else: ?>
+                        <?= e($notice['title']) ?>
+                    <?php endif; ?>
+                </span>
                 <span class="list-row__meta"><?= e($notice['meta']) ?></span>
             </div>
             <span class="list-row__time"><?= e($notice['time']) ?></span>

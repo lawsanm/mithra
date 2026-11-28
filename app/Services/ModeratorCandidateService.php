@@ -1,0 +1,184 @@
+<?php
+
+declare(strict_types=1);
+
+/** Admin recording of member nominations for a division (§16.1). */
+final class ModeratorCandidateService
+{
+    public function __construct(
+        private GnDivision $divisions,
+        private ModeratorCandidate $candidates
+    ) {
+    }
+
+    public function nominate(int $divisionId, int $candidateId, int $nominatorId): int
+    {
+        if (!$this->divisions->isActive($divisionId)) {
+            throw ValidationException::field('division_id', 'Choose an active GN division.');
+        }
+
+        if (!$this->candidates->isActiveHomeMember($candidateId, $divisionId)) {
+            throw ValidationException::field('candidate_id', 'The nominee must be an active member of this division.');
+        }
+
+        if (!$this->candidates->isActiveHomeMember($nominatorId, $divisionId)) {
+            throw ValidationException::field('nominated_by', 'The nominator must be an active member of this division.');
+        }
+
+        if ($this->candidates->hasOpenNomination($candidateId, $divisionId)) {
+            throw ValidationException::field('candidate_id', 'This member already has an open moderator nomination in this division.');
+        }
+
+        return $this->candidates->createNomination($divisionId, $candidateId, $nominatorId);
+    }
+
+    public function withdraw(int $id): void
+    {
+        if (!$this->candidates->withdraw($id)) {
+            throw ValidationException::field('candidate_id', 'Only an open nomination can be withdrawn. Appointed candidates must use the appointment review.');
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function selectionPool(int $divisionId): array
+    {
+        $rows = $this->candidates->candidatesForDivision($divisionId);
+
+        $candidates = array_map(static function (array $row): array {
+            $joinedAt = $row['verified_at'] === null ? null : new DateTimeImmutable((string) $row['verified_at']);
+            $now = new DateTimeImmutable();
+            $tenure = $joinedAt === null ? null : $joinedAt->diff($now);
+            $months = $tenure === null || $tenure->invert === 1 ? 0 : ($tenure->y * 12) + $tenure->m;
+            $clean = (int) $row['upheld_claims'] === 0 && !(bool) $row['has_suspension'];
+            $declared = (bool) $row['declaration_signed'];
+            $status = (string) ($row['candidate_status'] ?? '');
+            $documented = !empty($row['declaration_reference']) && !empty($row['capability_note']);
+            $launchReady = $documented && (bool) $row['nic_verified'] && $row['verified_at'] !== null
+                && (bool) $row['residence_verified']
+                && $declared
+                && (int) $row['competency_score'] > 0
+                && in_array($status, ['nominated', 'checks_passed', 'evaluated'], true);
+            $eligible = $documented && $months >= 6
+                && (bool) $row['nic_verified']
+                && (bool) $row['residence_verified']
+                && (int) $row['trust_score'] >= 70
+                && (int) $row['completed_transactions'] >= 10
+                && $clean
+                && $declared
+                && in_array($status, ['nominated', 'checks_passed', 'evaluated'], true)
+                && (int) $row['competency_score'] > 0;
+
+            return [
+                'id'                 => (int) $row['id'],
+                'nic_photo_path' => $row['nic_photo_path'],
+                'proof_file_path' => $row['proof_file_path'],
+                'declaration_reference' => $row['declaration_reference'] ?? '',
+                'capability_note' => $row['capability_note'] ?? '',
+                'reviewed_at' => $row['reviewed_at'],
+                'reviewer_name' => $row['reviewer_name'],
+                'candidate_id'       => $row['candidate_id'] === null ? null : (int) $row['candidate_id'],
+                'candidate_status'   => $status,
+                'name'               => (string) $row['full_name'],
+                'initials'           => User::initials((string) $row['full_name']),
+                'trust_score'        => (int) $row['trust_score'],
+                'address'            => (string) $row['address'],
+                'verified_at'        => (string) ($row['verified_at'] ?? ''),
+                'member_since'       => $joinedAt === null ? '' : $joinedAt->format('M Y'),
+                'months'             => $months,
+                'transactions'       => (int) $row['completed_transactions'],
+                'upheld_claims'      => (int) $row['upheld_claims'],
+                'has_suspension'     => (bool) $row['has_suspension'],
+                'record'             => $clean ? 'Clean' : 'Review required',
+                'gn_endorsed'        => (bool) $row['gn_endorsed'],
+                'nic_verified'       => (bool) $row['nic_verified'],
+                'residence_verified' => (bool) $row['residence_verified'],
+                'reference_1'        => (string) ($row['reference_1'] ?? ''),
+                'reference_2'        => (string) ($row['reference_2'] ?? ''),
+                'declaration_signed' => $declared,
+                'endorsement'        => (string) ($row['endorsement'] ?? ''),
+                'interview_score'    => $row['interview_score'] === null ? '' : (string) $row['interview_score'],
+                'involvement_score'  => $row['involvement_score'] === null ? '' : (string) $row['involvement_score'],
+                'references_score'   => $row['references_score'] === null ? '' : (string) $row['references_score'],
+                'competency_score'   => $row['competency_score'] === null ? '' : (string) $row['competency_score'],
+                'total_score'        => $row['total_score'] === null ? '' : (string) $row['total_score'],
+                'launch_ready'       => $launchReady,
+                'eligible'           => $eligible,
+                'conflict'           => $declared ? null : 'Declaration not recorded',
+                'recommended'        => false,
+            ];
+        }, $rows);
+
+        foreach ($candidates as $index => $candidate) {
+            if ($candidate['eligible']) {
+                $candidates[$index]['recommended'] = true;
+                break;
+            }
+        }
+
+        return $candidates;
+    }
+
+    /**
+     * @param array{
+     *     endorsement:?string,
+     *     nic_verified:bool,
+     *     residence_verified:bool,
+     *     reference_1:?string,
+     *     reference_2:?string,
+     *     declaration_signed:bool,
+     *     interview_score:?int,
+     *     involvement_score:?int,
+     *     references_score:?int,
+     *     competency_score:?int
+     * } $input
+     */
+    public function review(int $divisionId, int $candidateId, array $input, int $adminId): void
+    {
+        $candidate = $this->candidates->findForReview($candidateId, $divisionId);
+
+        if ($candidate === null) {
+            throw new RecordNotFoundException('No editable nomination exists in this division.');
+        }
+
+        $endorsement = self::optionalText($input['endorsement']);
+        $reference = trim($input['declaration_reference'] ?? '');
+        $note = trim($input['capability_note'] ?? '');
+        if ($input['declaration_signed'] && $reference === '') {
+            throw ValidationException::field('declaration_reference', 'Identify the signed declaration you checked.');
+        }
+        if ((int) $input['competency_score'] > 0 && $note === '') {
+            throw ValidationException::field('capability_note', 'Describe how the resident demonstrated independent use.');
+        }
+        $ready = $input['nic_verified'] && $input['residence_verified'] && $input['declaration_signed'] && (int) $input['competency_score'] > 0;
+        $status = $ready ? 'checks_passed' : 'nominated';
+
+        $updated = $this->candidates->updateReview($candidateId, $divisionId, [
+            'declaration_reference' => $reference,
+            'capability_note' => $note,
+            'reviewed_by' => $adminId,
+            'endorsement'        => $endorsement,
+            'nic_verified'       => (int) $input['nic_verified'],
+            'residence_verified' => (int) $input['residence_verified'],
+            'reference_1'        => $candidate['reference_1'],
+            'reference_2'        => $candidate['reference_2'],
+            'declaration_signed' => (int) $input['declaration_signed'],
+            'interview_score'    => $candidate['interview_score'],
+            'involvement_score'  => $candidate['involvement_score'],
+            'references_score'  => $candidate['references_score'],
+            'competency_score'   => $input['competency_score'],
+            'total_score'        => $candidate['total_score'],
+            'status'             => $status,
+        ]);
+
+        if (!$updated && $this->candidates->findForReview($candidateId, $divisionId) === null) {
+            throw new RecordNotFoundException('This nomination can no longer be edited.');
+        }
+    }
+
+    private static function optionalText(?string $value): ?string
+    {
+        $value = $value === null ? '' : trim($value);
+
+        return $value === '' ? null : $value;
+    }
+}

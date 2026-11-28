@@ -29,6 +29,14 @@ include __DIR__ . '/../../../partials/header.php';
 
 <header class="page-header">
     <h1 class="page-header__title">Moderator management</h1>
+    <div class="actions">
+    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/history">Appointment history</a>
+    <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/liaison">Liaison assignment</a>
+    <button class="btn btn--primary page-header__action" type="button" data-modal-open="modal-create-moderator-candidate">
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#icon-plus"></use></svg>
+        Record nomination
+    </button>
+    </div>
 </header>
 
 <ul class="filter-pills">
@@ -54,7 +62,47 @@ include __DIR__ . '/../../../partials/header.php';
     <p class="phase-card__meta"><?= e($phase['description']) ?></p>
 </div>
 
-<!-- ── Phase 1 content (Battaramulla sample — 6 members, no moderator) ── -->
+<section class="section">
+    <div class="section__head">
+        <h2 class="section__title">Nominations and candidate checks</h2>
+    </div>
+
+    <?php if ($nominations === []): ?>
+        <div class="empty-state">
+            <p class="empty-state__title">No nominations recorded</p>
+            <p class="empty-state__body">Record a community nomination to begin candidate checks and evaluation.</p>
+        </div>
+    <?php else: ?>
+        <div class="scroll-x">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Candidate</th><th>Status</th><th>Platform capability</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($nominations as $nomination): ?>
+                        <tr>
+                            <td>
+                                <div class="cluster">
+                                    <span class="avatar"><?= e($nomination['initials']) ?></span>
+                                    <strong><?= e($nomination['name']) ?></strong>
+                                </div>
+                            </td>
+                            <td><span class="badge badge--info"><?= e(ucfirst(str_replace('_', ' ', $nomination['candidate_status']))) ?></span></td>
+                            <td><?= (int) $nomination['competency_score'] > 0 ? 'Demonstrated' : 'Pending' ?></td>
+                            <td>
+                                <button class="btn btn--ghost" type="button" data-modal-open="modal-review-moderator-candidate-<?= e((string) $nomination['candidate_id']) ?>">
+                                    Review checks
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</section>
+
+<!-- ── Phase 1 content: first appointment waits for the minimum membership ── -->
 <section class="section" id="phase-1-content" <?= $phase['number'] === 1 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
         You are handling member registrations directly. No moderator is needed until approximately 10 members are registered in this division.
@@ -99,10 +147,16 @@ include __DIR__ . '/../../../partials/header.php';
     </div>
 </section>
 
-<!-- ── Phase 2 content (Maharagama South — 11 members, no moderator yet) ── -->
+<!-- ── Phase 2 content: first appointment or replacement ── -->
 <section class="section" id="phase-2-content" <?= $phase['number'] === 2 ? '' : 'hidden' ?>>
     <div class="notice notice--warning notice--full">
-        The division has reached the member threshold. Select and appoint the first moderator from the verified members below. The appointment is announced publicly with a 7-day objection window before it is finalised.
+        <?php if ($hasModerator): ?>
+            This division already has an active or trial moderator. End that appointment before selecting a replacement.
+        <?php elseif ($hasAppointmentHistory): ?>
+            The division has a vacancy after a previous appointment. Select the highest-trust member who meets normal-operation eligibility. A 7-day objection window starts when appointed; the three-month trial and 500-point bond start on day one.
+        <?php else: ?>
+            The division has reached the member threshold. Select the approved resident who best meets the criteria for the first appointment. A 7-day objection window starts when appointed; the three-month trial and 500-point bond start on day one.
+        <?php endif; ?>
     </div>
 
     <div class="section__head">
@@ -141,12 +195,20 @@ include __DIR__ . '/../../../partials/header.php';
                             <?php if ($member['conflict'] !== null): ?>
                                 <span class="badge badge--warning">! <?= e($member['conflict']) ?></span>
                             <?php else: ?>
-                                <span class="badge badge--success">None</span>
+                                <span class="badge badge--success">Declaration signed</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($member['conflict'] === null): ?>
+                            <?php if (!$hasModerator && !$hasAppointmentHistory && $member['launch_ready']): ?>
                                 <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
+                            <?php elseif ($hasModerator): ?>
+                                <span class="badge badge--neutral">Current moderator must leave first</span>
+                            <?php elseif ($hasAppointmentHistory && $member['eligible'] && $member['id'] === $recommendedCandidateId): ?>
+                                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
+                            <?php elseif ((!$hasAppointmentHistory && $member['launch_ready']) || ($hasAppointmentHistory && $member['eligible'])): ?>
+                                <span class="badge badge--neutral">Lower-ranked candidate</span>
+                            <?php else: ?>
+                                <span class="badge badge--neutral">Checks incomplete</span>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -159,7 +221,11 @@ include __DIR__ . '/../../../partials/header.php';
 <!-- ── Phase 3 content (Kaduwela West — 142 members, data-driven pool) ── -->
 <section class="section" id="phase-3-content" <?= $phase['number'] === 3 ? '' : 'hidden' ?>>
     <div class="notice notice--info notice--full">
-        Data-driven eligibility pool active. Members qualifying: 6+ months verified, trust score 70+, 10+ completed transactions, clean record, no conflict of interest.
+        <?php if ($hasModerator): ?>
+            This division already has an active or trial moderator. End that appointment before selecting a replacement.
+        <?php else: ?>
+            Data-driven eligibility pool active. Members qualifying: 6+ months verified, trust score 70+, 10+ completed transactions, clean record, and signed conflict declaration.
+        <?php endif; ?>
     </div>
 
     <div class="section__head">
@@ -181,6 +247,9 @@ include __DIR__ . '/../../../partials/header.php';
                 </tr>
             </thead>
             <tbody>
+                <?php if ($eligibilityPool === []): ?>
+                    <tr><td colspan="7">No members currently meet the recorded normal-operation eligibility criteria.</td></tr>
+                <?php endif; ?>
                 <?php foreach ($eligibilityPool as $member): ?>
                     <tr<?= $member['recommended'] ? ' class="list-row--highlighted"' : '' ?>>
                         <td>
@@ -197,7 +266,15 @@ include __DIR__ . '/../../../partials/header.php';
                         <td><strong style="color: var(--color-primary);"><?= e((string) $member['trust_score']) ?></strong></td>
                         <td><?= e((string) $member['months']) ?></td>
                         <td><?= e((string) $member['transactions']) ?></td>
-                        <td><span class="badge badge--<?= $member['record'] === 'Clean' ? 'success' : 'warning' ?>"><?= e($member['record']) ?></span></td>
+                        <td>
+                            <span class="badge badge--<?= $member['record'] === 'Clean' ? 'success' : 'warning' ?>"><?= e($member['record']) ?></span>
+                            <?php if ($member['upheld_claims'] > 0): ?>
+                                <span class="list-row__meta"><?= e((string) $member['upheld_claims']) ?> resolved claim(s)</span>
+                            <?php endif; ?>
+                            <?php if ($member['has_suspension']): ?>
+                                <span class="list-row__meta">Suspension on record</span>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <?php if ($member['gn_endorsed']): ?>
                                 <span class="badge badge--success">✓</span>
@@ -206,7 +283,15 @@ include __DIR__ . '/../../../partials/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <a class="btn btn--<?= $member['recommended'] ? 'primary' : 'ghost' ?>" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select</a>
+                            <?php if ($hasModerator): ?>
+                                <span class="badge badge--neutral">Current moderator must leave first</span>
+                            <?php else: ?>
+                                <?php if ($member['recommended']): ?>
+                                    <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $selectedDivision) ?>?member=<?= e((string) $member['id']) ?>">Select recommended</a>
+                                <?php else: ?>
+                                    <span class="badge badge--neutral">Lower trust score</span>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -258,6 +343,7 @@ include __DIR__ . '/../../../partials/header.php';
                             <td><?= e($mod['bond']) ?></td>
                             <td>
                                 <a class="btn btn--ghost" href="<?= e($mod['href']) ?>">View profile</a>
+                                <a class="btn btn--ghost" href="<?= e($mod['objections_href']) ?>">View objections</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -267,4 +353,8 @@ include __DIR__ . '/../../../partials/header.php';
     <?php endif; ?>
 </section>
 
-<?php include __DIR__ . '/../../../partials/footer.php'; ?>
+<?php foreach ($nominations as $nomination): ?>
+    <?php include __DIR__ . '/../../../partials/modal-review-moderator-candidate.php'; ?>
+<?php endforeach; ?>
+<?php include __DIR__ . '/../../../partials/modal-create-moderator-candidate.php'; ?>
+<?php $pageScripts = ['modal.js']; include __DIR__ . '/../../../partials/footer.php'; ?>

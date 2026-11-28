@@ -65,28 +65,7 @@ include __DIR__ . '/../../../partials/header.php';
         Removing a moderator returns their bond to the Sponsor Pool (good standing) or forfeits it to the Reserve Pool (removed for cause).
     </div>
 
-    <details class="disclosure">
-        <summary class="btn btn--ghost">Remove moderator…</summary>
-        <div data-demo-form>
-            <p class="demo-note">Preview only. Saving is not available yet.</p>
-            <div class="field u-mb-4">
-                <label class="field__label" for="removal-reason-type">Reason</label>
-                <select class="input" id="removal-reason-type" name="reason_type" disabled>
-                    <option value="">Select reason…</option>
-                    <option value="good_standing">Good standing</option>
-                    <option value="for_cause">Removed for cause</option>
-                    <option value="voluntary">Voluntary resignation</option>
-                </select>
-            </div>
-
-            <div class="field u-mb-4">
-                <label class="field__label" for="removal-reason">Details</label>
-                <textarea class="input" id="removal-reason" name="reason" rows="3" placeholder="Provide the reason for removal…" disabled></textarea>
-            </div>
-
-            <button class="btn btn--danger" type="submit" disabled>Remove moderator</button>
-        </div>
-    </details>
+    <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/objections/<?= e((string) $moderator['assignment_id']) ?>">Review appointment or record departure</a>
 </div>
 
 <?php include __DIR__ . '/../../../partials/footer.php'; ?>

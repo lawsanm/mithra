@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 /**
- * user_divisions — which community a member belongs to, and whether their
- * moderator has verified it yet.
+ * user_divisions — which community a member belongs to, and whether the Admin
+ * or moderator has verified it yet.
  *
  * A registration writes the 'home' row here in the same transaction as the
- * `users` row; the moderator's verification queue reads and decides it. A
+ * `users` row; the Admin reviews it during bootstrap and the moderator queue
+ * takes over after appointment. A
  * 'temporary' row is written by CommunityService (Plan §6.5) and decided in
  * the same queue.
  */
@@ -94,7 +95,7 @@ final class UserDivision extends BaseModel
                     ud.renewal_proof_path, ud.renewal_requested_at,
                     ud.proof_type, ud.proof_file_path,
                     u.full_name, u.nic, u.nic_photo_path, u.phone, u.email, u.address, u.status AS user_status,
-                    d.name AS division_name, d.moderator_id,
+                    d.name AS division_name, d.moderator_id, d.status AS division_status,
                     v.full_name AS decided_by_name
                FROM user_divisions ud
                JOIN users u        ON u.id = ud.user_id
@@ -106,20 +107,20 @@ final class UserDivision extends BaseModel
     }
 
     /**
-     * Record a moderator's decision. The current status is part of the WHERE
-     * clause, so two moderators racing on one application cannot both win and
+     * Record a reviewer's decision. The current status is part of the WHERE
+     * clause, so two reviewers racing on one application cannot both win and
      * a decided application can never be decided again.
      *
      * @return bool whether this call was the one that changed the row
      */
-    public function decide(int $id, int $moderatorId, string $status, ?string $expiresAt = null, ?string $reason = null): bool
+    public function decide(int $id, int $reviewerId, string $status, ?string $expiresAt = null, ?string $reason = null): bool
     {
         return $this->execute(
             "UPDATE user_divisions
-                SET status = :status, verified_by = :moderator, verified_at = NOW(),
+                SET status = :status, verified_by = :reviewer, verified_at = NOW(),
                     expires_at = :expires, decision_reason = :reason
               WHERE id = :id AND status = 'pending'",
-            ['status' => $status, 'moderator' => $moderatorId, 'expires' => $expiresAt, 'reason' => $reason, 'id' => $id]
+            ['status' => $status, 'reviewer' => $reviewerId, 'expires' => $expiresAt, 'reason' => $reason, 'id' => $id]
         ) === 1;
     }
 

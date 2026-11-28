@@ -102,28 +102,49 @@ final class Moderator extends BaseModel
         );
     }
 
-    /** @return list<array<string, mixed>> */
-    public function eligibleCandidates(int $divisionId): array
+    public function hasAppointmentHistory(int $divisionId): bool
     {
-        return $this->select(
-            'SELECT u.id, u.full_name, u.trust_score, u.address, u.joined_at,
-                    ud.verified_at,
-                    (SELECT COUNT(*) FROM bookings WHERE (borrower_id = u.id OR lender_id = u.id)
-                       AND status = \'completed\') AS completed_bookings,
-                    (SELECT COUNT(*) FROM disputes dp JOIN bookings b ON b.id = dp.booking_id
-                      WHERE b.borrower_id = u.id OR b.lender_id = u.id) AS disputes,
-                    EXISTS (SELECT 1 FROM moderator_candidates mc
-                             WHERE mc.user_id = u.id AND mc.gn_division_id = :div2
-                               AND mc.endorsement IS NOT NULL) AS gn_endorsed
-               FROM users u
-               JOIN user_divisions ud ON ud.user_id = u.id AND ud.gn_division_id = :div
-                    AND ud.membership_type = \'home\' AND ud.status = \'active\'
-               JOIN roles r ON r.id = u.role_id
-              WHERE r.code = \'member\'
-                AND u.status = \'active\'
-                AND u.trust_score >= 70
-              ORDER BY u.trust_score DESC',
-            ['div' => $divisionId, 'div2' => $divisionId]
+        return (int) $this->selectValue(
+            'SELECT COUNT(*) FROM moderator_assignments WHERE gn_division_id = :division',
+            ['division' => $divisionId]
+        ) > 0;
+    }
+
+    public function createProvisional(int $userId, int $divisionId, int $adminId): int
+    {
+        return $this->insert(
+            'INSERT INTO moderator_assignments
+                (user_id, gn_division_id, appointed_by, objection_window_ends, trial_ends_at,
+                 bond_points, bond_status, status)
+             VALUES
+                (:user, :division, :admin, NOW() + INTERVAL 7 DAY, NOW() + INTERVAL 3 MONTH,
+                 500, \'held\', \'trial\')',
+            ['user' => $userId, 'division' => $divisionId, 'admin' => $adminId]
         );
+    }
+
+    public function lifecycle(int $id, bool $lock = false): ?array
+    {
+        $sql = 'SELECT ma.id, ma.user_id, ma.gn_division_id, ma.status, ma.bond_points, ma.bond_status,
+                       ma.objection_window_ends, ma.trial_ends_at, ma.confirmed_at, ma.ended_at, ma.end_reason,
+                       u.full_name, d.name AS division_name
+                  FROM moderator_assignments ma JOIN users u ON u.id = ma.user_id
+                  JOIN gn_divisions d ON d.id = ma.gn_division_id WHERE ma.id = :id';
+        return $this->selectOne($lock ? $sql . ' FOR UPDATE' : $sql, ['id' => $id]);
+    }
+
+    public function confirmTrial(int $id): void
+    {
+        $this->execute("UPDATE moderator_assignments SET status = 'active', confirmed_at = NOW() WHERE id = :id AND status = 'trial'", ['id' => $id]);
+    }
+
+    public function endAppointment(int $id, string $status, string $bondStatus, string $reason): void
+    {
+        $this->execute('UPDATE moderator_assignments SET status = :status, bond_status = :bond, ended_at = NOW(), end_reason = :reason WHERE id = :id', ['id' => $id, 'status' => $status, 'bond' => $bondStatus, 'reason' => $reason]);
+    }
+
+    public function historyPage(int $page): array
+    {
+        return $this->selectPage('SELECT ma.id, ma.status, ma.appointed_at, ma.ended_at, ma.end_reason, ma.bond_status, u.full_name, d.name AS division_name FROM moderator_assignments ma JOIN users u ON u.id = ma.user_id JOIN gn_divisions d ON d.id = ma.gn_division_id ORDER BY ma.id DESC', [], $page, 20);
     }
 }

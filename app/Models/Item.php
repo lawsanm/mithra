@@ -286,7 +286,7 @@ final class Item extends BaseModel
      *
      * @return list<array<string, mixed>>
      */
-    public function reviewQueue(array $divisionIds, string $state): array
+    public function reviewQueue(array $divisionIds, string $state, int $reviewerId = 0, string $role = ''): array
     {
         $params = [];
         $where  = [match ($state) {
@@ -295,6 +295,14 @@ final class Item extends BaseModel
             'rejected' => "i.status = 'rejected'",
             default    => "(i.status = 'pending_approval' OR i.value_status <> 'pending')",
         }];
+
+        if ($role === 'admin') {
+            $where[] = '(d.moderator_id IS NULL OR d.moderator_id = i.owner_id)';
+        } elseif ($role === 'moderator') {
+            $where[] = 'd.moderator_id = :reviewer_division AND i.owner_id <> :reviewer_owner';
+            $params['reviewer_division'] = $reviewerId;
+            $params['reviewer_owner'] = $reviewerId;
+        }
 
         if ($divisionIds !== []) {
             $where[] = 'i.gn_division_id IN ' . self::inList('division', $divisionIds, $params);

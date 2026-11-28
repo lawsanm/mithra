@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Member verification: the moderator's decision on a home-membership
- * application (Plan §18.1, module 1.2).
+ * Member verification: the Admin's bootstrap decision or the moderator's
+ * decision on a home-membership application (Plan §17.1 and §18.1).
  *
  * This is the other half of sign-up. Registration leaves an account pending
  * and unable to sign in; approval here is what lets that member through
@@ -12,8 +12,8 @@ declare(strict_types=1);
  * status and the 200-point welcome bonus from the Sponsor Pool (Plan §6.4) —
  * moves together or not at all.
  *
- * Every method takes the acting moderator's id and refuses an application from
- * a division they do not moderate: an id in a URL is never trusted (§8).
+ * Review and decision methods verify that the acting reviewer is permitted in
+ * the current division phase: an id in a URL is never trusted (§8).
  */
 final class VerificationService
 {
@@ -76,6 +76,61 @@ final class VerificationService
         return $application;
     }
 
+    /** A pending home registration the Admin may handle before moderator appointment. */
+    public function reviewInitialByAdmin(int $id): array
+    {
+        $application = $this->memberships->findForReview($id);
+
+        if ($application === null) {
+            throw new RecordNotFoundException('No such registration.');
+        }
+
+        if ($application['membership_type'] !== 'home'
+            || $application['status'] !== 'pending'
+            || $application['moderator_id'] !== null
+            || $application['division_status'] !== 'active') {
+            throw new AccessDeniedException('This registration is not in the Admin initial review queue.');
+        }
+
+        return $application;
+    }
+
+    /** Approve a home registration while the division has no moderator. */
+    public function approveInitialByAdmin(int $id, int $adminId): string
+    {
+        $application = $this->reviewInitialByAdmin($id);
+
+        if (empty($application['nic_photo_path']) || empty($application['proof_file_path'])) {
+            throw ValidationException::field('documents', 'Both the NIC photograph and proof of address must be on file before approval.');
+        }
+
+        $this->approveHomeApplication($application, $adminId, true);
+
+        return (string) $application['full_name'];
+    }
+
+    /** Reject a home registration while the division has no moderator. */
+    public function rejectInitialByAdmin(int $id, int $adminId, ?string $reason = null): string
+    {
+        $application = $this->reviewInitialByAdmin($id);
+        $reason      = $reason === null || trim($reason) === '' ? null : trim($reason);
+
+        if ($reason !== null && mb_strlen($reason) > self::REASON_MAX) {
+            throw ValidationException::field('reason', sprintf('Keep the reason to %d characters.', self::REASON_MAX));
+        }
+
+        Database::transaction($this->pdo, function () use ($application, $id, $adminId, $reason): void {
+            $this->lockInitialDivision($application);
+            $this->assertInitialApplicationStillPending($id);
+
+            if (!$this->memberships->decide($id, $adminId, 'rejected', null, $reason)) {
+                throw $this->alreadyDecided();
+            }
+        });
+
+        return (string) $application['full_name'];
+    }
+
     /**
      * Approve one membership: the community lets them in, the account they
      * registered with becomes one they can sign in to, and the welcome bonus
@@ -94,34 +149,42 @@ final class VerificationService
             return $this->approveTemporary($application, $moderatorId);
         }
 
+        $this->approveHomeApplication($application, $moderatorId, false);
+
+        return (string) $application['full_name'];
+    }
+
+    /** Keep membership, account, wallet and welcome bonus changes atomic. */
+    private function approveHomeApplication(array $application, int $reviewerId, bool $initialAdminReview): void
+    {
+        $id       = (int) $application['id'];
         $memberId = (int) $application['user_id'];
 
         try {
-            Database::transaction($this->pdo, function () use ($id, $moderatorId, $memberId): void {
-                if (!$this->memberships->decide($id, $moderatorId, 'active')) {
-                    // Another moderator decided it between the read and this
-                    // write. Fail closed rather than approve twice.
+            Database::transaction($this->pdo, function () use ($application, $id, $reviewerId, $memberId, $initialAdminReview): void {
+                if ($initialAdminReview) {
+                    $this->lockInitialDivision($application);
+                    $this->assertInitialApplicationStillPending($id);
+                }
+
+                if (!$this->memberships->decide($id, $reviewerId, 'active')) {
                     throw $this->alreadyDecided();
                 }
 
                 $this->users->markActive($memberId);
                 $this->wallets->openFor($memberId);
 
-                // Once per verified person, however many times they are approved.
                 if (!$this->ledger->hasReceived($memberId, 'welcome_bonus')) {
                     $this->ledger->poolToMember('sponsor', $memberId, self::WELCOME_BONUS, 'welcome_bonus');
                 }
             });
         } catch (InsufficientPointsException $exception) {
-            // Fail closed: nobody is approved without the bonus the plan promises.
             throw ValidationException::field('form', sprintf(
                 'The Sponsor Pool cannot fund the %d-point welcome bonus right now, so nothing was approved. '
                 . 'Ask the Sponsor Liaison to record a General contribution, then approve again.',
                 self::WELCOME_BONUS
             ));
         }
-
-        return (string) $application['full_name'];
     }
 
     /**
@@ -228,6 +291,27 @@ final class VerificationService
         }
 
         return $application;
+    }
+
+    private function lockInitialDivision(array $application): void
+    {
+        $division = $this->divisions->lockForAppointment((int) $application['gn_division_id']);
+
+        if ($division === null || $division['status'] !== 'active' || $division['moderator_id'] !== null) {
+            throw new AccessDeniedException('This division is no longer in the Admin registration-review phase.');
+        }
+    }
+
+    private function assertInitialApplicationStillPending(int $id): void
+    {
+        $application = $this->memberships->findForReview($id);
+
+        if ($application === null
+            || $application['membership_type'] !== 'home'
+            || $application['status'] !== 'pending'
+            || $application['moderator_id'] !== null) {
+            throw $this->alreadyDecided();
+        }
     }
 
     private function alreadyDecided(): ValidationException

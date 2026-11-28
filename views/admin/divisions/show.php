@@ -58,7 +58,12 @@ include __DIR__ . '/../../../partials/header.php';
                 <span class="list-row__title u-text-error">Moderator — vacant</span>
                 <span class="list-row__meta">Until one is appointed, the Admin approves this division's new members.</span>
             </div>
-            <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Appoint moderator</a>
+            <?php if (!$division['archived']): ?>
+                <a class="btn btn--ghost" href="<?= base_url() ?>/admin/divisions/<?= e((string) $division['id']) ?>/approvals">
+                    Review registrations<?= $division['pending_approvals'] > 0 ? ' (' . e((string) $division['pending_approvals']) . ')' : '' ?>
+                </a>
+                <a class="btn btn--primary" href="<?= base_url() ?>/admin/moderators/appoint/<?= e((string) $division['id']) ?>">Appoint moderator</a>
+            <?php endif; ?>
         <?php else: ?>
             <span class="avatar"><?= e(User::initials($division['moderator_name'])) ?></span>
             <div class="list-row__body">
