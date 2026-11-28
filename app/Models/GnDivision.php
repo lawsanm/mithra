@@ -316,4 +316,37 @@ final class GnDivision extends BaseModel
     {
         return $this->execute('UPDATE gn_divisions SET moderator_id = NULL WHERE id = :id AND moderator_id = :user', ['id' => $id, 'user' => $userId]) === 1;
     }
+    /** Lock the division row while an Admin starts or ends its disaster event. */
+    public function lockForDisasterMode(int $id): ?array
+    {
+        $row = $this->selectOne(
+            'SELECT id, name, status, moderator_id, disaster_mode_active
+               FROM gn_divisions WHERE id = :id FOR UPDATE',
+            ['id' => $id]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $row['id'],
+            'name' => (string) $row['name'],
+            'status' => (string) $row['status'],
+            'moderator_id' => $row['moderator_id'] === null ? null : (int) $row['moderator_id'],
+            'disaster_mode_active' => (bool) $row['disaster_mode_active'],
+        ];
+    }
+
+    /** Activate or deactivate Disaster Mode for a division. */
+    public function setDisasterMode(int $id, bool $active, ?string $until = null): void
+    {
+        $this->execute(
+            'UPDATE gn_divisions
+                SET disaster_mode_active = :active,
+                    disaster_mode_until  = :until
+              WHERE id = :id',
+            ['id' => $id, 'active' => $active ? 1 : 0, 'until' => $active ? $until : null]
+        );
+    }
 }
