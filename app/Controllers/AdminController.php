@@ -1297,12 +1297,17 @@ final class AdminController extends Controller
         // Trust scores and suspension apply to residents only — staff and
         // sponsor accounts never lend or borrow.
         $isResident = in_array($users->roleCode($id), ['member', 'moderator'], true);
+        $isMember = $users->roleCode($id) === 'member';
+        $suspensionRecords = new AccountSuspension($this->pdo);
+        $suspensionHistory = $suspensionRecords->historyFor($id);
+        $hasActiveSuspension = $suspensionRecords->hasOpenForUser($id);
 
         return [
             'user' => [
                 'id'          => $id,
                 'is_resident' => $isResident,
-                'can_suspend' => $isResident && in_array((string) $row['status'], ['active', 'pending'], true),
+                'can_suspend' => $isMember && (string) $row['status'] === 'active' && !$hasActiveSuspension,
+                'can_reinstate' => $isMember && (string) $row['status'] === 'suspended' && $hasActiveSuspension,
                 'initials'    => User::initials((string) $row['full_name']),
                 'name'        => (string) $row['full_name'],
                 'email'       => (string) ($row['email'] ?? '') ?: '—',
@@ -1325,6 +1330,12 @@ final class AdminController extends Controller
                     . ' · ' . ($entry['incoming'] ? '+' : '−') . number_format((int) $entry['amount']) . ' pts',
                 'meta'      => date('j M Y', strtotime((string) $entry['created_at'])),
             ], array_slice((new Wallet($this->pdo))->activity($id), 0, 5)),
+            'suspension_history' => array_map(static fn (array $record): array => [
+                'reason' => (string) $record['reason'],
+                'started_at' => date('j M Y, H:i', strtotime((string) $record['started_at'])),
+                'ended_at' => $record['ended_at'] === null ? null : date('j M Y, H:i', strtotime((string) $record['ended_at'])),
+                'admin_name' => (string) ($record['admin_name'] ?? 'Former administrator'),
+            ], $suspensionHistory),
         ];
     }
 

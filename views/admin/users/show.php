@@ -6,9 +6,10 @@ declare(strict_types=1);
  * User detail — admin view of an individual member.
  *
  * @var array $user       id, initials, name, division, role, status, status_label, email, phone, joined_at,
- *                        trust_score, balance, is_resident (shows the trust score), can_suspend
+ *                        trust_score, balance, is_resident, can_suspend, can_reinstate
  * @var array $activity   the account's latest point movements: icon_type, title, meta
  * @var array $stats      label, value
+ * @var array $suspension_history prior suspension rows, newest first
  */
 
 $pageTitle = $user['name'] . ' — User';
@@ -86,6 +87,27 @@ include __DIR__ . '/../../../partials/header.php';
                 <?php endforeach; ?>
             </div>
         </section>
+
+        <section class="section u-mt-6">
+            <h2 class="section__title">Suspension history</h2>
+            <?php if ($suspension_history === []): ?>
+                <p class="empty-state__body">No suspension history.</p>
+            <?php else: ?>
+                <ul class="row-list">
+                    <?php foreach ($suspension_history as $record): ?>
+                        <li class="list-row">
+                            <div class="list-row__body">
+                                <span class="list-row__title"><?= e($record['reason']) ?></span>
+                                <span class="list-row__meta">
+                                    Started <?= e($record['started_at']) ?> by <?= e($record['admin_name']) ?>
+                                    · <?= $record['ended_at'] === null ? 'Current suspension' : 'Ended ' . e($record['ended_at']) ?>
+                                </span>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </section>
     </div>
 
     <div class="user-panel">
@@ -108,11 +130,21 @@ include __DIR__ . '/../../../partials/header.php';
 
         <div style="display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4);">
             <?php if ($user['can_suspend']): ?>
-                <?php // Suspension has no backend yet: the account status never changes from here. ?>
-                <div class="preview-action" data-demo-form style="align-items: stretch;">
-                    <button class="btn btn--danger" type="button" disabled style="width:100%;">Suspend member</button>
-                    <span class="demo-note">Not available in this demo</span>
-                </div>
+                <form class="stack" method="post" action="<?= base_url() ?>/admin/users/<?= e((string) $user['id']) ?>/suspension" data-confirm="Suspend this member account? The reason will be recorded in the account history." novalidate>
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="suspend">
+                    <div class="field">
+                        <label class="field__label" for="suspension-reason">Suspension reason</label>
+                        <textarea class="input" id="suspension-reason" name="reason" rows="3"></textarea>
+                    </div>
+                    <button class="btn btn--danger" type="submit" style="width:100%;">Suspend member</button>
+                </form>
+            <?php elseif ($user['can_reinstate']): ?>
+                <form method="post" action="<?= base_url() ?>/admin/users/<?= e((string) $user['id']) ?>/suspension" data-confirm="Reinstate this member account? The past suspension will remain in the account history." novalidate>
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="action" value="reinstate">
+                    <button class="btn btn--primary" type="submit" style="width:100%;">Reinstate member</button>
+                </form>
             <?php endif; ?>
             <a class="btn btn--ghost" href="<?= base_url() ?>/admin/users" style="width:100%; text-align:center;">Back to users</a>
         </div>
